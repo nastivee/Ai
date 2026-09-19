@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import OpenAI from 'openai';
+import fetch from 'node-fetch';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -31,12 +32,12 @@ app.post('/api/chat', async (req, res) => {
   }
 });
 
-// Image Route - Always sends Base64 data so browsers cannot block it
+// Image Route - Converts all images to Base64 so Safari cannot block them
 app.post('/api/image', async (req, res) => {
   const { prompt } = req.body;
   if (!prompt) return res.status(400).json({ error: 'Prompt is required' });
 
-  // 1. Try DALL-E 3 with native base64 output
+  // 1. Try OpenAI DALL-E 3 Base64
   try {
     const response = await openai.images.generate({
       model: "dall-e-3",
@@ -50,10 +51,10 @@ app.post('/api/image', async (req, res) => {
       return res.json({ imageUrl: `data:image/png;base64,${response.data[0].b64_json}` });
     }
   } catch (error) {
-    console.error('OpenAI image error, switching to fallback converter:', error.message);
+    console.error('OpenAI image error, using backup generator:', error.message);
   }
 
-  // 2. Fallback: Download image on backend and convert to base64
+  // 2. Backup Generator - Converts image to Base64 string directly on backend
   try {
     const encodedPrompt = encodeURIComponent(prompt + ', realistic photo, 8k');
     const fallbackUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1024&height=1024&nologo=true`;
