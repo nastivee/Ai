@@ -64,12 +64,11 @@ async function createImg(){
     const data=await r.json().catch(()=>({}));
     if(!r.ok)throw new Error(data.error||('HTTP '+r.status));
     
-    const imgData = data.imageUrl || data.image || data.svg || '';
+    const imgData = data.imageUrl || data.image || '';
 
-    if (typeof imgData === 'string' && (imgData.trim().startsWith('&lt;svg') || imgData.includes('&lt;/svg&gt;') || imgData.trim().startsWith('<svg') || imgData.includes('</svg>'))) {
+    if (typeof imgData === 'string' && (imgData.trim().startsWith('<svg') || imgData.includes('</svg>'))) {
       const d = document.createElement('div');
       d.className = 'msg ai';
-      
       const t = document.createElement('div');
       t.textContent = 'Here is your image, boss:';
       d.appendChild(t);
@@ -89,7 +88,7 @@ async function createImg(){
     status.textContent='Nastivee is online';
   }catch(e){
     console.error(e);
-    add('Failed to generate image. Please check backend logs or API keys.','ai');
+    add('Failed to generate image: ' + e.message, 'ai');
     status.textContent='Generation error';
   }finally{
     send.disabled=false;imgBtn.disabled=false;input.focus();
