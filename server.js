@@ -1,38 +1,100 @@
-import express from 'express';
-import cors from 'cors';
-import fs from 'fs';
-import OpenAI from 'openai';
+import express from "express";
+import cors from "cors";
+import fs from "fs";
+import path from "path";
+import OpenAI from "openai";
 
 const app = express();
 app.use(cors());
-app.use(express.json({limit:'1mb'}));
-app.use(express.static('public'));
+app.use(express.json());
 
-const DATA='data/memory.json';
-const load=()=>{try{return JSON.parse(fs.readFileSync(DATA,'utf8'))}catch{return {lessons:[],messages:[]}}};
-const save=x=>fs.writeFileSync(DATA,JSON.stringify(x,null,2));
-const db=load();
-const client=process.env.OPENAI_API_KEY?new OpenAI({apiKey:process.env.OPENAI_API_KEY}):null;
-const SYSTEM=`You are AI Lab, a capable personal AI assistant. Be direct, useful, thoughtful and transparent. Use saved lessons to improve future answers. You may adapt response style and reasoning strategies, but do not modify security boundaries, steal credentials, bypass access controls, or take external actions without explicit authorization. Never claim an action happened unless it actually did.`;
+const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-app.get('/api/status',(req,res)=>res.json({configured:!!client,model:process.env.OPENAI_MODEL||'gpt-5.6-luna',lessons:db.lessons.length}));
-app.post('/api/chat',async(req,res)=>{
- try{
-  if(!client)return res.status(503).json({error:'AI is not configured. Add OPENAI_API_KEY to the server environment.'});
-  const message=String(req.body.message||'').trim(); if(!message)return res.status(400).json({error:'Message required'});
-  const recent=db.messages.slice(-20).map(x=>`${x.role}: ${x.content}`).join('\n');
-  const lessons=db.lessons.slice(-20).map(x=>`Lesson: ${x.lesson}`).join('\n');
-  const r=await client.responses.create({model:process.env.OPENAI_MODEL||'gpt-5.6-luna',instructions:`${SYSTEM}\n\n${lessons}`,input:`Recent conversation:\n${recent}\n\nUser: ${message}`});
-  const answer=r.output_text||'No response.'; db.messages.push({role:'user',content:message},{role:'assistant',content:answer}); if(db.messages.length>100)db.messages.splice(0,db.messages.length-100); save(db); res.json({answer});
- }catch(e){console.error(e);res.status(500).json({error:'AI request failed.'})}
+const dataDir = path.join(process.cwd(), "data");
+const memoryFile = path.join(dataDir, "memory.json");
+
+// Create the data folder automatically so Render does not crash on first save.
+if (!fs.existsSync(dataDir)) {
+  fs.mkdirSync(dataDir, { recursive: true });
+}
+
+let memory = [];
+if (fs.existsSync(memoryFile)) {
+  try {
+    memory = JSON.parse(fs.readFileSync(memoryFile, "utf8"));
+    if (!Array.isArray(memory)) memory = [];
+  } catch {
+    memory = [];
+  }
+}
+
+function save() {
+  fs.writeFileSync(memoryFile, JSON.stringify(memory, null, 2), "utf8");
+}
+
+const SYSTEM_PROMPT = `
+You are AI Lab, an experimental personal AI assistant.
+
+Goals:
+- Be highly capable at reasoning, coding, planning and problem solving.
+- Give direct, useful answers.
+- Adapt to the user's preferred style.
+- Learn from previous conversations.
+- Identify mistakes and improve future responses.
+- Ask questions only when genuinely necessary.
+- Never pretend you completed an action you did not complete.
+
+Self-improvement:
+After important interactions, identify what worked, what was wrong, and what could improve next time.
+You may improve reasoning strategies and response style, but do not modify security boundaries, access controls, or execute unapproved code on external systems.
+`;
+
+app.get("/", (req, res) => {
+  res.send("AI Lab backend is running");
 });
-app.post('/api/improve',async(req,res)=>{
- try{
-  if(!client)return res.status(503).json({error:'AI is not configured.'});
-  const recent=db.messages.slice(-6).map(x=>`${x.role}: ${x.content}`).join('\n');
-  const r=await client.responses.create({model:process.env.OPENAI_MODEL||'gpt-5.6-luna',instructions:'Review the interaction and produce one concise reusable lesson for improving future responses. Return only the lesson.',input:recent});
-  const lesson=r.output_text.trim(); db.lessons.push({lesson,created:new Date().toISOString()}); if(db.lessons.length>100)db.lessons.splice(0,db.lessons.length-100); save(db); res.json({lesson});
- }catch(e){console.error(e);res.status(500).json({error:'Improvement failed.'})}
+
+app.get("/health", (req, res) => {
+  res.json({ ok: true, memoryItems: memory.length });
 });
-app.post('/api/reset',(_,res)=>{db.messages=[];save(db);res.json({ok:true})});
-app.listen(process.env.PORT||3000,()=>console.log('AI Lab running on port '+(process.env.PORT||3000)));
+
+app.post("/api/chat", async (req, res) => {
+  try {
+    const message = req.body?.message;
+    if (!message || typeof message !== "string") {
+      return res.status(400).json({ error: "Message required" });
+    }
+
+    const recentMemory = memory.slice(-20)
+      .map(x => `${x.role}: ${x.content}`)
+      .join("\n");
+
+    const response = await client.responses.create({
+      model: "gpt-5.6",
+      instructions: SYSTEM_PROMPT,
+      input: `Previous conversation memory:\n\n${recentMemory}\n\nUser:\n${message}`
+    });
+
+    const answer = response.output_text || "No response received.";
+
+    memory.push(
+      { role: "user", content: message },
+      { role: "assistant", content: answer }
+    );
+
+    if (memory.length > 100) {
+      memory.splice(0, memory.length - 100);
+    }
+
+    save();
+
+    res.json({ answer });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "AI request failed" });
+  }
+});
+
+const port = process.env.PORT || 3000;
+app.listen(port, () => {
+  console.log(`AI Lab backend running on port ${port}`);
+});
