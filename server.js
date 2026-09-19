@@ -1,13 +1,12 @@
 import express from 'express';
 import cors from 'cors';
 import OpenAI from 'openai';
-import fetch from 'node-fetch';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
@@ -32,43 +31,33 @@ app.post('/api/chat', async (req, res) => {
   }
 });
 
-// Image Route - Converts all images to Base64 so Safari cannot block them
+// Image Route
 app.post('/api/image', async (req, res) => {
   const { prompt } = req.body;
   if (!prompt) return res.status(400).json({ error: 'Prompt is required' });
 
-  // 1. Try OpenAI DALL-E 3 Base64
+  // 1. Try DALL-E 3 direct URL standard
   try {
     const response = await openai.images.generate({
       model: "dall-e-3",
-      prompt: prompt + ", realistic photograph, highly detailed, 8k resolution",
+      prompt: prompt + ", photorealistic, high quality 8k",
       n: 1,
       size: "1024x1024",
-      response_format: "b64_json"
+      quality: "standard"
     });
 
-    if (response.data && response.data[0]?.b64_json) {
-      return res.json({ imageUrl: `data:image/png;base64,${response.data[0].b64_json}` });
+    if (response.data && response.data[0]?.url) {
+      return res.json({ imageUrl: response.data[0].url });
     }
   } catch (error) {
-    console.error('OpenAI image error, using backup generator:', error.message);
+    console.error('OpenAI Error:', error.message);
   }
 
-  // 2. Backup Generator - Converts image to Base64 string directly on backend
-  try {
-    const encodedPrompt = encodeURIComponent(prompt + ', realistic photo, 8k');
-    const fallbackUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1024&height=1024&nologo=true`;
-    
-    const imgResponse = await fetch(fallbackUrl);
-    const arrayBuffer = await imgResponse.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-    const base64Img = `data:image/jpeg;base64,${buffer.toString('base64')}`;
-
-    return res.json({ imageUrl: base64Img });
-  } catch (err) {
-    console.error('Fallback image fetch failed:', err);
-    return res.status(500).json({ error: 'Failed to generate image.' });
-  }
+  // 2. Reliable Direct Fallback URL
+  const encodedPrompt = encodeURIComponent(prompt + ', realistic photo, high resolution');
+  const backupUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1024&height=1024&nologo=true`;
+  
+  return res.json({ imageUrl: backupUrl });
 });
 
 app.listen(PORT, () => {
