@@ -94,6 +94,28 @@ app.post("/api/chat", async (req, res) => {
   }
 });
 
+// Image Generation Endpoint (using default OpenAI image generation model)
+app.post("/api/image", async (req, res) => {
+  try {
+    const prompt = req.body?.prompt;
+    if (!prompt || typeof prompt !== "string") {
+      return res.status(400).json({ error: "Prompt required" });
+    }
+
+    const response = await client.images.generate({
+      prompt: prompt,
+      n: 1,
+      size: "1024x1024",
+    });
+
+    const imageUrl = response.data[0].url;
+    res.json({ imageUrl });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Image generation failed" });
+  }
+});
+
 const port = process.env.PORT || 3000;
 app.listen(port, () => {
   console.log(`AI Lab backend running on port ${port}`);
