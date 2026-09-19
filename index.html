@@ -1,265 +1,108 @@
-DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
-<title>AI Flare Chat & SVG Generator</title>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#09051a"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Nastivee AI Bot">
+<link rel="manifest" href="manifest.webmanifest"><title>Nastivee AI Bot</title>
 <style>
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body {
-font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", Roboto, sans-serif;
-background: #0f172a;
-color: #f8fafc;
-display: flex;
-flex-direction: column;
-height: 100vh;
-height: -webkit-fill-available;
-overflow: hidden;
-}
-header {
-background: #1e293b;
-padding: 14px 16px;
-border-bottom: 1px solid #334155;
-display: flex;
-align-items: center;
-justify-content: space-between;
-}
-header h1 {
-font-size: 1.1rem;
-color: #38bdf8;
-font-weight: 700;
-}
-header span {
-font-size: 0.75rem;
-background: #0369a1;
-color: #e0f2fe;
-padding: 3px 8px;
-border-radius: 12px;
-}
-.chat-container {
-flex: 1;
-overflow-y: auto;
-padding: 16px;
-display: flex;
-flex-direction: column;
-gap: 16px;
--webkit-overflow-scrolling: touch;
-}
-.message {
-display: flex;
-flex-direction: column;
-max-width: 85%;
-gap: 6px;
-}
-.message.user {
-align-self: flex-end;
-}
-.message.bot {
-align-self: flex-start;
-}
-.bubble {
-padding: 12px 16px;
-border-radius: 18px;
-font-size: 0.95rem;
-line-height: 1.45;
-word-break: break-word;
-}
-.user .bubble {
-background: #0284c7;
-color: #ffffff;
-border-bottom-right-radius: 4px;
-}
-.bot .bubble {
-background: #1e293b;
-color: #f1f5f9;
-border: 1px solid #334155;
-border-bottom-left-radius: 4px;
-}
-.svg-preview {
-margin-top: 8px;
-background: #090d16;
-border: 1px solid #334155;
-border-radius: 12px;
-padding: 12px;
-display: flex;
-flex-direction: column;
-align-items: center;
-justify-content: center;
-overflow: hidden;
-}
-.svg-preview svg, .svg-preview img {
-max-width: 100%;
-height: auto;
-display: block;
-}
-.code-toggle {
-background: transparent;
-border: none;
-color: #38bdf8;
-font-size: 0.75rem;
-margin-top: 6px;
-cursor: pointer;
-text-align: left;
-padding: 2px 0;
-}
-.raw-code {
-display: none;
-background: #020617;
-color: #38bdf8;
-font-family: ui-monospace, monospace;
-font-size: 0.75rem;
-padding: 10px;
-border-radius: 8px;
-margin-top: 6px;
-white-space: pre-wrap;
-overflow-x: auto;
-border: 1px solid #1e293b;
-}
-.input-area {
-background: #1e293b;
-padding: 12px 16px;
-border-top: 1px solid #334155;
-display: flex;
-gap: 8px;
-align-items: center;
-}
-textarea {
-flex: 1;
-background: #0f172a;
-color: #f8fafc;
-border: 1px solid #334155;
-border-radius: 20px;
-padding: 10px 16px;
-font-family: inherit;
-font-size: 0.95rem;
-resize: none;
-height: 42px;
-max-height: 120px;
-outline: none;
--webkit-appearance: none;
-}
-textarea:focus {
-border-color: #38bdf8;
-}
-.send-btn {
-background: #0284c7;
-color: #fff;
-border: none;
-width: 42px;
-height: 42px;
-border-radius: 50%;
-font-weight: bold;
-display: flex;
-align-items: center;
-justify-content: center;
-cursor: pointer;
-flex-shrink: 0;
-}
-.send-btn:active {
-background: #0369a1;
-}
-</style>
-</head>
-<body>
-<header>
-<h1>AI Flare Mobile</h1>
-<span>Chat + Render</span>
-</header>
-<div class="chat-container" id="chat">
-<div class="message bot">
-<div class="bubble">
-Hello! I am your AI assistant. Ask me to generate an SVG illustration or paste any SVG code directly here to view it rendered in real-time.
-</div>
-</div>
-</div>
-<div class="input-area">
-<textarea id="userInput" placeholder="Type a message or paste SVG code..." rows="1" onkeydown="handleKey(event)"></textarea>
-<button class="send-btn" onclick="sendMessage()">➤</button>
-</div>
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:#070511;color:#f8f7ff;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}body{background:radial-gradient(circle at 50% -10%,#32206d 0,#100b24 34%,#070511 72%);}.app{max-width:760px;margin:auto;min-height:100vh;display:flex;flex-direction:column;position:relative}.head{padding:calc(15px + env(safe-area-inset-top)) 17px 13px;border-bottom:1px solid rgba(157,124,255,.2);background:rgba(9,5,26,.78);backdrop-filter:blur(18px);position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:12px}.avatar{width:48px;height:48px;border-radius:16px;background:linear-gradient(145deg,#8b5cf6,#3b82f6);display:grid;place-items:center;box-shadow:0 8px 30px rgba(124,58,237,.35);font-size:27px}.title{font-size:20px;font-weight:800;letter-spacing:-.3px}.sub{font-size:12px;color:#b7b0ce;margin-top:2px}.online{margin-left:auto;font-size:11px;color:#b8ffd9;display:flex;align-items:center;gap:6px}.dot{width:7px;height:7px;border-radius:50%;background:#34d399;box-shadow:0 0 10px #34d399}.chat{flex:1;padding:18px 15px 20px;overflow:auto}.msg{max-width:88%;padding:13px 15px;margin:10px 0;border-radius:20px;white-space:pre-wrap;line-height:1.5;box-shadow:0 5px 22px rgba(0,0,0,.16)}.ai{background:linear-gradient(145deg,rgba(32,24,61,.95),rgba(18,16,38,.95));border:1px solid rgba(139,92,246,.22)}.user{margin-left:auto;background:linear-gradient(145deg,#6845d8,#4266db);border:1px solid rgba(255,255,255,.12)}.msg img, .msg svg{width:100%;height:auto;border-radius:14px;margin-top:10px;display:block}.bottom{padding:10px 13px calc(12px + env(safe-area-inset-bottom));border-top:1px solid rgba(157,124,255,.18);background:rgba(9,5,26,.82);backdrop-filter:blur(18px)}.inputrow{display:flex;gap:8px;align-items:flex-end}textarea{flex:1;min-height:50px;max-height:140px;resize:none;background:rgba(20,15,40,.95);color:#fff;border:1px solid rgba(139,92,246,.3);border-radius:17px;padding:13px 14px;font:inherit;font-size:16px;outline:none;box-shadow:inset 0 1px 0 rgba(255,255,255,.03)}textarea:focus{border-color:#8b5cf6;box-shadow:0 0 0 3px rgba(139,92,246,.12)}button{min-height:48px;border:0;border-radius:15px;padding:10px 16px;background:linear-gradient(135deg,#8b5cf6,#4f46e5);color:white;font-weight:750;font-size:15px;box-shadow:0 7px 20px rgba(79,70,229,.28)}button:disabled{opacity:.55}.actions{display:flex;gap:8px;margin-top:9px;flex-wrap:wrap}.actions button{background:rgba(37,28,65,.9);border:1px solid rgba(139,92,246,.2);box-shadow:none;font-size:13px;min-height:40px}.status{font-size:11px;color:#9f97b9;margin-top:7px;text-align:center}@media(max-width:380px){.actions button{flex:1;padding:8px 6px}.online{display:none}}
+</style></head>
+<body><main class="app"><header class="head"><div class="avatar" aria-label="Nastivee AI Bot">🤖</div><div><div class="title">Nastivee AI Bot</div><div class="sub">Your personal AI assistant</div></div><div class="online"><span class="dot"></span>Online</div></header>
+<section id="chat" class="chat" aria-live="polite"><div class="msg ai">Hello boss 👋\n\nI'm Nastivee AI Bot. I'm ready to chat, create images, and work on ideas with you.</div></section>
+<footer class="bottom"><div class="inputrow"><textarea id="input" rows="1" placeholder="Talk to Nastivee or describe an image..." aria-label="Message"></textarea><button id="send" type="button">Send</button></div><div class="actions"><button id="imgBtn" type="button">🎨 Create image</button><button id="improve" type="button">Improve last</button><button id="clear" type="button">New chat</button></div><div id="status" class="status">AI backend: connected</div></footer></main>
 <script>
-const chat = document.getElementById('chat');
-const input = document.getElementById('userInput');
-function handleKey(e) {
-if (e.key === 'Enter' && !e.shiftKey) {
-e.preventDefault();
-sendMessage();
+const BACKEND='https://ai-8vlt.onrender.com';
+const chat=document.getElementById('chat'),input=document.getElementById('input'),send=document.getElementById('send'),imgBtn=document.getElementById('imgBtn'),improve=document.getElementById('improve'),clear=document.getElementById('clear'),status=document.getElementById('status');
+let lastQ='',lastA='';
+
+function add(text,kind,imageUrl=''){
+  const d=document.createElement('div');
+  d.className='msg '+kind;
+  if(text){
+    const t=document.createElement('div');
+    t.textContent=text;
+    d.appendChild(t);
+  }
+  if(imageUrl){
+    const img=document.createElement('img');
+    img.src=imageUrl;
+    img.alt='Generated Image';
+    d.appendChild(img);
+  }
+  chat.appendChild(d);
+  chat.scrollTop=chat.scrollHeight;
+  return d;
 }
+
+async function sendMsg(){
+  const q=input.value.trim();if(!q)return;
+  add(q,'user');input.value='';input.style.height='auto';
+  status.textContent='Nastivee is thinking…';send.disabled=true;
+  try{
+    const r=await fetch(BACKEND+'/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:q})});
+    const data=await r.json().catch(()=>({}));
+    if(!r.ok)throw new Error(data.error||('HTTP '+r.status));
+    lastQ=q;lastA=data.answer||'No response received.';
+    add(lastA,'ai');
+    status.textContent='Nastivee is online';
+  }catch(e){
+    console.error(e);
+    add('I could not connect to Nastivee right now. Please check the backend.','ai');
+    status.textContent='Connection error';
+  }finally{
+    send.disabled=false;input.focus();
+  }
 }
-function sendMessage() {
-const text = input.value.trim();
-if (!text) return;
-// Add User Message
-appendMessage('user', text);
-input.value = '';
-// Auto-respond / Parse AI response
-setTimeout(() => {
-processAIResponse(text);
-}, 500);
+
+async function createImg(){
+  const prompt=input.value.trim();if(!prompt)return;
+  add('🎨 Create image: "'+prompt+'"','user');
+  input.value='';input.style.height='auto';
+  status.textContent='Generating image…';send.disabled=true;imgBtn.disabled=true;
+  try{
+    const r=await fetch(BACKEND+'/api/image',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt})});
+    const data=await r.json().catch(()=>({}));
+    if(!r.ok)throw new Error(data.error||('HTTP '+r.status));
+    
+    const imgData = data.imageUrl || data.image || data.svg || '';
+
+    if (typeof imgData === 'string' && (imgData.trim().startsWith('&lt;svg') || imgData.includes('&lt;/svg&gt;') || imgData.trim().startsWith('<svg') || imgData.includes('</svg>'))) {
+      const d = document.createElement('div');
+      d.className = 'msg ai';
+      
+      const t = document.createElement('div');
+      t.textContent = 'Here is your image, boss:';
+      d.appendChild(t);
+      
+      const svgWrapper = document.createElement('div');
+      svgWrapper.innerHTML = imgData;
+      d.appendChild(svgWrapper);
+      
+      chat.appendChild(d);
+      chat.scrollTop = chat.scrollHeight;
+    } else if (imgData) {
+      add('Here is your image, boss:', 'ai', imgData);
+    } else {
+      add('No image was returned by the server.', 'ai');
+    }
+
+    status.textContent='Nastivee is online';
+  }catch(e){
+    console.error(e);
+    add('Failed to generate image. Please check backend logs or API keys.','ai');
+    status.textContent='Generation error';
+  }finally{
+    send.disabled=false;imgBtn.disabled=false;input.focus();
+  }
 }
-function appendMessage(sender, content) {
-const msgDiv = document.createElement('div');
-msgDiv.className = ⁠message ${sender}⁠;
-const bubble = document.createElement('div');
-bubble.className = 'bubble';
-// Check for raw <svg>...</svg>
-const svgMatch = content.match(/<svg[\s\S]*?</svg>/i);
-// Check for <img src="data:image/svg+xml..."/>
-const imgMatch = content.match(/<img[^>]+src="'["']/i);
-if (svgMatch || imgMatch) {
-// Plain text part without SVG
-let cleanText = content
-.replace(/<svg[\s\S]*?</svg>/gi, '')
-.replace(/<img[^>]+>/gi, '')
-.trim();
-bubble.textContent = cleanText || (sender === 'bot' ? 'Here is your rendered image:' : '');
-msgDiv.appendChild(bubble);
-// Rendered Container
-const preview = document.createElement('div');
-preview.className = 'svg-preview';
-if (svgMatch) {
-preview.innerHTML = svgMatch[0];
-} else if (imgMatch) {
-preview.innerHTML = ⁠<img src="${imgMatch[1]}" alt="Rendered SVG" />⁠;
-}
-msgDiv.appendChild(preview);
-// Show code toggle
-if (svgMatch) {
-const toggleBtn = document.createElement('button');
-toggleBtn.className = 'code-toggle';
-toggleBtn.textContent = '{ } Toggle SVG Code';
-const rawCode = document.createElement('div');
-rawCode.className = 'raw-code';
-rawCode.textContent = svgMatch[0];
-toggleBtn.onclick = () => {
-rawCode.style.display = rawCode.style.display === 'block' ? 'none' : 'block';
-};
-msgDiv.appendChild(toggleBtn);
-msgDiv.appendChild(rawCode);
-}
-} else {
-bubble.textContent = content;
-msgDiv.appendChild(bubble);
-}
-chat.appendChild(msgDiv);
-chat.scrollTop = chat.scrollHeight;
-}
-function processAIResponse(userText) {
-const lower = userText.toLowerCase();
-// Demo auto-response if user asks for a tree or SVG sample
-if (lower.includes('tree') || lower.includes('svg') || userText.includes('<svg')) {
-if (userText.includes('<svg')) {
-// User pasted raw SVG code
-appendMessage('bot', 'I detected SVG code in your message and rendered it above! Here is another sample for you:\n' + getSampleTreeSVG());
-} else {
-appendMessage('bot', 'Here is the rendered SVG vector illustration you requested:\n' + getSampleTreeSVG());
-}
-} else {
-appendMessage('bot', ⁠I received your message: "${userText}". Try asking me to "draw a tree" or paste any raw <svg> code!⁠);
-}
-}
-function getSampleTreeSVG() {
-return ⁠<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 512 512"> <rect width="512" height="512" fill="#0f172a" rx="16"/> <circle cx="430" cy="80" r="42" fill="#ffd95a"/> <rect y="410" width="512" height="102" fill="#1e293b"/> <path d="M225 430 L238 275 L274 275 L291 430 Z" fill="#795038"/> <circle cx="256" cy="190" r="100" fill="#3e9b50"/> <circle cx="180" cy="225" r="70" fill="#49a95b"/> <circle cx="330" cy="220" r="76" fill="#368c47"/> </svg>⁠;
-}
-</script>
-</body>
-</html>
+
+send.onclick=sendMsg;
+imgBtn.onclick=createImg;
+input.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMsg()}});
+input.addEventListener('input',()=>{input.style.height='auto';input.style.height=Math.min(input.scrollHeight,140)+'px'});
+
+improve.onclick=()=>{if(!lastA){add('There is no previous answer to improve yet.','ai');return}add('Improvement review:\n\n• Check correctness\n• Find missing information\n• Strengthen the reasoning\n• Produce a better candidate','ai')};
+clear.onclick=()=>{chat.innerHTML='';lastQ='';lastA='';add('New conversation started, boss.','ai');status.textContent='Nastivee is online'};
+
+if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+</script></body></html>
