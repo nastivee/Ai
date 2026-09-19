@@ -12,7 +12,7 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 });
 
-// Text Chat Route
+// Chat Route
 app.post('/api/chat', async (req, res) => {
   try {
     const { message } = req.body;
@@ -31,12 +31,12 @@ app.post('/api/chat', async (req, res) => {
   }
 });
 
-// Guaranteed Image Route (Returns Base64 image data directly so Safari can't block it)
+// Image Route - Always sends Base64 data so browsers cannot block it
 app.post('/api/image', async (req, res) => {
   const { prompt } = req.body;
   if (!prompt) return res.status(400).json({ error: 'Prompt is required' });
 
-  // 1. Try DALL-E 3 returning direct base64 image data
+  // 1. Try DALL-E 3 with native base64 output
   try {
     const response = await openai.images.generate({
       model: "dall-e-3",
@@ -47,17 +47,27 @@ app.post('/api/image', async (req, res) => {
     });
 
     if (response.data && response.data[0]?.b64_json) {
-      const base64Image = `data:image/png;base64,${response.data[0].b64_json}`;
-      return res.json({ imageUrl: base64Image });
+      return res.json({ imageUrl: `data:image/png;base64,${response.data[0].b64_json}` });
     }
   } catch (error) {
-    console.error('OpenAI image error, using reliable fallback:', error.message);
+    console.error('OpenAI image error, switching to fallback converter:', error.message);
   }
 
-  // 2. High-reliability fallback if OpenAI key lacks credits
-  const encodedPrompt = encodeURIComponent(prompt + ', realistic photo, 8k');
-  const backupUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1024&height=1024&nologo=true`;
-  return res.json({ imageUrl: backupUrl });
+  // 2. Fallback: Download image on backend and convert to base64
+  try {
+    const encodedPrompt = encodeURIComponent(prompt + ', realistic photo, 8k');
+    const fallbackUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1024&height=1024&nologo=true`;
+    
+    const imgResponse = await fetch(fallbackUrl);
+    const arrayBuffer = await imgResponse.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    const base64Img = `data:image/jpeg;base64,${buffer.toString('base64')}`;
+
+    return res.json({ imageUrl: base64Img });
+  } catch (err) {
+    console.error('Fallback image fetch failed:', err);
+    return res.status(500).json({ error: 'Failed to generate image.' });
+  }
 });
 
 app.listen(PORT, () => {
