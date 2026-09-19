@@ -25,6 +25,11 @@ function add(text,kind,imageUrl=''){
   }
   if(imageUrl){
     const img=document.createElement('img');
+    img.crossOrigin = "anonymous";
+    img.onerror = () => {
+      console.error("Failed to load image URL:", imageUrl);
+      img.src = `https://image.pollinations.ai/prompt/${encodeURIComponent(lastQ || 'tree')}?width=1024&height=1024&nologo=true`;
+    };
     img.src=imageUrl;
     img.alt='Generated Image';
     d.appendChild(img);
@@ -60,6 +65,7 @@ async function createImg(){
     alert('Please type a description in the text box first!');
     return;
   }
+  lastQ = prompt;
   add('🎨 Create image: "'+prompt+'"','user');
   input.value='';input.style.height='auto';
   status.textContent='Generating image…';send.disabled=true;imgBtn.disabled=true;
@@ -95,3 +101,4 @@ clear.onclick=()=>{chat.innerHTML='';lastQ='';lastA='';add('New conversation sta
 
 if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
 </script></body></html>
+
