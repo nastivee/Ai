@@ -33,7 +33,9 @@
       cursor: pointer;
     }
 
-    /* AUTH */
+    /* =========================
+       AUTH
+    ========================= */
 
     #authScreen {
       position: fixed;
@@ -107,6 +109,11 @@
       margin-top: 5px;
     }
 
+    .authButton:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
     .authSwitch {
       margin-top: 18px;
       text-align: center;
@@ -129,7 +136,9 @@
       font-size: 14px;
     }
 
-    /* APP */
+    /* =========================
+       APP
+    ========================= */
 
     #app {
       display: none;
@@ -143,7 +152,9 @@
       height: 100%;
     }
 
-    /* SIDEBAR */
+    /* =========================
+       SIDEBAR
+    ========================= */
 
     .sidebar {
       width: 270px;
@@ -222,7 +233,9 @@
       color: white;
     }
 
-    /* MAIN */
+    /* =========================
+       MAIN
+    ========================= */
 
     .main {
       flex: 1;
@@ -242,6 +255,8 @@
       align-items: center;
       justify-content: space-between;
       padding: 0 20px;
+      position: relative;
+      z-index: 40;
     }
 
     .logo {
@@ -272,7 +287,9 @@
       padding: 9px 12px;
     }
 
-    /* MEMORY */
+    /* =========================
+       MEMORY
+    ========================= */
 
     #memoryPanel {
       display: none;
@@ -285,7 +302,7 @@
       border: 1px solid #43275a;
       border-radius: 16px;
       padding: 16px;
-      z-index: 50;
+      z-index: 100;
       box-shadow: 0 20px 50px rgba(0,0,0,0.5);
     }
 
@@ -316,7 +333,9 @@
       font-weight: bold;
     }
 
-    /* CHAT */
+    /* =========================
+       CHAT
+    ========================= */
 
     #chat {
       flex: 1;
@@ -368,7 +387,9 @@
       border-bottom-left-radius: 5px;
     }
 
-    /* IMAGES */
+    /* =========================
+       IMAGES
+    ========================= */
 
     .imageMessage {
       max-width: 850px;
@@ -377,10 +398,13 @@
 
     .generatedImage {
       max-width: min(100%, 700px);
+      max-height: 75vh;
       display: block;
       border-radius: 16px;
       border: 1px solid #39234b;
       margin-top: 8px;
+      object-fit: contain;
+      background: #10091a;
     }
 
     .imageActions {
@@ -402,7 +426,14 @@
       background: #241433;
     }
 
-    /* PROGRESS */
+    .imageActionButton:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* =========================
+       PROGRESS
+    ========================= */
 
     #imageProgress {
       display: none;
@@ -415,7 +446,7 @@
       border: 1px solid #44265b;
       border-radius: 14px;
       padding: 13px 16px;
-      z-index: 30;
+      z-index: 200;
       box-shadow: 0 15px 40px rgba(0,0,0,0.4);
     }
 
@@ -441,7 +472,9 @@
       transition: width 0.4s ease;
     }
 
-    /* UPLOAD PREVIEW */
+    /* =========================
+       UPLOAD PREVIEW
+    ========================= */
 
     #uploadPreview {
       display: none;
@@ -452,7 +485,7 @@
       border: 1px solid #42265a;
       border-radius: 12px;
       padding: 8px;
-      z-index: 10;
+      z-index: 50;
     }
 
     #uploadPreview img {
@@ -475,7 +508,9 @@
       font-size: 12px;
     }
 
-    /* DOCK */
+    /* =========================
+       DOCK
+    ========================= */
 
     .dock {
       position: fixed;
@@ -525,10 +560,21 @@
       background: #21132e;
       color: white;
       flex-shrink: 0;
+      position: relative;
     }
 
     .dockButton:hover {
       background: #2c1940;
+    }
+
+    .dockButton:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    #imageButton {
+      background: linear-gradient(135deg, #5d2cc9, #a341dc);
+      border: 0;
     }
 
     #sendButton {
@@ -536,9 +582,12 @@
       border: 0;
     }
 
-    /* MOBILE */
+    /* =========================
+       MOBILE
+    ========================= */
 
     @media (max-width: 750px) {
+
       .sidebar {
         display: none;
       }
@@ -582,22 +631,41 @@
       .welcome h2 {
         font-size: 26px;
       }
+
+      .imageMessage {
+        width: 100%;
+      }
+
+      .generatedImage {
+        max-width: 100%;
+      }
     }
   </style>
 </head>
 
 <body>
 
-  <!-- AUTH -->
+  <!-- =========================
+       AUTH
+  ========================= -->
 
   <div id="authScreen">
+
     <div class="authBox">
 
       <div class="authLogo">
-        <img src="IMG_0471.jpeg" alt="Nastivee AI">
+
+        <img
+          src="IMG_0471.jpeg"
+          alt="Nastivee AI"
+        >
+
         <h1>Nastivee AI</h1>
+
         <p>Your personal AI assistant</p>
+
       </div>
+
 
       <div id="loginForm">
 
@@ -616,6 +684,7 @@
         >
 
         <button
+          type="button"
           class="authButton"
           id="loginButton"
         >
@@ -623,15 +692,25 @@
         </button>
 
         <div class="authSwitch">
+
           Don't have an account?
-          <button id="showSignupButton">
+
+          <button
+            type="button"
+            id="showSignupButton"
+          >
             Sign up
           </button>
+
         </div>
 
       </div>
 
-      <div id="signupForm" style="display:none;">
+
+      <div
+        id="signupForm"
+        style="display:none;"
+      >
 
         <input
           id="signupEmail"
@@ -655,6 +734,7 @@
         >
 
         <button
+          type="button"
           class="authButton"
           id="signupButton"
         >
@@ -662,21 +742,31 @@
         </button>
 
         <div class="authSwitch">
+
           Already have an account?
-          <button id="showLoginButton">
+
+          <button
+            type="button"
+            id="showLoginButton"
+          >
             Login
           </button>
+
         </div>
 
       </div>
 
+
       <div id="authMessage"></div>
 
     </div>
+
   </div>
 
 
-  <!-- APP -->
+  <!-- =========================
+       APP
+  ========================= -->
 
   <div id="app">
 
@@ -687,6 +777,7 @@
       <aside class="sidebar">
 
         <button
+          type="button"
           class="newChatButton"
           id="sidebarNewChatButton"
         >
@@ -702,6 +793,7 @@
         <div class="sidebarBottom">
 
           <button
+            type="button"
             class="sidebarButton"
             id="sidebarMemoryButton"
           >
@@ -709,6 +801,7 @@
           </button>
 
           <button
+            type="button"
             class="sidebarButton"
             id="logoutButton"
           >
@@ -727,17 +820,30 @@
         <header>
 
           <div class="logo">
-            <img src="IMG_0471.jpeg" alt="Nastivee AI">
+
+            <img
+              src="IMG_0471.jpeg"
+              alt="Nastivee AI"
+            >
+
             <span>Nastivee AI</span>
+
           </div>
+
 
           <div class="headerButtons">
 
-            <button id="memoryButton">
+            <button
+              type="button"
+              id="memoryButton"
+            >
               🧠 Memory
             </button>
 
-            <button id="newChatButton">
+            <button
+              type="button"
+              id="newChatButton"
+            >
               ＋ New
             </button>
 
@@ -757,7 +863,10 @@
             placeholder="Things Nastivee should remember about you..."
           ></textarea>
 
-          <button id="saveMemoryButton">
+          <button
+            type="button"
+            id="saveMemoryButton"
+          >
             Save memory
           </button>
 
@@ -768,13 +877,20 @@
 
         <div id="chat">
 
-          <div class="welcome" id="welcome">
+          <div
+            class="welcome"
+            id="welcome"
+          >
 
-            <h2>What can I help you with?</h2>
+            <h2>
+              What can I help you with?
+            </h2>
 
             <p>
-              Ask Nastivee anything, create images,
-              edit photos, or just have a conversation.
+              Ask Nastivee anything,
+              create images,
+              edit photos,
+              or just have a conversation.
             </p>
 
           </div>
@@ -798,7 +914,9 @@
       </div>
 
       <div class="progressBar">
+
         <div id="progressFill"></div>
+
       </div>
 
     </div>
@@ -812,15 +930,24 @@
 
         <div id="uploadPreview">
 
-          <button id="removeUpload">
+          <button
+            type="button"
+            id="removeUpload"
+          >
             ×
           </button>
 
-          <img id="uploadPreviewImage" src="" alt="Upload preview">
+          <img
+            id="uploadPreviewImage"
+            src=""
+            alt="Upload preview"
+          >
 
         </div>
 
+
         <button
+          type="button"
           class="dockButton"
           id="uploadButton"
           title="Upload image"
@@ -828,24 +955,31 @@
           📎
         </button>
 
+
         <textarea
           id="messageInput"
           rows="1"
           placeholder="Message Nastivee..."
         ></textarea>
 
+
         <button
+          type="button"
           class="dockButton"
           id="imageButton"
-          title="Generate image"
+          title="Create image"
+          aria-label="Create image"
         >
           🖼️
         </button>
 
+
         <button
+          type="button"
           class="dockButton"
           id="sendButton"
-          title="Send"
+          title="Send message"
+          aria-label="Send message"
         >
           ➤
         </button>
@@ -853,6 +987,7 @@
       </div>
 
     </div>
+
 
     <input
       id="fileInput"
@@ -866,9 +1001,9 @@
 
 <script>
 
-  /* =========================
+  /* =========================================================
      CONFIG
-  ========================= */
+  ========================================================= */
 
   const SUPABASE_URL =
     'https://fzwqunpnohgwgwikumkt.supabase.co';
@@ -879,45 +1014,69 @@
   const API_BASE =
     'https://ai-8vlt.onrender.com';
 
+  /*
+    Always return email confirmations to the live website.
+  */
 
-  /* =========================
+  const LIVE_SITE_URL =
+    'https://ai-8vlt.onrender.com';
+
+
+  /* =========================================================
      SUPABASE
-  ========================= */
+  ========================================================= */
 
   let supabaseClient = null;
 
-  if (
-    window.supabase &&
-    typeof window.supabase.createClient === 'function'
-  ) {
+  try {
 
-    supabaseClient =
-      window.supabase.createClient(
-        SUPABASE_URL,
-        SUPABASE_KEY
-      );
+    if (
+      window.supabase &&
+      typeof window.supabase.createClient === 'function'
+    ) {
+
+      supabaseClient =
+        window.supabase.createClient(
+          SUPABASE_URL,
+          SUPABASE_KEY
+        );
+
+    }
+
+  } catch (error) {
+
+    console.error(
+      'Supabase initialisation failed:',
+      error
+    );
 
   }
 
 
-  /* =========================
+  /* =========================================================
      STATE
-  ========================= */
+  ========================================================= */
 
   let currentUser = null;
+
   let currentChatId = null;
+
   let chats = [];
+
   let memory = '';
 
   let selectedImageFile = null;
+
   let selectedImageData = null;
 
   let initialised = false;
 
+  let imageBusy = false;
 
-  /* =========================
+
+  /* =========================================================
      ELEMENTS
-  ========================= */
+  ========================================================= */
 
   const authScreen =
     document.getElementById('authScreen');
@@ -967,10 +1126,19 @@
   const memoryText =
     document.getElementById('memoryText');
 
+  const imageButton =
+    document.getElementById('imageButton');
 
-  /* =========================
+  const sendButton =
+    document.getElementById('sendButton');
+
+  const uploadButton =
+    document.getElementById('uploadButton');
+
+
+  /* =========================================================
      AUTH MESSAGE
-  ========================= */
+  ========================================================= */
 
   function setAuthMessage(
     message,
@@ -981,28 +1149,37 @@
       message || '';
 
     authMessage.style.color =
-      success ? '#8ff0ae' : '#ff9e9e';
+      success
+        ? '#8ff0ae'
+        : '#ff9e9e';
 
   }
 
 
-  /* =========================
+  /* =========================================================
      AUTH MODE
-  ========================= */
+  ========================================================= */
 
   function showLogin() {
 
-    loginForm.style.display = 'block';
-    signupForm.style.display = 'none';
+    loginForm.style.display =
+      'block';
+
+    signupForm.style.display =
+      'none';
 
     setAuthMessage('');
 
   }
 
+
   function showSignup() {
 
-    loginForm.style.display = 'none';
-    signupForm.style.display = 'block';
+    loginForm.style.display =
+      'none';
+
+    signupForm.style.display =
+      'block';
 
     setAuthMessage('');
 
@@ -1016,6 +1193,7 @@
       showSignup
     );
 
+
   document
     .getElementById('showLoginButton')
     .addEventListener(
@@ -1024,9 +1202,9 @@
     );
 
 
-  /* =========================
+  /* =========================================================
      LOGIN
-  ========================= */
+  ========================================================= */
 
   async function login() {
 
@@ -1037,7 +1215,9 @@
       );
 
       return;
+
     }
+
 
     const email =
       document
@@ -1050,6 +1230,7 @@
         .getElementById('loginPassword')
         .value;
 
+
     if (!email || !password) {
 
       setAuthMessage(
@@ -1057,25 +1238,45 @@
       );
 
       return;
+
     }
+
+
+    const button =
+      document.getElementById(
+        'loginButton'
+      );
+
+    button.disabled =
+      true;
+
+    button.textContent =
+      'Logging in...';
+
 
     setAuthMessage(
       'Logging in...',
       true
     );
 
+
     try {
 
       const result =
         await supabaseClient.auth.signInWithPassword({
+
           email,
+
           password
+
         });
+
 
       if (result.error) {
 
         const message =
           result.error.message || '';
+
 
         if (
           message
@@ -1096,15 +1297,31 @@
         }
 
         return;
+
       }
+
 
       setAuthMessage('');
 
     } catch (error) {
 
-      setAuthMessage(
-        error.message || 'Login failed.'
+      console.error(
+        'Login error:',
+        error
       );
+
+      setAuthMessage(
+        error.message ||
+        'Login failed.'
+      );
+
+    } finally {
+
+      button.disabled =
+        false;
+
+      button.textContent =
+        'Login';
 
     }
 
@@ -1119,9 +1336,9 @@
     );
 
 
-  /* =========================
+  /* =========================================================
      SIGN UP
-  ========================= */
+  ========================================================= */
 
   async function signup() {
 
@@ -1132,7 +1349,9 @@
       );
 
       return;
+
     }
+
 
     const email =
       document
@@ -1151,34 +1370,58 @@
         .value;
 
 
-    if (!email || !password || !confirmPassword) {
+    if (
+      !email ||
+      !password ||
+      !confirmPassword
+    ) {
 
       setAuthMessage(
         'Please complete all fields.'
       );
 
       return;
+
     }
 
 
-    if (password !== confirmPassword) {
+    if (
+      password !==
+      confirmPassword
+    ) {
 
       setAuthMessage(
         'Passwords do not match.'
       );
 
       return;
+
     }
 
 
-    if (password.length < 6) {
+    if (
+      password.length < 6
+    ) {
 
       setAuthMessage(
         'Password must be at least 6 characters.'
       );
 
       return;
+
     }
+
+
+    const button =
+      document.getElementById(
+        'signupButton'
+      );
+
+    button.disabled =
+      true;
+
+    button.textContent =
+      'Creating account...';
 
 
     setAuthMessage(
@@ -1188,12 +1431,6 @@
 
 
     try {
-
-      /*
-        IMPORTANT:
-        This sends the confirmation email back
-        to the live Render website instead of localhost.
-      */
 
       const result =
         await supabaseClient.auth.signUp({
@@ -1205,7 +1442,7 @@
           options: {
 
             emailRedirectTo:
-              'https://ai-8vlt.onrender.com'
+              LIVE_SITE_URL
 
           }
 
@@ -1216,6 +1453,7 @@
 
         const message =
           result.error.message || '';
+
 
         if (
           message
@@ -1236,6 +1474,7 @@
         }
 
         return;
+
       }
 
 
@@ -1259,12 +1498,25 @@
 
       }
 
-
     } catch (error) {
 
-      setAuthMessage(
-        error.message || 'Signup failed.'
+      console.error(
+        'Signup error:',
+        error
       );
+
+      setAuthMessage(
+        error.message ||
+        'Signup failed.'
+      );
+
+    } finally {
+
+      button.disabled =
+        false;
+
+      button.textContent =
+        'Create account';
 
     }
 
@@ -1279,16 +1531,22 @@
     );
 
 
-  /* =========================
+  /* =========================================================
      AUTH STATE
-  ========================= */
+  ========================================================= */
 
   if (supabaseClient) {
 
     supabaseClient.auth.onAuthStateChange(
-      async (event, session) => {
+      async (
+        event,
+        session
+      ) => {
 
-        if (session && session.user) {
+        if (
+          session &&
+          session.user
+        ) {
 
           currentUser =
             session.user;
@@ -1297,10 +1555,13 @@
 
         } else {
 
-          currentUser = null;
+          currentUser =
+            null;
 
           if (!initialised) {
+
             showAuthScreen();
+
           }
 
         }
@@ -1311,19 +1572,29 @@
   }
 
 
+  /* =========================================================
+     INITIALISE USER
+  ========================================================= */
+
   async function initialiseUser() {
 
     if (initialised) {
+
       return;
+
     }
 
-    initialised = true;
+    initialised =
+      true;
+
 
     showApp();
+
 
     await loadCloudMemory();
 
     await loadChats();
+
 
     if (!currentChatId) {
 
@@ -1334,9 +1605,9 @@
   }
 
 
-  /* =========================
-     SESSION START
-  ========================= */
+  /* =========================================================
+     SESSION
+  ========================================================= */
 
   async function checkSession() {
 
@@ -1348,10 +1619,12 @@
 
     }
 
+
     try {
 
       const result =
         await supabaseClient.auth.getSession();
+
 
       if (
         result.data &&
@@ -1384,9 +1657,9 @@
   }
 
 
-  /* =========================
-     AUTH SCREEN / APP
-  ========================= */
+  /* =========================================================
+     SHOW AUTH / APP
+  ========================================================= */
 
   function showAuthScreen() {
 
@@ -1410,9 +1683,9 @@
   }
 
 
-  /* =========================
+  /* =========================================================
      API FETCH
-  ========================= */
+  ========================================================= */
 
   async function apiFetch(
     path,
@@ -1445,11 +1718,13 @@
         const sessionResult =
           await supabaseClient.auth.getSession();
 
+
         const token =
           sessionResult
             .data
             ?.session
             ?.access_token;
+
 
         if (token) {
 
@@ -1463,7 +1738,7 @@
       } catch (error) {
 
         console.warn(
-          'Could not get access token',
+          'Could not get access token:',
           error
         );
 
@@ -1483,15 +1758,21 @@
   }
 
 
-  /* =========================
+  /* =========================================================
      MEMORY
-  ========================= */
+  ========================================================= */
 
   async function loadCloudMemory() {
 
-    if (!currentUser || !supabaseClient) {
+    if (
+      !currentUser ||
+      !supabaseClient
+    ) {
+
       return;
+
     }
+
 
     try {
 
@@ -1514,6 +1795,7 @@
         );
 
         return;
+
       }
 
 
@@ -1522,7 +1804,6 @@
 
       memoryText.value =
         memory;
-
 
     } catch (error) {
 
@@ -1575,6 +1856,7 @@
       } catch (error) {
 
         console.error(
+          'Memory save error:',
           error
         );
 
@@ -1600,10 +1882,15 @@
   function toggleMemory() {
 
     const visible =
-      memoryPanel.style.display === 'block';
+      memoryPanel.style.display ===
+      'block';
+
 
     memoryPanel.style.display =
-      visible ? 'none' : 'block';
+      visible
+        ? 'none'
+        : 'block';
+
 
     memoryText.value =
       memory;
@@ -1618,6 +1905,7 @@
       toggleMemory
     );
 
+
   document
     .getElementById('sidebarMemoryButton')
     .addEventListener(
@@ -1626,9 +1914,9 @@
     );
 
 
-  /* =========================
-     CHATS
-  ========================= */
+  /* =========================================================
+     CHAT HISTORY
+  ========================================================= */
 
   async function loadChats() {
 
@@ -1682,6 +1970,7 @@
     } catch (error) {
 
       console.error(
+        'Chat load error:',
         error
       );
 
@@ -1697,6 +1986,7 @@
         'chatHistory'
       );
 
+
     container.innerHTML =
       '';
 
@@ -1708,6 +1998,7 @@
           document.createElement(
             'div'
           );
+
 
         item.className =
           'historyItem';
@@ -1732,9 +2023,13 @@
 
         item.addEventListener(
           'click',
-          () => loadChat(
-            chatItem.id
-          )
+          () => {
+
+            loadChat(
+              chatItem.id
+            );
+
+          }
         );
 
 
@@ -1752,7 +2047,8 @@
 
     clearChatUI();
 
-    currentChatId = null;
+    currentChatId =
+      null;
 
 
     if (
@@ -1810,6 +2106,7 @@
     } catch (error) {
 
       console.error(
+        'Create chat error:',
         error
       );
 
@@ -1818,7 +2115,9 @@
   }
 
 
-  async function loadChat(chatId) {
+  async function loadChat(
+    chatId
+  ) {
 
     currentChatId =
       chatId;
@@ -1894,7 +2193,7 @@
                 message.image_url,
                 message.content || '',
                 null,
-                null
+                message.content || ''
               );
 
             } else {
@@ -1918,6 +2217,7 @@
     } catch (error) {
 
       console.error(
+        'Load chat error:',
         error
       );
 
@@ -1931,9 +2231,11 @@
     chat.innerHTML =
       '';
 
+
     chat.appendChild(
       welcome
     );
+
 
     welcome.style.display =
       'block';
@@ -1995,6 +2297,7 @@
     } catch (error) {
 
       console.error(
+        'Save message error:',
         error
       );
 
@@ -2026,21 +2329,34 @@
 
     try {
 
-      await supabaseClient
-        .from('chats')
-        .update({
-          title
-        })
-        .eq(
-          'id',
-          currentChatId
+      const result =
+        await supabaseClient
+          .from('chats')
+          .update({
+            title
+          })
+          .eq(
+            'id',
+            currentChatId
+          );
+
+
+      if (result.error) {
+
+        console.error(
+          'Title update error:',
+          result.error
         );
+
+        return;
+
+      }
 
 
       const found =
         chats.find(
-          c =>
-            c.id ===
+          item =>
+            item.id ===
             currentChatId
         );
 
@@ -2059,6 +2375,7 @@
     } catch (error) {
 
       console.error(
+        'Title update error:',
         error
       );
 
@@ -2067,9 +2384,9 @@
   }
 
 
-  /* =========================
-     TEXT MESSAGES
-  ========================= */
+  /* =========================================================
+     TEXT MESSAGE
+  ========================================================= */
 
   function addTextMessage(
     role,
@@ -2085,6 +2402,7 @@
         'div'
       );
 
+
     wrapper.className =
       `message ${role}`;
 
@@ -2094,11 +2412,13 @@
         'div'
       );
 
+
     bubble.className =
       'bubble';
 
+
     bubble.textContent =
-      text;
+      text || '';
 
 
     wrapper.appendChild(
@@ -2120,9 +2440,9 @@
   }
 
 
-  /* =========================
+  /* =========================================================
      IMAGE MESSAGE
-  ========================= */
+  ========================================================= */
 
   function addImageMessage(
     imageUrl,
@@ -2140,6 +2460,7 @@
         'div'
       );
 
+
     wrapper.className =
       'imageMessage';
 
@@ -2149,14 +2470,22 @@
         'img'
       );
 
+
     img.className =
       'generatedImage';
+
 
     img.src =
       imageUrl;
 
+
     img.alt =
-      prompt || 'Generated image';
+      prompt ||
+      'Generated image';
+
+
+    img.loading =
+      'lazy';
 
 
     wrapper.appendChild(
@@ -2171,17 +2500,22 @@
           'div'
         );
 
+
       caption.style.marginTop =
         '8px';
+
 
       caption.style.color =
         '#aaa';
 
+
       caption.style.fontSize =
         '13px';
 
+
       caption.textContent =
         prompt;
+
 
       wrapper.appendChild(
         caption
@@ -2195,57 +2529,73 @@
         'div'
       );
 
+
     actions.className =
       'imageActions';
 
 
     /*
-      Re-render
+      RE-RENDER
+
+      Generated images:
+      fresh generation from original prompt.
+
+      Uploaded edits:
+      fresh edit using the original upload.
     */
 
-    if (originalImageData || originalPrompt) {
-
-      const rerenderButton =
-        document.createElement(
-          'button'
-        );
-
-      rerenderButton.className =
-        'imageActionButton';
-
-      rerenderButton.textContent =
-        '🔄 Re-render';
+    const rerenderButton =
+      document.createElement(
+        'button'
+      );
 
 
-      rerenderButton.addEventListener(
-        'click',
-        async () => {
+    rerenderButton.type =
+      'button';
 
-          await rerenderImage({
 
-            sourceImage:
-              originalImageData,
+    rerenderButton.className =
+      'imageActionButton';
 
-            prompt:
-              originalPrompt ||
-              prompt ||
-              ''
 
-          });
+    rerenderButton.textContent =
+      '🔄 Re-render';
+
+
+    rerenderButton.addEventListener(
+      'click',
+      async () => {
+
+        if (imageBusy) {
+
+          return;
 
         }
-      );
 
 
-      actions.appendChild(
-        rerenderButton
-      );
+        await rerenderImage({
 
-    }
+          sourceImage:
+            originalImageData,
+
+          prompt:
+            originalPrompt ||
+            prompt ||
+            ''
+
+        });
+
+      }
+    );
+
+
+    actions.appendChild(
+      rerenderButton
+    );
 
 
     /*
-      Download
+      DOWNLOAD
     */
 
     const downloadButton =
@@ -2253,8 +2603,14 @@
         'button'
       );
 
+
+    downloadButton.type =
+      'button';
+
+
     downloadButton.className =
       'imageActionButton';
+
 
     downloadButton.textContent =
       '⬇️ Save image';
@@ -2264,21 +2620,44 @@
       'click',
       () => {
 
-        const link =
-          document.createElement(
-            'a'
+        try {
+
+          const link =
+            document.createElement(
+              'a'
+            );
+
+
+          link.href =
+            imageUrl;
+
+
+          link.download =
+            'nastivee-image.png';
+
+
+          link.target =
+            '_blank';
+
+
+          document.body.appendChild(
+            link
           );
 
-        link.href =
-          imageUrl;
 
-        link.download =
-          'nastivee-image.png';
+          link.click();
 
-        link.target =
-          '_blank';
 
-        link.click();
+          link.remove();
+
+        } catch (error) {
+
+          window.open(
+            imageUrl,
+            '_blank'
+          );
+
+        }
 
       }
     );
@@ -2308,9 +2687,9 @@
   }
 
 
-  /* =========================
+  /* =========================================================
      IMAGE PROGRESS
-  ========================= */
+  ========================================================= */
 
   function showImageProgress(
     title,
@@ -2320,8 +2699,10 @@
     imageProgress.style.display =
       'block';
 
+
     progressTitle.textContent =
       title;
+
 
     progressFill.style.width =
       `${percent}%`;
@@ -2334,19 +2715,69 @@
     imageProgress.style.display =
       'none';
 
+
     progressFill.style.width =
       '15%';
 
   }
 
 
-  /* =========================
+  function setImageButtonsBusy(
+    busy
+  ) {
+
+    imageBusy =
+      busy;
+
+
+    imageButton.disabled =
+      busy;
+
+
+    sendButton.disabled =
+      busy;
+
+
+    uploadButton.disabled =
+      busy;
+
+  }
+
+
+  /* =========================================================
      IMAGE GENERATION
-  ========================= */
+  ========================================================= */
 
   async function generateImage(
     prompt
   ) {
+
+    if (
+      !prompt ||
+      !prompt.trim()
+    ) {
+
+      addTextMessage(
+        'assistant',
+        'Please describe the image you want me to create.'
+      );
+
+      return;
+
+    }
+
+
+    if (imageBusy) {
+
+      return;
+
+    }
+
+
+    setImageButtonsBusy(
+      true
+    );
+
 
     showImageProgress(
       'Preparing image...',
@@ -2354,29 +2785,42 @@
     );
 
 
-    setTimeout(
-      () => {
-        showImageProgress(
-          'Creating your image...',
-          45
-        );
-      },
-      600
-    );
+    let progressTimer1 =
+      null;
 
-
-    setTimeout(
-      () => {
-        showImageProgress(
-          'Rendering details...',
-          70
-        );
-      },
-      1600
-    );
+    let progressTimer2 =
+      null;
 
 
     try {
+
+      progressTimer1 =
+        setTimeout(
+          () => {
+
+            showImageProgress(
+              'Creating your image...',
+              45
+            );
+
+          },
+          700
+        );
+
+
+      progressTimer2 =
+        setTimeout(
+          () => {
+
+            showImageProgress(
+              'Rendering details...',
+              70
+            );
+
+          },
+          1800
+        );
+
 
       const response =
         await apiFetch(
@@ -2388,7 +2832,10 @@
 
             body:
               JSON.stringify({
-                prompt
+
+                prompt:
+                  prompt.trim()
+
               })
 
           }
@@ -2401,32 +2848,43 @@
       );
 
 
-      const data =
-        await response.json();
+      let data = {};
+
+      try {
+
+        data =
+          await response.json();
+
+      } catch (error) {
+
+        throw new Error(
+          `Server returned an invalid response (${response.status}).`
+        );
+
+      }
 
 
       if (!response.ok) {
 
         throw new Error(
           data.error ||
-          'Image generation failed.'
+          data.message ||
+          `Image generation failed (${response.status}).`
+        );
+
+      }
+
+
+      if (!data.image) {
+
+        throw new Error(
+          'The image server did not return an image.'
         );
 
       }
 
 
       hideImageProgress();
-
-
-      if (
-        !data.image
-      ) {
-
-        throw new Error(
-          'No image was returned.'
-        );
-
-      }
 
 
       addImageMessage(
@@ -2446,6 +2904,12 @@
 
     } catch (error) {
 
+      console.error(
+        'IMAGE GENERATION ERROR:',
+        error
+      );
+
+
       hideImageProgress();
 
 
@@ -2454,19 +2918,69 @@
         `Image error: ${error.message}`
       );
 
+    } finally {
+
+      if (progressTimer1) {
+
+        clearTimeout(
+          progressTimer1
+        );
+
+      }
+
+
+      if (progressTimer2) {
+
+        clearTimeout(
+          progressTimer2
+        );
+
+      }
+
+
+      setImageButtonsBusy(
+        false
+      );
+
     }
 
   }
 
 
-  /* =========================
+  /* =========================================================
      IMAGE EDIT
-  ========================= */
+  ========================================================= */
 
   async function editImage(
     imageData,
     prompt
   ) {
+
+    if (
+      !imageData
+    ) {
+
+      addTextMessage(
+        'assistant',
+        'Please upload an image first.'
+      );
+
+      return;
+
+    }
+
+
+    if (imageBusy) {
+
+      return;
+
+    }
+
+
+    setImageButtonsBusy(
+      true
+    );
+
 
     showImageProgress(
       'Preparing your image...',
@@ -2474,33 +2988,42 @@
     );
 
 
-    setTimeout(
-      () => {
+    let progressTimer1 =
+      null;
 
-        showImageProgress(
-          'Understanding your edit...',
-          40
-        );
-
-      },
-      500
-    );
-
-
-    setTimeout(
-      () => {
-
-        showImageProgress(
-          'Rendering changes...',
-          70
-        );
-
-      },
-      1300
-    );
+    let progressTimer2 =
+      null;
 
 
     try {
+
+      progressTimer1 =
+        setTimeout(
+          () => {
+
+            showImageProgress(
+              'Understanding your edit...',
+              40
+            );
+
+          },
+          600
+        );
+
+
+      progressTimer2 =
+        setTimeout(
+          () => {
+
+            showImageProgress(
+              'Rendering changes...',
+              70
+            );
+
+          },
+          1500
+        );
+
 
       const response =
         await apiFetch(
@@ -2517,7 +3040,8 @@
                   imageData,
 
                 prompt:
-                  prompt
+                  prompt ||
+                  'Edit this image.'
 
               })
 
@@ -2531,30 +3055,43 @@
       );
 
 
-      const data =
-        await response.json();
+      let data = {};
+
+      try {
+
+        data =
+          await response.json();
+
+      } catch (error) {
+
+        throw new Error(
+          `Server returned an invalid response (${response.status}).`
+        );
+
+      }
 
 
       if (!response.ok) {
 
         throw new Error(
           data.error ||
-          'Image edit failed.'
+          data.message ||
+          `Image editing failed (${response.status}).`
+        );
+
+      }
+
+
+      if (!data.image) {
+
+        throw new Error(
+          'The image server did not return an edited image.'
         );
 
       }
 
 
       hideImageProgress();
-
-
-      if (!data.image) {
-
-        throw new Error(
-          'No edited image was returned.'
-        );
-
-      }
 
 
       addImageMessage(
@@ -2574,6 +3111,12 @@
 
     } catch (error) {
 
+      console.error(
+        'IMAGE EDIT ERROR:',
+        error
+      );
+
+
       hideImageProgress();
 
 
@@ -2582,45 +3125,88 @@
         `Image edit error: ${error.message}`
       );
 
+    } finally {
+
+      if (progressTimer1) {
+
+        clearTimeout(
+          progressTimer1
+        );
+
+      }
+
+
+      if (progressTimer2) {
+
+        clearTimeout(
+          progressTimer2
+        );
+
+      }
+
+
+      setImageButtonsBusy(
+        false
+      );
+
     }
 
   }
 
 
-  /* =========================
+  /* =========================================================
      RE-RENDER
-  ========================= */
+  ========================================================= */
 
   async function rerenderImage({
     sourceImage,
     prompt
   }) {
 
+    if (imageBusy) {
+
+      return;
+
+    }
+
+
+    const cleanPrompt =
+      (
+        prompt ||
+        'Create a new variation of this image.'
+      ).trim();
+
+
     /*
-      If the original image exists,
-      edit the original image again.
+      If the original uploaded image is available,
+      send THAT original image again.
+
+      This prevents a generated result from becoming
+      the source for the next render.
     */
 
     if (sourceImage) {
 
       const variationPrompt =
 
-        `${prompt}
+`${cleanPrompt}
 
-Create a fresh new variation of this image.
+Create a completely fresh variation of this image.
 
-Keep the original subject, person's identity,
-facial appearance, proportions and overall likeness
-as consistent as possible.
+Preserve the main subject and the user's original
+creative intention.
 
-Keep the user's original creative intent.
+If a person is present, preserve that person's
+identity, facial appearance, facial structure,
+body proportions and overall likeness as closely
+as possible.
 
-Change the composition, lighting, environment,
-pose, styling or other visual details where
-appropriate so the result is a genuinely new render.
+Do not replace the person with another person.
 
-Do not replace the main person or subject with
-a different person or unrelated subject.`;
+Change suitable visual elements such as composition,
+camera angle, lighting, background, environment,
+clothing details, pose or styling so this is a new
+variation rather than an identical copy.`;
 
       await editImage(
         sourceImage,
@@ -2633,16 +3219,24 @@ a different person or unrelated subject.`;
 
 
     /*
-      If no original upload exists,
-      create a fresh generation from the prompt.
+      For generated images, there is no uploaded
+      source file, so create a fresh generation from
+      the original prompt.
     */
 
     const variationPrompt =
 
-      `${prompt}
+`${cleanPrompt}
 
-Create a fresh variation while keeping the
-same core idea and user intent.`;
+Create a fresh new variation of this image concept.
+
+Keep the same main subject and original creative intent.
+
+Change the composition, camera angle, lighting,
+background, environment, pose or styling where
+appropriate.
+
+Make it clearly a new render rather than an exact copy.`;
 
     await generateImage(
       variationPrompt
@@ -2651,11 +3245,18 @@ same core idea and user intent.`;
   }
 
 
-  /* =========================
-     SEND CHAT
-  ========================= */
+  /* =========================================================
+     SEND CHAT MESSAGE
+  ========================================================= */
 
   async function sendMessage() {
+
+    if (imageBusy) {
+
+      return;
+
+    }
+
 
     const text =
       messageInput.value.trim();
@@ -2665,6 +3266,8 @@ same core idea and user intent.`;
       !text &&
       !selectedImageData
     ) {
+
+      messageInput.focus();
 
       return;
 
@@ -2695,9 +3298,12 @@ same core idea and user intent.`;
     );
 
 
-    if (
-      selectedImageData
-    ) {
+    await updateChatTitle(
+      userText
+    );
+
+
+    if (selectedImageData) {
 
       const image =
         selectedImageData;
@@ -2725,11 +3331,6 @@ same core idea and user intent.`;
       '';
 
 
-    await updateChatTitle(
-      userText
-    );
-
-
     try {
 
       const response =
@@ -2755,15 +3356,28 @@ same core idea and user intent.`;
         );
 
 
-      const data =
-        await response.json();
+      let data = {};
+
+      try {
+
+        data =
+          await response.json();
+
+      } catch (error) {
+
+        throw new Error(
+          `Server returned an invalid response (${response.status}).`
+        );
+
+      }
 
 
       if (!response.ok) {
 
         throw new Error(
           data.error ||
-          'Chat request failed.'
+          data.message ||
+          `Chat request failed (${response.status}).`
         );
 
       }
@@ -2789,6 +3403,12 @@ same core idea and user intent.`;
 
     } catch (error) {
 
+      console.error(
+        'CHAT ERROR:',
+        error
+      );
+
+
       addTextMessage(
         'assistant',
         `Error: ${error.message}`
@@ -2799,92 +3419,173 @@ same core idea and user intent.`;
   }
 
 
-  document
-    .getElementById('sendButton')
-    .addEventListener(
-      'click',
-      sendMessage
-    );
+  /* =========================================================
+     CREATE IMAGE BUTTON
+  ========================================================= */
+
+  async function createImageFromButton() {
+
+    if (imageBusy) {
+
+      return;
+
+    }
 
 
-  /* =========================
-     IMAGE BUTTON
-  ========================= */
-
-  document
-    .getElementById('imageButton')
-    .addEventListener(
-      'click',
-      async () => {
-
-        const prompt =
-          messageInput.value.trim();
+    const prompt =
+      messageInput.value.trim();
 
 
-        if (!prompt) {
+    /*
+      If an image is uploaded, the image button
+      performs an edit rather than generation.
+    */
 
-          messageInput.focus();
+    if (selectedImageData) {
 
-          return;
+      if (!prompt) {
 
-        }
-
-
-        if (!currentChatId) {
-
-          await createNewChat();
-
-        }
-
+        messageInput.focus();
 
         addTextMessage(
-          'user',
-          prompt
+          'assistant',
+          'Tell me what you want me to change in the uploaded image.'
         );
 
-
-        await saveMessage(
-          'user',
-          prompt
-        );
-
-
-        await updateChatTitle(
-          prompt
-        );
-
-
-        messageInput.value =
-          '';
-
-
-        await generateImage(
-          prompt
-        );
+        return;
 
       }
+
+
+      if (!currentChatId) {
+
+        await createNewChat();
+
+      }
+
+
+      addTextMessage(
+        'user',
+        prompt
+      );
+
+
+      await saveMessage(
+        'user',
+        prompt
+      );
+
+
+      await updateChatTitle(
+        prompt
+      );
+
+
+      const image =
+        selectedImageData;
+
+
+      clearUpload();
+
+
+      messageInput.value =
+        '';
+
+
+      await editImage(
+        image,
+        prompt
+      );
+
+
+      return;
+
+    }
+
+
+    /*
+      Normal image generation.
+    */
+
+    if (!prompt) {
+
+      messageInput.focus();
+
+      addTextMessage(
+        'assistant',
+        'Type what you want me to create first — for example: "A realistic husky running through a forest at sunset".'
+      );
+
+      return;
+
+    }
+
+
+    if (!currentChatId) {
+
+      await createNewChat();
+
+    }
+
+
+    addTextMessage(
+      'user',
+      prompt
     );
 
 
-  /* =========================
+    await saveMessage(
+      'user',
+      prompt
+    );
+
+
+    await updateChatTitle(
+      prompt
+    );
+
+
+    messageInput.value =
+      '';
+
+
+    await generateImage(
+      prompt
+    );
+
+  }
+
+
+  imageButton.addEventListener(
+    'click',
+    createImageFromButton
+  );
+
+
+  /* =========================================================
      UPLOAD
-  ========================= */
+  ========================================================= */
 
-  document
-    .getElementById('uploadButton')
-    .addEventListener(
-      'click',
-      () => {
+  uploadButton.addEventListener(
+    'click',
+    () => {
 
-        fileInput.click();
+      if (imageBusy) {
+
+        return;
 
       }
-    );
+
+
+      fileInput.click();
+
+    }
+  );
 
 
   fileInput.addEventListener(
     'change',
-    async event => {
+    event => {
 
       const file =
         event.target.files?.[0];
@@ -2926,11 +3627,27 @@ same core idea and user intent.`;
           selectedImageData =
             reader.result;
 
+
           uploadPreviewImage.src =
             selectedImageData;
 
+
           uploadPreview.style.display =
             'block';
+
+
+          messageInput.focus();
+
+        };
+
+
+      reader.onerror =
+        () => {
+
+          addTextMessage(
+            'assistant',
+            'I could not read that image. Please try another image.'
+          );
 
         };
 
@@ -2943,6 +3660,34 @@ same core idea and user intent.`;
   );
 
 
+  /* =========================================================
+     CLEAR UPLOAD
+  ========================================================= */
+
+  function clearUpload() {
+
+    selectedImageFile =
+      null;
+
+
+    selectedImageData =
+      null;
+
+
+    fileInput.value =
+      '';
+
+
+    uploadPreview.style.display =
+      'none';
+
+
+    uploadPreviewImage.src =
+      '';
+
+  }
+
+
   document
     .getElementById('removeUpload')
     .addEventListener(
@@ -2951,29 +3696,9 @@ same core idea and user intent.`;
     );
 
 
-  function clearUpload() {
-
-    selectedImageFile =
-      null;
-
-    selectedImageData =
-      null;
-
-    fileInput.value =
-      '';
-
-    uploadPreview.style.display =
-      'none';
-
-    uploadPreviewImage.src =
-      '';
-
-  }
-
-
-  /* =========================
+  /* =========================================================
      NEW CHAT
-  ========================= */
+  ========================================================= */
 
   document
     .getElementById('newChatButton')
@@ -2991,9 +3716,9 @@ same core idea and user intent.`;
     );
 
 
-  /* =========================
+  /* =========================================================
      LOGOUT
-  ========================= */
+  ========================================================= */
 
   document
     .getElementById('logoutButton')
@@ -3001,25 +3726,49 @@ same core idea and user intent.`;
       'click',
       async () => {
 
-        if (supabaseClient) {
+        try {
 
-          await supabaseClient.auth.signOut();
+          if (supabaseClient) {
+
+            await supabaseClient.auth.signOut();
+
+          }
+
+        } catch (error) {
+
+          console.error(
+            'Logout error:',
+            error
+          );
 
         }
+
 
         currentUser =
           null;
 
+
         currentChatId =
           null;
+
 
         chats =
           [];
 
+
+        memory =
+          '';
+
+
         initialised =
           false;
 
+
+        clearUpload();
+
+
         clearChatUI();
+
 
         showAuthScreen();
 
@@ -3027,9 +3776,9 @@ same core idea and user intent.`;
     );
 
 
-  /* =========================
+  /* =========================================================
      ENTER TO SEND
-  ========================= */
+  ========================================================= */
 
   messageInput.addEventListener(
     'keydown',
@@ -3042,6 +3791,7 @@ same core idea and user intent.`;
 
         event.preventDefault();
 
+
         sendMessage();
 
       }
@@ -3050,9 +3800,9 @@ same core idea and user intent.`;
   );
 
 
-  /* =========================
+  /* =========================================================
      TEXTAREA RESIZE
-  ========================= */
+  ========================================================= */
 
   messageInput.addEventListener(
     'input',
@@ -3060,6 +3810,7 @@ same core idea and user intent.`;
 
       messageInput.style.height =
         'auto';
+
 
       messageInput.style.height =
         `${Math.min(
@@ -3071,9 +3822,9 @@ same core idea and user intent.`;
   );
 
 
-  /* =========================
+  /* =========================================================
      DOCK HEIGHT
-  ========================= */
+  ========================================================= */
 
   function updateDockHeight() {
 
@@ -3084,7 +3835,9 @@ same core idea and user intent.`;
 
 
     if (!dock) {
+
       return;
+
     }
 
 
@@ -3104,9 +3857,9 @@ same core idea and user intent.`;
   );
 
 
-  /* =========================
+  /* =========================================================
      START
-  ========================= */
+  ========================================================= */
 
   updateDockHeight();
 
