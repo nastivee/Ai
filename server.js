@@ -55,7 +55,6 @@ app.post('/api/chat', async (req, res) => {
 
     console.log('CHAT:', message);
 
-
     const response =
       await openai.chat.completions.create({
 
@@ -107,16 +106,13 @@ The user should feel like they are chatting with a personality, not a generic cu
 
       });
 
-
     const reply =
       response.choices?.[0]?.message?.content ||
       'Sorry, I could not generate a response.';
 
-
     res.json({
       reply
     });
-
 
   } catch (error) {
 
@@ -179,7 +175,7 @@ app.post('/api/image', async (req, res) => {
 
 
     /* =====================================================
-       TEXT-ONLY IMAGE REGENERATION
+       TEXT IMAGE REGENERATION
     ===================================================== */
 
     if (regenerate === true) {
@@ -286,7 +282,7 @@ ${variation}
 
 
     /* =====================================================
-       BASE64 IMAGE
+       GPT IMAGE MODELS RETURN BASE64
     ===================================================== */
 
     if (imageData.b64_json) {
@@ -300,10 +296,6 @@ ${variation}
 
     }
 
-
-    /* =====================================================
-       IMAGE URL FALLBACK
-    ===================================================== */
 
     if (imageData.url) {
 
@@ -404,7 +396,7 @@ app.post('/api/image/edit', async (req, res) => {
 
 
     /* =====================================================
-       CONVERT DATA URL TO BUFFER
+       CONVERT DATA URL INTO BUFFER
     ===================================================== */
 
     let originalBuffer;
@@ -461,13 +453,11 @@ app.post('/api/image/edit', async (req, res) => {
     /* =====================================================
        NORMALISE ORIGINAL PHOTO
 
-       Handles:
-       - Phone rotation
-       - Large images
-       - Transparency
-       - Unsupported formats
-       - HEIC-style uploads after browser conversion
-       - JPEG compatibility
+       - Fixes phone rotation
+       - Converts to JPEG
+       - Removes transparency
+       - Limits huge uploads
+       - Makes the file compatible with OpenAI
     ===================================================== */
 
     const normalizedBuffer =
@@ -514,7 +504,7 @@ app.post('/api/image/edit', async (req, res) => {
 
 
     /* =====================================================
-       CREATE OPENAI FILE
+       CREATE OPENAI IMAGE FILE
     ===================================================== */
 
     const imageFile =
@@ -587,10 +577,9 @@ necessary to complete the requested edit.
        REGENERATION
        
        IMPORTANT:
-       The ORIGINAL uploaded photograph is sent again.
-
-       The previous AI-generated result is NOT used
-       as the reference.
+       The ORIGINAL uploaded photograph is used again.
+       
+       The previous AI-generated image is NOT used.
     ===================================================== */
 
     if (regenerate === true) {
@@ -740,6 +729,9 @@ same, with only a modest visual variation.
 
     /* =====================================================
        SEND ORIGINAL PHOTO TO OPENAI
+       
+       NO input_fidelity PARAMETER HERE.
+       gpt-image-2 does not support it.
     ===================================================== */
 
     console.log(
@@ -768,8 +760,6 @@ same, with only a modest visual variation.
         size: '1024x1024',
 
         quality: 'medium',
-
-        input_fidelity: 'high',
 
         n: 1
 
@@ -815,7 +805,7 @@ same, with only a modest visual variation.
 
 
     /* =====================================================
-       RETURN URL IF PROVIDED
+       URL FALLBACK
     ===================================================== */
 
     if (imageData.url) {
