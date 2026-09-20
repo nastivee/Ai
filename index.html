@@ -585,13 +585,33 @@ button {
   font-weight: 600;
 }
 
+.accountLine {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
 .userEmail {
+  flex: 1;
+  min-width: 0;
   color: #92879d;
   font-size: 12px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  margin-bottom: 10px;
+}
+
+.versionTag {
+  flex-shrink: 0;
+  padding: 3px 9px;
+  border: 1px solid #2e2344;
+  border-radius: 999px;
+  background: #170f26;
+  color: #6f6580;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: .3px;
 }
 
 .logoutButton {
@@ -1846,10 +1866,20 @@ button {
       </div>
 
 
-      <div
-        class="userEmail"
-        id="userEmail"
-      ></div>
+      <div class="accountLine">
+
+        <div
+          class="userEmail"
+          id="userEmail"
+        ></div>
+
+        <div
+          class="versionTag"
+          id="versionTag"
+          title="App version"
+        ></div>
+
+      </div>
 
       <div class="accountRow">
 
@@ -2455,6 +2485,9 @@ const clearUploadButton =
 
 const newChatButton =
   document.getElementById('newChatButton');
+
+const versionTag =
+  document.getElementById('versionTag');
 
 const modeSwitch =
   document.getElementById('modeSwitch');
@@ -7421,9 +7454,12 @@ window.addEventListener('online', () => {
    clearing anything by hand.
 ===================================================== */
 
-const APP_VERSION = '2026-09-20-29';
+const APP_VERSION = '2026-09-20-30';
 
 const RELOAD_FLAG = 'nastivee_reloaded_for';
+
+/* the build this device is running, shown beside the email */
+versionTag.textContent = `v${APP_VERSION}`;
 
 if ('serviceWorker' in navigator) {
 
