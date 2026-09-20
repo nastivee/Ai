@@ -329,6 +329,23 @@ button {
 }
 
 /* A chat with work still running */
+.guestPrompt {
+  background: #191323;
+  border: 1px solid #40304f;
+  border-bottom-left-radius: 5px;
+}
+
+.guestPromptButton {
+  display: inline-block;
+  margin-top: 10px;
+  border: 0;
+  border-radius: 10px;
+  padding: 10px 16px;
+  background: linear-gradient(135deg, #7c3aed, #9333ea);
+  color: white;
+  font-weight: 700;
+}
+
 .runningDot {
   width: 8px;
   height: 8px;
@@ -3705,6 +3722,82 @@ function addImageMessage(
 
 
 /* =====================================================
+   IMAGES NEED AN ACCOUNT
+
+   Guests can chat, but image generating and editing
+   runs up real cost, so it asks them to sign up.
+===================================================== */
+
+function guestImagesBlocked() {
+
+  if (!guestMode) {
+    return false;
+  }
+
+  showGuestImageNotice();
+
+  return true;
+
+}
+
+
+function showGuestImageNotice() {
+
+  emptyState?.remove();
+
+  const row =
+    document.createElement('div');
+
+  row.className = 'messageRow assistant';
+
+  const bubble =
+    document.createElement('div');
+
+  bubble.className = 'messageBubble guestPrompt';
+
+  const text =
+    document.createElement('div');
+
+  text.textContent =
+    'Creating and editing images needs an account. ' +
+    'Create one and you can generate images, and your ' +
+    'chats will follow you to any device.';
+
+  const button =
+    document.createElement('button');
+
+  button.className = 'guestPromptButton';
+
+  button.textContent = 'Create an account';
+
+  button.addEventListener(
+    'click',
+    () => {
+
+      stopGuestMode();
+
+      signupMode = true;
+
+      updateAuthMode();
+
+      showAuth();
+
+    }
+  );
+
+  bubble.appendChild(text);
+  bubble.appendChild(button);
+
+  row.appendChild(bubble);
+
+  chat.appendChild(row);
+
+  scrollToBottom();
+
+}
+
+
+/* =====================================================
    RENDER INTO A PARTICULAR CHAT
 
    A job can finish while the user is reading another
@@ -4004,6 +4097,13 @@ async function rerenderImage(
 ) {
 
   if (!state?.currentImage) {
+
+    return;
+
+  }
+
+
+  if (guestImagesBlocked()) {
 
     return;
 
@@ -4468,6 +4568,14 @@ async function sendMessage() {
 
   if (selectedImageData) {
 
+    if (guestImagesBlocked()) {
+
+      clearUpload();
+
+      return;
+
+    }
+
     const image =
       selectedImageData;
 
@@ -4532,6 +4640,10 @@ async function sendMessage() {
     resizeTextarea();
 
     setImageMode(false);
+
+    if (guestImagesBlocked()) {
+      return;
+    }
 
 
     generateImage(
@@ -4643,7 +4755,7 @@ imageButton.addEventListener(
   'click',
   () => {
 
-    if (imageBusy) {
+    if (guestImagesBlocked()) {
       return;
     }
 
@@ -4684,7 +4796,7 @@ uploadButton.addEventListener(
   'click',
   () => {
 
-    if (imageBusy) {
+    if (guestImagesBlocked()) {
       return;
     }
 
