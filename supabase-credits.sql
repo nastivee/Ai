@@ -9,6 +9,12 @@
 -- the service role key.
 -- =========================================================
 
+-- The memory box the My profile panel writes to. It was
+-- never created, so the profile text has been going
+-- nowhere. This puts it right.
+alter table public.profiles
+  add column if not exists memory text;
+
 alter table public.profiles
   add column if not exists image_credits integer not null default 0;
 
@@ -77,7 +83,7 @@ returns integer
 language plpgsql
 security definer
 set search_path = public
-as $$
+as $fn$
 declare
   v_balance integer;
 begin
@@ -111,7 +117,7 @@ begin
   return v_balance;
 
 end;
-$$;
+$fn$;
 
 revoke all on function public.add_credits(uuid, integer, text, text) from public, anon, authenticated;
 
@@ -127,7 +133,7 @@ returns integer
 language plpgsql
 security definer
 set search_path = public
-as $$
+as $fn$
 declare
   v_unlimited boolean;
   v_balance   integer;
@@ -159,7 +165,7 @@ begin
   return v_balance;
 
 end;
-$$;
+$fn$;
 
 revoke all on function public.spend_credit(uuid) from public, anon, authenticated;
 
