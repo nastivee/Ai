@@ -659,9 +659,15 @@ button {
   font-weight: 600;
 }
 
-.versionTag {
+.sidebarFoot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
   margin-top: 10px;
-  text-align: center;
+}
+
+.versionTag {
   color: #5f566f;
   font-size: 10.5px;
   font-weight: 700;
@@ -912,32 +918,213 @@ button {
 .installButton {
   display: none;
   align-items: center;
-  justify-content: center;
-  gap: 9px;
-  width: 100%;
-  margin-bottom: 8px;
-  padding: 11px 16px;
-  border: 1px solid #3b5a44;
-  border-radius: 12px;
-  background: #16281c;
-  color: #a9e5bd;
+  gap: 6px;
+  padding: 3px 10px;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: #6f6580;
+  font-size: 10.5px;
   font-weight: 700;
-  font-size: 13px;
+  letter-spacing: .3px;
+}
+
+.installButton::before {
+  content: '';
+  width: 3px;
+  height: 3px;
+  margin-right: 2px;
+  border-radius: 50%;
+  background: #3e3550;
+}
+
+.installButton:hover {
+  color: #c4a6ff;
+  background: rgba(124, 58, 237, .12);
+}
+
+.installButton .icon {
+  color: inherit;
 }
 
 .installButton.show {
+  display: inline-flex;
+}
+
+/* ---- the guided install sheet ---- */
+
+.installOverlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 950;
+  padding: 20px;
+  align-items: center;
+  justify-content: center;
+  background: rgba(6, 4, 12, .72);
+  backdrop-filter: blur(4px);
+}
+
+.installOverlay.show {
   display: flex;
 }
 
-.installHint {
-  margin: -2px 0 10px;
-  padding: 8px 11px;
-  border: 1px solid #3b5a44;
-  border-radius: 10px;
-  background: rgba(22, 40, 28, .6);
-  color: #9fd8b3;
+.installCard {
+  width: 100%;
+  max-width: 440px;
+  max-height: 88vh;
+  overflow-y: auto;
+  padding: 24px;
+  border: 1px solid #33264a;
+  border-radius: 22px;
+  background: #17112a;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, .5);
+}
+
+.installHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+/* Close mark: large, no background, no border */
+.installClose {
+  border: 0;
+  background: none;
+  color: #cfc3dd;
+  font-size: 34px;
+  line-height: 1;
+  padding: 0 8px;
+}
+
+.installClose:hover {
+  color: #fff;
+}
+
+.installIdentity {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  min-width: 0;
+}
+
+.installMarkHolder {
+  /* extra room so the glow is never clipped */
+  padding: 6px;
+  flex-shrink: 0;
+}
+
+.installMark {
+  display: block;
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  object-fit: contain;
+  filter: drop-shadow(0 6px 16px rgba(139, 92, 246, .4));
+}
+
+.installName {
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: -.3px;
+}
+
+.installHost {
+  margin-top: 2px;
+  color: #8a7e99;
   font-size: 12px;
-  line-height: 1.45;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.installLead {
+  margin: 16px 0 4px;
+  color: #b9adc8;
+  font-size: 13.5px;
+  line-height: 1.55;
+}
+
+.installSteps {
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: installStep;
+}
+
+.installStep {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 0;
+  border-top: 1px solid #261c3c;
+  color: #ded3ec;
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+
+.installStep:first-child {
+  border-top: 0;
+}
+
+.installStepNum {
+  counter-increment: installStep;
+  flex-shrink: 0;
+  width: 25px;
+  height: 25px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(124, 58, 237, .22);
+  color: #c4a6ff;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.installStepNum::before {
+  content: counter(installStep);
+}
+
+.installStep .inlineIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: -4px;
+  margin: 0 3px;
+  padding: 3px;
+  border-radius: 6px;
+  background: #241a3c;
+  color: #c4a6ff;
+}
+
+.installWhy {
+  margin-top: 16px;
+  padding: 12px 14px;
+  border: 1px solid #2c2244;
+  border-radius: 12px;
+  background: #140f24;
+  color: #9a8fab;
+  font-size: 12.5px;
+  line-height: 1.55;
+}
+
+.installDone {
+  width: 100%;
+  min-height: 46px;
+  margin-top: 16px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 13px;
+  background: linear-gradient(135deg, #7c3aed, #9333ea);
+  color: white;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.installDone:hover {
+  filter: brightness(1.08);
 }
 
 .accountRow {
@@ -2300,6 +2487,63 @@ button {
      MY PROFILE
 ===================================================== -->
 
+<div class="installOverlay" id="installOverlay">
+
+  <div class="installCard">
+
+    <div class="installHead">
+
+      <div class="installIdentity">
+
+        <span class="installMarkHolder">
+          <img
+            class="installMark"
+            src="./icon-192.png"
+            alt=""
+          >
+        </span>
+
+        <div>
+          <div class="installName">Nastivee AI</div>
+          <div class="installHost" id="installHost"></div>
+        </div>
+
+      </div>
+
+      <button
+        class="installClose"
+        id="installClose"
+        type="button"
+        aria-label="Close"
+      >
+        &times;
+      </button>
+
+    </div>
+
+    <p class="installLead" id="installLead"></p>
+
+    <ul class="installSteps" id="installSteps"></ul>
+
+    <div class="installWhy">
+      Installed, Nastivee opens full screen from your home
+      screen or dock, with no address bar, and your chats
+      carry on exactly where you left them.
+    </div>
+
+    <button
+      class="installDone"
+      id="installDone"
+      type="button"
+    >
+      Got it
+    </button>
+
+  </div>
+
+</div>
+
+
 <div class="profileOverlay" id="profileOverlay">
 
   <div class="profileCard">
@@ -2440,15 +2684,6 @@ button {
       </div>
 
 
-      <button
-        class="installButton"
-        id="installButton"
-        type="button"
-      >
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-        Install the app
-      </button>
-
       <div class="accountRow">
 
         <button
@@ -2485,11 +2720,32 @@ button {
 
       </div>
 
-      <div
-        class="versionTag"
-        id="versionTag"
-        title="App version"
-      ></div>
+      <div class="sidebarFoot">
+
+        <span
+          class="versionTag"
+          id="versionTag"
+          title="App version"
+        ></span>
+
+        <button
+          class="installButton"
+          id="installButton"
+          type="button"
+          title="Install Nastivee AI as an app"
+        >
+          <svg class="icon" width="12" height="12" viewBox="0 0 24 24"
+               fill="none" stroke="currentColor" stroke-width="2.2"
+               stroke-linecap="round" stroke-linejoin="round"
+               aria-hidden="true">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+          Install app
+        </button>
+
+      </div>
 
     </div>
 
@@ -7294,7 +7550,200 @@ function iconLabel(name, label, short) {
 const installButton =
   document.getElementById('installButton');
 
+const installOverlay =
+  document.getElementById('installOverlay');
+
+const installSteps =
+  document.getElementById('installSteps');
+
+const installLead =
+  document.getElementById('installLead');
+
+const installHost =
+  document.getElementById('installHost');
+
 let installPrompt = null;
+
+
+const runningAsApp =
+  window.matchMedia?.('(display-mode: standalone)')?.matches === true ||
+  window.matchMedia?.('(display-mode: window-controls-overlay)')?.matches === true ||
+  window.navigator.standalone === true;
+
+
+/*
+  Which set of steps this browser needs. Only Chromium
+  gives us a real prompt, everyone else gets told exactly
+  where their own menu hides it.
+*/
+
+function installFlavour() {
+
+  const ua = navigator.userAgent;
+
+  const apple =
+    /iPad|iPhone|iPod/.test(ua) ||
+    (navigator.platform === 'MacIntel' &&
+     navigator.maxTouchPoints > 1);
+
+  if (apple) {
+
+    return /CriOS|FxiOS|EdgiOS/.test(ua)
+      ? 'ios-other'
+      : 'ios';
+
+  }
+
+  if (/Macintosh/.test(ua) &&
+      /Safari/.test(ua) &&
+      !/Chrome|Chromium/.test(ua)) {
+    return 'mac-safari';
+  }
+
+  if (/Firefox/.test(ua)) {
+    return 'firefox';
+  }
+
+  return 'generic';
+
+}
+
+
+const SHARE_GLYPH =
+  '<span class="inlineIcon">' +
+  '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" ' +
+  'stroke="currentColor" stroke-width="2" stroke-linecap="round" ' +
+  'stroke-linejoin="round" aria-hidden="true">' +
+  '<path d="M12 16V3"></path>' +
+  '<polyline points="8 7 12 3 16 7"></polyline>' +
+  '<path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"></path>' +
+  '</svg></span>';
+
+const PLUS_GLYPH =
+  '<span class="inlineIcon">' +
+  '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" ' +
+  'stroke="currentColor" stroke-width="2" stroke-linecap="round" ' +
+  'stroke-linejoin="round" aria-hidden="true">' +
+  '<rect x="3" y="3" width="18" height="18" rx="4"></rect>' +
+  '<line x1="12" y1="8" x2="12" y2="16"></line>' +
+  '<line x1="8" y1="12" x2="16" y2="12"></line>' +
+  '</svg></span>';
+
+const DOTS_GLYPH =
+  '<span class="inlineIcon">' +
+  '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" ' +
+  'stroke="currentColor" stroke-width="2.4" stroke-linecap="round" ' +
+  'aria-hidden="true">' +
+  '<circle cx="12" cy="5" r="1"></circle>' +
+  '<circle cx="12" cy="12" r="1"></circle>' +
+  '<circle cx="12" cy="19" r="1"></circle>' +
+  '</svg></span>';
+
+
+const INSTALL_GUIDES = {
+
+  'ios': {
+    lead:
+      'Safari keeps this behind the Share button, it takes ' +
+      'about ten seconds.',
+    steps: [
+      `Tap the Share button ${SHARE_GLYPH} at the bottom of ` +
+        'Safari, the square with the arrow coming out of it.',
+      `Scroll down the list and tap ${PLUS_GLYPH} ` +
+        '<strong>Add to Home Screen</strong>.',
+      'Tap <strong>Add</strong> in the top right, and Nastivee ' +
+        'lands on your home screen with its own icon.'
+    ]
+  },
+
+  'ios-other': {
+    lead:
+      'Chrome and Firefox on iPhone can do this, but only ' +
+      'Safari adds the proper icon, so open this page in ' +
+      'Safari first if you can.',
+    steps: [
+      `Tap the Share button ${SHARE_GLYPH} in the toolbar.`,
+      `Choose ${PLUS_GLYPH} <strong>Add to Home Screen</strong>.`,
+      'Tap <strong>Add</strong> to finish.'
+    ]
+  },
+
+  'mac-safari': {
+    lead:
+      'Safari on a Mac puts this in the Share menu.',
+    steps: [
+      `Click the Share button ${SHARE_GLYPH} in the toolbar, ` +
+        'or open the <strong>File</strong> menu.',
+      'Choose <strong>Add to Dock</strong>.',
+      'Click <strong>Add</strong>, and Nastivee sits in your ' +
+        'Dock like any other app.'
+    ]
+  },
+
+  'firefox': {
+    lead:
+      'Firefox does not install web apps, so the neatest ' +
+      'route is a pinned tab or a desktop shortcut.',
+    steps: [
+      'Right click this tab and choose <strong>Pin Tab</strong> ' +
+        'so Nastivee is always open.',
+      'Or drag the padlock in the address bar onto your ' +
+        'desktop to drop a shortcut there.',
+      'Chrome, Edge and Safari can install it properly if ' +
+        'you would rather have a real app icon.'
+    ]
+  },
+
+  'generic': {
+    lead:
+      'Your browser can install this, the button is tucked ' +
+      'away in its menu.',
+    steps: [
+      `Open the browser menu ${DOTS_GLYPH} in the top right.`,
+      'Look for <strong>Install app</strong>, <strong>Install ' +
+        'Nastivee AI</strong> or <strong>Add to Home ' +
+        'screen</strong>.',
+      'Confirm, and it opens in its own window from then on.'
+    ]
+  }
+
+};
+
+
+function showInstallSheet() {
+
+  const guide =
+    INSTALL_GUIDES[installFlavour()] ||
+    INSTALL_GUIDES.generic;
+
+  installLead.textContent = guide.lead;
+
+  installHost.textContent = location.host;
+
+  installSteps.innerHTML =
+    guide.steps
+      .map(step =>
+        '<li class="installStep">' +
+        '<span class="installStepNum"></span>' +
+        `<span>${step}</span>` +
+        '</li>'
+      )
+      .join('');
+
+  installOverlay.classList.add('show');
+
+}
+
+
+function hideInstallSheet() {
+  installOverlay.classList.remove('show');
+}
+
+
+/*
+  Chromium hands us a real prompt. Everything else gets
+  the sheet.
+*/
 
 window.addEventListener('beforeinstallprompt', event => {
 
@@ -7306,76 +7755,60 @@ window.addEventListener('beforeinstallprompt', event => {
 
 });
 
-installButton.addEventListener('click', async () => {
 
-  if (!installPrompt) return;
+if (!runningAsApp && installButton) {
+  installButton.classList.add('show');
+}
 
-  installButton.classList.remove('show');
 
-  installPrompt.prompt();
+installButton?.addEventListener('click', async () => {
 
-  await installPrompt.userChoice;
+  if (installPrompt) {
 
-  installPrompt = null;
+    installPrompt.prompt();
+
+    const choice =
+      await installPrompt.userChoice;
+
+    installPrompt = null;
+
+    if (choice?.outcome === 'accepted') {
+      installButton.classList.remove('show');
+    }
+
+    return;
+
+  }
+
+  showInstallSheet();
 
 });
+
+
+document
+  .getElementById('installClose')
+  ?.addEventListener('click', hideInstallSheet);
+
+document
+  .getElementById('installDone')
+  ?.addEventListener('click', hideInstallSheet);
+
+installOverlay?.addEventListener('click', event => {
+  if (event.target === installOverlay) {
+    hideInstallSheet();
+  }
+});
+
 
 window.addEventListener('appinstalled', () => {
 
-  installButton.classList.remove('show');
-  installHint?.remove();
+  installButton?.classList.remove('show');
+
+  hideInstallSheet();
 
   installPrompt = null;
 
 });
-
-
-/*
-  iPhones and iPads never fire beforeinstallprompt, so offer
-  the Share sheet route instead.
-*/
-
-let installHint = null;
-
-const standalone =
-  window.matchMedia?.('(display-mode: standalone)')?.matches === true ||
-  window.navigator.standalone === true;
-
-const isApple =
-  /iPad|iPhone|iPod/.test(navigator.userAgent) ||
-  (navigator.platform === 'MacIntel' &&
-   navigator.maxTouchPoints > 1);
-
-if (isApple && !standalone && installButton) {
-
-  installButton.classList.add('show');
-
-  installButton.addEventListener('click', () => {
-
-    if (installPrompt) return;
-
-    if (installHint) {
-      installHint.remove();
-      installHint = null;
-      return;
-    }
-
-    installHint =
-      document.createElement('div');
-
-    installHint.className = 'installHint';
-
-    installHint.textContent =
-      'Tap Share, then "Add to Home Screen".';
-
-    installButton.insertAdjacentElement(
-      'afterend',
-      installHint
-    );
-
-  });
-
-}
 
 
 /* =====================================================
@@ -9156,7 +9589,7 @@ window.addEventListener('online', () => {
    clearing anything by hand.
 ===================================================== */
 
-const APP_VERSION = '2026-09-20-42';
+const APP_VERSION = '2026-09-20-43';
 
 const RELOAD_FLAG = 'nastivee_reloaded_for';
 
