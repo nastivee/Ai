@@ -585,17 +585,9 @@ button {
   font-weight: 600;
 }
 
-.accountLine {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 10px;
-}
-
 .userEmail {
-  flex: 1;
-  min-width: 0;
   color: #92879d;
+  margin-bottom: 10px;
   font-size: 12px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -603,15 +595,12 @@ button {
 }
 
 .versionTag {
-  flex-shrink: 0;
-  padding: 3px 9px;
-  border: 1px solid #2e2344;
-  border-radius: 999px;
-  background: #170f26;
-  color: #6f6580;
+  margin-top: 10px;
+  text-align: center;
+  color: #5f566f;
   font-size: 10.5px;
   font-weight: 700;
-  letter-spacing: .3px;
+  letter-spacing: .4px;
 }
 
 .logoutButton {
@@ -1942,20 +1931,10 @@ button {
       </div>
 
 
-      <div class="accountLine">
-
-        <div
-          class="userEmail"
-          id="userEmail"
-        ></div>
-
-        <div
-          class="versionTag"
-          id="versionTag"
-          title="App version"
-        ></div>
-
-      </div>
+      <div
+        class="userEmail"
+        id="userEmail"
+      ></div>
 
       <div class="accountRow">
 
@@ -1992,6 +1971,12 @@ button {
         </button>
 
       </div>
+
+      <div
+        class="versionTag"
+        id="versionTag"
+        title="App version"
+      ></div>
 
     </div>
 
@@ -7676,7 +7661,7 @@ window.addEventListener('online', () => {
    clearing anything by hand.
 ===================================================== */
 
-const APP_VERSION = '2026-09-20-31';
+const APP_VERSION = '2026-09-20-32';
 
 const RELOAD_FLAG = 'nastivee_reloaded_for';
 
