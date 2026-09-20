@@ -2,753 +2,742 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Nastivee AI</title>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
-* {
-  box-sizing: border-box;
+*{
+  box-sizing:border-box;
+  -webkit-tap-highlight-color:transparent;
 }
 
-:root {
-  --header-h: 65px;
-  --dock-h: 90px;
-  --sidebar-w: 285px;
+:root{
+  --bg:#10081d;
+  --panel:#180d29;
+  --panel2:#211139;
+  --purple:#8b5cf6;
+  --purple2:#a78bfa;
+  --text:#f7f2ff;
+  --muted:#aaa0bd;
+  --border:rgba(255,255,255,.09);
+  --dock-h:100px;
 }
 
-body {
-  margin: 0;
-  font-family: Arial, sans-serif;
-  background: linear-gradient(160deg, #241044, #0b0615);
-  background-attachment: fixed;
-  color: white;
-  min-height: 100vh;
+html,body{
+  margin:0;
+  width:100%;
+  min-height:100%;
+  background:var(--bg);
+  color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
 }
 
-button,
-textarea,
-input {
-  font: inherit;
+body{
+  overflow-x:hidden;
 }
 
-button {
-  -webkit-tap-highlight-color: transparent;
+button,input,textarea{
+  font:inherit;
 }
 
-.app {
-  min-height: 100vh;
-  display: flex;
+button{
+  cursor:pointer;
 }
 
-/* =====================================================
-   AUTH SCREEN
-===================================================== */
+.hidden{
+  display:none!important;
+}
 
-.authScreen {
-  position: fixed;
-  inset: 0;
-  z-index: 1000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
+
+/* =========================
+   AUTH
+========================= */
+
+.authScreen{
+  position:fixed;
+  inset:0;
+  z-index:9999;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
   background:
-    radial-gradient(circle at top, rgba(124,60,255,.25), transparent 45%),
-    linear-gradient(160deg, #241044, #0b0615);
+    radial-gradient(circle at 50% 15%,rgba(139,92,246,.22),transparent 38%),
+    var(--bg);
 }
 
-.authScreen.hidden {
-  display: none;
+.authCard{
+  width:100%;
+  max-width:420px;
+  padding:34px 28px 30px;
+  border:1px solid var(--border);
+  border-radius:24px;
+  background:rgba(24,13,41,.96);
+  box-shadow:0 25px 80px rgba(0,0,0,.45);
 }
 
-.authCard {
-  width: min(100%, 420px);
-  padding: 28px;
-  border-radius: 22px;
-  background: rgba(20,10,38,.96);
-  border: 1px solid rgba(255,255,255,.1);
-  box-shadow: 0 25px 80px rgba(0,0,0,.45);
+.authLogo{
+  display:flex;
+  justify-content:center;
+  margin-bottom:18px;
 }
 
-.authLogo {
-  text-align: center;
-  margin-bottom: 20px;
+.authLogo img{
+  width:76px;
+  height:76px;
+  object-fit:contain;
+  border-radius:18px;
 }
 
-.authLogo img {
-  width: 72px;
-  height: 72px;
-  object-fit: contain;
-  border-radius: 18px;
+.authTitle{
+  text-align:center;
+  font-size:25px;
+  font-weight:800;
 }
 
-.authTitle {
-  text-align: center;
-  font-size: 27px;
-  font-weight: bold;
-  margin-top: 10px;
+.authSubtitle{
+  text-align:center;
+  color:var(--muted);
+  font-size:14px;
+  margin:8px 0 22px;
+  line-height:1.5;
 }
 
-.authSubtitle {
-  text-align: center;
-  color: #bdb2cb;
-  font-size: 14px;
-  margin-top: 7px;
-  margin-bottom: 23px;
+.authError{
+  display:none;
+  margin-bottom:15px;
+  padding:11px 13px;
+  border-radius:12px;
+  background:rgba(239,68,68,.13);
+  border:1px solid rgba(239,68,68,.35);
+  color:#ff9b9b;
+  font-size:14px;
+  line-height:1.4;
 }
 
-.authField {
-  margin-bottom: 13px;
+.authError.open{
+  display:block;
 }
 
-.authField label {
-  display: block;
-  font-size: 13px;
-  color: #cfc5da;
-  margin-bottom: 6px;
+.authField{
+  margin-bottom:15px;
 }
 
-.authField input {
-  width: 100%;
-  padding: 13px;
-  border-radius: 11px;
-  border: 1px solid rgba(255,255,255,.12);
-  outline: none;
-  background: rgba(255,255,255,.06);
-  color: white;
+.authField label{
+  display:block;
+  margin-bottom:7px;
+  font-size:13px;
+  color:#d8d0e3;
 }
 
-.authField input:focus {
-  border-color: rgba(139,92,246,.8);
+.authField input{
+  width:100%;
+  height:50px;
+  padding:0 15px;
+  border:1px solid var(--border);
+  border-radius:13px;
+  outline:none;
+  background:#10081d;
+  color:white;
 }
 
-.authButton {
-  width: 100%;
-  padding: 13px;
-  margin-top: 5px;
-  border: 0;
-  border-radius: 12px;
-  background: linear-gradient(135deg,#743cff,#5420b5);
-  color: white;
-  font-weight: bold;
-  cursor: pointer;
+.authField input:focus{
+  border-color:var(--purple);
+  box-shadow:0 0 0 3px rgba(139,92,246,.12);
 }
 
-.authButton:disabled {
-  opacity: .55;
+.authButton{
+  width:100%;
+  height:50px;
+  border:0;
+  border-radius:13px;
+  background:linear-gradient(135deg,#8b5cf6,#6d3eea);
+  color:white;
+  font-weight:700;
 }
 
-.authSwitch {
-  margin-top: 16px;
-  text-align: center;
-  color: #aaa0b5;
-  font-size: 14px;
+.authButton:disabled{
+  opacity:.65;
+  cursor:not-allowed;
 }
 
-.authSwitch button {
-  border: 0;
-  background: none;
-  color: #a978ff;
-  cursor: pointer;
-  font-weight: bold;
+.authSwitch{
+  margin-top:18px;
+  text-align:center;
+  color:var(--muted);
+  font-size:14px;
 }
 
-.authError {
-  display: none;
-  margin-bottom: 12px;
-  padding: 10px;
-  border-radius: 10px;
-  background: rgba(249,115,22,.12);
-  border: 1px solid rgba(249,115,22,.35);
-  color: #ffc5a0;
-  font-size: 13px;
+.authSwitch button{
+  border:0;
+  background:none;
+  color:var(--purple2);
+  font-weight:700;
 }
 
-.authError.open {
-  display: block;
+
+/* =========================
+   APP
+========================= */
+
+#app{
+  min-height:100vh;
 }
 
-/* =====================================================
-   SIDEBAR
-===================================================== */
-
-.sidebar {
-  width: var(--sidebar-w);
-  height: 100vh;
-  flex-shrink: 0;
-  background: rgba(10,5,20,.96);
-  border-right: 1px solid rgba(255,255,255,.08);
-  display: flex;
-  flex-direction: column;
-  position: fixed;
-  left: 0;
-  top: 0;
-  z-index: 30;
+.sidebar{
+  position:fixed;
+  top:0;
+  left:0;
+  bottom:0;
+  width:275px;
+  z-index:1000;
+  display:flex;
+  flex-direction:column;
+  padding:16px;
+  background:#130a20;
+  border-right:1px solid var(--border);
+  transition:transform .25s ease;
 }
 
-.sidebarTop {
-  padding: 15px;
-  border-bottom: 1px solid rgba(255,255,255,.08);
+.sidebarTop{
+  flex:1;
+  min-height:0;
 }
 
-.sidebarLogo {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 19px;
-  font-weight: bold;
-  margin-bottom: 15px;
+.sidebarLogo{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:8px 5px 20px;
+  font-weight:800;
+  font-size:19px;
 }
 
-.sidebarLogo img {
-  width: 38px;
-  height: 38px;
-  object-fit: contain;
-  border-radius: 9px;
+.sidebarLogo img{
+  width:37px;
+  height:37px;
+  object-fit:contain;
+  border-radius:10px;
 }
 
-.newChatSideButton {
-  width: 100%;
-  border: 1px solid rgba(255,255,255,.12);
-  background: rgba(255,255,255,.07);
-  color: white;
-  padding: 11px 13px;
-  border-radius: 11px;
-  cursor: pointer;
-  text-align: left;
+.newChatSideButton{
+  width:100%;
+  padding:12px 14px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:var(--panel2);
+  color:white;
+  text-align:left;
+  font-weight:700;
 }
 
-.newChatSideButton:hover {
-  background: rgba(255,255,255,.12);
+.newChatSideButton:hover{
+  background:#2b1747;
 }
 
-.chatHistory {
-  flex: 1;
-  overflow-y: auto;
-  padding: 12px 9px;
+.chatHistory{
+  overflow-y:auto;
+  margin-top:18px;
+  padding-bottom:10px;
 }
 
-.historyLabel {
-  color: #91879f;
-  font-size: 12px;
-  font-weight: bold;
-  padding: 8px 9px;
-  text-transform: uppercase;
+.historyLabel{
+  padding:0 9px 8px;
+  color:#81768f;
+  font-size:11px;
+  text-transform:uppercase;
+  letter-spacing:.08em;
 }
 
-.chatItem {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  width: 100%;
-  padding: 10px 9px;
-  margin-bottom: 3px;
-  border-radius: 9px;
-  color: #eee;
-  background: transparent;
-  cursor: pointer;
-  text-align: left;
+.chatItem{
+  display:flex;
+  align-items:center;
+  gap:9px;
+  min-height:44px;
+  padding:8px 9px;
+  margin-bottom:4px;
+  border-radius:10px;
+  color:#dcd4e8;
+  cursor:pointer;
 }
 
-.chatItem:hover {
-  background: rgba(255,255,255,.07);
+.chatItem:hover,
+.chatItem.active{
+  background:#26143d;
 }
 
-.chatItem.active {
-  background: rgba(124,60,255,.25);
+.chatItemTitle{
+  flex:1;
+  min-width:0;
+  overflow:hidden;
+  white-space:nowrap;
+  text-overflow:ellipsis;
+  font-size:14px;
 }
 
-.chatItemTitle {
-  flex: 1;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  font-size: 14px;
+.deleteChat{
+  flex:none;
+  border:0;
+  background:none;
+  color:#786d87;
+  font-size:20px;
+  padding:0 3px;
 }
 
-.deleteChat {
-  opacity: 0;
-  border: 0;
-  background: transparent;
-  color: #aaa;
-  cursor: pointer;
-  padding: 3px 5px;
-  border-radius: 6px;
+.deleteChat:hover{
+  color:#ff8e8e;
 }
 
-.chatItem:hover .deleteChat {
-  opacity: 1;
-}
-
-.deleteChat:hover {
-  color: white;
-  background: rgba(255,255,255,.1);
-}
-
-.sidebarBottom {
-  padding: 12px;
-  border-top: 1px solid rgba(255,255,255,.08);
+.sidebarBottom{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  padding-top:12px;
+  border-top:1px solid var(--border);
 }
 
 .sidebarMemoryButton,
-.logoutButton {
-  width: 100%;
-  border: 0;
-  color: white;
-  padding: 10px;
-  border-radius: 10px;
-  cursor: pointer;
+.logoutButton{
+  width:100%;
+  padding:11px 12px;
+  border:0;
+  border-radius:10px;
+  background:transparent;
+  color:#cfc5dc;
+  text-align:left;
 }
 
-.sidebarMemoryButton {
-  background: rgba(255,255,255,.06);
-  margin-bottom: 8px;
+.sidebarMemoryButton:hover,
+.logoutButton:hover{
+  background:#26143d;
 }
 
-.logoutButton {
-  background: rgba(255,80,80,.12);
-  color: #ffb8b8;
+.mainArea{
+  margin-left:275px;
+  min-height:100vh;
 }
 
-/* =====================================================
-   MAIN
-===================================================== */
-
-.mainArea {
-  width: 100%;
-  min-height: 100vh;
-  margin-left: var(--sidebar-w);
+.appInner{
+  min-height:100vh;
 }
 
-.appInner {
-  max-width: 1000px;
-  min-height: 100vh;
-  margin: auto;
-  display: flex;
-  flex-direction: column;
+header{
+  position:sticky;
+  top:0;
+  z-index:50;
+  height:68px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:0 20px;
+  background:rgba(16,8,29,.9);
+  backdrop-filter:blur(15px);
+  border-bottom:1px solid var(--border);
 }
 
-/* =====================================================
-   HEADER
-===================================================== */
-
-header {
-  height: var(--header-h);
-  padding: 0 15px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: rgba(10,5,20,.8);
-  border-bottom: 1px solid rgba(255,255,255,.08);
-  position: sticky;
-  top: 0;
-  z-index: 10;
+.logo{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  font-size:20px;
+  font-weight:bold;
 }
 
-.logo {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 20px;
-  font-weight: bold;
+.logo img{
+  width:42px;
+  height:42px;
+  object-fit:contain;
+  border-radius:10px;
 }
 
-.logo img {
-  width: 42px;
-  height: 42px;
-  object-fit: contain;
-  border-radius: 10px;
+.headerButtons{
+  display:flex;
+  gap:8px;
 }
 
-.headerButtons {
-  display: flex;
-  gap: 7px;
+.headerButtons button,
+#menuButton{
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:8px 12px;
+  background:#1d1030;
+  color:white;
 }
 
-.headerButtons button {
-  border: 1px solid rgba(255,255,255,.1);
-  background: rgba(255,255,255,.07);
-  color: white;
-  padding: 8px 11px;
-  border-radius: 10px;
-  cursor: pointer;
+#menuButton{
+  display:none;
 }
 
-.menuButton {
-  display: none;
+.memoryPanel{
+  display:none;
+  margin:15px auto;
+  max-width:850px;
+  padding:15px;
+  border:1px solid var(--border);
+  border-radius:15px;
+  background:var(--panel);
 }
 
-/* =====================================================
-   MEMORY
-===================================================== */
-
-.memoryPanel {
-  display: none;
-  margin: 10px 15px;
-  padding: 13px;
-  border-radius: 13px;
-  background: rgba(255,255,255,.06);
+.memoryPanel.open{
+  display:block;
 }
 
-.memoryPanel.open {
-  display: block;
+.memoryContent{
+  white-space:pre-wrap;
+  color:#cbc1d5;
+  font-size:14px;
+  line-height:1.6;
 }
 
-.memoryTitle {
-  font-weight: bold;
-  margin-bottom: 7px;
+#chat{
+  width:100%;
+  max-width:900px;
+  margin:0 auto;
+  padding:25px 20px calc(var(--dock-h) + 30px);
 }
 
-.memoryContent {
-  white-space: pre-line;
-  color: #ddd;
-  font-size: 14px;
+.message{
+  display:flex;
+  margin:0 0 18px;
 }
 
-/* =====================================================
-   CHAT
-===================================================== */
-
-#chat {
-  flex: 1;
-  padding: 20px 14px;
-  padding-bottom: calc(var(--dock-h) + 24px);
+.message.user{
+  justify-content:flex-end;
 }
 
-.message {
-  display: flex;
-  margin-bottom: 15px;
-  scroll-margin-top: calc(var(--header-h) + 10px);
+.bubble{
+  max-width:min(78%,700px);
+  padding:12px 15px;
+  border-radius:17px;
+  line-height:1.55;
+  white-space:pre-wrap;
+  overflow-wrap:anywhere;
 }
 
-.message.user {
-  justify-content: flex-end;
+.message.assistant .bubble{
+  background:#211139;
+  border:1px solid var(--border);
 }
 
-.bubble {
-  max-width: 85%;
-  padding: 11px 14px;
-  border-radius: 16px;
-  line-height: 1.5;
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
+.message.user .bubble{
+  background:linear-gradient(135deg,#7546df,#6133c5);
 }
 
-.message.user .bubble {
-  background: linear-gradient(135deg, #743cff, #5020a7);
-  border-bottom-right-radius: 5px;
+
+/* =========================
+   IMAGES
+========================= */
+
+.imageCard{
+  max-width:700px;
+  overflow:hidden;
+  border:1px solid var(--border);
+  border-radius:18px;
+  background:#180d29;
 }
 
-.message.assistant .bubble {
-  background: rgba(255,255,255,.07);
-  border-bottom-left-radius: 5px;
+.imageCard img{
+  display:block;
+  width:100%;
+  max-height:750px;
+  object-fit:contain;
+  background:#08050d;
 }
 
-/* =====================================================
-   IMAGE
-===================================================== */
-
-.imageCard {
-  width: min(100%, 650px);
-  padding: 8px;
-  border-radius: 17px;
-  background: rgba(255,255,255,.06);
+.imageActions{
+  padding:10px;
 }
 
-.imageCard img {
-  width: 100%;
-  display: block;
-  border-radius: 12px;
+.rerenderButton{
+  width:100%;
+  padding:10px;
+  border:1px solid var(--border);
+  border-radius:10px;
+  background:#261441;
+  color:white;
+  font-weight:650;
 }
 
-.imageActions {
-  margin-top: 9px;
+.rerenderButton:hover{
+  background:#332052;
 }
 
-.rerenderButton {
-  border: 0;
-  padding: 10px 15px;
-  border-radius: 11px;
-  background: linear-gradient(135deg, #7d43ff, #5521b7);
-  color: white;
-  font-weight: bold;
-  cursor: pointer;
+.rerenderButton:disabled{
+  opacity:.55;
+  cursor:not-allowed;
 }
 
-.rerenderButton:disabled {
-  opacity: .55;
-}
 
-/* =====================================================
+/* =========================
    DOCK
-===================================================== */
+========================= */
 
-.dock {
-  position: fixed;
-  left: var(--sidebar-w);
-  right: 0;
-  bottom: 0;
-  display: flex;
-  justify-content: center;
-  padding: 10px 10px calc(10px + env(safe-area-inset-bottom));
-  background: linear-gradient(transparent, rgba(8,5,16,.97) 22%);
-  z-index: 7;
+.dock{
+  position:fixed;
+  left:275px;
+  right:0;
+  bottom:0;
+  z-index:100;
+  padding:10px 18px calc(10px + env(safe-area-inset-bottom));
+  background:linear-gradient(
+    to top,
+    rgba(16,8,29,1) 55%,
+    rgba(16,8,29,.88)
+  );
+  backdrop-filter:blur(14px);
 }
 
-.dockInner {
-  width: min(100%, 970px);
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+.dockInner{
+  max-width:900px;
+  margin:auto;
 }
 
-/* =====================================================
+.uploadPreview{
+  display:none;
+  align-items:center;
+  gap:10px;
+  width:max-content;
+  max-width:100%;
+  margin-bottom:8px;
+  padding:7px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:#1d1030;
+}
+
+.uploadPreview.open{
+  display:flex;
+}
+
+.uploadPreviewImage{
+  width:55px;
+  height:55px;
+  border-radius:8px;
+  object-fit:cover;
+}
+
+.removePhoto{
+  border:0;
+  background:none;
+  color:#ff9696;
+  font-size:20px;
+}
+
+.composer{
+  display:flex;
+  align-items:flex-end;
+  gap:7px;
+  padding:7px;
+  border:1px solid rgba(255,255,255,.13);
+  border-radius:17px;
+  background:#1b0e2b;
+  box-shadow:0 10px 35px rgba(0,0,0,.3);
+}
+
+.composer button{
+  flex:none;
+}
+
+.uploadButton,
+.imageButton,
+.sendButton{
+  width:40px;
+  height:40px;
+  border:0;
+  border-radius:11px;
+  background:#291642;
+  color:white;
+}
+
+.sendButton{
+  background:linear-gradient(135deg,#8b5cf6,#6736d0);
+}
+
+.sendButton:disabled{
+  opacity:.5;
+}
+
+.messageInput{
+  flex:1;
+  min-width:0;
+  max-height:140px;
+  min-height:40px;
+  padding:10px 8px;
+  resize:none;
+  outline:none;
+  border:0;
+  background:transparent;
+  color:white;
+  line-height:20px;
+}
+
+.messageInput::placeholder{
+  color:#82778e;
+}
+
+#fileInput{
+  display:none;
+}
+
+
+/* =========================
    PROGRESS
-===================================================== */
+========================= */
 
-.imageProgress {
-  display: none;
-  padding: 14px;
-  border-radius: 14px;
-  background: rgba(36,20,64,.97);
-  border: 1px solid rgba(124,60,255,.3);
+.imageProgress{
+  display:none;
+  max-width:900px;
+  margin:0 auto 9px;
+  padding:11px 13px;
+  border:1px solid rgba(139,92,246,.28);
+  border-radius:13px;
+  background:#1b0e2b;
 }
 
-.imageProgress.open {
-  display: block;
+.imageProgress.open{
+  display:block;
 }
 
-.progressTop {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  margin-bottom: 8px;
+.progressTitle{
+  font-size:13px;
+  font-weight:700;
 }
 
-.progressSpinner {
-  width: 18px;
-  height: 18px;
-  flex-shrink: 0;
-  border: 3px solid rgba(255,255,255,.2);
-  border-top-color: white;
-  border-radius: 50%;
-  animation: spin .8s linear infinite;
+.progressStage{
+  margin-top:3px;
+  color:#a99db8;
+  font-size:12px;
 }
 
-.imageProgress.done .progressSpinner {
-  display: none;
+.progressFillWrap{
+  height:5px;
+  margin-top:9px;
+  overflow:hidden;
+  border-radius:99px;
+  background:#30203f;
 }
 
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
+.progressFill{
+  width:5%;
+  height:100%;
+  border-radius:99px;
+  background:linear-gradient(
+    90deg,
+    #7c3aed,
+    #a78bfa
+  );
+  transition:width .5s ease;
 }
 
-.progressTitle {
-  font-weight: bold;
+
+/* =========================
+   OVERLAY
+========================= */
+
+.sidebarOverlay{
+  display:none;
+  position:fixed;
+  inset:0;
+  z-index:900;
+  background:rgba(0,0,0,.55);
 }
 
-.progressStage {
-  font-size: 13px;
-  color: #d8ccec;
-  margin-bottom: 9px;
+.sidebarOverlay.open{
+  display:block;
 }
 
-.progressBar {
-  height: 7px;
-  background: rgba(255,255,255,.1);
-  border-radius: 10px;
-  overflow: hidden;
-}
 
-.progressFill {
-  height: 100%;
-  width: 5%;
-  background: linear-gradient(90deg,#8b5cff,#c18cff);
-  transition: width .7s ease;
-}
+/* =========================
+   MOBILE
+========================= */
 
-.imageProgress.closing .progressFill {
-  transition: width var(--drain-ms, 1000ms) linear;
-  width: 0 !important;
-}
+@media(max-width:800px){
 
-.imageProgress.failed {
-  border-color: rgba(249,115,22,.6);
-}
-
-.imageProgress.failed .progressFill {
-  background: #f97316;
-}
-
-/* =====================================================
-   UPLOAD
-===================================================== */
-
-.uploadPreview {
-  display: none;
-  align-items: flex-start;
-  gap: 2px;
-  align-self: flex-start;
-}
-
-.uploadPreview.open {
-  display: flex;
-}
-
-.uploadPreview img {
-  width: 75px;
-  height: 75px;
-  object-fit: cover;
-  border-radius: 10px;
-  border: 1px solid rgba(255,255,255,.2);
-}
-
-.removePhoto {
-  border: 0;
-  background: none;
-  color: white;
-  font-size: 34px;
-  line-height: 1;
-  padding: 0 10px;
-  cursor: pointer;
-}
-
-/* =====================================================
-   COMPOSER
-===================================================== */
-
-.composer {
-  display: flex;
-  align-items: flex-end;
-  gap: 7px;
-  padding: 8px;
-  border-radius: 16px;
-  background: rgba(26,15,47,.97);
-  border: 1px solid rgba(255,255,255,.1);
-}
-
-.composer.imageMode {
-  border-color: rgba(139,92,246,.65);
-}
-
-.composer textarea {
-  flex: 1;
-  min-height: 43px;
-  max-height: 140px;
-  resize: none;
-  padding: 11px;
-  border: 0;
-  outline: 0;
-  background: transparent;
-  color: white;
-}
-
-.composer textarea::placeholder {
-  color: #9b91a9;
-}
-
-.actionButton {
-  width: 42px;
-  height: 42px;
-  flex-shrink: 0;
-  border: 0;
-  border-radius: 11px;
-  background: rgba(255,255,255,.08);
-  color: white;
-  cursor: pointer;
-}
-
-.sendButton {
-  background: linear-gradient(135deg,#743cff,#5420b5);
-}
-
-.actionButton:disabled {
-  opacity: .5;
-}
-
-/* =====================================================
-   MOBILE SIDEBAR
-===================================================== */
-
-.sidebarOverlay {
-  display: none;
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,.55);
-  z-index: 25;
-}
-
-.sidebarOverlay.open {
-  display: block;
-}
-
-@media(max-width:700px) {
-
-  .sidebar {
-    transform: translateX(-100%);
-    transition: transform .25s ease;
+  .sidebar{
+    transform:translateX(-100%);
+    width:285px;
+    box-shadow:20px 0 50px rgba(0,0,0,.35);
   }
 
-  .sidebar.open {
-    transform: translateX(0);
+  .sidebar.open{
+    transform:translateX(0);
   }
 
-  .mainArea {
-    margin-left: 0;
+  .mainArea{
+    margin-left:0;
   }
 
-  .dock {
-    left: 0;
+  .dock{
+    left:0;
   }
 
-  .menuButton {
-    display: block;
+  #menuButton{
+    display:block;
+    margin-right:4px;
   }
 
-  .logo span {
-    font-size: 18px;
+  header{
+    padding:0 12px;
+    gap:8px;
   }
 
-  .headerButtons button {
-    padding: 7px 9px;
+  header .logo{
+    font-size:17px;
+    flex:1;
   }
 
-  .bubble {
-    max-width: 92%;
+  header .logo img{
+    width:36px;
+    height:36px;
   }
 
-  #chat {
-    padding-left: 9px;
-    padding-right: 9px;
+  .headerButtons button{
+    padding:8px 9px;
   }
+
+  #memoryButton{
+    display:none;
+  }
+
+  #chat{
+    padding-left:12px;
+    padding-right:12px;
+  }
+
+  .bubble{
+    max-width:88%;
+  }
+
+  .imageCard{
+    width:100%;
+  }
+
+  .authCard{
+    padding:28px 20px;
+  }
+
 }
 
-@media(min-width:701px) {
-
-  .sidebarOverlay {
-    display: none !important;
-  }
-}
 </style>
 </head>
 
 <body>
 
-<!-- =====================================================
-     LOGIN / SIGN UP
-===================================================== -->
+<!-- =================================================
+     AUTH SCREEN
+================================================= -->
 
 <div id="authScreen" class="authScreen">
 
   <div class="authCard">
 
     <div class="authLogo">
-      <img src="IMG_0471.jpeg" alt="Nastivee AI">
+      <img
+        src="IMG_0471.jpeg"
+        alt="Nastivee AI"
+      >
     </div>
 
     <div
@@ -827,244 +816,262 @@ header {
 </div>
 
 
-<div class="app">
+<!-- =================================================
+     APP
+================================================= -->
 
-<!-- =====================================================
-     SIDEBAR
-===================================================== -->
+<div id="app">
 
-<aside id="sidebar" class="sidebar">
+  <!-- SIDEBAR -->
 
-  <div class="sidebarTop">
-
-    <div class="sidebarLogo">
-      <img src="IMG_0471.jpeg" alt="Nastivee AI">
-      <span>Nastivee AI</span>
-    </div>
-
-    <button
-      id="newChatSideButton"
-      class="newChatSideButton"
-    >
-      ＋ New Chat
-    </button>
-
-  </div>
-
-  <div
-    id="chatHistory"
-    class="chatHistory"
-  ></div>
-
-  <div class="sidebarBottom">
-
-    <button
-      id="sidebarMemoryButton"
-      class="sidebarMemoryButton"
-    >
-      🧠 Memory
-    </button>
-
-    <button
-      id="logoutButton"
-      class="logoutButton"
-    >
-      🚪 Log out
-    </button>
-
-  </div>
-
-</aside>
-
-<div
-  id="sidebarOverlay"
-  class="sidebarOverlay"
-></div>
-
-
-<!-- =====================================================
-     MAIN
-===================================================== -->
-
-<div class="mainArea">
-
-<div class="appInner">
-
-<header>
-
-  <div class="logo">
-
-    <button
-      id="menuButton"
-      class="headerButtons button menuButton"
-      style="border:0;background:transparent;color:white;font-size:22px;"
-    >
-      ☰
-    </button>
-
-    <img
-      src="IMG_0471.jpeg"
-      alt="Nastivee AI"
-    >
-
-    <span>Nastivee AI</span>
-
-  </div>
-
-  <div class="headerButtons">
-
-    <button id="memoryButton">
-      🧠 Memory
-    </button>
-
-    <button id="newChatButton">
-      ＋ New
-    </button>
-
-  </div>
-
-</header>
-
-
-<div
-  id="memoryPanel"
-  class="memoryPanel"
->
-
-  <div class="memoryTitle">
-    Long-term memory
-  </div>
-
-  <div
-    id="memoryContent"
-    class="memoryContent"
-  >
-    No saved memories yet.
-  </div>
-
-</div>
-
-
-<main id="chat"></main>
-
-
-<!-- =====================================================
-     DOCK
-===================================================== -->
-
-<div id="dock" class="dock">
-
-<div class="dockInner">
-
-  <div
-    id="uploadPreview"
-    class="uploadPreview"
+  <aside
+    id="sidebar"
+    class="sidebar"
   >
 
-    <img
-      id="uploadPreviewImage"
-      src=""
-      alt="Uploaded image"
-    >
+    <div class="sidebarTop">
 
-    <button
-      id="removePhoto"
-      class="removePhoto"
-      title="Remove photo"
-      aria-label="Remove photo"
-    >
-      ×
-    </button>
+      <div class="sidebarLogo">
 
-  </div>
+        <img
+          src="IMG_0471.jpeg"
+          alt="Nastivee"
+        >
 
+        <span>
+          Nastivee AI
+        </span>
 
-  <div
-    id="imageProgress"
-    class="imageProgress"
-  >
-
-    <div class="progressTop">
-
-      <div class="progressSpinner"></div>
-
-      <div
-        id="progressTitle"
-        class="progressTitle"
-      >
-        Creating your image…
       </div>
 
-    </div>
-
-    <div
-      id="progressStage"
-      class="progressStage"
-    >
-      Preparing…
-    </div>
-
-    <div class="progressBar">
+      <button
+        id="newChatSideButton"
+        class="newChatSideButton"
+      >
+        ＋ New chat
+      </button>
 
       <div
-        id="progressFill"
-        class="progressFill"
+        id="chatHistory"
+        class="chatHistory"
       ></div>
 
     </div>
 
-  </div>
+    <div class="sidebarBottom">
+
+      <button
+        id="sidebarMemoryButton"
+        class="sidebarMemoryButton"
+      >
+        🧠 Memory
+      </button>
+
+      <button
+        id="logoutButton"
+        class="logoutButton"
+      >
+        ↪ Log out
+      </button>
+
+    </div>
+
+  </aside>
 
 
   <div
-    id="composer"
-    class="composer"
-  >
+    id="sidebarOverlay"
+    class="sidebarOverlay"
+  ></div>
 
-    <button
-      id="uploadButton"
-      class="actionButton"
-      title="Upload image"
-    >
-      📷
-    </button>
 
-    <button
-      id="imageButton"
-      class="actionButton"
-      title="Image mode"
-    >
-      🎨
-    </button>
+  <!-- MAIN -->
 
-    <textarea
-      id="messageInput"
-      placeholder="Message Nastivee…"
-      rows="1"
-    ></textarea>
+  <main class="mainArea">
 
-    <button
-      id="sendButton"
-      class="actionButton sendButton"
-      title="Send"
-    >
-      ➤
-    </button>
+    <div class="appInner">
 
-    <input
-      id="fileInput"
-      type="file"
-      accept="image/*"
-      hidden
-    >
+      <header>
 
-  </div>
+        <button
+          id="menuButton"
+          type="button"
+        >
+          ☰
+        </button>
+
+        <div class="logo">
+
+          <img
+            src="IMG_0471.jpeg"
+            alt="Nastivee AI"
+          >
+
+          <span>
+            Nastivee AI
+          </span>
+
+        </div>
+
+        <div class="headerButtons">
+
+          <button
+            id="memoryButton"
+            type="button"
+          >
+            🧠 Memory
+          </button>
+
+          <button
+            id="newChatButton"
+            type="button"
+          >
+            ＋ New
+          </button>
+
+        </div>
+
+      </header>
+
+
+      <div
+        id="memoryPanel"
+        class="memoryPanel"
+      >
+
+        <div
+          id="memoryContent"
+          class="memoryContent"
+        >
+          No saved memories yet.
+        </div>
+
+      </div>
+
+
+      <main id="chat"></main>
+
+
+      <!-- DOCK -->
+
+      <div
+        id="dock"
+        class="dock"
+      >
+
+        <div class="dockInner">
+
+          <div
+            id="uploadPreview"
+            class="uploadPreview"
+          >
+
+            <img
+              id="uploadPreviewImage"
+              class="uploadPreviewImage"
+              alt="Uploaded image"
+            >
+
+            <button
+              id="removePhoto"
+              class="removePhoto"
+              type="button"
+            >
+              ×
+            </button>
+
+          </div>
+
+
+          <div
+            id="imageProgress"
+            class="imageProgress"
+          >
+
+            <div
+              id="progressTitle"
+              class="progressTitle"
+            >
+              Creating your image…
+            </div>
+
+            <div
+              id="progressStage"
+              class="progressStage"
+            >
+              Preparing your request…
+            </div>
+
+            <div class="progressFillWrap">
+
+              <div
+                id="progressFill"
+                class="progressFill"
+              ></div>
+
+            </div>
+
+          </div>
+
+
+          <div
+            id="composer"
+            class="composer"
+          >
+
+            <button
+              id="uploadButton"
+              class="uploadButton"
+              type="button"
+              title="Upload image"
+            >
+              📎
+            </button>
+
+            <button
+              id="imageButton"
+              class="imageButton"
+              type="button"
+              title="Image mode"
+            >
+              🎨
+            </button>
+
+            <textarea
+              id="messageInput"
+              class="messageInput"
+              rows="1"
+              placeholder="Message Nastivee…"
+            ></textarea>
+
+            <button
+              id="sendButton"
+              class="sendButton"
+              type="button"
+              title="Send"
+            >
+              ➤
+            </button>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </main>
 
 </div>
-</div>
 
-</div>
-</div>
+
+<input
+  id="fileInput"
+  type="file"
+  accept="image/*"
+>
+
 
 <script>
 
@@ -1078,11 +1085,7 @@ const SUPABASE_URL =
 const SUPABASE_KEY =
   'sb_publishable_kNUxEr43Kp5qVC4Evxgz0A_iCTLw7GB';
 
-const supabaseClient =
-  window.supabase.createClient(
-    SUPABASE_URL,
-    SUPABASE_KEY
-  );
+let supabaseClient = null;
 
 
 /* =====================================================
@@ -1106,13 +1109,31 @@ const MEMORY_KEY =
 
 
 /* =====================================================
+   SUPABASE INITIALISE
+===================================================== */
+
+if (
+  window.supabase &&
+  typeof window.supabase.createClient === 'function'
+) {
+
+  supabaseClient =
+    window.supabase.createClient(
+      SUPABASE_URL,
+      SUPABASE_KEY
+    );
+
+}
+
+
+/* =====================================================
    STATE
 ===================================================== */
 
 let chats = [];
 let activeChatId = null;
-
 let conversation = [];
+
 let memory = {};
 
 let imageMode = false;
@@ -1130,6 +1151,7 @@ let currentUser = null;
 let authMode = 'login';
 
 let cloudSyncBusy = false;
+let userInitialising = false;
 
 
 /* =====================================================
@@ -1243,38 +1265,41 @@ const chatHistory =
 
 
 /* =====================================================
-   AUTH UI
+   AUTH ERROR
 ===================================================== */
 
-function showAuthError(message) {
+function showAuthError(message){
 
   authError.textContent =
     message || 'Something went wrong.';
 
-  authError.classList.add(
-    'open'
-  );
+  authError.classList.add('open');
 
 }
 
 
-function clearAuthError() {
+function clearAuthError(){
 
-  authError.textContent =
-    '';
+  authError.textContent = '';
 
-  authError.classList.remove(
-    'open'
-  );
+  authError.classList.remove('open');
 
 }
 
 
-function updateAuthMode() {
+/* =====================================================
+   AUTH MODE
+===================================================== */
 
-  clearAuthError();
+function updateAuthMode(
+  clearError = true
+){
 
-  if (authMode === 'login') {
+  if(clearError){
+    clearAuthError();
+  }
+
+  if(authMode === 'login'){
 
     authTitle.textContent =
       'Welcome to Nastivee';
@@ -1294,7 +1319,7 @@ function updateAuthMode() {
     authPassword.autocomplete =
       'current-password';
 
-  } else {
+  }else{
 
     authTitle.textContent =
       'Create your Nastivee account';
@@ -1319,9 +1344,13 @@ function updateAuthMode() {
 }
 
 
+/* =====================================================
+   AUTH SWITCH
+===================================================== */
+
 authSwitchButton.addEventListener(
   'click',
-  () => {
+  function(){
 
     authMode =
       authMode === 'login'
@@ -1334,9 +1363,24 @@ authSwitchButton.addEventListener(
 );
 
 
-async function handleAuthSubmit() {
+/* =====================================================
+   AUTH SUBMIT
+===================================================== */
+
+async function handleAuthSubmit(){
 
   clearAuthError();
+
+  if(!supabaseClient){
+
+    showAuthError(
+      'Nastivee could not load its login service. Please refresh the page.'
+    );
+
+    return;
+
+  }
+
 
   const email =
     authEmail.value.trim();
@@ -1345,7 +1389,7 @@ async function handleAuthSubmit() {
     authPassword.value;
 
 
-  if (!email || !password) {
+  if(!email || !password){
 
     showAuthError(
       'Please enter your email and password.'
@@ -1356,7 +1400,7 @@ async function handleAuthSubmit() {
   }
 
 
-  if (password.length < 6) {
+  if(password.length < 6){
 
     showAuthError(
       'Your password must be at least 6 characters.'
@@ -1367,8 +1411,7 @@ async function handleAuthSubmit() {
   }
 
 
-  authSubmit.disabled =
-    true;
+  authSubmit.disabled = true;
 
   authSubmit.textContent =
     authMode === 'login'
@@ -1376,9 +1419,9 @@ async function handleAuthSubmit() {
       : 'Creating account…';
 
 
-  try {
+  try{
 
-    if (authMode === 'login') {
+    if(authMode === 'login'){
 
       const result =
         await supabaseClient.auth.signInWithPassword({
@@ -1387,8 +1430,17 @@ async function handleAuthSubmit() {
         });
 
 
-      if (result.error) {
+      if(result.error){
         throw result.error;
+      }
+
+
+      if(!result.data?.session){
+
+        throw new Error(
+          'Login succeeded but no session was returned. Please try again.'
+        );
+
       }
 
 
@@ -1396,9 +1448,12 @@ async function handleAuthSubmit() {
         result.data.user;
 
 
-      await initialiseUser();
+      await initialiseUser(
+        currentUser
+      );
 
-    } else {
+
+    }else{
 
       const result =
         await supabaseClient.auth.signUp({
@@ -1407,41 +1462,105 @@ async function handleAuthSubmit() {
         });
 
 
-      if (result.error) {
+      if(result.error){
         throw result.error;
       }
 
 
-      if (result.data.session) {
+      if(result.data?.session){
 
         currentUser =
           result.data.user;
 
-        await initialiseUser();
+        await initialiseUser(
+          currentUser
+        );
 
-      } else {
+      }else{
 
         showAuthError(
-          'Account created. Check your email to confirm your account, then log in.'
+          'Account created. Check your email and click the confirmation link before logging in.'
         );
 
       }
 
     }
 
-  } catch (error) {
+  }catch(error){
 
-    showAuthError(
-      error.message ||
-      'Authentication failed.'
+    console.error(
+      'NASTIVEE AUTH ERROR:',
+      error
     );
 
-  } finally {
+
+    let message =
+      error?.message ||
+      'Authentication failed.';
+
+
+    const lower =
+      message.toLowerCase();
+
+
+    if(
+      lower.includes(
+        'email not confirmed'
+      )
+    ){
+
+      message =
+        'Your email has not been confirmed yet. Check your email for the Supabase confirmation link.';
+
+    }
+
+
+    if(
+      lower.includes(
+        'invalid login credentials'
+      )
+    ){
+
+      message =
+        'The email or password is incorrect.';
+
+    }
+
+
+    if(
+      lower.includes(
+        'user already registered'
+      )
+    ){
+
+      message =
+        'An account with this email already exists. Try logging in instead.';
+
+    }
+
+
+    showAuthError(
+      message
+    );
+
+  }finally{
 
     authSubmit.disabled =
       false;
 
-    updateAuthMode();
+    /*
+       Do NOT call updateAuthMode()
+       here because it clears errors.
+    */
+
+    if(!currentUser){
+
+      authSubmit.textContent =
+        authMode === 'login'
+          ? 'Log in'
+          : 'Create account';
+
+    }
 
   }
 
@@ -1456,9 +1575,9 @@ authSubmit.addEventListener(
 
 authPassword.addEventListener(
   'keydown',
-  event => {
+  function(event){
 
-    if (event.key === 'Enter') {
+    if(event.key === 'Enter'){
 
       event.preventDefault();
 
@@ -1470,39 +1589,60 @@ authPassword.addEventListener(
 );
 
 
-async function logout() {
+/* =====================================================
+   LOGOUT
+===================================================== */
 
-  if (chatBusy || imageBusy) {
+async function logout(){
+
+  if(
+    chatBusy ||
+    imageBusy
+  ){
     return;
   }
 
-  await supabaseClient.auth.signOut();
 
-  currentUser =
-    null;
+  try{
 
-  chats =
-    [];
+    if(supabaseClient){
 
-  activeChatId =
-    null;
+      await supabaseClient.auth.signOut();
 
-  conversation =
-    [];
+    }
 
-  memory =
-    {};
+  }catch(error){
 
-  chat.innerHTML =
-    '';
+    console.warn(
+      'Logout error:',
+      error
+    );
 
-  renderChatHistory();
+  }
 
-  renderMemory();
+
+  currentUser = null;
+  chats = [];
+  activeChatId = null;
+  conversation = [];
+  memory = {};
+
+  chat.innerHTML = '';
+
+  authEmail.value = '';
+  authPassword.value = '';
+
+  authMode = 'login';
+
+  updateAuthMode();
 
   authScreen.classList.remove(
     'hidden'
   );
+
+  loadLocalChats();
+  renderChatHistory();
+  renderMemory();
 
 }
 
@@ -1514,47 +1654,211 @@ logoutButton.addEventListener(
 
 
 /* =====================================================
-   CLOUD MEMORY
+   LOCAL MEMORY
 ===================================================== */
 
-async function loadCloudMemory() {
+function loadLocalMemory(){
 
-  if (!currentUser) {
+  try{
+
+    memory =
+      JSON.parse(
+        localStorage.getItem(
+          MEMORY_KEY
+        )
+      ) || {};
+
+  }catch{
+
+    memory = {};
+
+  }
+
+}
+
+
+function saveMemory(){
+
+  try{
+
+    localStorage.setItem(
+      MEMORY_KEY,
+      JSON.stringify(memory)
+    );
+
+  }catch(error){
+
+    console.warn(
+      'Memory local save failed:',
+      error
+    );
+
+  }
+
+  saveCloudMemory();
+
+}
+
+
+function extractMemory(text){
+
+  if(!text){
     return;
   }
 
-  try {
+
+  let match;
+
+
+  match =
+    text.match(
+      /my\s+(?:dog|dogs|puppy)(?:'s)?\s+(?:name\s+is|is called|is named)\s+([A-Za-z][A-Za-z0-9_-]{1,30})/i
+    );
+
+
+  if(match){
+
+    memory.dogName =
+      match[1];
+
+  }
+
+
+  match =
+    text.match(
+      /my\s+name\s+is\s+([A-Za-z][A-Za-z0-9_-]{1,30})/i
+    );
+
+
+  if(match){
+
+    memory.userName =
+      match[1];
+
+  }
+
+
+  match =
+    text.match(
+      /(?:my\s+dog|my\s+puppy)\s+is\s+a\s+([A-Za-z][A-Za-z -]{2,30})/i
+    );
+
+
+  if(match){
+
+    memory.dogBreed =
+      match[1].trim();
+
+  }
+
+
+  saveMemory();
+  renderMemory();
+
+}
+
+
+function renderMemory(){
+
+  const entries = [];
+
+
+  if(memory.userName){
+
+    entries.push(
+      `Your name: ${memory.userName}`
+    );
+
+  }
+
+
+  if(memory.dogName){
+
+    entries.push(
+      `Dog's name: ${memory.dogName}`
+    );
+
+  }
+
+
+  if(memory.dogBreed){
+
+    entries.push(
+      `Dog breed: ${memory.dogBreed}`
+    );
+
+  }
+
+
+  memoryContent.textContent =
+    entries.length
+      ? entries.join('\n')
+      : 'No saved memories yet.';
+
+}
+
+
+/* =====================================================
+   CLOUD MEMORY
+===================================================== */
+
+async function loadCloudMemory(){
+
+  if(!currentUser){
+    return;
+  }
+
+
+  try{
 
     const result =
       await supabaseClient
         .from('profiles')
         .select('memory')
-        .eq('id', currentUser.id)
+        .eq(
+          'id',
+          currentUser.id
+        )
         .maybeSingle();
 
 
-    if (
-      !result.error &&
+    if(result.error){
+
+      console.warn(
+        'Cloud memory unavailable:',
+        result.error.message
+      );
+
+      return;
+
+    }
+
+
+    if(
       result.data &&
       result.data.memory
-    ) {
+    ){
 
       memory =
         result.data.memory;
 
-      localStorage.setItem(
-        MEMORY_KEY,
-        JSON.stringify(memory)
-      );
+      try{
+
+        localStorage.setItem(
+          MEMORY_KEY,
+          JSON.stringify(memory)
+        );
+
+      }catch{}
 
       renderMemory();
 
     }
 
-  } catch (error) {
+  }catch(error){
 
     console.warn(
-      'Cloud memory load failed:',
+      'Cloud memory failed:',
       error
     );
 
@@ -1563,24 +1867,34 @@ async function loadCloudMemory() {
 }
 
 
-async function saveCloudMemory() {
+async function saveCloudMemory(){
 
-  if (!currentUser) {
+  if(!currentUser){
     return;
   }
 
-  try {
 
-    await supabaseClient
-      .from('profiles')
-      .upsert({
-        id:
-          currentUser.id,
+  try{
 
-        memory
-      });
+    const result =
+      await supabaseClient
+        .from('profiles')
+        .upsert({
+          id:currentUser.id,
+          memory
+        });
 
-  } catch (error) {
+
+    if(result.error){
+
+      console.warn(
+        'Cloud memory save failed:',
+        result.error.message
+      );
+
+    }
+
+  }catch(error){
 
     console.warn(
       'Cloud memory save failed:',
@@ -1593,12 +1907,15 @@ async function saveCloudMemory() {
 
 
 /* =====================================================
-   CHAT STORAGE
+   CHAT OBJECT
 ===================================================== */
 
-function createChat(title = 'New chat') {
+function createChat(
+  title = 'New chat'
+){
 
-  return {
+  return{
+
     id:
       crypto.randomUUID(),
 
@@ -1610,15 +1927,20 @@ function createChat(title = 'New chat') {
     updatedAt:
       Date.now(),
 
-    messages: []
+    messages:[]
+
   };
 
 }
 
 
-function saveChats() {
+/* =====================================================
+   LOCAL CHAT STORAGE
+===================================================== */
 
-  try {
+function saveChats(){
+
+  try{
 
     localStorage.setItem(
       CHATS_KEY,
@@ -1630,10 +1952,10 @@ function saveChats() {
       activeChatId || ''
     );
 
-  } catch (error) {
+  }catch(error){
 
     console.warn(
-      'Could not save chats:',
+      'Chat storage failed:',
       error
     );
 
@@ -1642,32 +1964,39 @@ function saveChats() {
 }
 
 
-function loadLocalChats() {
+function loadLocalChats(){
 
-  try {
+  try{
 
     const stored =
-      localStorage.getItem(CHATS_KEY);
+      localStorage.getItem(
+        CHATS_KEY
+      );
 
-    if (stored) {
 
-      chats =
-        JSON.parse(stored);
+    chats =
+      stored
+        ? JSON.parse(stored)
+        : [];
 
-    }
-
-  } catch {
+  }catch{
 
     chats = [];
 
   }
 
 
-  if (!chats.length) {
+  if(!Array.isArray(chats)){
+    chats = [];
+  }
+
+
+  if(!chats.length){
 
     let oldConversation = [];
 
-    try {
+
+    try{
 
       oldConversation =
         JSON.parse(
@@ -1676,14 +2005,14 @@ function loadLocalChats() {
           )
         ) || [];
 
-    } catch {
+    }catch{
 
       oldConversation = [];
 
     }
 
 
-    if (oldConversation.length) {
+    if(oldConversation.length){
 
       const migrated =
         createChat(
@@ -1699,12 +2028,10 @@ function loadLocalChats() {
         migrated
       );
 
-    } else {
+    }else{
 
       chats.push(
-        createChat(
-          'New chat'
-        )
+        createChat()
       );
 
     }
@@ -1718,13 +2045,13 @@ function loadLocalChats() {
     );
 
 
-  if (
+  if(
     !activeChatId ||
     !chats.some(
-      item =>
-        item.id === activeChatId
+      c =>
+        c.id === activeChatId
     )
-  ) {
+  ){
 
     activeChatId =
       chats[0].id;
@@ -1738,17 +2065,17 @@ function loadLocalChats() {
 
 
 /* =====================================================
-   CLOUD CHAT LOADING
+   CLOUD CHATS
 ===================================================== */
 
-async function loadCloudChats() {
+async function loadCloudChats(){
 
-  if (!currentUser) {
+  if(!currentUser){
     return;
   }
 
 
-  const chatsResult =
+  const result =
     await supabaseClient
       .from('chats')
       .select('*')
@@ -1759,44 +2086,28 @@ async function loadCloudChats() {
       .order(
         'updated_at',
         {
-          ascending:
-            false
+          ascending:false
         }
       );
 
 
-  if (chatsResult.error) {
+  if(result.error){
 
-    console.error(
-      'Could not load chats:',
-      chatsResult.error
-    );
-
-    return;
+    throw result.error;
 
   }
 
 
   const cloudChats =
-    chatsResult.data || [];
+    result.data || [];
 
 
-  if (!cloudChats.length) {
+  if(!cloudChats.length){
 
-    if (!chats.length) {
-
-      chats.push(
-        createChat(
-          'New chat'
-        )
-      );
-
-    }
-
-    for (
+    for(
       const localChat
       of chats
-    ) {
+    ){
 
       await uploadChat(
         localChat
@@ -1804,81 +2115,86 @@ async function loadCloudChats() {
 
     }
 
-  } else {
-
-    const loadedChats = [];
-
-
-    for (
-      const cloudChat
-      of cloudChats
-    ) {
-
-      const messagesResult =
-        await supabaseClient
-          .from('messages')
-          .select('*')
-          .eq(
-            'chat_id',
-            cloudChat.id
-          )
-          .eq(
-            'user_id',
-            currentUser.id
-          )
-          .order(
-            'created_at',
-            {
-              ascending:
-                true
-            }
-          );
-
-
-      const messages =
-        messagesResult.data || [];
-
-
-      loadedChats.push({
-        id:
-          cloudChat.id,
-
-        title:
-          cloudChat.title ||
-          'New chat',
-
-        createdAt:
-          new Date(
-            cloudChat.created_at
-          ).getTime(),
-
-        updatedAt:
-          new Date(
-            cloudChat.updated_at
-          ).getTime(),
-
-        messages:
-          messages.map(
-            message => ({
-              role:
-                message.role,
-
-              type:
-                message.type,
-
-              content:
-                message.content
-            })
-          )
-      });
-
-    }
-
-
-    chats =
-      loadedChats;
+    return;
 
   }
+
+
+  const loaded = [];
+
+
+  for(
+    const cloudChat
+    of cloudChats
+  ){
+
+    const messageResult =
+      await supabaseClient
+        .from('messages')
+        .select('*')
+        .eq(
+          'chat_id',
+          cloudChat.id
+        )
+        .eq(
+          'user_id',
+          currentUser.id
+        )
+        .order(
+          'created_at',
+          {
+            ascending:true
+          }
+        );
+
+
+    const cloudMessages =
+      messageResult.data || [];
+
+
+    loaded.push({
+
+      id:
+        cloudChat.id,
+
+      title:
+        cloudChat.title ||
+        'New chat',
+
+      createdAt:
+        new Date(
+          cloudChat.created_at
+        ).getTime(),
+
+      updatedAt:
+        new Date(
+          cloudChat.updated_at
+        ).getTime(),
+
+      messages:
+        cloudMessages.map(
+          m => ({
+
+            role:
+              m.role,
+
+            type:
+              m.type ||
+              'text',
+
+            content:
+              m.content
+
+          })
+        )
+
+    });
+
+  }
+
+
+  chats =
+    loaded;
 
 
   activeChatId =
@@ -1886,15 +2202,9 @@ async function loadCloudChats() {
     null;
 
 
-  if (activeChatId) {
-
-    const active =
-      getActiveChat();
-
-    conversation =
-      active?.messages || [];
-
-  }
+  conversation =
+    getActiveChat()?.messages ||
+    [];
 
 
   saveChats();
@@ -1909,23 +2219,15 @@ async function loadCloudChats() {
 
 
 /* =====================================================
-   CLOUD CHAT SAVE
+   CLOUD UPLOAD
 ===================================================== */
 
 async function uploadChat(
   chatObject
-) {
+){
 
-  if (!currentUser) {
+  if(!currentUser){
     return;
-  }
-
-
-  if (!chatObject.id) {
-
-    chatObject.id =
-      crypto.randomUUID();
-
   }
 
 
@@ -1933,6 +2235,7 @@ async function uploadChat(
     await supabaseClient
       .from('chats')
       .upsert({
+
         id:
           chatObject.id,
 
@@ -1954,29 +2257,16 @@ async function uploadChat(
             chatObject.updatedAt ||
             Date.now()
           ).toISOString()
+
       });
 
 
-  if (chatResult.error) {
+  if(chatResult.error){
 
-    console.error(
-      'Chat cloud save failed:',
-      chatResult.error
-    );
-
-    return;
+    throw chatResult.error;
 
   }
 
-
-  /*
-     Remove existing messages and
-     replace them with the current
-     conversation.
-
-     This keeps cloud history
-     straightforward and reliable.
-  */
 
   await supabaseClient
     .from('messages')
@@ -1995,6 +2285,7 @@ async function uploadChat(
     (chatObject.messages || [])
       .map(
         message => ({
+
           chat_id:
             chatObject.id,
 
@@ -2002,8 +2293,7 @@ async function uploadChat(
             currentUser.id,
 
           role:
-            message.role ||
-            'assistant',
+            message.role,
 
           type:
             message.type ||
@@ -2012,13 +2302,14 @@ async function uploadChat(
           content:
             message.content ||
             ''
+
         })
       );
 
 
-  if (messages.length) {
+  if(messages.length){
 
-    const messageResult =
+    const result =
       await supabaseClient
         .from('messages')
         .insert(
@@ -2026,11 +2317,11 @@ async function uploadChat(
         );
 
 
-    if (messageResult.error) {
+    if(result.error){
 
-      console.error(
-        'Message cloud save failed:',
-        messageResult.error
+      console.warn(
+        'Message upload failed:',
+        result.error
       );
 
     }
@@ -2040,12 +2331,12 @@ async function uploadChat(
 }
 
 
-async function syncActiveChat() {
+async function syncActiveChat(){
 
-  if (
+  if(
     !currentUser ||
     cloudSyncBusy
-  ) {
+  ){
     return;
   }
 
@@ -2053,16 +2344,16 @@ async function syncActiveChat() {
   const current =
     getActiveChat();
 
-  if (!current) {
+
+  if(!current){
     return;
   }
 
 
-  cloudSyncBusy =
-    true;
+  cloudSyncBusy = true;
 
 
-  try {
+  try{
 
     await uploadChat(
       current
@@ -2070,118 +2361,18 @@ async function syncActiveChat() {
 
     await saveCloudMemory();
 
-  } catch (error) {
+  }catch(error){
 
     console.warn(
       'Cloud sync failed:',
       error
     );
 
-  } finally {
+  }finally{
 
-    cloudSyncBusy =
-      false;
-
-  }
-
-}
-
-
-async function deleteCloudChat(
-  id
-) {
-
-  if (!currentUser) {
-    return;
-  }
-
-
-  try {
-
-    await supabaseClient
-      .from('messages')
-      .delete()
-      .eq(
-        'chat_id',
-        id
-      )
-      .eq(
-        'user_id',
-        currentUser.id
-      );
-
-
-    await supabaseClient
-      .from('chats')
-      .delete()
-      .eq(
-        'id',
-        id
-      )
-      .eq(
-        'user_id',
-        currentUser.id
-      );
-
-  } catch (error) {
-
-    console.warn(
-      'Cloud chat deletion failed:',
-      error
-    );
+    cloudSyncBusy = false;
 
   }
-
-}
-
-
-/* =====================================================
-   INITIALISE USER
-===================================================== */
-
-async function initialiseUser() {
-
-  authScreen.classList.add(
-    'hidden'
-  );
-
-
-  try {
-
-    await loadCloudMemory();
-
-    await loadCloudChats();
-
-  } catch (error) {
-
-    console.error(
-      'User initialisation failed:',
-      error
-    );
-
-    loadLocalChats();
-
-    const active =
-      getActiveChat();
-
-    if (active) {
-
-      conversation =
-        active.messages || [];
-
-    }
-
-    chat.innerHTML =
-      '';
-
-    renderChatHistory();
-
-    restoreConversation();
-
-  }
-
-
-  updateDockHeight();
 
 }
 
@@ -2190,33 +2381,38 @@ async function initialiseUser() {
    CHAT TITLE
 ===================================================== */
 
-function makeChatTitle(messages) {
+function makeChatTitle(
+  messages
+){
 
-  const firstUserMessage =
+  const first =
     messages.find(
-      message =>
-        message.role === 'user' &&
-        typeof message.content === 'string'
+      m =>
+        m.role === 'user' &&
+        typeof m.content === 'string'
     );
 
 
-  if (!firstUserMessage) {
+  if(!first){
     return 'New chat';
   }
 
 
   let title =
-    firstUserMessage.content
-      .replace(/\s+/g, ' ')
+    first.content
+      .replace(
+        /\s+/g,
+        ' '
+      )
       .trim();
 
 
-  if (!title) {
+  if(!title){
     return 'New chat';
   }
 
 
-  if (title.length > 32) {
+  if(title.length > 32){
 
     title =
       title.substring(
@@ -2232,12 +2428,15 @@ function makeChatTitle(messages) {
 }
 
 
-function updateChatTitle() {
+function updateChatTitle(){
 
   const current =
     getActiveChat();
 
-  if (!current) return;
+
+  if(!current){
+    return;
+  }
 
 
   const title =
@@ -2246,7 +2445,7 @@ function updateChatTitle() {
     );
 
 
-  if (title !== 'New chat') {
+  if(title !== 'New chat'){
 
     current.title =
       title;
@@ -2260,26 +2459,30 @@ function updateChatTitle() {
    ACTIVE CHAT
 ===================================================== */
 
-function getActiveChat() {
+function getActiveChat(){
 
   return chats.find(
-    item =>
-      item.id === activeChatId
+    c =>
+      c.id === activeChatId
   );
 
 }
 
 
-function saveActiveConversation() {
+function saveActiveConversation(){
 
   const current =
     getActiveChat();
 
-  if (!current) return;
+
+  if(!current){
+    return;
+  }
 
 
   current.messages =
     conversation;
+
 
   current.updatedAt =
     Date.now();
@@ -2297,267 +2500,40 @@ function saveActiveConversation() {
 
 
 /* =====================================================
-   LOAD CHAT
+   CHAT HISTORY UI
 ===================================================== */
 
-function openChat(id) {
+function renderChatHistory(){
 
-  if (
-    chatBusy ||
-    imageBusy
-  ) {
-    return;
-  }
-
-
-  const selected =
-    chats.find(
-      item =>
-        item.id === id
-    );
-
-
-  if (!selected) return;
-
-
-  activeChatId =
-    id;
-
-  conversation =
-    selected.messages || [];
-
-  messageCount =
-    0;
-
-  selectedPhoto =
-    null;
-
-  fileInput.value =
-    '';
-
-  uploadPreview.classList.remove(
-    'open'
-  );
-
-
-  setImageMode(
-    false
-  );
-
-
-  chat.innerHTML =
-    '';
-
-  restoreConversation();
-
-  saveChats();
-
-  renderChatHistory();
-
-  closeSidebar();
-
-}
-
-
-function createNewChat() {
-
-  if (
-    chatBusy ||
-    imageBusy
-  ) {
-    return;
-  }
-
-
-  const newChat =
-    createChat();
-
-
-  chats.unshift(
-    newChat
-  );
-
-
-  activeChatId =
-    newChat.id;
-
-  conversation =
-    [];
-
-  messageCount =
-    0;
-
-  selectedPhoto =
-    null;
-
-  fileInput.value =
-    '';
-
-  uploadPreview.classList.remove(
-    'open'
-  );
-
-
-  setImageMode(
-    false
-  );
-
-
-  chat.innerHTML =
-    '';
-
-
-  addMessage(
-    'assistant',
-    'Hi 👋 I’m Nastivee. What would you like to do?',
-    {
-      silent:
-        true
-    }
-  );
-
-
-  saveActiveConversation();
-
-  renderChatHistory();
-
-  closeSidebar();
-
-}
-
-
-/* =====================================================
-   DELETE CHAT
-===================================================== */
-
-function deleteChat(
-  id,
-  event
-) {
-
-  event.stopPropagation();
-
-
-  if (
-    chatBusy ||
-    imageBusy
-  ) {
-    return;
-  }
-
-
-  deleteCloudChat(
-    id
-  );
-
-
-  if (chats.length === 1) {
-
-    chats[0] =
-      createChat();
-
-
-    activeChatId =
-      chats[0].id;
-
-    conversation =
-      [];
-
-    chat.innerHTML =
-      '';
-
-    messageCount =
-      0;
-
-
-    addMessage(
-      'assistant',
-      'Hi 👋 I’m Nastivee. What would you like to do?',
-      {
-        silent:
-          true
-      }
-    );
-
-
-    saveActiveConversation();
-
-  } else {
-
-    chats =
-      chats.filter(
-        item =>
-          item.id !== id
-      );
-
-
-    if (
-      activeChatId === id
-    ) {
-
-      activeChatId =
-        chats[0].id;
-
-      conversation =
-        chats[0].messages || [];
-
-      chat.innerHTML =
-        '';
-
-      messageCount =
-        0;
-
-      restoreConversation();
-
-    }
-
-    saveChats();
-
-  }
-
-
-  renderChatHistory();
-
-}
-
-
-/* =====================================================
-   RENDER SIDEBAR
-===================================================== */
-
-function renderChatHistory() {
-
-  chatHistory.innerHTML =
-    '';
-
-
-  if (!chats.length) {
-    return;
-  }
+  chatHistory.innerHTML = '';
 
 
   const sorted =
     [...chats].sort(
-      (a, b) =>
+      (a,b) =>
         b.updatedAt -
         a.updatedAt
     );
 
 
-  const label =
-    document.createElement(
-      'div'
+  if(sorted.length){
+
+    const label =
+      document.createElement(
+        'div'
+      );
+
+    label.className =
+      'historyLabel';
+
+    label.textContent =
+      'Chats';
+
+    chatHistory.appendChild(
+      label
     );
 
-  label.className =
-    'historyLabel';
-
-  label.textContent =
-    'Chats';
-
-  chatHistory.appendChild(
-    label
-  );
+  }
 
 
   sorted.forEach(
@@ -2572,9 +2548,9 @@ function renderChatHistory() {
         'chatItem';
 
 
-      if (
+      if(
         item.id === activeChatId
-      ) {
+      ){
 
         row.classList.add(
           'active'
@@ -2605,28 +2581,32 @@ function renderChatHistory() {
         'New chat';
 
 
-      const deleteButton =
+      const del =
         document.createElement(
           'button'
         );
 
-      deleteButton.className =
+      del.className =
         'deleteChat';
 
-      deleteButton.textContent =
+      del.textContent =
         '×';
 
-      deleteButton.title =
+      del.title =
         'Delete chat';
 
 
-      deleteButton.addEventListener(
+      del.addEventListener(
         'click',
-        event =>
+        function(event){
+
+          event.stopPropagation();
+
           deleteChat(
-            item.id,
-            event
-          )
+            item.id
+          );
+
+        }
       );
 
 
@@ -2639,16 +2619,19 @@ function renderChatHistory() {
       );
 
       row.appendChild(
-        deleteButton
+        del
       );
 
 
       row.addEventListener(
         'click',
-        () =>
+        function(){
+
           openChat(
             item.id
-          )
+          );
+
+        }
       );
 
 
@@ -2663,234 +2646,262 @@ function renderChatHistory() {
 
 
 /* =====================================================
-   MEMORY
+   OPEN CHAT
 ===================================================== */
 
-function loadLocalMemory() {
+function openChat(id){
 
-  try {
-
-    memory =
-      JSON.parse(
-        localStorage.getItem(
-          MEMORY_KEY
-        )
-      ) || {};
-
-  } catch {
-
-    memory =
-      {};
-
-  }
-
-}
-
-
-function saveMemory() {
-
-  try {
-
-    localStorage.setItem(
-      MEMORY_KEY,
-      JSON.stringify(
-        memory
-      )
-    );
-
-  } catch {}
-
-  saveCloudMemory();
-
-}
-
-
-function extractMemory(text) {
-
-  if (!text) return;
-
-
-  let match;
-
-
-  match =
-    text.match(
-      /my\s+(?:dog|dogs|puppy)(?:'s)?\s+(?:name\s+is|is\s+called|is\s+named)\s+([A-Za-z][A-Za-z0-9_-]{1,30})/i
-    );
-
-
-  if (match) {
-
-    memory.dogName =
-      match[1];
-
+  if(
+    chatBusy ||
+    imageBusy
+  ){
+    return;
   }
 
 
-  match =
-    text.match(
-      /my\s+name\s+is\s+([A-Za-z][A-Za-z0-9_-]{1,30})/i
+  const selected =
+    chats.find(
+      c =>
+        c.id === id
     );
 
 
-  if (match) {
-
-    memory.userName =
-      match[1];
-
+  if(!selected){
+    return;
   }
 
 
-  match =
-    text.match(
-      /(?:my\s+dog|my\s+puppy)\s+is\s+a\s+([A-Za-z][A-Za-z -]{2,30})/i
-    );
+  activeChatId =
+    id;
 
+  conversation =
+    selected.messages || [];
 
-  if (match) {
+  selectedPhoto =
+    null;
 
-    memory.dogBreed =
-      match[1].trim();
+  fileInput.value = '';
 
-  }
+  uploadPreview.classList.remove(
+    'open'
+  );
 
+  setImageMode(
+    false
+  );
 
-  saveMemory();
+  chat.innerHTML = '';
 
-  renderMemory();
+  restoreConversation();
 
-}
+  saveChats();
 
+  renderChatHistory();
 
-function renderMemory() {
-
-  const entries = [];
-
-
-  if (memory.userName) {
-
-    entries.push(
-      `Your name: ${memory.userName}`
-    );
-
-  }
-
-
-  if (memory.dogName) {
-
-    entries.push(
-      `Dog's name: ${memory.dogName}`
-    );
-
-  }
-
-
-  if (memory.dogBreed) {
-
-    entries.push(
-      `Dog breed: ${memory.dogBreed}`
-    );
-
-  }
-
-
-  if (memory.favourites) {
-
-    entries.push(
-      `Favourites: ${memory.favourites}`
-    );
-
-  }
-
-
-  memoryContent.textContent =
-    entries.length
-      ? entries.join('\n')
-      : 'No saved memories yet.';
+  closeSidebar();
 
 }
 
 
 /* =====================================================
-   API
+   NEW CHAT
 ===================================================== */
 
-async function apiFetch(
-  path,
-  options = {}
-) {
+function createNewChat(){
 
-  const response =
-    await fetch(
-      `${API_BASE}${path}`,
+  if(
+    chatBusy ||
+    imageBusy
+  ){
+    return;
+  }
+
+
+  const newChat =
+    createChat();
+
+
+  chats.unshift(
+    newChat
+  );
+
+
+  activeChatId =
+    newChat.id;
+
+
+  conversation = [];
+
+  selectedPhoto = null;
+
+  fileInput.value = '';
+
+  uploadPreview.classList.remove(
+    'open'
+  );
+
+  setImageMode(
+    false
+  );
+
+  chat.innerHTML = '';
+
+
+  addMessage(
+    'assistant',
+    'Hi 👋 I’m Nastivee. What would you like to do?',
+    {
+      silent:true
+    }
+  );
+
+
+  saveActiveConversation();
+
+  renderChatHistory();
+
+  closeSidebar();
+
+}
+
+
+newChatButton.addEventListener(
+  'click',
+  createNewChat
+);
+
+
+newChatSideButton.addEventListener(
+  'click',
+  createNewChat
+);
+
+
+/* =====================================================
+   DELETE CHAT
+===================================================== */
+
+async function deleteChat(id){
+
+  if(
+    chatBusy ||
+    imageBusy
+  ){
+    return;
+  }
+
+
+  if(currentUser){
+
+    try{
+
+      await supabaseClient
+        .from('messages')
+        .delete()
+        .eq(
+          'chat_id',
+          id
+        )
+        .eq(
+          'user_id',
+          currentUser.id
+        );
+
+
+      await supabaseClient
+        .from('chats')
+        .delete()
+        .eq(
+          'id',
+          id
+        )
+        .eq(
+          'user_id',
+          currentUser.id
+        );
+
+    }catch(error){
+
+      console.warn(
+        'Cloud delete failed:',
+        error
+      );
+
+    }
+
+  }
+
+
+  chats =
+    chats.filter(
+      c =>
+        c.id !== id
+    );
+
+
+  if(!chats.length){
+
+    const newChatObject =
+      createChat();
+
+    chats.push(
+      newChatObject
+    );
+
+    activeChatId =
+      newChatObject.id;
+
+    conversation = [];
+
+    chat.innerHTML = '';
+
+    addMessage(
+      'assistant',
+      'Hi 👋 I’m Nastivee. What would you like to do?',
       {
-        ...options,
-
-        headers: {
-          'Content-Type':
-            'application/json',
-
-          ...(options.headers || {})
-        }
+        silent:true
       }
     );
 
+  }else if(
+    activeChatId === id
+  ){
 
-  const text =
-    await response.text();
+    activeChatId =
+      chats[0].id;
 
+    conversation =
+      chats[0].messages || [];
 
-  let data;
+    chat.innerHTML = '';
 
-
-  try {
-
-    data =
-      text
-        ? JSON.parse(text)
-        : {};
-
-  } catch {
-
-    throw new Error(
-      text ||
-      `Server returned HTTP ${response.status}`
-    );
+    restoreConversation();
 
   }
 
 
-  if (!response.ok) {
+  saveChats();
 
-    throw new Error(
-      data.details ||
-      data.error ||
-      `HTTP ${response.status}`
-    );
-
-  }
-
-
-  return data;
+  renderChatHistory();
 
 }
 
 
 /* =====================================================
-   MESSAGE WRAPPER
+   MESSAGE
 ===================================================== */
 
 function createMessageWrapper(
   role
-) {
+){
+
+  messageCount++;
+
 
   const wrapper =
     document.createElement(
       'div'
     );
-
-
-  messageCount++;
 
 
   wrapper.id =
@@ -2906,15 +2917,11 @@ function createMessageWrapper(
 }
 
 
-/* =====================================================
-   CHAT MESSAGE
-===================================================== */
-
 function addMessage(
   role,
   content,
-  options = {}
-) {
+  options={}
+){
 
   const wrapper =
     createMessageWrapper(
@@ -2940,17 +2947,17 @@ function addMessage(
     bubble
   );
 
-
   chat.appendChild(
     wrapper
   );
 
 
-  if (!options.silent) {
+  if(!options.silent){
 
-    showMessage(
-      wrapper
-    );
+    wrapper.scrollIntoView({
+      behavior:'smooth',
+      block:'start'
+    });
 
   }
 
@@ -2969,8 +2976,8 @@ function addImageMessage(
   sourceImage,
   prompt,
   wasEdit,
-  options = {}
-) {
+  options={}
+){
 
   const wrapper =
     createMessageWrapper(
@@ -2998,7 +3005,7 @@ function addImageMessage(
     imageUrl;
 
   img.alt =
-    'Nastivee AI image';
+    'Nastivee AI generated image';
 
 
   const actions =
@@ -3020,14 +3027,13 @@ function addImageMessage(
   button.className =
     'rerenderButton';
 
-
   button.textContent =
     '🔄 Re-render';
 
 
   button.addEventListener(
     'click',
-    () => {
+    function(){
 
       rerenderImage(
         button,
@@ -3040,10 +3046,10 @@ function addImageMessage(
   );
 
 
-  if (
+  if(
     wasEdit &&
     !sourceImage
-  ) {
+  ){
 
     button.disabled =
       true;
@@ -3058,7 +3064,6 @@ function addImageMessage(
     button
   );
 
-
   card.appendChild(
     img
   );
@@ -3067,34 +3072,21 @@ function addImageMessage(
     actions
   );
 
-
   wrapper.appendChild(
     card
   );
-
 
   chat.appendChild(
     wrapper
   );
 
 
-  if (!options.silent) {
+  if(!options.silent){
 
-    showMessage(
-      wrapper
-    );
-
-    img.addEventListener(
-      'load',
-      () =>
-        showMessage(
-          wrapper
-        ),
-      {
-        once:
-          true
-      }
-    );
+    wrapper.scrollIntoView({
+      behavior:'smooth',
+      block:'start'
+    });
 
   }
 
@@ -3105,54 +3097,286 @@ function addImageMessage(
 
 
 /* =====================================================
-   SCROLL
+   API
 ===================================================== */
 
-function showMessage(
-  element
-) {
+async function apiFetch(
+  path,
+  options={}
+){
 
-  requestAnimationFrame(
-    () => {
+  const headers = {
 
-      element.scrollIntoView({
-        block:
-          'start',
+    'Content-Type':
+      'application/json',
 
-        behavior:
-          'smooth'
-      });
+    ...(options.headers || {})
 
-    }
-  );
-
-}
+  };
 
 
-function scrollToBottom() {
+  if(supabaseClient){
 
-  requestAnimationFrame(
-    () => {
+    try{
 
-      window.scrollTo(
-        0,
-        document.documentElement
-          .scrollHeight
+      const result =
+        await supabaseClient.auth.getSession();
+
+
+      const token =
+        result.data?.session?.access_token;
+
+
+      if(token){
+
+        headers.Authorization =
+          `Bearer ${token}`;
+
+      }
+
+    }catch(error){
+
+      console.warn(
+        'Could not get access token:',
+        error
       );
 
     }
-  );
+
+  }
+
+
+  const response =
+    await fetch(
+      `${API_BASE}${path}`,
+      {
+        ...options,
+        headers
+      }
+    );
+
+
+  const text =
+    await response.text();
+
+
+  let data;
+
+
+  try{
+
+    data =
+      text
+        ? JSON.parse(text)
+        : {};
+
+  }catch{
+
+    throw new Error(
+      text ||
+      `Server returned HTTP ${response.status}`
+    );
+
+  }
+
+
+  if(!response.ok){
+
+    throw new Error(
+      data.details ||
+      data.error ||
+      `HTTP ${response.status}`
+    );
+
+  }
+
+
+  return data;
 
 }
 
 
 /* =====================================================
-   PROGRESS
+   SEND CHAT
+===================================================== */
+
+function chatHistoryForApi(){
+
+  return conversation
+    .filter(
+      m =>
+        m.type !== 'image' &&
+        typeof m.content === 'string'
+    )
+    .slice(-30)
+    .map(
+      m => ({
+
+        role:
+          m.role,
+
+        content:
+          m.content
+
+      })
+    );
+
+}
+
+
+async function sendMessage(){
+
+  const text =
+    messageInput.value.trim();
+
+
+  if(!text){
+    return;
+  }
+
+
+  if(
+    chatBusy ||
+    imageBusy
+  ){
+    return;
+  }
+
+
+  if(imageMode){
+
+    messageInput.value = '';
+
+    resizeInput();
+
+    await createImage(
+      text
+    );
+
+    return;
+
+  }
+
+
+  chatBusy = true;
+
+  sendButton.disabled = true;
+
+
+  addMessage(
+    'user',
+    text
+  );
+
+
+  conversation.push({
+
+    role:'user',
+
+    content:text
+
+  });
+
+
+  extractMemory(
+    text
+  );
+
+
+  messageInput.value = '';
+
+  resizeInput();
+
+  saveActiveConversation();
+
+
+  const thinking =
+    addMessage(
+      'assistant',
+      'Nastivee is thinking…'
+    );
+
+
+  try{
+
+    const data =
+      await apiFetch(
+        '/api/chat',
+        {
+
+          method:'POST',
+
+          body:
+            JSON.stringify({
+
+              messages:
+                chatHistoryForApi(),
+
+              memory
+
+            })
+
+        }
+      );
+
+
+    thinking.remove();
+
+
+    addMessage(
+      'assistant',
+      data.reply ||
+      'I did not receive a response.'
+    );
+
+
+    conversation.push({
+
+      role:'assistant',
+
+      content:
+        data.reply ||
+        ''
+
+    });
+
+
+    saveActiveConversation();
+
+  }catch(error){
+
+    thinking.remove();
+
+
+    addMessage(
+      'assistant',
+      `Sorry, something went wrong: ${error.message}`
+    );
+
+  }finally{
+
+    chatBusy = false;
+
+    sendButton.disabled = false;
+
+  }
+
+}
+
+
+sendButton.addEventListener(
+  'click',
+  sendMessage
+);
+
+
+/* =====================================================
+   IMAGE PROGRESS
 ===================================================== */
 
 function startImageProgress(
-  isRerender
-) {
+  rerender
+){
 
   clearInterval(
     progressTimer
@@ -3163,55 +3387,51 @@ function startImageProgress(
   );
 
 
-  imageProgress.classList.remove(
-    'closing',
-    'done',
-    'failed'
-  );
-
-
   imageProgress.classList.add(
     'open'
   );
 
 
   progressTitle.textContent =
-    isRerender
+    rerender
       ? 'Re-rendering your image…'
       : 'Creating your image…';
 
 
   const stages =
-    isRerender
+    rerender
 
       ? [
+
           [
             'Preparing your original photo…',
-            8
+            10
           ],
 
           [
             'Using your original photo for likeness…',
-            25
+            28
           ],
 
           [
-            'Reworking your original request…',
-            45
+            'Reworking your request…',
+            48
           ],
 
           [
             'Creating a fresh variation…',
-            68
+            70
           ],
 
           [
             'Finishing the new image…',
-            88
+            90
           ]
+
         ]
 
       : [
+
           [
             'Preparing your request…',
             10
@@ -3219,27 +3439,28 @@ function startImageProgress(
 
           [
             'Understanding your image instructions…',
-            28
+            30
           ],
 
           [
             'Creating your image…',
-            58
+            65
           ],
 
           [
             'Finishing the image…',
-            85
+            90
           ]
+
         ];
 
 
-  let index =
-    0;
+  let index = 0;
 
 
   progressStage.textContent =
     stages[0][0];
+
 
   progressFill.style.width =
     `${stages[0][1]}%`;
@@ -3247,15 +3468,15 @@ function startImageProgress(
 
   progressTimer =
     setInterval(
-      () => {
+      function(){
 
         index++;
 
 
-        if (
+        if(
           index >=
           stages.length
-        ) {
+        ){
 
           clearInterval(
             progressTimer
@@ -3279,69 +3500,10 @@ function startImageProgress(
 }
 
 
-function closeProgressAfter(
-  ms
-) {
-
-  clearTimeout(
-    progressCloseTimer
-  );
-
-
-  imageProgress.style.setProperty(
-    '--drain-ms',
-    `${ms}ms`
-  );
-
-
-  requestAnimationFrame(
-    () => {
-
-      requestAnimationFrame(
-        () => {
-
-          imageProgress.classList.add(
-            'closing'
-          );
-
-        }
-      );
-
-    }
-  );
-
-
-  progressCloseTimer =
-    setTimeout(
-      () => {
-
-        imageProgress.classList.remove(
-          'open',
-          'closing',
-          'done',
-          'failed'
-        );
-
-
-        progressFill.style.width =
-          '5%';
-
-      },
-      ms
-    );
-
-}
-
-
-function finishImageProgress() {
+function finishImageProgress(){
 
   clearInterval(
     progressTimer
-  );
-
-
-  imageProgress.classList.add(
-    'done'
   );
 
 
@@ -3353,23 +3515,25 @@ function finishImageProgress() {
     '100%';
 
 
-  closeProgressAfter(
-    1200
-  );
+  progressCloseTimer =
+    setTimeout(
+      function(){
+
+        imageProgress.classList.remove(
+          'open'
+        );
+
+      },
+      1200
+    );
 
 }
 
 
-function failImageProgress() {
+function failImageProgress(){
 
   clearInterval(
     progressTimer
-  );
-
-
-  imageProgress.classList.add(
-    'done',
-    'failed'
   );
 
 
@@ -3381,237 +3545,44 @@ function failImageProgress() {
     '100%';
 
 
-  closeProgressAfter(
-    2000
-  );
+  progressCloseTimer =
+    setTimeout(
+      function(){
 
-}
+        imageProgress.classList.remove(
+          'open'
+        );
 
-
-/* =====================================================
-   CHAT HISTORY FOR API
-===================================================== */
-
-function chatHistoryForApi() {
-
-  return conversation
-
-    .filter(
-      message =>
-        message.type !== 'image' &&
-        typeof message.content === 'string'
-    )
-
-    .slice(-30)
-
-    .map(
-      message => ({
-        role:
-          message.role,
-
-        content:
-          message.content
-      })
+      },
+      2000
     );
 
 }
 
 
 /* =====================================================
-   NORMAL CHAT
-===================================================== */
-
-async function sendMessage() {
-
-  const text =
-    messageInput.value.trim();
-
-
-  if (!text) return;
-
-
-  if (
-    chatBusy ||
-    imageBusy
-  ) {
-    return;
-  }
-
-
-  if (imageMode) {
-
-    messageInput.value =
-      '';
-
-    resizeInput();
-
-    await createImage(
-      text
-    );
-
-    return;
-
-  }
-
-
-  chatBusy =
-    true;
-
-  sendButton.disabled =
-    true;
-
-
-  addMessage(
-    'user',
-    text
-  );
-
-
-  conversation.push({
-    role:
-      'user',
-
-    content:
-      text
-  });
-
-
-  extractMemory(
-    text
-  );
-
-
-  messageInput.value =
-    '';
-
-  resizeInput();
-
-
-  saveActiveConversation();
-
-
-  const thinking =
-    createMessageWrapper(
-      'assistant'
-    );
-
-
-  const thinkingBubble =
-    document.createElement(
-      'div'
-    );
-
-
-  thinkingBubble.className =
-    'bubble';
-
-
-  thinkingBubble.textContent =
-    'Nastivee is thinking…';
-
-
-  thinking.appendChild(
-    thinkingBubble
-  );
-
-
-  chat.appendChild(
-    thinking
-  );
-
-
-  try {
-
-    const data =
-      await apiFetch(
-        '/api/chat',
-        {
-          method:
-            'POST',
-
-          body:
-            JSON.stringify({
-              messages:
-                chatHistoryForApi(),
-
-              memory
-            })
-        }
-      );
-
-
-    thinking.remove();
-
-
-    addMessage(
-      'assistant',
-      data.reply
-    );
-
-
-    conversation.push({
-      role:
-        'assistant',
-
-      content:
-        data.reply
-    });
-
-
-    saveActiveConversation();
-
-
-  } catch (error) {
-
-    thinking.remove();
-
-
-    addMessage(
-      'assistant',
-      `Sorry, something went wrong: ${error.message}`
-    );
-
-  } finally {
-
-    chatBusy =
-      false;
-
-    sendButton.disabled =
-      false;
-
-  }
-
-}
-
-
-/* =====================================================
-   CREATE IMAGE
+   IMAGE GENERATION
 ===================================================== */
 
 async function createImage(
   prompt
-) {
+){
 
-  if (imageBusy) return;
-
-
-  imageBusy =
-    true;
-
-  sendButton.disabled =
-    true;
+  if(imageBusy){
+    return;
+  }
 
 
-  const wasEdit =
-    !!selectedPhoto;
+  imageBusy = true;
+
+  sendButton.disabled = true;
 
 
   const sourceImage =
     selectedPhoto;
 
-
-  const originalPrompt =
-    prompt;
+  const wasEdit =
+    !!sourceImage;
 
 
   addMessage(
@@ -3621,11 +3592,11 @@ async function createImage(
 
 
   conversation.push({
-    role:
-      'user',
 
-    content:
-      prompt
+    role:'user',
+
+    content:prompt
+
   });
 
 
@@ -3637,51 +3608,53 @@ async function createImage(
   );
 
 
-  try {
+  try{
 
     let data;
 
 
-    if (wasEdit) {
+    if(sourceImage){
 
       data =
         await apiFetch(
           '/api/image/edit',
           {
-            method:
-              'POST',
+
+            method:'POST',
 
             body:
               JSON.stringify({
-                prompt:
-                  originalPrompt,
+
+                prompt,
 
                 image:
                   sourceImage,
 
-                regenerate:
-                  false
+                regenerate:false
+
               })
+
           }
         );
 
-    } else {
+    }else{
 
       data =
         await apiFetch(
           '/api/image',
           {
-            method:
-              'POST',
+
+            method:'POST',
 
             body:
               JSON.stringify({
-                prompt:
-                  originalPrompt,
 
-                regenerate:
-                  false
+                prompt,
+
+                regenerate:false
+
               })
+
           }
         );
 
@@ -3694,27 +3667,25 @@ async function createImage(
     addImageMessage(
       data.image,
       sourceImage,
-      originalPrompt,
+      prompt,
       wasEdit
     );
 
 
     conversation.push({
-      role:
-        'assistant',
 
-      type:
-        'image',
+      role:'assistant',
 
-      content:
-        data.image
+      type:'image',
+
+      content:data.image
+
     });
 
 
     saveActiveConversation();
 
-
-  } catch (error) {
+  }catch(error){
 
     failImageProgress();
 
@@ -3724,13 +3695,11 @@ async function createImage(
       `Image generation failed: ${error.message}`
     );
 
-  } finally {
+  }finally{
 
-    imageBusy =
-      false;
+    imageBusy = false;
 
-    sendButton.disabled =
-      false;
+    sendButton.disabled = false;
 
   }
 
@@ -3746,15 +3715,17 @@ async function rerenderImage(
   sourceImage,
   originalPrompt,
   wasEdit
-) {
+){
 
-  if (imageBusy) return;
+  if(imageBusy){
+    return;
+  }
 
 
-  if (
+  if(
     wasEdit &&
     !sourceImage
-  ) {
+  ){
 
     addMessage(
       'assistant',
@@ -3766,12 +3737,9 @@ async function rerenderImage(
   }
 
 
-  imageBusy =
-    true;
+  imageBusy = true;
 
-
-  button.disabled =
-    true;
+  button.disabled = true;
 
   button.textContent =
     '⏳ Re-rendering…';
@@ -3782,51 +3750,67 @@ async function rerenderImage(
   );
 
 
-  try {
+  /*
+     Tell the image model to create
+     a fresh variation while retaining
+     the original intent.
+  */
+
+  const rerenderPrompt =
+    `${originalPrompt}
+
+Create a fresh variation of this image while keeping the user's original intent. Preserve important subject identity, facial appearance, composition requirements and key details from the original request. Do not unnecessarily change the person's likeness.`;
+
+  
+  try{
 
     let data;
 
 
-    if (wasEdit) {
+    if(wasEdit){
 
       data =
         await apiFetch(
           '/api/image/edit',
           {
-            method:
-              'POST',
+
+            method:'POST',
 
             body:
               JSON.stringify({
+
                 prompt:
-                  originalPrompt,
+                  rerenderPrompt,
 
                 image:
                   sourceImage,
 
-                regenerate:
-                  true
+                regenerate:true
+
               })
+
           }
         );
 
-    } else {
+    }else{
 
       data =
         await apiFetch(
           '/api/image',
           {
-            method:
-              'POST',
+
+            method:'POST',
 
             body:
               JSON.stringify({
-                prompt:
-                  originalPrompt,
 
-                regenerate:
-                  true
+                prompt:
+                  rerenderPrompt,
+
+                regenerate:true
+
               })
+
           }
         );
 
@@ -3845,21 +3829,19 @@ async function rerenderImage(
 
 
     conversation.push({
-      role:
-        'assistant',
 
-      type:
-        'image',
+      role:'assistant',
 
-      content:
-        data.image
+      type:'image',
+
+      content:data.image
+
     });
 
 
     saveActiveConversation();
 
-
-  } catch (error) {
+  }catch(error){
 
     failImageProgress();
 
@@ -3869,13 +3851,11 @@ async function rerenderImage(
       `Re-render failed: ${error.message}`
     );
 
-  } finally {
+  }finally{
 
-    imageBusy =
-      false;
+    imageBusy = false;
 
-    button.disabled =
-      false;
+    button.disabled = false;
 
     button.textContent =
       '🔄 Re-render';
@@ -3891,13 +3871,13 @@ async function rerenderImage(
 
 function setImageMode(
   enabled
-) {
+){
 
   imageMode =
     enabled;
 
 
-  if (imageMode) {
+  if(enabled){
 
     composer.classList.add(
       'imageMode'
@@ -3913,7 +3893,7 @@ function setImageMode(
         ? 'Describe what you want changed…'
         : 'Describe the image you want…';
 
-  } else {
+  }else{
 
     composer.classList.remove(
       'imageMode'
@@ -3934,7 +3914,7 @@ function setImageMode(
 
 imageButton.addEventListener(
   'click',
-  () => {
+  function(){
 
     setImageMode(
       !imageMode
@@ -3945,12 +3925,12 @@ imageButton.addEventListener(
 
 
 /* =====================================================
-   UPLOAD
+   UPLOAD IMAGE
 ===================================================== */
 
 uploadButton.addEventListener(
   'click',
-  () => {
+  function(){
 
     fileInput.click();
 
@@ -3960,13 +3940,26 @@ uploadButton.addEventListener(
 
 fileInput.addEventListener(
   'change',
-  () => {
+  function(){
 
     const file =
       fileInput.files?.[0];
 
 
-    if (!file) return;
+    if(!file){
+      return;
+    }
+
+
+    if(
+      !file.type.startsWith(
+        'image/'
+      )
+    ){
+
+      return;
+
+    }
 
 
     const reader =
@@ -3974,15 +3967,10 @@ fileInput.addEventListener(
 
 
     reader.onload =
-      () => {
+      function(){
 
         selectedPhoto =
           reader.result;
-
-
-        setImageMode(
-          true
-        );
 
 
         uploadPreviewImage.src =
@@ -3994,8 +3982,9 @@ fileInput.addEventListener(
         );
 
 
-        messageInput.placeholder =
-          'Describe what you want changed…';
+        setImageMode(
+          true
+        );
 
       };
 
@@ -4009,18 +3998,16 @@ fileInput.addEventListener(
 
 
 /* =====================================================
-   REMOVE PHOTO
+   REMOVE UPLOAD
 ===================================================== */
 
 removePhoto.addEventListener(
   'click',
-  () => {
+  function(){
 
-    selectedPhoto =
-      null;
+    selectedPhoto = null;
 
-    fileInput.value =
-      '';
+    fileInput.value = '';
 
     uploadPreview.classList.remove(
       'open'
@@ -4037,10 +4024,10 @@ removePhoto.addEventListener(
 
 
 /* =====================================================
-   MEMORY BUTTONS
+   MEMORY BUTTON
 ===================================================== */
 
-function toggleMemory() {
+function toggleMemory(){
 
   memoryPanel.classList.toggle(
     'open'
@@ -4064,26 +4051,10 @@ sidebarMemoryButton.addEventListener(
 
 
 /* =====================================================
-   NEW CHAT BUTTONS
-===================================================== */
-
-newChatButton.addEventListener(
-  'click',
-  createNewChat
-);
-
-
-newChatSideButton.addEventListener(
-  'click',
-  createNewChat
-);
-
-
-/* =====================================================
    MOBILE SIDEBAR
 ===================================================== */
 
-function openSidebar() {
+function openSidebar(){
 
   sidebar.classList.add(
     'open'
@@ -4096,7 +4067,7 @@ function openSidebar() {
 }
 
 
-function closeSidebar() {
+function closeSidebar(){
 
   sidebar.classList.remove(
     'open'
@@ -4122,23 +4093,41 @@ sidebarOverlay.addEventListener(
 
 
 /* =====================================================
-   SEND
+   TEXTAREA
 ===================================================== */
 
-sendButton.addEventListener(
-  'click',
-  sendMessage
+function resizeInput(){
+
+  messageInput.style.height =
+    'auto';
+
+
+  messageInput.style.height =
+    `${Math.min(
+      messageInput.scrollHeight,
+      140
+    )}px`;
+
+
+  updateDockHeight();
+
+}
+
+
+messageInput.addEventListener(
+  'input',
+  resizeInput
 );
 
 
 messageInput.addEventListener(
   'keydown',
-  event => {
+  function(event){
 
-    if (
+    if(
       event.key === 'Enter' &&
       !event.shiftKey
-    ) {
+    ){
 
       event.preventDefault();
 
@@ -4151,44 +4140,48 @@ messageInput.addEventListener(
 
 
 /* =====================================================
-   TEXTAREA RESIZE
+   DOCK HEIGHT
 ===================================================== */
 
-function resizeInput() {
+function updateDockHeight(){
 
-  messageInput.style.height =
-    'auto';
+  if(!dock){
+    return;
+  }
 
 
-  messageInput.style.height =
-    `${Math.min(
-      messageInput.scrollHeight,
-      140
-    )}px`;
+  document.documentElement
+    .style
+    .setProperty(
+      '--dock-h',
+      `${dock.offsetHeight}px`
+    );
 
 }
 
 
-messageInput.addEventListener(
-  'input',
-  resizeInput
+window.addEventListener(
+  'resize',
+  updateDockHeight
 );
 
 
 /* =====================================================
-   RESTORE CONVERSATION
+   RESTORE CHAT
 ===================================================== */
 
-function restoreConversation() {
+function restoreConversation(){
 
-  if (!conversation.length) {
+  messageCount = 0;
+
+
+  if(!conversation.length){
 
     addMessage(
       'assistant',
       'Hi 👋 I’m Nastivee. What would you like to do?',
       {
-        silent:
-          true
+        silent:true
       }
     );
 
@@ -4200,9 +4193,9 @@ function restoreConversation() {
   conversation.forEach(
     message => {
 
-      if (
+      if(
         message.type === 'image'
-      ) {
+      ){
 
         addImageMessage(
           message.content,
@@ -4210,12 +4203,11 @@ function restoreConversation() {
           '',
           false,
           {
-            silent:
-              true
+            silent:true
           }
         );
 
-      } else {
+      }else{
 
         addMessage(
           message.role === 'user'
@@ -4225,9 +4217,9 @@ function restoreConversation() {
           message.content,
 
           {
-            silent:
-              true
+            silent:true
           }
+
         );
 
       }
@@ -4236,18 +4228,173 @@ function restoreConversation() {
   );
 
 
-  scrollToBottom();
+  setTimeout(
+    function(){
+
+      window.scrollTo(
+        0,
+        document.documentElement.scrollHeight
+      );
+
+    },
+    50
+  );
 
 }
 
 
 /* =====================================================
-   START
+   INITIALISE USER
 ===================================================== */
 
-async function startApp() {
+async function initialiseUser(
+  user
+){
 
-  updateAuthMode();
+  if(user){
+
+    currentUser =
+      user;
+
+  }
+
+
+  if(!currentUser){
+    return;
+  }
+
+
+  if(userInitialising){
+
+    return;
+
+  }
+
+
+  userInitialising = true;
+
+
+  authScreen.classList.add(
+    'hidden'
+  );
+
+
+  try{
+
+    await loadCloudMemory();
+
+    await loadCloudChats();
+
+  }catch(error){
+
+    console.error(
+      'Cloud initialisation failed:',
+      error
+    );
+
+
+    /*
+       Cloud failure should NOT stop
+       the user using Nastivee.
+    */
+
+    loadLocalMemory();
+
+    loadLocalChats();
+
+    renderMemory();
+
+    renderChatHistory();
+
+    const active =
+      getActiveChat();
+
+
+    conversation =
+      active?.messages ||
+      [];
+
+
+    chat.innerHTML = '';
+
+    restoreConversation();
+
+  }finally{
+
+    userInitialising =
+      false;
+
+  }
+
+
+  updateDockHeight();
+
+}
+
+
+/* =====================================================
+   AUTH STATE
+===================================================== */
+
+if(supabaseClient){
+
+  supabaseClient.auth.onAuthStateChange(
+    async function(
+      event,
+      session
+    ){
+
+      console.log(
+        'SUPABASE AUTH:',
+        event
+      );
+
+
+      if(
+        event === 'SIGNED_IN' &&
+        session
+      ){
+
+        currentUser =
+          session.user;
+
+
+        await initialiseUser(
+          currentUser
+        );
+
+      }
+
+
+      if(
+        event === 'SIGNED_OUT'
+      ){
+
+        currentUser = null;
+
+      }
+
+    }
+  );
+
+}
+
+
+/* =====================================================
+   START APP
+===================================================== */
+
+async function startApp(){
+
+  console.log(
+    'NASTIVEE STARTING'
+  );
+
+
+  updateAuthMode(
+    false
+  );
+
 
   loadLocalMemory();
 
@@ -4260,41 +4407,89 @@ async function startApp() {
   updateDockHeight();
 
 
-  const result =
-    await supabaseClient.auth.getSession();
-
-
-  if (
-    result.error
-  ) {
-
-    console.error(
-      'Supabase session error:',
-      result.error
-    );
+  if(!supabaseClient){
 
     authScreen.classList.remove(
       'hidden'
     );
+
+
+    showAuthError(
+      'Nastivee could not load its login service. Please refresh the page.'
+    );
+
 
     return;
 
   }
 
 
-  if (
-    result.data.session
-  ) {
+  try{
 
-    currentUser =
-      result.data.session.user;
+    const result =
+      await supabaseClient.auth.getSession();
 
-    await initialiseUser();
 
-  } else {
+    if(result.error){
+
+      console.error(
+        'SESSION ERROR:',
+        result.error
+      );
+
+
+      authScreen.classList.remove(
+        'hidden'
+      );
+
+
+      showAuthError(
+        result.error.message ||
+        'Could not check your login session.'
+      );
+
+
+      return;
+
+    }
+
+
+    if(
+      result.data?.session
+    ){
+
+      currentUser =
+        result.data.session.user;
+
+
+      await initialiseUser(
+        currentUser
+      );
+
+    }else{
+
+      authScreen.classList.remove(
+        'hidden'
+      );
+
+    }
+
+  }catch(error){
+
+    console.error(
+      'START ERROR:',
+      error
+    );
+
 
     authScreen.classList.remove(
       'hidden'
+    );
+
+
+    showAuthError(
+      error.message ||
+      'Nastivee could not start correctly.'
     );
 
   }
@@ -4302,37 +4497,9 @@ async function startApp() {
 }
 
 
-supabaseClient.auth.onAuthStateChange(
-  async (
-    event,
-    session
-  ) => {
-
-    if (
-      event === 'SIGNED_IN' &&
-      session
-    ) {
-
-      currentUser =
-        session.user;
-
-      await initialiseUser();
-
-    }
-
-
-    if (
-      event === 'SIGNED_OUT'
-    ) {
-
-      currentUser =
-        null;
-
-    }
-
-  }
-);
-
+/* =====================================================
+   START
+===================================================== */
 
 startApp();
 
