@@ -1054,6 +1054,7 @@
           id="imageButton"
           title="Create image"
           aria-label="Image mode"
+          aria-pressed="false"
         >
           🖼️
         </button>
@@ -1136,21 +1137,7 @@
   let selectedImageFile = null;
   let selectedImageData = null;
 
-  /*
-    Image mode is deliberately just a mode for
-    the normal chat box.
-
-    Press the image button once:
-      Normal mode -> Image mode
-
-    Then type a description and press SEND.
-  */
-
   let imageMode = false;
-
-  /*
-    Every chat gets its own conversation array.
-  */
 
   const chatConversations = new Map();
 
@@ -1158,17 +1145,19 @@
   let imageBusy = false;
 
   /*
-    Prevents an older chat-loading request from
-    overwriting a newer chat selection.
+    Protects chat switching from old database loads.
   */
-
   let loadSequence = 0;
 
   /*
-    Identifies the chat an AI request started in.
+    Protects normal AI requests.
   */
-
   let activeRequestId = 0;
+
+  /*
+    Protects image-generation UI.
+  */
+  let imageRequestId = 0;
 
 
   /* =========================================================
@@ -1312,8 +1301,17 @@
 
     } else {
 
-      messageInput.placeholder =
-        'Message Nastivee...';
+      if (selectedImageData) {
+
+        messageInput.placeholder =
+          'Describe what you want me to change...';
+
+      } else {
+
+        messageInput.placeholder =
+          'Message Nastivee...';
+
+      }
 
       imageButton.classList.remove(
         'imageModeActive'
@@ -1338,6 +1336,17 @@
 
       if (imageBusy) {
         return;
+      }
+
+      /*
+        Uploaded images are already in edit mode.
+      */
+      if (selectedImageData) {
+
+        messageInput.focus();
+
+        return;
+
       }
 
       setImageMode(
@@ -1729,8 +1738,13 @@
 
     } else {
 
-      currentChatId =
-        null;
+      currentChatId = null;
+
+      imageMode = false;
+
+      clearUpload();
+
+      setImageMode(false);
 
       clearChatUI();
 
@@ -2205,18 +2219,14 @@
         deleteButton.type =
           'button';
 
-
         deleteButton.className =
           'deleteChatButton';
-
 
         deleteButton.textContent =
           '🗑️';
 
-
         deleteButton.title =
           'Delete conversation';
-
 
         deleteButton.setAttribute(
           'aria-label',
@@ -2257,12 +2267,6 @@
               return;
 
             }
-
-
-            console.log(
-              'CLICKED CHAT:',
-              chatItem.id
-            );
 
 
             await loadChat(
@@ -2329,12 +2333,13 @@
 
 
     /*
-      Invalidate any AI response and any
-      chat loading operation.
+      Invalidate all old activity.
     */
-
     activeRequestId++;
     loadSequence++;
+    imageRequestId++;
+
+    hideImageProgress();
 
 
     /*
@@ -2373,7 +2378,7 @@
 
 
     /*
-      Then delete the chat itself.
+      Delete chat.
     */
 
     const chatDelete =
@@ -2407,10 +2412,6 @@
     }
 
 
-    /*
-      Remove it from local memory.
-    */
-
     chatConversations.delete(
       String(chatId)
     );
@@ -2424,11 +2425,6 @@
       );
 
 
-    /*
-      If we deleted the currently open
-      conversation, open another one.
-    */
-
     if (
       String(currentChatId) ===
       String(chatId)
@@ -2437,9 +2433,10 @@
       currentChatId =
         null;
 
+      imageMode =
+        false;
 
       clearUpload();
-
 
       messageInput.value =
         '';
@@ -2447,9 +2444,9 @@
       messageInput.style.height =
         'auto';
 
+      setImageMode(false);
 
       clearChatUI();
-
 
       renderChatHistory();
 
@@ -2478,9 +2475,22 @@
   function createNewChat() {
 
     /*
-      Preserve the currently displayed conversation
-      in memory before starting a blank chat.
+      Immediately invalidate old activity.
     */
+    activeRequestId++;
+    loadSequence++;
+    imageRequestId++;
+
+    /*
+      IMPORTANT:
+      Remove the global image progress immediately.
+    */
+    hideImageProgress();
+
+    /*
+      Stop image mode.
+    */
+    imageMode = false;
 
     if (currentChatId) {
 
@@ -2502,20 +2512,6 @@
     }
 
 
-    /*
-      Invalidate old AI responses.
-    */
-
-    activeRequestId++;
-
-
-    /*
-      Invalidate old chat loads.
-    */
-
-    loadSequence++;
-
-
     currentChatId =
       null;
 
@@ -2528,6 +2524,9 @@
 
     messageInput.style.height =
       'auto';
+
+
+    setImageMode(false);
 
 
     clearChatUI();
@@ -2654,7 +2653,7 @@
 
 
   /* =========================================================
-     LOAD OLD CHAT
+     LOAD CHAT
   ========================================================= */
 
   async function loadChat(
@@ -2671,14 +2670,6 @@
     }
 
 
-    /*
-      Every load gets a unique sequence number.
-
-      If the user clicks Chat A then immediately
-      clicks Chat B, Chat A cannot overwrite Chat B
-      when its database request eventually finishes.
-    */
-
     const thisLoad =
       ++loadSequence;
 
@@ -2687,7 +2678,21 @@
       String(chatId);
 
 
+    /*
+      Selecting another chat invalidates the
+      previous normal AI response.
+    */
     activeRequestId++;
+
+
+    /*
+      Image UI must also be disconnected from
+      the previous chat.
+    */
+    imageRequestId++;
+
+
+    hideImageProgress();
 
 
     console.log(
@@ -2703,10 +2708,6 @@
 
 
     try {
-
-      /*
-        VERIFY CHAT OWNERSHIP
-      */
 
       const chatResult =
         await supabaseClient
@@ -2727,11 +2728,6 @@
         thisLoad !==
         loadSequence
       ) {
-
-        console.log(
-          'IGNORING OLD CHAT LOAD:',
-          chatId
-        );
 
         return;
 
@@ -2781,10 +2777,6 @@
       }
 
 
-      /*
-        LOAD ALL MESSAGES
-      */
-
       const messageResult =
         await supabaseClient
           .from('messages')
@@ -2810,20 +2802,9 @@
         loadSequence
       ) {
 
-        console.log(
-          'IGNORING OLD MESSAGE LOAD:',
-          chatId
-        );
-
         return;
 
       }
-
-
-      console.log(
-        'MESSAGE QUERY RESULT:',
-        messageResult
-      );
 
 
       if (messageResult.error) {
@@ -2832,7 +2813,6 @@
           'MESSAGE LOAD ERROR:',
           messageResult.error
         );
-
 
         const cached =
           getConversation(
@@ -2862,16 +2842,6 @@
         messageResult.data || [];
 
 
-      console.log(
-        'MESSAGES FOUND:',
-        messages.length
-      );
-
-
-      /*
-        Build separate conversation memory.
-      */
-
       const rebuiltConversation =
         [];
 
@@ -2889,10 +2859,8 @@
 
 
           /*
-            Generated image rows do not form
-            normal text GPT context.
+            Image rows are displayed separately.
           */
-
           if (
             message.image_url
           ) {
@@ -2930,22 +2898,25 @@
 
 
       /*
-        Only now change the active chat.
+        Now activate the requested chat.
       */
 
       currentChatId =
         chatId;
 
 
+      imageMode =
+        false;
+
+
       clearUpload();
+
+
+      setImageMode(false);
 
 
       clearChatUI();
 
-
-      /*
-        Render messages.
-      */
 
       messages.forEach(
         message => {
@@ -3009,10 +2980,9 @@
         chatId
       );
 
-
       console.log(
-        'RESTORED AI MEMORY:',
-        rebuiltConversation
+        'MESSAGES FOUND:',
+        messages.length
       );
 
 
@@ -3169,7 +3139,11 @@
           currentUser.id,
 
         role:
-          role
+          role,
+
+        hasImage:
+          Boolean(imageUrl)
+
       }
     );
 
@@ -3435,14 +3409,11 @@
       caption.style.marginTop =
         '8px';
 
-
       caption.style.color =
         '#aaa';
 
-
       caption.style.fontSize =
         '13px';
-
 
       caption.textContent =
         prompt;
@@ -3474,10 +3445,8 @@
     rerenderButton.type =
       'button';
 
-
     rerenderButton.className =
       'imageActionButton';
-
 
     rerenderButton.textContent =
       '🔄 Re-render';
@@ -3529,10 +3498,8 @@
     downloadButton.type =
       'button';
 
-
     downloadButton.className =
       'imageActionButton';
-
 
     downloadButton.textContent =
       '⬇️ Save image';
@@ -3649,7 +3616,9 @@
 
   async function generateImage(
     prompt,
-    chatIdOverride = null
+    chatIdOverride = null,
+    requestImageId = null,
+    requestId = null
   ) {
 
     if (imageBusy) {
@@ -3660,6 +3629,21 @@
     const targetChatId =
       chatIdOverride ||
       currentChatId;
+
+
+    if (!targetChatId) {
+      return;
+    }
+
+
+    const thisImageRequest =
+      requestImageId ||
+      ++imageRequestId;
+
+
+    const thisRequestId =
+      requestId ||
+      ++activeRequestId;
 
 
     setImageButtonsBusy(true);
@@ -3681,6 +3665,17 @@
         setTimeout(
           () => {
 
+            if (
+              thisImageRequest !== imageRequestId ||
+              String(currentChatId) !==
+                String(targetChatId)
+            ) {
+
+              return;
+
+            }
+
+
             showImageProgress(
               'Creating your image...',
               45
@@ -3694,6 +3689,17 @@
       timer2 =
         setTimeout(
           () => {
+
+            if (
+              thisImageRequest !== imageRequestId ||
+              String(currentChatId) !==
+                String(targetChatId)
+            ) {
+
+              return;
+
+            }
+
 
             showImageProgress(
               'Rendering details...',
@@ -3762,24 +3768,65 @@
       }
 
 
-      showImageProgress(
-        'Finishing image...',
-        95
-      );
+      /*
+        IMPORTANT:
+        Save the generated image to the ORIGINAL
+        conversation, regardless of the current UI.
+      */
+
+      const saved =
+        await saveMessage(
+          'assistant',
+          prompt,
+          data.image,
+          targetChatId
+        );
 
 
-      await saveMessage(
-        'assistant',
-        prompt,
-        data.image,
-        targetChatId
-      );
+      if (!saved) {
 
+        console.error(
+          'GENERATED IMAGE COULD NOT BE SAVED:',
+          targetChatId
+        );
+
+
+        if (
+          String(currentChatId) ===
+          String(targetChatId)
+        ) {
+
+          hideImageProgress();
+
+          addTextMessage(
+            'assistant',
+            'The image was generated, but I could not save it to this conversation.'
+          );
+
+        }
+
+        return;
+
+      }
+
+
+      /*
+        Only update the UI if the original chat
+        is still open.
+      */
 
       if (
+        thisImageRequest === imageRequestId &&
         String(currentChatId) ===
-        String(targetChatId)
+          String(targetChatId) &&
+        thisRequestId === activeRequestId
       ) {
+
+        showImageProgress(
+          'Finishing image...',
+          95
+        );
+
 
         addImageMessage(
           data.image,
@@ -3788,10 +3835,17 @@
           prompt
         );
 
+
+        hideImageProgress();
+
+      } else {
+
+        console.log(
+          'IMAGE FINISHED IN BACKGROUND CHAT:',
+          targetChatId
+        );
+
       }
-
-
-      hideImageProgress();
 
 
     } catch (error) {
@@ -3801,13 +3855,14 @@
         error
       );
 
-      hideImageProgress();
-
 
       if (
+        thisImageRequest === imageRequestId &&
         String(currentChatId) ===
-        String(targetChatId)
+          String(targetChatId)
       ) {
+
+        hideImageProgress();
 
         addTextMessage(
           'assistant',
@@ -3816,12 +3871,27 @@
 
       }
 
+
     } finally {
 
       clearTimeout(timer1);
       clearTimeout(timer2);
 
-      setImageButtonsBusy(false);
+
+      /*
+        An old image request cannot hide or
+        alter a newer request's state.
+      */
+
+      if (
+        thisImageRequest === imageRequestId
+      ) {
+
+        hideImageProgress();
+
+        setImageButtonsBusy(false);
+
+      }
 
     }
 
@@ -3848,6 +3918,15 @@
       currentChatId;
 
 
+    if (!targetChatId) {
+      return;
+    }
+
+
+    const thisImageRequest =
+      ++imageRequestId;
+
+
     setImageButtonsBusy(true);
 
 
@@ -3867,6 +3946,17 @@
         setTimeout(
           () => {
 
+            if (
+              thisImageRequest !== imageRequestId ||
+              String(currentChatId) !==
+                String(targetChatId)
+            ) {
+
+              return;
+
+            }
+
+
             showImageProgress(
               'Understanding your edit...',
               40
@@ -3880,6 +3970,17 @@
       timer2 =
         setTimeout(
           () => {
+
+            if (
+              thisImageRequest !== imageRequestId ||
+              String(currentChatId) !==
+                String(targetChatId)
+            ) {
+
+              return;
+
+            }
+
 
             showImageProgress(
               'Rendering changes...',
@@ -3951,24 +4052,57 @@
       }
 
 
-      showImageProgress(
-        'Finishing your image...',
-        95
-      );
+      /*
+        Save edited image against original chat.
+      */
+
+      const saved =
+        await saveMessage(
+          'assistant',
+          prompt,
+          data.image,
+          targetChatId
+        );
 
 
-      await saveMessage(
-        'assistant',
-        prompt,
-        data.image,
-        targetChatId
-      );
+      if (!saved) {
+
+        console.error(
+          'EDITED IMAGE COULD NOT BE SAVED:',
+          targetChatId
+        );
+
+
+        if (
+          String(currentChatId) ===
+          String(targetChatId)
+        ) {
+
+          hideImageProgress();
+
+          addTextMessage(
+            'assistant',
+            'The image was edited, but I could not save it to this conversation.'
+          );
+
+        }
+
+        return;
+
+      }
 
 
       if (
+        thisImageRequest === imageRequestId &&
         String(currentChatId) ===
-        String(targetChatId)
+          String(targetChatId)
       ) {
+
+        showImageProgress(
+          'Finishing your image...',
+          95
+        );
+
 
         addImageMessage(
           data.image,
@@ -3977,10 +4111,10 @@
           prompt
         );
 
+
+        hideImageProgress();
+
       }
-
-
-      hideImageProgress();
 
 
     } catch (error) {
@@ -3990,13 +4124,14 @@
         error
       );
 
-      hideImageProgress();
-
 
       if (
+        thisImageRequest === imageRequestId &&
         String(currentChatId) ===
-        String(targetChatId)
+          String(targetChatId)
       ) {
+
+        hideImageProgress();
 
         addTextMessage(
           'assistant',
@@ -4005,12 +4140,22 @@
 
       }
 
+
     } finally {
 
       clearTimeout(timer1);
       clearTimeout(timer2);
 
-      setImageButtonsBusy(false);
+
+      if (
+        thisImageRequest === imageRequestId
+      ) {
+
+        hideImageProgress();
+
+        setImageButtonsBusy(false);
+
+      }
 
     }
 
@@ -4068,11 +4213,6 @@ lighting, camera angle, background or styling.`;
 
   async function sendMessage() {
 
-    console.log(
-      'SEND MESSAGE'
-    );
-
-
     if (imageBusy) {
       return;
     }
@@ -4095,12 +4235,8 @@ lighting, camera angle, background or styling.`;
 
 
     /*
-      If IMAGE MODE is enabled, the normal SEND
-      button creates the image.
-
-      This makes the image function look like
-      ordinary chat instead of an obvious
-      separate image generator.
+      IMAGE MODE:
+      The normal send button creates the image.
     */
 
     if (
@@ -4124,7 +4260,7 @@ lighting, camera angle, background or styling.`;
 
 
     /*
-      Make sure this chat exists.
+      Make sure the chat exists.
     */
 
     const chatReady =
@@ -4146,7 +4282,7 @@ lighting, camera angle, background or styling.`;
 
 
     /*
-      Capture the chat ID now.
+      Lock request to this chat.
     */
 
     const requestChatId =
@@ -4164,7 +4300,7 @@ lighting, camera angle, background or styling.`;
 
 
     /*
-      UI
+      Display user message.
     */
 
     addTextMessage(
@@ -4172,10 +4308,6 @@ lighting, camera angle, background or styling.`;
       userText
     );
 
-
-    /*
-      CHAT MEMORY
-    */
 
     conversation.push({
 
@@ -4189,7 +4321,7 @@ lighting, camera angle, background or styling.`;
 
 
     /*
-      SAVE USER MESSAGE
+      Save user message.
     */
 
     const saved =
@@ -4203,9 +4335,12 @@ lighting, camera angle, background or styling.`;
 
     if (!saved) {
 
-      console.error(
-        'USER MESSAGE WAS NOT SAVED TO SUPABASE'
+      addTextMessage(
+        'assistant',
+        'I could not save your message. Please try again.'
       );
+
+      return;
 
     }
 
@@ -4231,6 +4366,9 @@ lighting, camera angle, background or styling.`;
 
       messageInput.value =
         '';
+
+      messageInput.style.height =
+        'auto';
 
 
       await editImage(
@@ -4319,12 +4457,23 @@ lighting, camera angle, background or styling.`;
         Save against original chat.
       */
 
-      await saveMessage(
-        'assistant',
-        answer,
-        null,
-        requestChatId
-      );
+      const assistantSaved =
+        await saveMessage(
+          'assistant',
+          answer,
+          null,
+          requestChatId
+        );
+
+
+      if (!assistantSaved) {
+
+        console.error(
+          'ASSISTANT MESSAGE WAS NOT SAVED:',
+          requestChatId
+        );
+
+      }
 
 
       conversation.push({
@@ -4339,7 +4488,7 @@ lighting, camera angle, background or styling.`;
 
 
       /*
-        Only display if still on that chat.
+        Only display if still in original chat.
       */
 
       if (
@@ -4356,7 +4505,7 @@ lighting, camera angle, background or styling.`;
       } else {
 
         console.log(
-          'AI response completed in background chat:',
+          'AI RESPONSE COMPLETED IN BACKGROUND CHAT:',
           requestChatId
         );
 
@@ -4373,7 +4522,8 @@ lighting, camera angle, background or styling.`;
 
       if (
         String(currentChatId) ===
-        String(requestChatId)
+        String(requestChatId) &&
+        requestId === activeRequestId
       ) {
 
         addTextMessage(
@@ -4389,17 +4539,26 @@ lighting, camera angle, background or styling.`;
 
 
   /* =========================================================
-     IMAGE FROM NORMAL CHAT BOX
+     IMAGE FROM CHAT BOX
   ========================================================= */
 
   async function sendImageFromChatBox(
     prompt
   ) {
 
-    if (!prompt) {
+    if (
+      !prompt ||
+      imageBusy
+    ) {
+
       return;
+
     }
 
+
+    /*
+      Create the chat FIRST.
+    */
 
     const chatReady =
       await ensureCurrentChat(
@@ -4419,8 +4578,21 @@ lighting, camera angle, background or styling.`;
     }
 
 
+    /*
+      Permanently lock this image request
+      to this conversation.
+    */
+
     const targetChatId =
       currentChatId;
+
+
+    const requestId =
+      ++activeRequestId;
+
+
+    const thisImageRequest =
+      ++imageRequestId;
 
 
     const conversation =
@@ -4430,7 +4602,7 @@ lighting, camera angle, background or styling.`;
 
 
     /*
-      Show the user's prompt like a normal message.
+      Show user prompt.
     */
 
     addTextMessage(
@@ -4438,6 +4610,10 @@ lighting, camera angle, background or styling.`;
       prompt
     );
 
+
+    /*
+      Store it locally.
+    */
 
     conversation.push({
 
@@ -4450,12 +4626,42 @@ lighting, camera angle, background or styling.`;
     });
 
 
-    await saveMessage(
-      'user',
-      prompt,
-      null,
-      targetChatId
-    );
+    /*
+      SAVE USER IMAGE PROMPT.
+    */
+
+    const saved =
+      await saveMessage(
+        'user',
+        prompt,
+        null,
+        targetChatId
+      );
+
+
+    if (!saved) {
+
+      console.error(
+        'IMAGE PROMPT WAS NOT SAVED:',
+        targetChatId
+      );
+
+
+      if (
+        String(currentChatId) ===
+        String(targetChatId)
+      ) {
+
+        addTextMessage(
+          'assistant',
+          'I could not save this image request. Please try again.'
+        );
+
+      }
+
+      return;
+
+    }
 
 
     await updateChatTitle(
@@ -4471,21 +4677,18 @@ lighting, camera angle, background or styling.`;
       'auto';
 
 
+    setImageMode(false);
+
+
     /*
-      Turn image mode off after sending.
-
-      This makes the next message automatically
-      behave like a normal chat message.
+      Generate using the locked chat ID.
     */
-
-    setImageMode(
-      false
-    );
-
 
     await generateImage(
       prompt,
-      targetChatId
+      targetChatId,
+      thisImageRequest,
+      requestId
     );
 
   }
@@ -4510,7 +4713,9 @@ lighting, camera angle, background or styling.`;
     () => {
 
       if (!imageBusy) {
+
         fileInput.click();
+
       }
 
     }
@@ -4569,12 +4774,17 @@ lighting, camera angle, background or styling.`;
 
 
           /*
-            Uploading an image automatically puts
-            the composer into edit mode.
+            Uploaded image automatically means
+            edit mode.
           */
 
           messageInput.placeholder =
             'Describe what you want me to change...';
+
+
+          imageButton.classList.add(
+            'imageModeActive'
+          );
 
 
           messageInput.focus();
@@ -4611,10 +4821,6 @@ lighting, camera angle, background or styling.`;
     uploadPreviewImage.src =
       '';
 
-
-    /*
-      Restore placeholder depending on mode.
-    */
 
     if (imageMode) {
 
@@ -4695,12 +4901,16 @@ lighting, camera angle, background or styling.`;
       async () => {
 
         /*
-          Invalidate active requests.
+          Invalidate absolutely everything.
         */
 
         activeRequestId++;
-
         loadSequence++;
+        imageRequestId++;
+
+        hideImageProgress();
+
+        imageBusy = false;
 
 
         await supabaseClient.auth.signOut();
