@@ -1622,6 +1622,9 @@ let imageRequestId = 0;
 
 const imageState = new Map();
 
+/* Keeps Improve from repeating the same steer twice in a row */
+let improveSequence = 0;
+
 
 /* =====================================================
    GUEST MODE
@@ -3109,7 +3112,15 @@ async function deleteChat(
     }
 
 
+    /*
+      .select() makes the delete return the rows it removed.
+      Without a delete policy, Supabase removes nothing and
+      reports no error, which looked like the chat coming
+      back to life in the sidebar.
+    */
+
     const {
+      data: removed,
       error: chatError
     } =
       await supabaseClient
@@ -3122,11 +3133,22 @@ async function deleteChat(
         .eq(
           'user_id',
           currentUser.id
-        );
+        )
+        .select();
 
 
     if (chatError) {
       throw chatError;
+    }
+
+
+    if (!removed || !removed.length) {
+
+      throw new Error(
+        'The database refused to delete this chat. ' +
+        'Its delete policy is missing in Supabase.'
+      );
+
     }
 
 
@@ -4297,7 +4319,8 @@ async function editImage(
   image,
   prompt,
   requestChatId,
-  regenerate = false
+  regenerate = false,
+  caption = null
 ) {
 
   if (!image) {
@@ -4382,18 +4405,27 @@ async function editImage(
       prompt back to /api/image.
     */
 
+    /*
+      What the user sees under the image is their own
+      request, never the instructions sent to the model.
+    */
+
+    const shownPrompt =
+      caption || prompt;
+
+
     addImageMessageTo(
       requestChatId,
       data.image,
-      prompt,
+      shownPrompt,
       data.image,
-      prompt
+      shownPrompt
     );
 
 
     await saveMessage(
       'assistant',
-      prompt,
+      shownPrompt,
       data.image,
       requestChatId
     );
@@ -4463,127 +4495,61 @@ async function rerenderImage(
     'Improve this image.';
 
 
+  /*
+    A different steer each press, so pressing Improve twice
+    does not return the same picture twice.
+  */
+
+  const variations = [
+    'Re-light the scene: change the light direction, softness and mood.',
+    'Change the camera: a different angle, distance and framing.',
+    'Refresh the background and depth of field while keeping the setting.',
+    'Adjust the pose or arrangement slightly and sharpen the detail.',
+    'Warm or cool the colour grade and lift the texture and clarity.'
+  ];
+
+  improveSequence++;
+
+  state.improveCount =
+    (state.improveCount || 0) + 1;
+
+  const variation =
+    variations[
+      (improveSequence - 1) % variations.length
+    ];
+
+
   const improvementPrompt = `
-IMPROVE AND REFINE THE CURRENT IMAGE.
+Produce an improved, visibly different version of the
+supplied image. This is attempt ${state.improveCount}.
 
-The supplied image is the current version
-of the image.
-
-Do NOT start over from the text prompt.
-
-Do NOT create a completely unrelated image.
-
-Keep the same subject, same person,
-same concept and same requested changes.
-
-
-ORIGINAL CREATIVE REQUEST:
+ORIGINAL REQUEST:
 
 ${originalPrompt}
 
+THIS PASS:
 
-PRESERVE THE PERSON:
+${variation}
 
-If there is a person in the image, preserve
-their likeness as closely as possible.
+KEEP:
 
-Keep the SAME person.
+- the same subject and concept
+- the same person, if a person is present, with their
+  facial structure, features, skin tone and hair intact
+- anything the original request specifically asked for
 
-Preserve:
+IMPROVE:
 
-- facial structure
-- face shape
-- facial proportions
-- eyes
-- eye shape
-- eyebrows
-- nose
-- mouth
-- lips
-- cheeks
-- jawline
-- ears
-- skin tone
-- hair
-- hairline
-- hairstyle
-- distinctive facial characteristics
-- visible body proportions
+realism, lighting, shadows, detail, texture, clarity,
+depth and overall polish.
 
-Do NOT replace the person.
+AVOID:
 
-Do NOT create a generic person.
+a copy of the supplied image, a different person, a
+different subject, or an unrelated scene.
 
-Do NOT unnecessarily beautify the person.
-
-Do NOT unnecessarily age or de-age them.
-
-Do NOT unnecessarily change their face.
-
-Do NOT change their identity.
-
-
-PRESERVE THE CURRENT IMAGE:
-
-Keep the existing:
-
-- subject
-- person
-- identity
-- requested modification
-- important composition
-- clothing
-- important objects
-- environment
-- overall concept
-
-
-IMPROVE QUALITY:
-
-Make useful improvements to:
-
-- realism
-- lighting
-- shadows
-- detail
-- texture
-- clarity
-- depth
-- natural skin detail
-- photographic quality
-- overall polish
-
-
-AVOID UNNECESSARY CHANGES:
-
-Do not redesign the image.
-
-Do not randomly change the face.
-
-Do not remove the user's requested change.
-
-Do not change the concept.
-
-Do not introduce unrelated objects.
-
-Do not turn it into a completely different scene.
-
-
-RESULT:
-
-Create a refined version of the CURRENT
-IMAGE.
-
-It should clearly look like the same image
-and the same person, but improved.
-
-PRIORITY:
-
-1. Preserve identity and likeness.
-2. Preserve the requested modification.
-3. Preserve the existing image.
-4. Improve visual quality.
-5. Avoid unnecessary changes.
+The result must be recognisably the same subject, clearly
+improved, and clearly not identical to the supplied image.
 `;
 
 
@@ -4601,7 +4567,8 @@ PRIORITY:
         currentImage,
         improvementPrompt,
         requestChatId,
-        true
+        true,
+        originalPrompt
       );
 
 
@@ -4630,7 +4597,7 @@ PRIORITY:
       newImage;
 
     state.prompt =
-      improvementPrompt;
+      originalPrompt;
 
 
     imageState.set(
@@ -5681,7 +5648,7 @@ window.addEventListener('online', () => {
    clearing anything by hand.
 ===================================================== */
 
-const APP_VERSION = '2026-09-20-3';
+const APP_VERSION = '2026-09-20-4';
 
 const RELOAD_FLAG = 'nastivee_reloaded_for';
 
