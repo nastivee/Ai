@@ -3609,6 +3609,13 @@ async function deleteChat(
 
   try {
 
+    /*
+      Delete by chat only. Row level security already limits
+      this to your own rows, and filtering on user_id as well
+      left behind any message row whose user_id was not set,
+      which then blocked the chat from being deleted.
+    */
+
     const {
       error: messageError
     } =
@@ -3618,10 +3625,6 @@ async function deleteChat(
         .eq(
           'chat_id',
           chatId
-        )
-        .eq(
-          'user_id',
-          currentUser.id
         );
 
 
@@ -6303,7 +6306,7 @@ window.addEventListener('online', () => {
    clearing anything by hand.
 ===================================================== */
 
-const APP_VERSION = '2026-09-20-22';
+const APP_VERSION = '2026-09-20-23';
 
 const RELOAD_FLAG = 'nastivee_reloaded_for';
 
