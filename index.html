@@ -307,6 +307,53 @@ button {
   border-top: 1px solid #2a2138;
 }
 
+.guestNotice {
+  display: none;
+  color: #c3b4d4;
+  font-size: 12px;
+  line-height: 1.5;
+  margin-bottom: 10px;
+}
+
+.guestNotice.show {
+  display: block;
+}
+
+.guestNotice button {
+  border: 0;
+  background: none;
+  color: #b98aff;
+  font-weight: 700;
+  padding: 4px 0 0;
+  font-size: 12px;
+}
+
+/* A chat with work still running */
+.runningDot {
+  width: 8px;
+  height: 8px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: #b98aff;
+  animation: runningPulse 1.1s ease-in-out infinite;
+}
+
+@keyframes runningPulse {
+  0%, 100% { opacity: .35; }
+  50% { opacity: 1; }
+}
+
+.guestButton {
+  width: 100%;
+  margin-top: 10px;
+  padding: 14px;
+  border: 1px solid #3b3150;
+  background: transparent;
+  color: #cfc3dd;
+  border-radius: 13px;
+  font-weight: 600;
+}
+
 .userEmail {
   color: #92879d;
   font-size: 12px;
@@ -849,6 +896,14 @@ button {
       Log in
     </button>
 
+    <button
+      id="guestButton"
+      class="guestButton"
+      type="button"
+    >
+      Continue as guest
+    </button>
+
     <div
       id="authError"
       class="authError"
@@ -988,6 +1043,14 @@ button {
     </div>
 
     <div class="sidebarBottom">
+
+      <div class="guestNotice" id="guestNotice">
+        Guest mode. Your chats are saved on this device only.
+        <button id="guestSignUpButton" type="button">
+          Create an account
+        </button>
+      </div>
+
 
       <div
         class="userEmail"
@@ -1292,6 +1355,158 @@ const imageState = new Map();
 
 
 /* =====================================================
+   GUEST MODE
+
+   Guest chats live in this browser only. Nothing is
+   sent to Supabase and nothing follows the user to
+   another device.
+===================================================== */
+
+let guestMode = false;
+
+const GUEST_FLAG_KEY = 'nastivee_guest_mode';
+const GUEST_CHATS_KEY = 'nastivee_guest_chats';
+const GUEST_MEMORY_KEY = 'nastivee_guest_memory';
+
+function guestMessagesKey(chatId) {
+  return `nastivee_guest_messages_${chatId}`;
+}
+
+function readLocal(key, fallback) {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function writeLocal(key, value) {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function guestChats() {
+  return readLocal(GUEST_CHATS_KEY, []);
+}
+
+function saveGuestChats(list) {
+  writeLocal(GUEST_CHATS_KEY, list);
+}
+
+function guestMessages(chatId) {
+  return readLocal(guestMessagesKey(chatId), []);
+}
+
+/*
+  Images are stored as data URLs and browser storage
+  is small, so when it fills up we drop the oldest
+  images in this chat rather than losing the chat.
+*/
+function saveGuestMessages(chatId, list) {
+
+  if (writeLocal(guestMessagesKey(chatId), list)) {
+    return true;
+  }
+
+  const trimmed = list.map(item => ({ ...item }));
+
+  for (const item of trimmed) {
+
+    if (item.image_url) {
+
+      item.image_url = null;
+      item.image_dropped = true;
+
+      if (writeLocal(guestMessagesKey(chatId), trimmed)) {
+        return true;
+      }
+
+    }
+
+  }
+
+  return writeLocal(
+    guestMessagesKey(chatId),
+    trimmed.slice(-30)
+  );
+
+}
+
+
+/* =====================================================
+   RUNNING JOBS
+
+   Several replies and images can run at once, in any
+   chat. Each job remembers the chat it belongs to, so
+   the user can switch chats while it finishes.
+===================================================== */
+
+const jobs = new Map();
+
+let jobSequence = 0;
+
+function startJob(chatId, label) {
+
+  const id = ++jobSequence;
+
+  jobs.set(id, { chatId, label });
+
+  refreshJobUI();
+
+  return id;
+
+}
+
+function endJob(id) {
+
+  jobs.delete(id);
+
+  refreshJobUI();
+
+}
+
+function jobsForChat(chatId) {
+
+  return [...jobs.values()].filter(
+    job => String(job.chatId) === String(chatId)
+  );
+
+}
+
+function refreshJobUI() {
+
+  const mine = jobsForChat(currentChatId);
+
+  if (mine.length) {
+
+    progressText.textContent =
+      mine.length === 1
+        ? mine[0].label
+        : `${mine[0].label} (${mine.length} running in this chat)`;
+
+    imageProgress.classList.add('show');
+
+  } else {
+
+    imageProgress.classList.remove('show');
+
+  }
+
+  renderChatHistory();
+
+}
+
+function isCurrentChat(chatId) {
+  return String(chatId) === String(currentChatId);
+}
+
+
+/* =====================================================
    DOM
 ===================================================== */
 
@@ -1325,7 +1540,7 @@ const userEmail =
 const chat =
   document.getElementById('chat');
 
-const emptyState =
+let emptyState =
   document.getElementById('emptyState');
 
 const messageInput =
@@ -1360,6 +1575,15 @@ const newChatButton =
 
 const chatHistoryList =
   document.getElementById('chatHistoryList');
+
+const guestButton =
+  document.getElementById('guestButton');
+
+const guestNotice =
+  document.getElementById('guestNotice');
+
+const guestSignUpButton =
+  document.getElementById('guestSignUpButton');
 
 const logoutButton =
   document.getElementById('logoutButton');
@@ -1954,18 +2178,78 @@ supabaseClient.auth.onAuthStateChange(
 
     if (session?.user) {
 
+      if (guestMode) {
+        stopGuestMode();
+      }
+
       currentUser =
         session.user;
 
       await initialiseApp();
 
-    } else {
+    } else if (!guestMode) {
 
       currentUser = null;
 
       showAuth();
 
     }
+
+  }
+);
+
+
+function startGuestMode() {
+
+  guestMode = true;
+
+  currentUser = null;
+
+  currentChatId = null;
+
+  try {
+    localStorage.setItem(GUEST_FLAG_KEY, '1');
+  } catch {}
+
+  initialiseApp();
+
+}
+
+
+function stopGuestMode() {
+
+  guestMode = false;
+
+  chats = [];
+
+  currentChatId = null;
+
+  jobs.clear();
+
+  try {
+    localStorage.removeItem(GUEST_FLAG_KEY);
+  } catch {}
+
+}
+
+
+guestButton.addEventListener(
+  'click',
+  startGuestMode
+);
+
+
+guestSignUpButton.addEventListener(
+  'click',
+  () => {
+
+    stopGuestMode();
+
+    signupMode = true;
+
+    updateAuthMode();
+
+    showAuth();
 
   }
 );
@@ -1996,11 +2280,28 @@ async function checkSession() {
 
     await initialiseApp();
 
-  } else {
-
-    showAuth();
+    return;
 
   }
+
+
+  let wasGuest = false;
+
+  try {
+    wasGuest = localStorage.getItem(GUEST_FLAG_KEY) === '1';
+  } catch {}
+
+
+  if (wasGuest) {
+
+    startGuestMode();
+
+    return;
+
+  }
+
+
+  showAuth();
 
 }
 
@@ -2035,14 +2336,18 @@ function showApp() {
 
 async function initialiseApp() {
 
-  if (!currentUser) {
+  if (!currentUser && !guestMode) {
     return;
   }
 
   showApp();
 
   userEmail.textContent =
-    currentUser.email || '';
+    guestMode
+      ? 'Guest'
+      : (currentUser?.email || '');
+
+  guestNotice.classList.toggle('show', guestMode);
 
   memory =
     await loadMemory();
@@ -2086,6 +2391,11 @@ memoryTextarea.addEventListener(
 
 
 async function loadMemory() {
+
+  if (guestMode) {
+    return readLocal(GUEST_MEMORY_KEY, '') || '';
+  }
+
 
   if (!currentUser) {
     return '';
@@ -2138,13 +2448,19 @@ async function loadMemory() {
 
 async function saveMemory() {
 
-  if (!currentUser) {
+  if (!currentUser && !guestMode) {
     return;
   }
 
 
   memory =
     memoryTextarea.value.trim();
+
+
+  if (guestMode) {
+    writeLocal(GUEST_MEMORY_KEY, memory);
+    return;
+  }
 
 
   try {
@@ -2189,6 +2505,17 @@ async function saveMemory() {
 ===================================================== */
 
 async function loadChats() {
+
+  if (guestMode) {
+
+    chats = guestChats();
+
+    renderChatHistory();
+
+    return;
+
+  }
+
 
   if (!currentUser) {
     return;
@@ -2288,6 +2615,20 @@ function renderChatHistory() {
       button.appendChild(title);
 
 
+      if (jobsForChat(chatItem.id).length) {
+
+        const dot =
+          document.createElement('div');
+
+        dot.className = 'runningDot';
+
+        dot.title = 'Still working in this chat';
+
+        button.appendChild(dot);
+
+      }
+
+
       button.addEventListener(
         'click',
         async () => {
@@ -2355,7 +2696,7 @@ async function deleteChat(
   chatId
 ) {
 
-  if (!currentUser) {
+  if (!currentUser && !guestMode) {
     return;
   }
 
@@ -2368,6 +2709,34 @@ async function deleteChat(
 
   if (!confirmed) {
     return;
+  }
+
+
+  if (guestMode) {
+
+    try {
+      localStorage.removeItem(
+        guestMessagesKey(chatId)
+      );
+    } catch {}
+
+    saveGuestChats(
+      guestChats().filter(
+        item =>
+          String(item.id) !== String(chatId)
+      )
+    );
+
+    imageState.clear();
+
+    currentChatId = null;
+
+    await loadChats();
+
+    newChat();
+
+    return;
+
   }
 
 
@@ -2457,6 +2826,8 @@ function newChat() {
 
   imageState.clear();
 
+  refreshJobUI();
+
   headerTitle.textContent =
     'New chat';
 
@@ -2522,7 +2893,7 @@ async function ensureChat(
   }
 
 
-  if (!currentUser) {
+  if (!currentUser && !guestMode) {
     throw new Error(
       'You are not logged in.'
     );
@@ -2536,6 +2907,33 @@ async function ensureChat(
           .trim()
           .slice(0, 55)
       : 'New chat';
+
+
+  if (guestMode) {
+
+    const guestChat = {
+      id: `g-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      title: title || 'New chat',
+      created_at: new Date().toISOString()
+    };
+
+    const list = guestChats();
+
+    list.unshift(guestChat);
+
+    saveGuestChats(list);
+
+    currentChatId = guestChat.id;
+
+    headerTitle.textContent = guestChat.title;
+
+    chats = list;
+
+    renderChatHistory();
+
+    return currentChatId;
+
+  }
 
 
   const {
@@ -2587,7 +2985,7 @@ async function loadChat(
   chatId
 ) {
 
-  if (!currentUser) {
+  if (!currentUser && !guestMode) {
     return;
   }
 
@@ -2618,6 +3016,51 @@ async function loadChat(
 
 
   renderChatHistory();
+
+  refreshJobUI();
+
+
+  if (guestMode) {
+
+    const stored = guestMessages(chatId);
+
+    if (stored.length) {
+
+      emptyState?.remove();
+
+      stored.forEach(message => {
+
+        if (message.role === 'user') {
+
+          addTextMessage('user', message.content || '');
+
+        } else if (message.image_url) {
+
+          addImageMessage(
+            message.image_url,
+            message.content || '',
+            message.image_url,
+            message.content || ''
+          );
+
+        } else {
+
+          addTextMessage(
+            'assistant',
+            message.content || ''
+          );
+
+        }
+
+      });
+
+      scrollToBottom();
+
+    }
+
+    return;
+
+  }
 
 
   try {
@@ -2749,6 +3192,26 @@ async function saveMessage(
     currentChatId;
 
 
+  if (guestMode) {
+
+    if (!targetChatId) {
+      return false;
+    }
+
+    const list = guestMessages(targetChatId);
+
+    list.push({
+      role,
+      content: content || '',
+      image_url: imageUrl || null,
+      created_at: new Date().toISOString()
+    });
+
+    return saveGuestMessages(targetChatId, list);
+
+  }
+
+
   if (
     !currentUser ||
     !targetChatId
@@ -2848,7 +3311,35 @@ async function updateChatTitle(
   title
 ) {
 
-  if (!currentUser || !chatId) {
+  if (!chatId) {
+    return;
+  }
+
+
+  if (guestMode) {
+
+    const list = guestChats().map(item =>
+      String(item.id) === String(chatId)
+        ? { ...item, title: title.slice(0, 55) }
+        : item
+    );
+
+    saveGuestChats(list);
+
+    chats = list;
+
+    if (isCurrentChat(chatId)) {
+      headerTitle.textContent = title.slice(0, 55);
+    }
+
+    renderChatHistory();
+
+    return;
+
+  }
+
+
+  if (!currentUser) {
     return;
   }
 
@@ -3210,27 +3701,40 @@ function addImageMessage(
 
 
 /* =====================================================
-   IMAGE PROGRESS
+   RENDER INTO A PARTICULAR CHAT
+
+   A job can finish while the user is reading another
+   chat. The message is always saved, and only drawn
+   if that chat is the one on screen.
 ===================================================== */
 
-function showImageProgress(
-  text = 'Creating image...'
-) {
+function addTextMessageTo(chatId, role, content) {
 
-  progressText.textContent =
-    text;
+  if (!isCurrentChat(chatId)) {
+    return;
+  }
 
-  imageProgress.classList.add(
-    'show'
-  );
+  addTextMessage(role, content);
 
 }
 
+function addImageMessageTo(
+  chatId,
+  imageData,
+  prompt,
+  originalImageData,
+  originalPrompt
+) {
 
-function hideImageProgress() {
+  if (!isCurrentChat(chatId)) {
+    return;
+  }
 
-  imageProgress.classList.remove(
-    'show'
+  addImageMessage(
+    imageData,
+    prompt,
+    originalImageData,
+    originalPrompt
   );
 
 }
@@ -3250,22 +3754,11 @@ async function generateImage(
   }
 
 
-  const requestId =
-    ++imageRequestId;
-
-
-  imageBusy = true;
-
-  sendButton.disabled =
-    true;
-
-  imageButton.disabled =
-    true;
-
-
-  showImageProgress(
-    'Creating your image...'
-  );
+  const jobId =
+    startJob(
+      requestChatId,
+      'Creating your image...'
+    );
 
 
   try {
@@ -3307,15 +3800,6 @@ async function generateImage(
     }
 
 
-    if (
-      requestId !== imageRequestId
-    ) {
-
-      return;
-
-    }
-
-
     if (!data?.image) {
 
       throw new Error(
@@ -3333,7 +3817,8 @@ async function generateImage(
       re-render.
     */
 
-    addImageMessage(
+    addImageMessageTo(
+      requestChatId,
       data.image,
       prompt,
       data.image,
@@ -3357,22 +3842,25 @@ async function generateImage(
     );
 
 
-    addTextMessage(
+    const failure =
+      `Image generation failed:\n${error.message}`;
+
+    addTextMessageTo(
+      requestChatId,
       'assistant',
-      `Image generation failed:\n${error.message}`
+      failure
+    );
+
+    await saveMessage(
+      'assistant',
+      failure,
+      null,
+      requestChatId
     );
 
   } finally {
 
-    imageBusy = false;
-
-    sendButton.disabled =
-      false;
-
-    imageButton.disabled =
-      false;
-
-    hideImageProgress();
+    endJob(jobId);
 
   }
 
@@ -3399,24 +3887,13 @@ async function editImage(
   }
 
 
-  const requestId =
-    ++imageRequestId;
-
-
-  imageBusy = true;
-
-  sendButton.disabled =
-    true;
-
-  imageButton.disabled =
-    true;
-
-
-  showImageProgress(
-    regenerate
-      ? 'Improving your image...'
-      : 'Editing your image...'
-  );
+  const jobId =
+    startJob(
+      requestChatId,
+      regenerate
+        ? 'Improving your image...'
+        : 'Editing your image...'
+    );
 
 
   try {
@@ -3464,15 +3941,6 @@ async function editImage(
     }
 
 
-    if (
-      requestId !== imageRequestId
-    ) {
-
-      return null;
-
-    }
-
-
     if (!data?.image) {
 
       throw new Error(
@@ -3492,7 +3960,8 @@ async function editImage(
       prompt back to /api/image.
     */
 
-    addImageMessage(
+    addImageMessageTo(
+      requestChatId,
       data.image,
       prompt,
       data.image,
@@ -3513,15 +3982,7 @@ async function editImage(
 
   } finally {
 
-    imageBusy = false;
-
-    sendButton.disabled =
-      false;
-
-    imageButton.disabled =
-      false;
-
-    hideImageProgress();
+    endJob(jobId);
 
   }
 
@@ -3538,14 +3999,20 @@ async function rerenderImage(
   button
 ) {
 
-  if (
-    imageBusy ||
-    !state?.currentImage
-  ) {
+  if (!state?.currentImage) {
 
     return;
 
   }
+
+
+  /*
+    The chat this image belongs to, captured before
+    anything asynchronous happens, so the result lands
+    in the right place even if the user moves on.
+  */
+
+  const requestChatId = currentChatId;
 
 
   /*
@@ -3704,7 +4171,7 @@ PRIORITY:
       await editImage(
         currentImage,
         improvementPrompt,
-        currentChatId,
+        requestChatId,
         true
       );
 
@@ -3751,7 +4218,8 @@ PRIORITY:
     );
 
 
-    addTextMessage(
+    addTextMessageTo(
+      requestChatId,
       'assistant',
       `Could not improve the image:\n${error.message}`
     );
@@ -3778,11 +4246,30 @@ async function sendNormalMessage(
   requestChatId
 ) {
 
-  const requestId =
-    ++activeRequestId;
+  const jobId =
+    startJob(
+      requestChatId,
+      'Nastivee is replying...'
+    );
 
 
   try {
+
+    let messages;
+
+
+    if (guestMode) {
+
+      messages =
+        guestMessages(requestChatId)
+          .filter(item => !item.image_url)
+          .map(item => ({
+            role: item.role,
+            content: item.content || ''
+          }))
+          .slice(-30);
+
+    } else {
 
     const {
       data: messageRows,
@@ -3814,7 +4301,7 @@ async function sendNormalMessage(
     }
 
 
-    const messages =
+    messages =
       (messageRows || [])
         .map(
           item => ({
@@ -3826,6 +4313,8 @@ async function sendNormalMessage(
           })
         )
         .slice(-30);
+
+    }
 
 
     const response =
@@ -3869,22 +4358,13 @@ async function sendNormalMessage(
     }
 
 
-    if (
-      requestId !==
-      activeRequestId
-    ) {
-
-      return;
-
-    }
-
-
     const reply =
       data?.reply ||
       'Sorry, I could not generate a response.';
 
 
-    addTextMessage(
+    addTextMessageTo(
+      requestChatId,
       'assistant',
       reply
     );
@@ -3906,10 +4386,25 @@ async function sendNormalMessage(
     );
 
 
-    addTextMessage(
+    const failure =
+      `Sorry, something went wrong:\n${error.message}`;
+
+    addTextMessageTo(
+      requestChatId,
       'assistant',
-      `Sorry, something went wrong:\n${error.message}`
+      failure
     );
+
+    await saveMessage(
+      'assistant',
+      failure,
+      null,
+      requestChatId
+    );
+
+  } finally {
+
+    endJob(jobId);
 
   }
 
@@ -3928,8 +4423,7 @@ async function sendMessage() {
 
   if (
     !userText ||
-    imageBusy ||
-    !currentUser
+    (!currentUser && !guestMode)
   ) {
 
     return;
@@ -3983,17 +4477,12 @@ async function sendMessage() {
     resizeTextarea();
 
 
-    try {
-
-      await editImage(
-        image,
-        userText,
-        requestChatId,
-        false
-      );
-
-
-    } catch (error) {
+    editImage(
+      image,
+      userText,
+      requestChatId,
+      false
+    ).catch(async error => {
 
       console.error(
         'UPLOAD EDIT ERROR:',
@@ -4001,12 +4490,23 @@ async function sendMessage() {
       );
 
 
-      addTextMessage(
+      const failure =
+        `Could not edit the image:\n${error.message}`;
+
+      addTextMessageTo(
+        requestChatId,
         'assistant',
-        `Could not edit the image:\n${error.message}`
+        failure
       );
 
-    }
+      await saveMessage(
+        'assistant',
+        failure,
+        null,
+        requestChatId
+      );
+
+    });
 
 
     return;
@@ -4030,7 +4530,7 @@ async function sendMessage() {
     setImageMode(false);
 
 
-    await generateImage(
+    generateImage(
       userText,
       requestChatId
     );
@@ -4053,7 +4553,7 @@ async function sendMessage() {
   resizeTextarea();
 
 
-  await sendNormalMessage(
+  sendNormalMessage(
     userText,
     requestChatId
   );
@@ -4432,6 +4932,20 @@ function downloadImage(
 logoutButton.addEventListener(
   'click',
   async () => {
+
+    if (guestMode) {
+
+      stopGuestMode();
+
+      imageState.clear();
+
+      initialised = false;
+
+      showAuth();
+
+      return;
+
+    }
 
     await supabaseClient.auth.signOut();
 
