@@ -211,6 +211,12 @@
       color: white;
     }
 
+    .emptyHistory {
+      color: #666;
+      font-size: 13px;
+      padding: 10px 5px;
+    }
+
     .sidebarBottom {
       border-top: 1px solid #251735;
       padding-top: 12px;
@@ -666,7 +672,6 @@
 
       </div>
 
-
       <div id="loginForm">
 
         <input
@@ -705,7 +710,6 @@
         </div>
 
       </div>
-
 
       <div
         id="signupForm"
@@ -755,7 +759,6 @@
         </div>
 
       </div>
-
 
       <div id="authMessage"></div>
 
@@ -829,7 +832,6 @@
             <span>Nastivee AI</span>
 
           </div>
-
 
           <div class="headerButtons">
 
@@ -945,7 +947,6 @@
 
         </div>
 
-
         <button
           type="button"
           class="dockButton"
@@ -955,13 +956,11 @@
           📎
         </button>
 
-
         <textarea
           id="messageInput"
           rows="1"
           placeholder="Message Nastivee..."
         ></textarea>
-
 
         <button
           type="button"
@@ -972,7 +971,6 @@
         >
           🖼️
         </button>
-
 
         <button
           type="button"
@@ -1013,10 +1011,6 @@
 
   const API_BASE =
     'https://ai-8vlt.onrender.com';
-
-  /*
-    Always return email confirmations to the live website.
-  */
 
   const LIVE_SITE_URL =
     'https://ai-8vlt.onrender.com';
@@ -1069,9 +1063,13 @@
 
   let selectedImageData = null;
 
+  let conversationMessages = [];
+
   let initialised = false;
 
   let imageBusy = false;
+
+  let loadingChat = false;
 
 
   /* =========================================================
@@ -1218,7 +1216,6 @@
 
     }
 
-
     const email =
       document
         .getElementById('loginEmail')
@@ -1230,7 +1227,6 @@
         .getElementById('loginPassword')
         .value;
 
-
     if (!email || !password) {
 
       setAuthMessage(
@@ -1240,7 +1236,6 @@
       return;
 
     }
-
 
     const button =
       document.getElementById(
@@ -1253,12 +1248,10 @@
     button.textContent =
       'Logging in...';
 
-
     setAuthMessage(
       'Logging in...',
       true
     );
-
 
     try {
 
@@ -1271,12 +1264,10 @@
 
         });
 
-
       if (result.error) {
 
         const message =
           result.error.message || '';
-
 
         if (
           message
@@ -1299,7 +1290,6 @@
         return;
 
       }
-
 
       setAuthMessage('');
 
@@ -1352,7 +1342,6 @@
 
     }
 
-
     const email =
       document
         .getElementById('signupEmail')
@@ -1369,7 +1358,6 @@
         .getElementById('signupPasswordConfirm')
         .value;
 
-
     if (
       !email ||
       !password ||
@@ -1384,7 +1372,6 @@
 
     }
 
-
     if (
       password !==
       confirmPassword
@@ -1398,7 +1385,6 @@
 
     }
 
-
     if (
       password.length < 6
     ) {
@@ -1411,7 +1397,6 @@
 
     }
 
-
     const button =
       document.getElementById(
         'signupButton'
@@ -1423,12 +1408,10 @@
     button.textContent =
       'Creating account...';
 
-
     setAuthMessage(
       'Creating your account...',
       true
     );
-
 
     try {
 
@@ -1448,12 +1431,10 @@
 
         });
 
-
       if (result.error) {
 
         const message =
           result.error.message || '';
-
 
         if (
           message
@@ -1476,7 +1457,6 @@
         return;
 
       }
-
 
       if (
         result.data &&
@@ -1551,7 +1531,11 @@
           currentUser =
             session.user;
 
-          await initialiseUser();
+          if (!initialised) {
+
+            await initialiseUser();
+
+          }
 
         } else {
 
@@ -1587,18 +1571,41 @@
     initialised =
       true;
 
-
     showApp();
-
 
     await loadCloudMemory();
 
     await loadChats();
 
+    /*
+      IMPORTANT:
 
-    if (!currentChatId) {
+      Do NOT automatically create a new
+      database chat.
 
-      await createNewChat();
+      If chats already exist, open the
+      newest one.
+
+      If none exist, show a blank chat.
+    */
+
+    if (chats.length > 0) {
+
+      await loadChat(
+        chats[0].id
+      );
+
+    } else {
+
+      currentChatId =
+        null;
+
+      conversationMessages =
+        [];
+
+      clearChatUI();
+
+      renderChatHistory();
 
     }
 
@@ -1619,12 +1626,10 @@
 
     }
 
-
     try {
 
       const result =
         await supabaseClient.auth.getSession();
-
 
       if (
         result.data &&
@@ -1697,7 +1702,6 @@
         options.headers || {}
       );
 
-
     if (
       options.body &&
       !(options.body instanceof FormData)
@@ -1710,7 +1714,6 @@
 
     }
 
-
     if (supabaseClient) {
 
       try {
@@ -1718,13 +1721,11 @@
         const sessionResult =
           await supabaseClient.auth.getSession();
 
-
         const token =
           sessionResult
             .data
             ?.session
             ?.access_token;
-
 
         if (token) {
 
@@ -1745,7 +1746,6 @@
       }
 
     }
-
 
     return fetch(
       `${API_BASE}${path}`,
@@ -1773,7 +1773,6 @@
 
     }
 
-
     try {
 
       const result =
@@ -1786,7 +1785,6 @@
           )
           .maybeSingle();
 
-
       if (result.error) {
 
         console.warn(
@@ -1797,7 +1795,6 @@
         return;
 
       }
-
 
       memory =
         result.data?.memory || '';
@@ -1822,7 +1819,6 @@
     memory =
       memoryText.value.trim();
 
-
     if (
       currentUser &&
       supabaseClient
@@ -1842,7 +1838,6 @@
                 memory
 
             });
-
 
         if (result.error) {
 
@@ -1864,7 +1859,6 @@
 
     }
 
-
     memoryPanel.style.display =
       'none';
 
@@ -1885,12 +1879,10 @@
       memoryPanel.style.display ===
       'block';
 
-
     memoryPanel.style.display =
       visible
         ? 'none'
         : 'block';
-
 
     memoryText.value =
       memory;
@@ -1929,7 +1921,6 @@
 
     }
 
-
     try {
 
       const result =
@@ -1947,7 +1938,6 @@
             }
           );
 
-
       if (result.error) {
 
         console.error(
@@ -1959,13 +1949,10 @@
 
       }
 
-
       chats =
         result.data || [];
 
-
       renderChatHistory();
-
 
     } catch (error) {
 
@@ -1986,10 +1973,29 @@
         'chatHistory'
       );
 
-
     container.innerHTML =
       '';
 
+    if (!chats.length) {
+
+      const empty =
+        document.createElement(
+          'div'
+        );
+
+      empty.className =
+        'emptyHistory';
+
+      empty.textContent =
+        'No conversations yet';
+
+      container.appendChild(
+        empty
+      );
+
+      return;
+
+    }
 
     chats.forEach(
       chatItem => {
@@ -1999,10 +2005,8 @@
             'div'
           );
 
-
         item.className =
           'historyItem';
-
 
         if (
           chatItem.id ===
@@ -2015,23 +2019,33 @@
 
         }
 
-
         item.textContent =
           chatItem.title ||
           'New chat';
 
+        item.title =
+          chatItem.title ||
+          'New chat';
 
         item.addEventListener(
           'click',
-          () => {
+          async () => {
 
-            loadChat(
+            if (
+              loadingChat ||
+              chatItem.id === currentChatId
+            ) {
+
+              return;
+
+            }
+
+            await loadChat(
               chatItem.id
             );
 
           }
         );
-
 
         container.appendChild(
           item
@@ -2043,23 +2057,76 @@
   }
 
 
-  async function createNewChat() {
+  /*
+    Start a blank NEW CHAT.
 
-    clearChatUI();
+    We deliberately do NOT insert the
+    chat into Supabase yet.
+
+    The database conversation is created
+    when the user actually sends something.
+
+    This prevents lots of empty "New chat"
+    entries appearing in history.
+  */
+
+  function createNewChat() {
 
     currentChatId =
       null;
 
+    conversationMessages =
+      [];
+
+    clearUpload();
+
+    messageInput.value =
+      '';
+
+    messageInput.style.height =
+      'auto';
+
+    clearChatUI();
+
+    renderChatHistory();
+
+    messageInput.focus();
+
+  }
+
+
+  /*
+    Create the actual database chat
+    only when the user sends the first
+    message.
+  */
+
+  async function ensureCurrentChat(
+    firstMessage
+  ) {
+
+    if (
+      currentChatId
+    ) {
+
+      return true;
+
+    }
 
     if (
       !currentUser ||
       !supabaseClient
     ) {
 
-      return;
+      return false;
 
     }
 
+    const title =
+      firstMessage
+        .trim()
+        .slice(0, 45) ||
+      'New chat';
 
     try {
 
@@ -2072,12 +2139,11 @@
               currentUser.id,
 
             title:
-              'New chat'
+              title
 
           })
           .select()
           .single();
-
 
       if (result.error) {
 
@@ -2086,22 +2152,20 @@
           result.error
         );
 
-        return;
+        return false;
 
       }
 
-
       currentChatId =
         result.data.id;
-
 
       chats.unshift(
         result.data
       );
 
-
       renderChatHistory();
 
+      return true;
 
     } catch (error) {
 
@@ -2109,6 +2173,8 @@
         'Create chat error:',
         error
       );
+
+      return false;
 
     }
 
@@ -2119,14 +2185,8 @@
     chatId
   ) {
 
-    currentChatId =
-      chatId;
-
-
-    clearChatUI();
-
-
     if (
+      !chatId ||
       !currentUser ||
       !supabaseClient
     ) {
@@ -2135,6 +2195,20 @@
 
     }
 
+    loadingChat =
+      true;
+
+    currentChatId =
+      chatId;
+
+    conversationMessages =
+      [];
+
+    clearUpload();
+
+    clearChatUI();
+
+    renderChatHistory();
 
     try {
 
@@ -2153,7 +2227,6 @@
             }
           );
 
-
       if (result.error) {
 
         console.error(
@@ -2161,14 +2234,15 @@
           result.error
         );
 
+        loadingChat =
+          false;
+
         return;
 
       }
 
-
       const messages =
         result.data || [];
-
 
       messages.forEach(
         message => {
@@ -2178,9 +2252,22 @@
             'user'
           ) {
 
+            const content =
+              message.content || '';
+
+            conversationMessages.push({
+
+              role:
+                'user',
+
+              content:
+                content
+
+            });
+
             addTextMessage(
               'user',
-              message.content
+              content
             );
 
           } else {
@@ -2198,9 +2285,22 @@
 
             } else {
 
+              const content =
+                message.content || '';
+
+              conversationMessages.push({
+
+                role:
+                  'assistant',
+
+                content:
+                  content
+
+              });
+
               addTextMessage(
                 'assistant',
-                message.content
+                content
               );
 
             }
@@ -2210,9 +2310,10 @@
         }
       );
 
-
       renderChatHistory();
 
+      chat.scrollTop =
+        chat.scrollHeight;
 
     } catch (error) {
 
@@ -2220,6 +2321,11 @@
         'Load chat error:',
         error
       );
+
+    } finally {
+
+      loadingChat =
+        false;
 
     }
 
@@ -2231,11 +2337,9 @@
     chat.innerHTML =
       '';
 
-
     chat.appendChild(
       welcome
     );
-
 
     welcome.style.display =
       'block';
@@ -2255,10 +2359,9 @@
       !supabaseClient
     ) {
 
-      return;
+      return false;
 
     }
-
 
     try {
 
@@ -2284,7 +2387,6 @@
 
           });
 
-
       if (result.error) {
 
         console.error(
@@ -2292,7 +2394,11 @@
           result.error
         );
 
+        return false;
+
       }
+
+      return true;
 
     } catch (error) {
 
@@ -2300,6 +2406,8 @@
         'Save message error:',
         error
       );
+
+      return false;
 
     }
 
@@ -2319,13 +2427,34 @@
 
     }
 
+    const found =
+      chats.find(
+        item =>
+          item.id ===
+          currentChatId
+      );
+
+    /*
+      Only set the title when the
+      conversation is still called
+      "New chat".
+    */
+
+    if (
+      found &&
+      found.title &&
+      found.title !== 'New chat'
+    ) {
+
+      return;
+
+    }
 
     const title =
       text
         .trim()
         .slice(0, 45) ||
       'New chat';
-
 
     try {
 
@@ -2340,7 +2469,6 @@
             currentChatId
           );
 
-
       if (result.error) {
 
         console.error(
@@ -2352,15 +2480,6 @@
 
       }
 
-
-      const found =
-        chats.find(
-          item =>
-            item.id ===
-            currentChatId
-        );
-
-
       if (found) {
 
         found.title =
@@ -2368,9 +2487,7 @@
 
       }
 
-
       renderChatHistory();
-
 
     } catch (error) {
 
@@ -2396,44 +2513,35 @@
     welcome.style.display =
       'none';
 
-
     const wrapper =
       document.createElement(
         'div'
       );
 
-
     wrapper.className =
       `message ${role}`;
-
 
     const bubble =
       document.createElement(
         'div'
       );
 
-
     bubble.className =
       'bubble';
 
-
     bubble.textContent =
       text || '';
-
 
     wrapper.appendChild(
       bubble
     );
 
-
     chat.appendChild(
       wrapper
     );
 
-
     chat.scrollTop =
       chat.scrollHeight;
-
 
     return bubble;
 
@@ -2454,44 +2562,35 @@
     welcome.style.display =
       'none';
 
-
     const wrapper =
       document.createElement(
         'div'
       );
 
-
     wrapper.className =
       'imageMessage';
-
 
     const img =
       document.createElement(
         'img'
       );
 
-
     img.className =
       'generatedImage';
 
-
     img.src =
       imageUrl;
-
 
     img.alt =
       prompt ||
       'Generated image';
 
-
     img.loading =
       'lazy';
-
 
     wrapper.appendChild(
       img
     );
-
 
     if (prompt) {
 
@@ -2500,22 +2599,17 @@
           'div'
         );
 
-
       caption.style.marginTop =
         '8px';
-
 
       caption.style.color =
         '#aaa';
 
-
       caption.style.fontSize =
         '13px';
 
-
       caption.textContent =
         prompt;
-
 
       wrapper.appendChild(
         caption
@@ -2523,12 +2617,10 @@
 
     }
 
-
     const actions =
       document.createElement(
         'div'
       );
-
 
     actions.className =
       'imageActions';
@@ -2536,12 +2628,6 @@
 
     /*
       RE-RENDER
-
-      Generated images:
-      fresh generation from original prompt.
-
-      Uploaded edits:
-      fresh edit using the original upload.
     */
 
     const rerenderButton =
@@ -2549,18 +2635,14 @@
         'button'
       );
 
-
     rerenderButton.type =
       'button';
-
 
     rerenderButton.className =
       'imageActionButton';
 
-
     rerenderButton.textContent =
       '🔄 Re-render';
-
 
     rerenderButton.addEventListener(
       'click',
@@ -2571,7 +2653,6 @@
           return;
 
         }
-
 
         await rerenderImage({
 
@@ -2588,7 +2669,6 @@
       }
     );
 
-
     actions.appendChild(
       rerenderButton
     );
@@ -2603,18 +2683,14 @@
         'button'
       );
 
-
     downloadButton.type =
       'button';
-
 
     downloadButton.className =
       'imageActionButton';
 
-
     downloadButton.textContent =
       '⬇️ Save image';
-
 
     downloadButton.addEventListener(
       'click',
@@ -2627,26 +2703,20 @@
               'a'
             );
 
-
           link.href =
             imageUrl;
-
 
           link.download =
             'nastivee-image.png';
 
-
           link.target =
             '_blank';
-
 
           document.body.appendChild(
             link
           );
 
-
           link.click();
-
 
           link.remove();
 
@@ -2662,25 +2732,20 @@
       }
     );
 
-
     actions.appendChild(
       downloadButton
     );
-
 
     wrapper.appendChild(
       actions
     );
 
-
     chat.appendChild(
       wrapper
     );
 
-
     chat.scrollTop =
       chat.scrollHeight;
-
 
     return wrapper;
 
@@ -2699,10 +2764,8 @@
     imageProgress.style.display =
       'block';
 
-
     progressTitle.textContent =
       title;
-
 
     progressFill.style.width =
       `${percent}%`;
@@ -2714,7 +2777,6 @@
 
     imageProgress.style.display =
       'none';
-
 
     progressFill.style.width =
       '15%';
@@ -2729,14 +2791,11 @@
     imageBusy =
       busy;
 
-
     imageButton.disabled =
       busy;
 
-
     sendButton.disabled =
       busy;
-
 
     uploadButton.disabled =
       busy;
@@ -2766,31 +2825,26 @@
 
     }
 
-
     if (imageBusy) {
 
       return;
 
     }
 
-
     setImageButtonsBusy(
       true
     );
-
 
     showImageProgress(
       'Preparing image...',
       15
     );
 
-
     let progressTimer1 =
       null;
 
     let progressTimer2 =
       null;
-
 
     try {
 
@@ -2807,7 +2861,6 @@
           700
         );
 
-
       progressTimer2 =
         setTimeout(
           () => {
@@ -2820,7 +2873,6 @@
           },
           1800
         );
-
 
       const response =
         await apiFetch(
@@ -2841,12 +2893,10 @@
           }
         );
 
-
       showImageProgress(
         'Finishing image...',
         90
       );
-
 
       let data = {};
 
@@ -2863,7 +2913,6 @@
 
       }
 
-
       if (!response.ok) {
 
         throw new Error(
@@ -2874,7 +2923,6 @@
 
       }
 
-
       if (!data.image) {
 
         throw new Error(
@@ -2883,9 +2931,7 @@
 
       }
 
-
       hideImageProgress();
-
 
       addImageMessage(
         data.image,
@@ -2894,13 +2940,11 @@
         prompt
       );
 
-
       await saveMessage(
         'assistant',
         prompt,
         data.image
       );
-
 
     } catch (error) {
 
@@ -2909,9 +2953,7 @@
         error
       );
 
-
       hideImageProgress();
-
 
       addTextMessage(
         'assistant',
@@ -2928,7 +2970,6 @@
 
       }
 
-
       if (progressTimer2) {
 
         clearTimeout(
@@ -2936,7 +2977,6 @@
         );
 
       }
-
 
       setImageButtonsBusy(
         false
@@ -2956,9 +2996,7 @@
     prompt
   ) {
 
-    if (
-      !imageData
-    ) {
+    if (!imageData) {
 
       addTextMessage(
         'assistant',
@@ -2969,31 +3007,26 @@
 
     }
 
-
     if (imageBusy) {
 
       return;
 
     }
 
-
     setImageButtonsBusy(
       true
     );
-
 
     showImageProgress(
       'Preparing your image...',
       15
     );
 
-
     let progressTimer1 =
       null;
 
     let progressTimer2 =
       null;
-
 
     try {
 
@@ -3010,7 +3043,6 @@
           600
         );
 
-
       progressTimer2 =
         setTimeout(
           () => {
@@ -3023,7 +3055,6 @@
           },
           1500
         );
-
 
       const response =
         await apiFetch(
@@ -3048,12 +3079,10 @@
           }
         );
 
-
       showImageProgress(
         'Finishing your image...',
         90
       );
-
 
       let data = {};
 
@@ -3070,7 +3099,6 @@
 
       }
 
-
       if (!response.ok) {
 
         throw new Error(
@@ -3081,7 +3109,6 @@
 
       }
 
-
       if (!data.image) {
 
         throw new Error(
@@ -3090,9 +3117,7 @@
 
       }
 
-
       hideImageProgress();
-
 
       addImageMessage(
         data.image,
@@ -3101,13 +3126,11 @@
         prompt
       );
 
-
       await saveMessage(
         'assistant',
         prompt,
         data.image
       );
-
 
     } catch (error) {
 
@@ -3116,9 +3139,7 @@
         error
       );
 
-
       hideImageProgress();
-
 
       addTextMessage(
         'assistant',
@@ -3135,7 +3156,6 @@
 
       }
 
-
       if (progressTimer2) {
 
         clearTimeout(
@@ -3143,7 +3163,6 @@
         );
 
       }
-
 
       setImageButtonsBusy(
         false
@@ -3169,7 +3188,6 @@
 
     }
 
-
     const cleanPrompt =
       (
         prompt ||
@@ -3178,11 +3196,10 @@
 
 
     /*
-      If the original uploaded image is available,
-      send THAT original image again.
+      Uploaded image available.
 
-      This prevents a generated result from becoming
-      the source for the next render.
+      ALWAYS send the original uploaded
+      image again.
     */
 
     if (sourceImage) {
@@ -3219,9 +3236,11 @@ variation rather than an identical copy.`;
 
 
     /*
-      For generated images, there is no uploaded
-      source file, so create a fresh generation from
-      the original prompt.
+      Generated image.
+
+      There is no original uploaded file available
+      after a page reload, so generate a new version
+      from the original prompt.
     */
 
     const variationPrompt =
@@ -3257,10 +3276,8 @@ Make it clearly a new render rather than an exact copy.`;
 
     }
 
-
     const text =
       messageInput.value.trim();
-
 
     if (
       !text &&
@@ -3274,22 +3291,54 @@ Make it clearly a new render rather than an exact copy.`;
     }
 
 
-    if (!currentChatId) {
-
-      await createNewChat();
-
-    }
-
-
     const userText =
       text ||
       'Please edit this image.';
+
+
+    /*
+      Create database chat only when
+      the user actually sends something.
+    */
+
+    const chatReady =
+      await ensureCurrentChat(
+        userText
+      );
+
+    if (!chatReady) {
+
+      addTextMessage(
+        'assistant',
+        'I could not create the conversation. Please try again.'
+      );
+
+      return;
+
+    }
 
 
     addTextMessage(
       'user',
       userText
     );
+
+
+    /*
+      Add the user message to the local
+      conversation history before sending
+      it to OpenAI.
+    */
+
+    conversationMessages.push({
+
+      role:
+        'user',
+
+      content:
+        userText
+
+    });
 
 
     await saveMessage(
@@ -3303,33 +3352,36 @@ Make it clearly a new render rather than an exact copy.`;
     );
 
 
+    /*
+      IMAGE EDIT
+    */
+
     if (selectedImageData) {
 
       const image =
         selectedImageData;
 
-
       clearUpload();
-
 
       messageInput.value =
         '';
-
 
       await editImage(
         image,
         userText
       );
 
-
       return;
 
     }
 
 
+    /*
+      NORMAL CHAT
+    */
+
     messageInput.value =
       '';
-
 
     try {
 
@@ -3344,8 +3396,8 @@ Make it clearly a new render rather than an exact copy.`;
             body:
               JSON.stringify({
 
-                message:
-                  userText,
+                messages:
+                  conversationMessages.slice(-30),
 
                 memory:
                   memory
@@ -3395,6 +3447,23 @@ Make it clearly a new render rather than an exact copy.`;
       );
 
 
+      /*
+        Store assistant response locally
+        so the next question knows the
+        previous answer.
+      */
+
+      conversationMessages.push({
+
+        role:
+          'assistant',
+
+        content:
+          answer
+
+      });
+
+
       await saveMessage(
         'assistant',
         answer
@@ -3414,6 +3483,37 @@ Make it clearly a new render rather than an exact copy.`;
         `Error: ${error.message}`
       );
 
+
+      /*
+        Remove the failed user message
+        from the local API history so
+        a failed request doesn't corrupt
+        the conversation.
+      */
+
+      conversationMessages =
+        conversationMessages.filter(
+          (message, index) => {
+
+            if (
+              index !==
+              conversationMessages.length - 1
+            ) {
+
+              return true;
+
+            }
+
+            return !(
+              message.role ===
+              'user' &&
+              message.content ===
+              userText
+            );
+
+          }
+        );
+
     }
 
   }
@@ -3431,14 +3531,12 @@ Make it clearly a new render rather than an exact copy.`;
 
     }
 
-
     const prompt =
       messageInput.value.trim();
 
 
     /*
-      If an image is uploaded, the image button
-      performs an edit rather than generation.
+      UPLOADED IMAGE = EDIT
     */
 
     if (selectedImageData) {
@@ -3457,9 +3555,19 @@ Make it clearly a new render rather than an exact copy.`;
       }
 
 
-      if (!currentChatId) {
+      const chatReady =
+        await ensureCurrentChat(
+          prompt
+        );
 
-        await createNewChat();
+      if (!chatReady) {
+
+        addTextMessage(
+          'assistant',
+          'I could not create the conversation. Please try again.'
+        );
+
+        return;
 
       }
 
@@ -3469,6 +3577,12 @@ Make it clearly a new render rather than an exact copy.`;
         prompt
       );
 
+
+      /*
+        Image edit requests are stored
+        as messages but aren't sent to
+        the normal text conversation API.
+      */
 
       await saveMessage(
         'user',
@@ -3484,19 +3598,15 @@ Make it clearly a new render rather than an exact copy.`;
       const image =
         selectedImageData;
 
-
       clearUpload();
-
 
       messageInput.value =
         '';
-
 
       await editImage(
         image,
         prompt
       );
-
 
       return;
 
@@ -3504,7 +3614,7 @@ Make it clearly a new render rather than an exact copy.`;
 
 
     /*
-      Normal image generation.
+      NORMAL IMAGE GENERATION
     */
 
     if (!prompt) {
@@ -3521,9 +3631,19 @@ Make it clearly a new render rather than an exact copy.`;
     }
 
 
-    if (!currentChatId) {
+    const chatReady =
+      await ensureCurrentChat(
+        prompt
+      );
 
-      await createNewChat();
+    if (!chatReady) {
+
+      addTextMessage(
+        'assistant',
+        'I could not create the conversation. Please try again.'
+      );
+
+      return;
 
     }
 
@@ -3547,7 +3667,6 @@ Make it clearly a new render rather than an exact copy.`;
 
     messageInput.value =
       '';
-
 
     await generateImage(
       prompt
@@ -3576,7 +3695,6 @@ Make it clearly a new render rather than an exact copy.`;
 
       }
 
-
       fileInput.click();
 
     }
@@ -3590,13 +3708,11 @@ Make it clearly a new render rather than an exact copy.`;
       const file =
         event.target.files?.[0];
 
-
       if (!file) {
 
         return;
 
       }
-
 
       if (
         !file.type.startsWith(
@@ -3612,14 +3728,11 @@ Make it clearly a new render rather than an exact copy.`;
 
       }
 
-
       selectedImageFile =
         file;
 
-
       const reader =
         new FileReader();
-
 
       reader.onload =
         () => {
@@ -3627,19 +3740,15 @@ Make it clearly a new render rather than an exact copy.`;
           selectedImageData =
             reader.result;
 
-
           uploadPreviewImage.src =
             selectedImageData;
-
 
           uploadPreview.style.display =
             'block';
 
-
           messageInput.focus();
 
         };
-
 
       reader.onerror =
         () => {
@@ -3650,7 +3759,6 @@ Make it clearly a new render rather than an exact copy.`;
           );
 
         };
-
 
       reader.readAsDataURL(
         file
@@ -3669,18 +3777,14 @@ Make it clearly a new render rather than an exact copy.`;
     selectedImageFile =
       null;
 
-
     selectedImageData =
       null;
-
 
     fileInput.value =
       '';
 
-
     uploadPreview.style.display =
       'none';
-
 
     uploadPreviewImage.src =
       '';
@@ -3743,32 +3847,29 @@ Make it clearly a new render rather than an exact copy.`;
 
         }
 
-
         currentUser =
           null;
-
 
         currentChatId =
           null;
 
-
         chats =
           [];
-
 
         memory =
           '';
 
+        conversationMessages =
+          [];
 
         initialised =
           false;
 
-
         clearUpload();
-
 
         clearChatUI();
 
+        renderChatHistory();
 
         showAuthScreen();
 
@@ -3791,7 +3892,6 @@ Make it clearly a new render rather than an exact copy.`;
 
         event.preventDefault();
 
-
         sendMessage();
 
       }
@@ -3810,7 +3910,6 @@ Make it clearly a new render rather than an exact copy.`;
 
       messageInput.style.height =
         'auto';
-
 
       messageInput.style.height =
         `${Math.min(
@@ -3833,13 +3932,11 @@ Make it clearly a new render rather than an exact copy.`;
         '.dock'
       );
 
-
     if (!dock) {
 
       return;
 
     }
-
 
     document.documentElement
       .style
