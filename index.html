@@ -585,15 +585,6 @@ button {
   font-weight: 600;
 }
 
-.userEmail {
-  color: #92879d;
-  margin-bottom: 10px;
-  font-size: 12px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .versionTag {
   margin-top: 10px;
   text-align: center;
@@ -2141,11 +2132,6 @@ button {
       </div>
 
 
-      <div
-        class="userEmail"
-        id="userEmail"
-      ></div>
-
       <button
         class="installButton"
         id="installButton"
@@ -3682,10 +3668,17 @@ async function initialiseApp() {
 
   showApp();
 
-  userEmail.textContent =
-    guestMode
-      ? 'Guest'
-      : (currentUser?.email || '');
+  /*
+    The email lives in My profile now, not the sidebar.
+  */
+  if (userEmail) {
+
+    userEmail.textContent =
+      guestMode
+        ? 'Guest'
+        : (currentUser?.email || '');
+
+  }
 
   guestNotice.classList.toggle('show', guestMode);
 
@@ -8478,7 +8471,7 @@ window.addEventListener('online', () => {
    clearing anything by hand.
 ===================================================== */
 
-const APP_VERSION = '2026-09-20-35';
+const APP_VERSION = '2026-09-20-36';
 
 const RELOAD_FLAG = 'nastivee_reloaded_for';
 
