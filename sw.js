@@ -9,7 +9,17 @@
   Bump CACHE whenever the cached files change.
 */
 
-const CACHE = 'nastivee-v3';
+/*
+  The page registers this file as ./sw.js?v=APP_VERSION,
+  so bumping APP_VERSION in index.html is enough to make
+  the browser treat this as a new worker. The cache name
+  follows that version so old caches are cleared.
+*/
+
+const VERSION =
+  new URL(self.location.href).searchParams.get('v') || 'v3';
+
+const CACHE = `nastivee-${VERSION}`;
 
 const ASSETS = [
   './',

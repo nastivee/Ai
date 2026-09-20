@@ -5086,6 +5086,92 @@ logoutButton.addEventListener(
 
 
 /* =====================================================
+   APP VERSION / CACHE BUSTING
+
+   Bump APP_VERSION on every deploy. The service worker
+   registration carries it, so the browser always sees a
+   changed worker, installs it, and this page reloads
+   itself once so the user is on the new version without
+   clearing anything by hand.
+===================================================== */
+
+const APP_VERSION = '2026-09-20-1';
+
+const RELOAD_FLAG = 'nastivee_reloaded_for';
+
+if ('serviceWorker' in navigator) {
+
+  window.addEventListener('load', () => {
+
+    navigator.serviceWorker
+      .register(`./sw.js?v=${APP_VERSION}`)
+      .then(registration => {
+
+        // Look for a newer worker whenever the app is opened
+        registration.update().catch(() => {});
+
+        registration.addEventListener('updatefound', () => {
+
+          const installing = registration.installing;
+
+          if (!installing) return;
+
+          installing.addEventListener('statechange', () => {
+
+            if (
+              installing.state === 'installed' &&
+              navigator.serviceWorker.controller
+            ) {
+
+              reloadForNewVersion();
+
+            }
+
+          });
+
+        });
+
+      })
+      .catch(() => {});
+
+
+    // A new worker took over this page
+    navigator.serviceWorker.addEventListener(
+      'controllerchange',
+      reloadForNewVersion
+    );
+
+  });
+
+}
+
+
+/*
+  Reload at most once per version, so a worker that keeps
+  updating can never put the app in a reload loop.
+*/
+function reloadForNewVersion() {
+
+  let already = null;
+
+  try {
+    already = sessionStorage.getItem(RELOAD_FLAG);
+  } catch {}
+
+  if (already === APP_VERSION) {
+    return;
+  }
+
+  try {
+    sessionStorage.setItem(RELOAD_FLAG, APP_VERSION);
+  } catch {}
+
+  window.location.reload();
+
+}
+
+
+/* =====================================================
    START
 ===================================================== */
 
