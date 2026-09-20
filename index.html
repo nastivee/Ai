@@ -1255,6 +1255,28 @@ button {
    COMPOSER
 ===================================================== */
 
+.jumpButton {
+  display: none;
+  position: absolute;
+  left: 50%;
+  bottom: 104px;
+  transform: translateX(-50%);
+  z-index: 5;
+  padding: 9px 18px;
+  border: 1px solid #4a3568;
+  border-radius: 999px;
+  background: #241839;
+  color: #e4d9f1;
+  font-size: 12.5px;
+  font-weight: 700;
+  /* room for the shadow so it is never clipped */
+  box-shadow: 0 10px 30px rgba(0,0,0,.45);
+}
+
+.jumpButton.show {
+  display: block;
+}
+
 .composerArea {
   flex-shrink: 0;
   padding: 12px 20px 18px;
@@ -1336,6 +1358,42 @@ button {
   color: #c9bfd2;
   border-radius: 8px;
   padding: 7px 9px;
+}
+
+.shapeRow {
+  display: none;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 4px 10px;
+  flex-wrap: wrap;
+}
+
+.shapeRow.show {
+  display: flex;
+}
+
+.shapeLabel {
+  color: #7e738f;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .8px;
+  padding-right: 4px;
+}
+
+.shapeButton {
+  padding: 7px 14px;
+  border: 1px solid #3d2f56;
+  border-radius: 9px;
+  background: transparent;
+  color: #b7abc6;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.shapeButton.active {
+  background: #6d42ae;
+  border-color: transparent;
+  color: white;
 }
 
 .composerBottom {
@@ -1452,6 +1510,24 @@ button {
     text-overflow: ellipsis;
   }
 
+}
+
+.stopButton {
+  display: none;
+  background: #3a1520;
+  border: 1px solid #6b2634;
+  color: #ff8a8a;
+}
+
+.stopButton.show {
+  display: flex;
+}
+
+.stopSquare {
+  width: 13px;
+  height: 13px;
+  border-radius: 3px;
+  background: currentColor;
 }
 
 .sendButton {
@@ -2036,6 +2112,16 @@ button {
 
     <!-- COMPOSER -->
 
+    <button
+      class="jumpButton"
+      id="jumpButton"
+      type="button"
+      title="Jump to the latest"
+      aria-label="Jump to the latest"
+    >
+      ↓ Latest
+    </button>
+
     <div class="composerArea">
 
       <div class="composer">
@@ -2091,6 +2177,16 @@ button {
         </div>
 
 
+        <div class="shapeRow" id="shapeRow">
+
+          <span class="shapeLabel">Shape</span>
+
+          <button type="button" class="shapeButton active" data-shape="square">Square</button>
+          <button type="button" class="shapeButton" data-shape="portrait">Portrait</button>
+          <button type="button" class="shapeButton" data-shape="landscape">Landscape</button>
+
+        </div>
+
         <div class="composerBottom">
 
           <div class="composerTools">
@@ -2132,6 +2228,16 @@ button {
             title="Send"
           >
             ➤
+          </button>
+
+          <button
+            id="stopButton"
+            class="composerButton stopButton"
+            type="button"
+            title="Stop"
+            aria-label="Stop"
+          >
+            <span class="stopSquare"></span>
           </button>
 
         </div>
@@ -2210,6 +2316,12 @@ let imageMode = false;
 
 /* what to do with an attached photo: 'edit' or 'ask' */
 let photoAction = 'edit';
+
+/* the shape of the next generated image */
+let imageShape = 'square';
+
+/* lets the user stop a reply part way through */
+let replyController = null;
 
 /* 'fast' for everyday, 'smart' for harder questions */
 let chatMode =
@@ -2476,6 +2588,15 @@ const uploadThumb =
 
 const uploadName =
   document.getElementById('uploadName');
+
+const jumpButton =
+  document.getElementById('jumpButton');
+
+const stopButton =
+  document.getElementById('stopButton');
+
+const shapeRow =
+  document.getElementById('shapeRow');
 
 const photoChoice =
   document.getElementById('photoChoice');
@@ -4824,6 +4945,22 @@ async function updateChatTitle(
    WHAT TO DO WITH AN ATTACHED PHOTO
 ===================================================== */
 
+shapeRow.addEventListener('click', event => {
+
+  const button =
+    event.target.closest('.shapeButton');
+
+  if (!button) return;
+
+  imageShape = button.dataset.shape;
+
+  [...shapeRow.querySelectorAll('.shapeButton')].forEach(item => {
+    item.classList.toggle('active', item === button);
+  });
+
+});
+
+
 photoChoice.addEventListener('click', event => {
 
   const button =
@@ -5663,7 +5800,8 @@ async function generateImage(
 
           body:
             JSON.stringify({
-              prompt
+              prompt,
+              shape: imageShape
             })
 
         }
@@ -5813,6 +5951,8 @@ async function editImage(
               image,
 
               regenerate,
+
+              shape: imageShape,
 
               /*
                 Tells the server this is a real photograph,
@@ -5977,12 +6117,17 @@ async function rerenderImage(
     'a three quarter view from the side'
   ];
 
+  /*
+    Every option names a real place. An empty floor is
+    never one of them: a blank grey backdrop adds nothing
+    to the picture.
+  */
   const backgrounds = [
-    'a different setting with more depth behind the subject',
-    'a simpler, less cluttered background',
-    'a background thrown well out of focus',
-    'a different time of day in the same kind of place',
-    'a wider setting showing more of the surroundings'
+    'a real location that suits the subject, with depth and things happening behind them',
+    'a different real place from the supplied image, still suiting the subject',
+    'the same kind of place at a different time of day, with its own light and atmosphere',
+    'a wider view of a real setting, showing where the subject actually is',
+    'a real setting with foreground and background layers, the background softly out of focus'
   ];
 
   improveSequence++;
@@ -6032,6 +6177,11 @@ DO NOT:
 Do not swap the subject for a different one.
 Do not reproduce the supplied image.
 Do not drop anything the original request asked for.
+
+Do not place the subject on a blank studio floor, plain
+tarmac, seamless backdrop or empty grey ground. There must
+be a real environment around them, unless the original
+request specifically asked for a plain background.
 `;
 
 
@@ -6114,6 +6264,15 @@ Do not drop anything the original request asked for.
   }
 
 }
+
+
+stopButton.addEventListener('click', () => {
+
+  replyController?.abort();
+
+  stopButton.classList.remove('show');
+
+});
 
 
 /* =====================================================
@@ -6374,6 +6533,11 @@ async function sendNormalMessage(
     );
 
 
+  replyController = new AbortController();
+
+  stopButton.classList.add('show');
+
+
   try {
 
     let messages;
@@ -6449,6 +6613,9 @@ async function sendNormalMessage(
           headers:
             await apiHeaders(),
 
+          signal:
+            replyController.signal,
+
           body:
             JSON.stringify({
 
@@ -6513,6 +6680,16 @@ async function sendNormalMessage(
 
   } catch (error) {
 
+    /*
+      The user pressed Stop. Whatever arrived before that
+      is already drawn, so there is nothing to apologise for.
+    */
+
+    if (error?.name === 'AbortError') {
+      return;
+    }
+
+
     console.error(
       'CHAT ERROR:',
       error
@@ -6536,6 +6713,10 @@ async function sendNormalMessage(
     );
 
   } finally {
+
+    replyController = null;
+
+    stopButton.classList.remove('show');
 
     endJob(jobId);
 
@@ -6892,6 +7073,9 @@ function setImageMode(
   imageMode =
     Boolean(enabled);
 
+  /* the shape picker belongs to Create image */
+  shapeRow.classList.toggle('show', imageMode);
+
 
   if (imageMode) {
 
@@ -7192,7 +7376,29 @@ messageInput.addEventListener(
    SCROLL
 ===================================================== */
 
-function scrollToBottom() {
+/*
+  Only follow the conversation down while the user is
+  already at the bottom. If they have scrolled up to read
+  something, leave them there and offer a way back.
+*/
+
+function nearBottom() {
+
+  return (
+    chat.scrollHeight - chat.scrollTop - chat.clientHeight < 120
+  );
+
+}
+
+function scrollToBottom(force = false) {
+
+  if (!force && !nearBottom()) {
+
+    jumpButton.classList.add('show');
+
+    return;
+
+  }
 
   requestAnimationFrame(
     () => {
@@ -7200,10 +7406,26 @@ function scrollToBottom() {
       chat.scrollTop =
         chat.scrollHeight;
 
+      jumpButton.classList.remove('show');
+
     }
   );
 
 }
+
+chat.addEventListener('scroll', () => {
+
+  jumpButton.classList.toggle(
+    'show',
+    !nearBottom()
+  );
+
+});
+
+jumpButton.addEventListener(
+  'click',
+  () => scrollToBottom(true)
+);
 
 
 /* =====================================================
@@ -7454,7 +7676,7 @@ window.addEventListener('online', () => {
    clearing anything by hand.
 ===================================================== */
 
-const APP_VERSION = '2026-09-20-30';
+const APP_VERSION = '2026-09-20-31';
 
 const RELOAD_FLAG = 'nastivee_reloaded_for';
 

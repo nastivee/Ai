@@ -122,6 +122,20 @@ sweep.unref();
 
 
 /*
+  gpt-image sizes, by the shape the user picked.
+*/
+function sizeFor(shape) {
+
+  if (shape === 'portrait') return '1024x1536';
+
+  if (shape === 'landscape') return '1536x1024';
+
+  return '1024x1024';
+
+}
+
+
+/*
   Guards an image route: signed in, and inside the
   hourly allowance.
 */
@@ -424,7 +438,10 @@ app.post('/api/image', async (req, res) => {
     }
 
     const {
-      prompt
+      prompt,
+
+      /* 'square', 'portrait' or 'landscape' */
+      shape = 'square'
     } = req.body;
 
     if (!prompt || !prompt.trim()) {
@@ -464,7 +481,7 @@ app.post('/api/image', async (req, res) => {
 
         prompt: finalPrompt,
 
-        size: '1024x1024',
+        size: sizeFor(shape),
 
         quality: 'medium',
 
@@ -538,6 +555,9 @@ app.post('/api/image/edit', async (req, res) => {
       prompt,
       image,
       regenerate = false,
+
+      /* 'square', 'portrait' or 'landscape' */
+      shape = 'square',
 
       /*
         true when the source is a photograph the user
@@ -824,6 +844,13 @@ Move the lighting, the camera angle and the
 background. All three must be visibly different
 from the supplied image.
 
+The background must be a real place that suits
+the subject. Never a blank studio floor, seamless
+backdrop, empty tarmac or plain grey ground: an
+empty floor adds nothing to the picture. The only
+exception is when the original request asked for
+a plain background.
+
 Do not hand back the supplied image with small
 touch ups. Do not keep the same angle, the same
 light and the same backdrop.
@@ -859,7 +886,7 @@ style was requested.
 
         prompt: finalPrompt,
 
-        size: '1024x1024',
+        size: sizeFor(shape),
 
         quality: 'medium',
 
