@@ -4220,10 +4220,22 @@ async function loadChat(
           'user'
         ) {
 
-          addTextMessage(
-            'user',
-            message.content || ''
-          );
+          if (message.image_url) {
+
+            addUserImage(
+              chatId,
+              message.image_url,
+              message.content || ''
+            );
+
+          } else {
+
+            addTextMessage(
+              'user',
+              message.content || ''
+            );
+
+          }
 
         } else if (
           message.image_url
