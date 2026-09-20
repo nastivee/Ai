@@ -6,8 +6,8 @@
 <meta name="theme-color" content="#171126">
 <title>Nastivee AI</title>
 
-<link rel="icon" href="./IMG_0471.jpeg">
-<link rel="apple-touch-icon" href="./IMG_0471.jpeg">
+<link rel="icon" href="./NAI-Logo.png">
+<link rel="apple-touch-icon" href="./NAI-Logo.png">
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
@@ -693,9 +693,8 @@ button {
   width: min(46vmin, 360px);
   height: min(46vmin, 360px);
   transform: translate(-50%, -50%);
-  background: url('./IMG_0471.jpeg') center / contain no-repeat;
-  border-radius: 28px;
-  opacity: .05;
+  background: url('./NAI-Logo.png') center / contain no-repeat;
+  opacity: .07;
   pointer-events: none;
   z-index: 0;
 }
@@ -718,14 +717,13 @@ button {
 }
 
 .emptyIcon {
-  width: 104px;
-  height: 104px;
-  object-fit: cover;
+  width: 118px;
+  height: 118px;
+  object-fit: contain;
   margin: 0 auto 18px;
   display: block;
-  border-radius: 24px;
-  /* Padding around the halo so it is never clipped */
-  box-shadow: 0 18px 50px rgba(139,92,246,.28);
+  /* Glow drawn as a filter so the transparent edges keep it */
+  filter: drop-shadow(0 14px 34px rgba(139,92,246,.35));
 }
 
 .emptyText {
@@ -1448,7 +1446,7 @@ button {
 
           <img
             class="emptyIcon"
-            src="./IMG_0471.jpeg"
+            src="./NAI-Logo.png"
             alt="Nastivee AI"
           >
 
@@ -3314,7 +3312,7 @@ function clearChatUI() {
 
   emptyState.innerHTML = `
     <div class="emptyInner">
-      <img class="emptyIcon" src="./IMG_0471.jpeg" alt="Nastivee AI">
+      <img class="emptyIcon" src="./NAI-Logo.png" alt="Nastivee AI">
 
       <div class="emptyText">
         Ask me anything, upload an image,
@@ -5786,7 +5784,7 @@ window.addEventListener('online', () => {
    clearing anything by hand.
 ===================================================== */
 
-const APP_VERSION = '2026-09-20-12';
+const APP_VERSION = '2026-09-20-13';
 
 const RELOAD_FLAG = 'nastivee_reloaded_for';
 

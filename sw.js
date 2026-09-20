@@ -26,7 +26,7 @@ const ASSETS = [
   './index.html',
   './manifest.webmanifest',
   './icon.svg',
-  './IMG_0471.jpeg'
+  './NAI-Logo.png'
 ];
 
 self.addEventListener('install', event => {
