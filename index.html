@@ -243,7 +243,7 @@
     }
 
     /* =========================
-       MOBILE SIDEBAR OVERLAY
+       MOBILE SIDEBAR
     ========================= */
 
     .sidebarOverlay {
@@ -257,10 +257,6 @@
     .sidebarOverlay.show {
       display: block;
     }
-
-    /* =========================
-       MOBILE MENU BUTTON
-    ========================= */
 
     .mobileMenuButton {
       display: none;
@@ -478,11 +474,6 @@
       background: #241433;
     }
 
-    .imageActionButton:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-
     /* =========================
        PROGRESS
     ========================= */
@@ -525,7 +516,7 @@
     }
 
     /* =========================
-       UPLOAD PREVIEW
+       UPLOAD
     ========================= */
 
     #uploadPreview {
@@ -561,7 +552,7 @@
     }
 
     /* =========================
-       DOCK
+       COMPOSER
     ========================= */
 
     .dock {
@@ -612,7 +603,6 @@
       background: #21132e;
       color: white;
       flex-shrink: 0;
-      position: relative;
     }
 
     .dockButton:hover {
@@ -710,10 +700,6 @@
         font-size: 26px;
       }
 
-      .imageMessage {
-        width: 100%;
-      }
-
       .generatedImage {
         max-width: 100%;
       }
@@ -723,14 +709,11 @@
         top: 72px;
         width: calc(100vw - 20px);
       }
-
     }
   </style>
 </head>
 
 <body>
-
-  <!-- MOBILE SIDEBAR OVERLAY -->
 
   <div
     id="sidebarOverlay"
@@ -738,9 +721,7 @@
   ></div>
 
 
-  <!-- =========================
-       AUTH
-  ========================= -->
+  <!-- AUTH -->
 
   <div id="authScreen">
 
@@ -758,6 +739,7 @@
         <p>Your personal AI assistant</p>
 
       </div>
+
 
       <div id="loginForm">
 
@@ -794,6 +776,7 @@
         </div>
 
       </div>
+
 
       <div
         id="signupForm"
@@ -848,9 +831,7 @@
   </div>
 
 
-  <!-- =========================
-       APP
-  ========================= -->
+  <!-- APP -->
 
   <div id="app">
 
@@ -1014,7 +995,7 @@
     </div>
 
 
-    <!-- DOCK -->
+    <!-- COMPOSER -->
 
     <div class="dock">
 
@@ -1037,6 +1018,7 @@
 
         </div>
 
+
         <button
           type="button"
           class="dockButton"
@@ -1046,28 +1028,29 @@
           📎
         </button>
 
+
         <textarea
           id="messageInput"
           rows="1"
           placeholder="Message Nastivee..."
         ></textarea>
 
+
         <button
           type="button"
           class="dockButton"
           id="imageButton"
           title="Create image"
-          aria-label="Create image"
         >
           🖼️
         </button>
+
 
         <button
           type="button"
           class="dockButton"
           id="sendButton"
           title="Send message"
-          aria-label="Send message"
         >
           ➤
         </button>
@@ -1114,23 +1097,16 @@
 
   try {
 
-    if (
-      window.supabase &&
-      typeof window.supabase.createClient === 'function'
-    ) {
-
-      supabaseClient =
-        window.supabase.createClient(
-          SUPABASE_URL,
-          SUPABASE_KEY
-        );
-
-    }
+    supabaseClient =
+      window.supabase.createClient(
+        SUPABASE_URL,
+        SUPABASE_KEY
+      );
 
   } catch (error) {
 
     console.error(
-      'Supabase initialisation failed:',
+      'Supabase initialisation error:',
       error
     );
 
@@ -1230,56 +1206,44 @@
 
   function openMobileSidebar() {
 
-    if (!sidebar) {
-      return;
-    }
+    sidebar.classList.add(
+      'mobileOpen'
+    );
 
-    sidebar.classList.add('mobileOpen');
-
-    if (sidebarOverlay) {
-      sidebarOverlay.classList.add('show');
-    }
+    sidebarOverlay.classList.add(
+      'show'
+    );
 
   }
 
 
   function closeMobileSidebar() {
 
-    if (!sidebar) {
-      return;
-    }
+    sidebar.classList.remove(
+      'mobileOpen'
+    );
 
-    sidebar.classList.remove('mobileOpen');
-
-    if (sidebarOverlay) {
-      sidebarOverlay.classList.remove('show');
-    }
-
-  }
-
-
-  if (mobileMenuButton) {
-
-    mobileMenuButton.addEventListener(
-      'click',
-      openMobileSidebar
+    sidebarOverlay.classList.remove(
+      'show'
     );
 
   }
 
 
-  if (sidebarOverlay) {
+  mobileMenuButton.addEventListener(
+    'click',
+    openMobileSidebar
+  );
 
-    sidebarOverlay.addEventListener(
-      'click',
-      closeMobileSidebar
-    );
 
-  }
+  sidebarOverlay.addEventListener(
+    'click',
+    closeMobileSidebar
+  );
 
 
   /* =========================================================
-     AUTH MESSAGE
+     AUTH
   ========================================================= */
 
   function setAuthMessage(
@@ -1297,10 +1261,6 @@
 
   }
 
-
-  /* =========================================================
-     AUTH MODE
-  ========================================================= */
 
   function showLogin() {
 
@@ -1350,16 +1310,6 @@
 
   async function login() {
 
-    if (!supabaseClient) {
-
-      setAuthMessage(
-        'Authentication is not available.'
-      );
-
-      return;
-
-    }
-
     const email =
       document
         .getElementById('loginEmail')
@@ -1382,15 +1332,12 @@
     }
 
     const button =
-      document.getElementById('loginButton');
+      document.getElementById(
+        'loginButton'
+      );
 
     button.disabled = true;
     button.textContent = 'Logging in...';
-
-    setAuthMessage(
-      'Logging in...',
-      true
-    );
 
     try {
 
@@ -1402,24 +1349,9 @@
 
       if (result.error) {
 
-        const message =
-          result.error.message || '';
-
-        if (
-          message
-            .toLowerCase()
-            .includes('email not confirmed')
-        ) {
-
-          setAuthMessage(
-            'Please confirm your email address first.'
-          );
-
-        } else {
-
-          setAuthMessage(message);
-
-        }
+        setAuthMessage(
+          result.error.message
+        );
 
         return;
 
@@ -1435,8 +1367,7 @@
       );
 
       setAuthMessage(
-        error.message ||
-        'Login failed.'
+        error.message
       );
 
     } finally {
@@ -1458,20 +1389,10 @@
 
 
   /* =========================================================
-     SIGN UP
+     SIGNUP
   ========================================================= */
 
   async function signup() {
-
-    if (!supabaseClient) {
-
-      setAuthMessage(
-        'Authentication is not available.'
-      );
-
-      return;
-
-    }
 
     const email =
       document
@@ -1489,11 +1410,7 @@
         .getElementById('signupPasswordConfirm')
         .value;
 
-    if (
-      !email ||
-      !password ||
-      !confirmPassword
-    ) {
+    if (!email || !password) {
 
       setAuthMessage(
         'Please complete all fields.'
@@ -1503,10 +1420,7 @@
 
     }
 
-    if (
-      password !==
-      confirmPassword
-    ) {
+    if (password !== confirmPassword) {
 
       setAuthMessage(
         'Passwords do not match.'
@@ -1516,28 +1430,14 @@
 
     }
 
-    if (
-      password.length < 6
-    ) {
-
-      setAuthMessage(
-        'Password must be at least 6 characters.'
+    const button =
+      document.getElementById(
+        'signupButton'
       );
 
-      return;
-
-    }
-
-    const button =
-      document.getElementById('signupButton');
-
     button.disabled = true;
-    button.textContent = 'Creating account...';
-
-    setAuthMessage(
-      'Creating your account...',
-      true
-    );
+    button.textContent =
+      'Creating account...';
 
     try {
 
@@ -1554,39 +1454,25 @@
 
         });
 
+
       if (result.error) {
 
-        const message =
-          result.error.message || '';
-
-        if (
-          message
-            .toLowerCase()
-            .includes('already registered')
-        ) {
-
-          setAuthMessage(
-            'An account with this email already exists.'
-          );
-
-        } else {
-
-          setAuthMessage(message);
-
-        }
+        setAuthMessage(
+          result.error.message
+        );
 
         return;
 
       }
 
+
       if (
         result.data &&
-        result.data.user &&
         !result.data.session
       ) {
 
         setAuthMessage(
-          'Account created. Check your email and click the confirmation link.',
+          'Account created. Check your email to confirm your account.',
           true
         );
 
@@ -1607,14 +1493,14 @@
       );
 
       setAuthMessage(
-        error.message ||
-        'Signup failed.'
+        error.message
       );
 
     } finally {
 
       button.disabled = false;
-      button.textContent = 'Create account';
+      button.textContent =
+        'Create account';
 
     }
 
@@ -1633,82 +1519,37 @@
      AUTH STATE
   ========================================================= */
 
-  if (supabaseClient) {
+  supabaseClient.auth.onAuthStateChange(
+    async (
+      event,
+      session
+    ) => {
 
-    supabaseClient.auth.onAuthStateChange(
-      async (
-        event,
-        session
-      ) => {
+      if (
+        session &&
+        session.user
+      ) {
 
-        if (
-          session &&
-          session.user
-        ) {
+        currentUser =
+          session.user;
 
-          currentUser =
-            session.user;
+        if (!initialised) {
 
-          if (!initialised) {
-
-            await initialiseUser();
-
-          }
-
-        } else {
-
-          currentUser =
-            null;
-
-          if (!initialised) {
-
-            showAuthScreen();
-
-          }
+          await initialiseUser();
 
         }
 
+      } else {
+
+        currentUser =
+          null;
+
+        showAuthScreen();
+
       }
-    );
-
-  }
-
-
-  /* =========================================================
-     INITIALISE USER
-  ========================================================= */
-
-  async function initialiseUser() {
-
-    if (initialised) {
-      return;
-    }
-
-    initialised = true;
-
-    showApp();
-
-    await loadCloudMemory();
-
-    await loadChats();
-
-    if (chats.length > 0) {
-
-      await loadChat(
-        chats[0].id
-      );
-
-    } else {
-
-      currentChatId = null;
-      conversationMessages = [];
-
-      clearChatUI();
-      renderChatHistory();
 
     }
-
-  }
+  );
 
 
   /* =========================================================
@@ -1717,14 +1558,6 @@
 
   async function checkSession() {
 
-    if (!supabaseClient) {
-
-      showAuthScreen();
-
-      return;
-
-    }
-
     try {
 
       const result =
@@ -1732,8 +1565,7 @@
 
       if (
         result.data &&
-        result.data.session &&
-        result.data.session.user
+        result.data.session
       ) {
 
         currentUser =
@@ -1762,8 +1594,49 @@
 
 
   /* =========================================================
-     SHOW AUTH / APP
+     INITIALISE
   ========================================================= */
+
+  async function initialiseUser() {
+
+    if (initialised) {
+      return;
+    }
+
+    initialised = true;
+
+    showApp();
+
+    await loadCloudMemory();
+
+    await loadChats();
+
+    /*
+      Open newest chat automatically.
+    */
+
+    if (chats.length > 0) {
+
+      await loadChat(
+        chats[0].id
+      );
+
+    } else {
+
+      currentChatId =
+        null;
+
+      conversationMessages =
+        [];
+
+      clearChatUI();
+
+      renderChatHistory();
+
+    }
+
+  }
+
 
   function showAuthScreen() {
 
@@ -1788,7 +1661,7 @@
 
 
   /* =========================================================
-     API FETCH
+     API
   ========================================================= */
 
   async function apiFetch(
@@ -1800,6 +1673,7 @@
       new Headers(
         options.headers || {}
       );
+
 
     if (
       options.body &&
@@ -1813,38 +1687,36 @@
 
     }
 
-    if (supabaseClient) {
 
-      try {
+    try {
 
-        const sessionResult =
-          await supabaseClient.auth.getSession();
+      const sessionResult =
+        await supabaseClient.auth.getSession();
 
-        const token =
-          sessionResult
-            .data
-            ?.session
-            ?.access_token;
+      const token =
+        sessionResult
+          .data
+          ?.session
+          ?.access_token;
 
-        if (token) {
+      if (token) {
 
-          headers.set(
-            'Authorization',
-            `Bearer ${token}`
-          );
-
-        }
-
-      } catch (error) {
-
-        console.warn(
-          'Could not get access token:',
-          error
+        headers.set(
+          'Authorization',
+          `Bearer ${token}`
         );
 
       }
 
+    } catch (error) {
+
+      console.warn(
+        'Token error:',
+        error
+      );
+
     }
+
 
     return fetch(
       `${API_BASE}${path}`,
@@ -1863,10 +1735,7 @@
 
   async function loadCloudMemory() {
 
-    if (
-      !currentUser ||
-      !supabaseClient
-    ) {
+    if (!currentUser) {
       return;
     }
 
@@ -1882,10 +1751,11 @@
           )
           .maybeSingle();
 
+
       if (result.error) {
 
-        console.warn(
-          'Memory load failed:',
+        console.error(
+          'Memory load error:',
           result.error
         );
 
@@ -1893,15 +1763,17 @@
 
       }
 
+
       memory =
-        result.data?.memory || '';
+        result.data?.memory ||
+        '';
 
       memoryText.value =
         memory;
 
     } catch (error) {
 
-      console.warn(
+      console.error(
         'Memory error:',
         error
       );
@@ -1916,45 +1788,32 @@
     memory =
       memoryText.value.trim();
 
-    if (
-      currentUser &&
-      supabaseClient
-    ) {
 
-      try {
+    const result =
+      await supabaseClient
+        .from('profiles')
+        .upsert({
 
-        const result =
-          await supabaseClient
-            .from('profiles')
-            .upsert({
+          id:
+            currentUser.id,
 
-              id:
-                currentUser.id,
+          memory:
+            memory
 
-              memory:
-                memory
+        });
 
-            });
 
-        if (result.error) {
+    if (result.error) {
 
-          console.error(
-            'Memory save error:',
-            result.error
-          );
+      console.error(
+        'Memory save error:',
+        result.error
+      );
 
-        }
-
-      } catch (error) {
-
-        console.error(
-          'Memory save error:',
-          error
-        );
-
-      }
+      return;
 
     }
+
 
     memoryPanel.style.display =
       'none';
@@ -1972,17 +1831,23 @@
 
   function toggleMemory() {
 
-    const visible =
+    if (
       memoryPanel.style.display ===
-      'block';
+      'block'
+    ) {
 
-    memoryPanel.style.display =
-      visible
-        ? 'none'
-        : 'block';
+      memoryPanel.style.display =
+        'none';
 
-    memoryText.value =
-      memory;
+    } else {
+
+      memoryPanel.style.display =
+        'block';
+
+      memoryText.value =
+        memory;
+
+    }
 
   }
 
@@ -2010,15 +1875,12 @@
 
 
   /* =========================================================
-     CHAT HISTORY
+     LOAD CHATS
   ========================================================= */
 
   async function loadChats() {
 
-    if (
-      !currentUser ||
-      !supabaseClient
-    ) {
+    if (!currentUser) {
       return;
     }
 
@@ -2039,26 +1901,37 @@
             }
           );
 
+
       if (result.error) {
 
         console.error(
-          'Chat load error:',
+          'CHAT HISTORY ERROR:',
           result.error
         );
+
+        chats = [];
 
         return;
 
       }
 
+
       chats =
         result.data || [];
+
+
+      console.log(
+        'CHAT HISTORY LOADED:',
+        chats
+      );
+
 
       renderChatHistory();
 
     } catch (error) {
 
       console.error(
-        'Chat load error:',
+        'loadChats error:',
         error
       );
 
@@ -2067,6 +1940,10 @@
   }
 
 
+  /* =========================================================
+     RENDER CHAT HISTORY
+  ========================================================= */
+
   function renderChatHistory() {
 
     const container =
@@ -2074,7 +1951,9 @@
         'chatHistory'
       );
 
-    container.innerHTML = '';
+    container.innerHTML =
+      '';
+
 
     if (!chats.length) {
 
@@ -2097,6 +1976,7 @@
 
     }
 
+
     chats.forEach(
       chatItem => {
 
@@ -2105,12 +1985,14 @@
             'div'
           );
 
+
         item.className =
           'historyItem';
 
+
         if (
-          chatItem.id ===
-          currentChatId
+          String(chatItem.id) ===
+          String(currentChatId)
         ) {
 
           item.classList.add(
@@ -2119,36 +2001,42 @@
 
         }
 
+
         item.textContent =
           chatItem.title ||
           'New chat';
 
-        item.title =
-          chatItem.title ||
-          'New chat';
 
         item.addEventListener(
           'click',
           async () => {
 
             /*
-              Do NOT block clicking a different
-              chat just because the current chat
-              is already selected.
+              IMPORTANT:
+              Always attempt to load the clicked chat.
             */
 
             if (loadingChat) {
               return;
             }
 
+
+            console.log(
+              'CLICKED OLD CHAT:',
+              chatItem.id
+            );
+
+
             await loadChat(
               chatItem.id
             );
+
 
             closeMobileSidebar();
 
           }
         );
+
 
         container.appendChild(
           item
@@ -2161,7 +2049,7 @@
 
 
   /* =========================================================
-     NEW CHAT
+     CREATE NEW CHAT
   ========================================================= */
 
   function createNewChat() {
@@ -2191,8 +2079,24 @@
   }
 
 
+  document
+    .getElementById('newChatButton')
+    .addEventListener(
+      'click',
+      createNewChat
+    );
+
+
+  document
+    .getElementById('sidebarNewChatButton')
+    .addEventListener(
+      'click',
+      createNewChat
+    );
+
+
   /* =========================================================
-     ENSURE CHAT
+     CREATE CHAT IN DATABASE
   ========================================================= */
 
   async function ensureCurrentChat(
@@ -2200,77 +2104,97 @@
   ) {
 
     if (currentChatId) {
-      return true;
+
+      /*
+        Verify the chat actually belongs to
+        the current user before continuing.
+      */
+
+      const existing =
+        chats.find(
+          item =>
+            String(item.id) ===
+            String(currentChatId)
+        );
+
+      if (existing) {
+        return true;
+      }
+
     }
 
-    if (
-      !currentUser ||
-      !supabaseClient
-    ) {
+
+    if (!currentUser) {
       return false;
     }
+
 
     const title =
       firstMessage
         .trim()
-        .slice(0, 45) ||
+        .slice(0, 50) ||
       'New chat';
 
-    try {
 
-      const result =
-        await supabaseClient
-          .from('chats')
-          .insert({
+    console.log(
+      'CREATING CHAT FOR USER:',
+      currentUser.id
+    );
 
-            user_id:
-              currentUser.id,
 
-            title:
-              title
+    const result =
+      await supabaseClient
+        .from('chats')
+        .insert({
 
-          })
-          .select()
-          .single();
+          user_id:
+            currentUser.id,
 
-      if (result.error) {
+          title:
+            title
 
-        console.error(
-          'Create chat error:',
-          result.error
-        );
+        })
+        .select('*')
+        .single();
 
-        return false;
 
-      }
-
-      currentChatId =
-        result.data.id;
-
-      chats.unshift(
-        result.data
-      );
-
-      renderChatHistory();
-
-      return true;
-
-    } catch (error) {
+    if (result.error) {
 
       console.error(
-        'Create chat error:',
-        error
+        'CREATE CHAT ERROR:',
+        result.error
       );
 
       return false;
 
     }
+
+
+    currentChatId =
+      result.data.id;
+
+
+    chats.unshift(
+      result.data
+    );
+
+
+    renderChatHistory();
+
+
+    console.log(
+      'NEW CHAT CREATED:',
+      currentChatId
+    );
+
+
+    return true;
 
   }
 
 
   /* =========================================================
-     LOAD CHAT - FIXED
+     LOAD OLD CHAT
   ========================================================= */
 
   async function loadChat(
@@ -2279,62 +2203,108 @@
 
     if (
       !chatId ||
-      !currentUser ||
-      !supabaseClient
+      !currentUser
     ) {
-
-      console.warn(
-        'Cannot load chat - missing:',
-        {
-          chatId,
-          currentUser: !!currentUser,
-          supabase: !!supabaseClient
-        }
-      );
 
       return;
 
     }
+
 
     if (loadingChat) {
       return;
     }
 
+
     loadingChat =
       true;
 
-    clearUpload();
+
+    console.log(
+      '================================'
+    );
+
+    console.log(
+      'LOADING CHAT:',
+      chatId
+    );
+
+    console.log(
+      'USER:',
+      currentUser.id
+    );
+
 
     try {
 
-      console.log(
-        'Loading chat:',
-        chatId
-      );
+      /*
+        First verify that the selected chat
+        belongs to the current user.
+      */
 
-      console.log(
-        'Current user:',
-        currentUser.id
-      );
+      const chatResult =
+        await supabaseClient
+          .from('chats')
+          .select('*')
+          .eq(
+            'id',
+            chatId
+          )
+          .eq(
+            'user_id',
+            currentUser.id
+          )
+          .maybeSingle();
+
+
+      if (chatResult.error) {
+
+        console.error(
+          'CHAT VERIFY ERROR:',
+          chatResult.error
+        );
+
+        addTextMessage(
+          'assistant',
+          'I could not open this conversation: ' +
+          chatResult.error.message
+        );
+
+        return;
+
+      }
+
+
+      if (!chatResult.data) {
+
+        console.error(
+          'CHAT NOT FOUND FOR CURRENT USER'
+        );
+
+        addTextMessage(
+          'assistant',
+          'This conversation could not be found.'
+        );
+
+        return;
+
+      }
 
 
       /*
-        IMPORTANT:
-        Get the messages for BOTH the selected
-        chat and the currently logged-in user.
+        Now load messages.
+
+        We deliberately use chat_id as the primary
+        filter. Supabase RLS will enforce ownership.
       */
 
-      const result =
+      const messageResult =
         await supabaseClient
           .from('messages')
           .select('*')
           .eq(
             'chat_id',
             chatId
-          )
-          .eq(
-            'user_id',
-            currentUser.id
           )
           .order(
             'created_at',
@@ -2344,18 +2314,25 @@
           );
 
 
-      if (result.error) {
+      console.log(
+        'MESSAGE QUERY:',
+        messageResult
+      );
+
+
+      if (messageResult.error) {
 
         console.error(
-          'Message load error:',
-          result.error
+          'MESSAGE LOAD ERROR:',
+          messageResult.error
         );
 
         clearChatUI();
 
         addTextMessage(
           'assistant',
-          `Could not load this conversation: ${result.error.message}`
+          'Could not load this conversation: ' +
+          messageResult.error.message
         );
 
         return;
@@ -2364,37 +2341,39 @@
 
 
       const messages =
-        result.data || [];
+        messageResult.data || [];
 
 
       console.log(
-        'Messages loaded:',
-        messages.length,
+        'MESSAGES FOUND:',
+        messages.length
+      );
+
+
+      console.table(
         messages
       );
 
 
       /*
-        Only switch the active chat once
-        Supabase has successfully returned.
+        Switch active chat.
       */
 
       currentChatId =
         chatId;
 
+
       conversationMessages =
         [];
 
 
-      /*
-        Clear the current screen.
-      */
+      clearUpload();
 
       clearChatUI();
 
 
       /*
-        Rebuild the complete conversation.
+        Rebuild messages.
       */
 
       messages.forEach(
@@ -2410,32 +2389,17 @@
 
 
           /*
-            NORMAL TEXT MESSAGE
+            IMAGE
           */
 
           if (
-            !message.image_url
+            message.image_url
           ) {
 
-            if (
-              role === 'user' ||
-              role === 'assistant'
-            ) {
-
-              conversationMessages.push({
-
-                role:
-                  role,
-
-                content:
-                  content
-
-              });
-
-            }
-
-            addTextMessage(
-              role,
+            addImageMessage(
+              message.image_url,
+              content,
+              null,
               content
             );
 
@@ -2445,36 +2409,38 @@
 
 
           /*
-            IMAGE MESSAGE
+            TEXT
           */
 
-          addImageMessage(
+          if (
+            role === 'user' ||
+            role === 'assistant'
+          ) {
 
-            message.image_url,
+            conversationMessages.push({
 
-            content,
+              role:
+                role,
 
-            null,
+              content:
+                content
 
+            });
+
+          }
+
+
+          addTextMessage(
+            role,
             content
-
           );
 
         }
       );
 
 
-      /*
-        Refresh sidebar so the selected
-        conversation is highlighted.
-      */
-
       renderChatHistory();
 
-
-      /*
-        Scroll to bottom after rendering.
-      */
 
       requestAnimationFrame(
         () => {
@@ -2486,10 +2452,20 @@
       );
 
 
+      console.log(
+        'CHAT SUCCESSFULLY LOADED'
+      );
+
+      console.log(
+        'CONVERSATION:',
+        conversationMessages
+      );
+
+
     } catch (error) {
 
       console.error(
-        'Load chat error:',
+        'LOAD CHAT ERROR:',
         error
       );
 
@@ -2497,7 +2473,8 @@
 
       addTextMessage(
         'assistant',
-        `Could not load this conversation: ${error.message}`
+        'Could not load this conversation: ' +
+        error.message
       );
 
     } finally {
@@ -2505,13 +2482,17 @@
       loadingChat =
         false;
 
+      console.log(
+        '================================'
+      );
+
     }
 
   }
 
 
   /* =========================================================
-     CLEAR CHAT
+     CLEAR CHAT UI
   ========================================================= */
 
   function clearChatUI() {
@@ -2541,17 +2522,39 @@
 
     if (
       !currentUser ||
-      !currentChatId ||
-      !supabaseClient
+      !currentChatId
     ) {
 
-      console.warn(
-        'Message not saved - missing user/chat.'
+      console.error(
+        'SAVE MESSAGE FAILED: missing user or chat',
+        {
+          user:
+            currentUser?.id,
+
+          chat:
+            currentChatId
+        }
       );
 
       return false;
 
     }
+
+
+    console.log(
+      'SAVING MESSAGE:',
+      {
+        chat_id:
+          currentChatId,
+
+        user_id:
+          currentUser.id,
+
+        role:
+          role
+      }
+    );
+
 
     try {
 
@@ -2573,14 +2576,15 @@
               content || '',
 
             image_url:
-              imageUrl
+              imageUrl || null
 
           });
+
 
       if (result.error) {
 
         console.error(
-          'Save message error:',
+          'SAVE MESSAGE ERROR:',
           result.error
         );
 
@@ -2588,12 +2592,18 @@
 
       }
 
+
+      console.log(
+        'MESSAGE SAVED'
+      );
+
+
       return true;
 
     } catch (error) {
 
       console.error(
-        'Save message error:',
+        'SAVE MESSAGE EXCEPTION:',
         error
       );
 
@@ -2612,83 +2622,80 @@
     text
   ) {
 
-    if (
-      !currentChatId ||
-      !supabaseClient
-    ) {
+    if (!currentChatId) {
       return;
     }
 
-    const found =
+
+    const existing =
       chats.find(
         item =>
-          item.id ===
-          currentChatId
+          String(item.id) ===
+          String(currentChatId)
       );
 
+
     if (
-      found &&
-      found.title &&
-      found.title !== 'New chat'
+      existing &&
+      existing.title &&
+      existing.title !== 'New chat'
     ) {
 
       return;
 
     }
+
 
     const title =
       text
         .trim()
-        .slice(0, 45) ||
+        .slice(0, 50) ||
       'New chat';
 
-    try {
 
-      const result =
-        await supabaseClient
-          .from('chats')
-          .update({
-            title
-          })
-          .eq(
-            'id',
-            currentChatId
-          );
-
-      if (result.error) {
-
-        console.error(
-          'Title update error:',
-          result.error
+    const result =
+      await supabaseClient
+        .from('chats')
+        .update({
+          title
+        })
+        .eq(
+          'id',
+          currentChatId
+        )
+        .eq(
+          'user_id',
+          currentUser.id
         );
 
-        return;
 
-      }
-
-      if (found) {
-
-        found.title =
-          title;
-
-      }
-
-      renderChatHistory();
-
-    } catch (error) {
+    if (result.error) {
 
       console.error(
-        'Title update error:',
-        error
+        'TITLE UPDATE ERROR:',
+        result.error
       );
 
+      return;
+
     }
+
+
+    if (existing) {
+
+      existing.title =
+        title;
+
+    }
+
+
+    renderChatHistory();
 
   }
 
 
   /* =========================================================
-     TEXT MESSAGE
+     TEXT MESSAGE UI
   ========================================================= */
 
   function addTextMessage(
@@ -2699,35 +2706,44 @@
     welcome.style.display =
       'none';
 
+
     const wrapper =
       document.createElement(
         'div'
       );
 
+
     wrapper.className =
       `message ${role}`;
+
 
     const bubble =
       document.createElement(
         'div'
       );
 
+
     bubble.className =
       'bubble';
 
+
     bubble.textContent =
       text || '';
+
 
     wrapper.appendChild(
       bubble
     );
 
+
     chat.appendChild(
       wrapper
     );
 
+
     chat.scrollTop =
       chat.scrollHeight;
+
 
     return bubble;
 
@@ -2735,7 +2751,7 @@
 
 
   /* =========================================================
-     IMAGE MESSAGE
+     IMAGE UI
   ========================================================= */
 
   function addImageMessage(
@@ -2748,31 +2764,35 @@
     welcome.style.display =
       'none';
 
+
     const wrapper =
       document.createElement(
         'div'
       );
 
+
     wrapper.className =
       'imageMessage';
+
 
     const img =
       document.createElement(
         'img'
       );
 
+
     img.className =
       'generatedImage';
 
+
     img.src =
       imageUrl;
+
 
     img.alt =
       prompt ||
       'Generated image';
 
-    img.loading =
-      'lazy';
 
     wrapper.appendChild(
       img
@@ -2786,17 +2806,22 @@
           'div'
         );
 
+
       caption.style.marginTop =
         '8px';
+
 
       caption.style.color =
         '#aaa';
 
+
       caption.style.fontSize =
         '13px';
 
+
       caption.textContent =
         prompt;
+
 
       wrapper.appendChild(
         caption
@@ -2810,124 +2835,140 @@
         'div'
       );
 
+
     actions.className =
       'imageActions';
 
-
-    /* RE-RENDER */
 
     const rerenderButton =
       document.createElement(
         'button'
       );
 
+
     rerenderButton.type =
       'button';
+
 
     rerenderButton.className =
       'imageActionButton';
 
+
     rerenderButton.textContent =
       '🔄 Re-render';
 
-    rerenderButton.addEventListener(
-      'click',
-      async () => {
 
-        if (imageBusy) {
-          return;
+    /*
+      If this image was loaded from history,
+      originalImageData is null.
+
+      We still show the button but don't pretend
+      we have the original source image.
+    */
+
+    if (!originalImageData) {
+
+      rerenderButton.disabled =
+        true;
+
+      rerenderButton.title =
+        'Re-render is available for images from the current session';
+
+    } else {
+
+      rerenderButton.addEventListener(
+        'click',
+        async () => {
+
+          await rerenderImage({
+
+            sourceImage:
+              originalImageData,
+
+            prompt:
+              originalPrompt ||
+              prompt ||
+              ''
+
+          });
+
         }
+      );
 
-        await rerenderImage({
+    }
 
-          sourceImage:
-            originalImageData,
-
-          prompt:
-            originalPrompt ||
-            prompt ||
-            ''
-
-        });
-
-      }
-    );
 
     actions.appendChild(
       rerenderButton
     );
 
 
-    /* DOWNLOAD */
-
     const downloadButton =
       document.createElement(
         'button'
       );
 
+
     downloadButton.type =
       'button';
+
 
     downloadButton.className =
       'imageActionButton';
 
+
     downloadButton.textContent =
       '⬇️ Save image';
+
 
     downloadButton.addEventListener(
       'click',
       () => {
 
-        try {
-
-          const link =
-            document.createElement(
-              'a'
-            );
-
-          link.href =
-            imageUrl;
-
-          link.download =
-            'nastivee-image.png';
-
-          link.target =
-            '_blank';
-
-          document.body.appendChild(
-            link
+        const link =
+          document.createElement(
+            'a'
           );
 
-          link.click();
+        link.href =
+          imageUrl;
 
-          link.remove();
+        link.download =
+          'nastivee-image.png';
 
-        } catch (error) {
+        link.target =
+          '_blank';
 
-          window.open(
-            imageUrl,
-            '_blank'
-          );
+        document.body.appendChild(
+          link
+        );
 
-        }
+        link.click();
+
+        link.remove();
 
       }
     );
+
 
     actions.appendChild(
       downloadButton
     );
 
+
     wrapper.appendChild(
       actions
     );
+
 
     chat.appendChild(
       wrapper
     );
 
+
     chat.scrollTop =
       chat.scrollHeight;
+
 
     return wrapper;
 
@@ -2935,7 +2976,7 @@
 
 
   /* =========================================================
-     IMAGE PROGRESS
+     PROGRESS
   ========================================================= */
 
   function showImageProgress(
@@ -2986,44 +3027,34 @@
 
 
   /* =========================================================
-     IMAGE GENERATION
+     GENERATE IMAGE
   ========================================================= */
 
   async function generateImage(
     prompt
   ) {
 
-    if (
-      !prompt ||
-      !prompt.trim()
-    ) {
-
-      addTextMessage(
-        'assistant',
-        'Please describe the image you want me to create.'
-      );
-
-      return;
-
-    }
-
     if (imageBusy) {
       return;
     }
 
+
     setImageButtonsBusy(true);
+
 
     showImageProgress(
       'Preparing image...',
       15
     );
 
-    let progressTimer1 = null;
-    let progressTimer2 = null;
+
+    let timer1;
+    let timer2;
+
 
     try {
 
-      progressTimer1 =
+      timer1 =
         setTimeout(
           () => {
 
@@ -3036,7 +3067,8 @@
           700
         );
 
-      progressTimer2 =
+
+      timer2 =
         setTimeout(
           () => {
 
@@ -3070,23 +3102,18 @@
         );
 
 
-      showImageProgress(
-        'Finishing image...',
-        90
-      );
+      let data;
 
-
-      let data = {};
 
       try {
 
         data =
           await response.json();
 
-      } catch (error) {
+      } catch {
 
         throw new Error(
-          `Server returned an invalid response (${response.status}).`
+          'Invalid response from image server.'
         );
 
       }
@@ -3097,7 +3124,7 @@
         throw new Error(
           data.error ||
           data.message ||
-          `Image generation failed (${response.status}).`
+          `Image generation failed (${response.status})`
         );
 
       }
@@ -3106,13 +3133,16 @@
       if (!data.image) {
 
         throw new Error(
-          'The image server did not return an image.'
+          'No image was returned.'
         );
 
       }
 
 
-      hideImageProgress();
+      showImageProgress(
+        'Finishing image...',
+        95
+      );
 
 
       addImageMessage(
@@ -3130,14 +3160,18 @@
       );
 
 
+      hideImageProgress();
+
+
     } catch (error) {
 
       console.error(
-        'IMAGE GENERATION ERROR:',
+        'IMAGE ERROR:',
         error
       );
 
       hideImageProgress();
+
 
       addTextMessage(
         'assistant',
@@ -3146,13 +3180,8 @@
 
     } finally {
 
-      if (progressTimer1) {
-        clearTimeout(progressTimer1);
-      }
-
-      if (progressTimer2) {
-        clearTimeout(progressTimer2);
-      }
+      clearTimeout(timer1);
+      clearTimeout(timer2);
 
       setImageButtonsBusy(false);
 
@@ -3162,7 +3191,7 @@
 
 
   /* =========================================================
-     IMAGE EDIT
+     EDIT IMAGE
   ========================================================= */
 
   async function editImage(
@@ -3170,34 +3199,27 @@
     prompt
   ) {
 
-    if (!imageData) {
-
-      addTextMessage(
-        'assistant',
-        'Please upload an image first.'
-      );
-
-      return;
-
-    }
-
     if (imageBusy) {
       return;
     }
 
+
     setImageButtonsBusy(true);
+
 
     showImageProgress(
       'Preparing your image...',
       15
     );
 
-    let progressTimer1 = null;
-    let progressTimer2 = null;
+
+    let timer1;
+    let timer2;
+
 
     try {
 
-      progressTimer1 =
+      timer1 =
         setTimeout(
           () => {
 
@@ -3210,7 +3232,8 @@
           600
         );
 
-      progressTimer2 =
+
+      timer2 =
         setTimeout(
           () => {
 
@@ -3239,8 +3262,7 @@
                   imageData,
 
                 prompt:
-                  prompt ||
-                  'Edit this image.'
+                  prompt
 
               })
 
@@ -3248,23 +3270,18 @@
         );
 
 
-      showImageProgress(
-        'Finishing your image...',
-        90
-      );
+      let data;
 
-
-      let data = {};
 
       try {
 
         data =
           await response.json();
 
-      } catch (error) {
+      } catch {
 
         throw new Error(
-          `Server returned an invalid response (${response.status}).`
+          'Invalid response from image server.'
         );
 
       }
@@ -3275,7 +3292,7 @@
         throw new Error(
           data.error ||
           data.message ||
-          `Image editing failed (${response.status}).`
+          `Image edit failed (${response.status})`
         );
 
       }
@@ -3284,13 +3301,16 @@
       if (!data.image) {
 
         throw new Error(
-          'The image server did not return an edited image.'
+          'No edited image was returned.'
         );
 
       }
 
 
-      hideImageProgress();
+      showImageProgress(
+        'Finishing your image...',
+        95
+      );
 
 
       addImageMessage(
@@ -3308,6 +3328,9 @@
       );
 
 
+      hideImageProgress();
+
+
     } catch (error) {
 
       console.error(
@@ -3317,6 +3340,7 @@
 
       hideImageProgress();
 
+
       addTextMessage(
         'assistant',
         `Image edit error: ${error.message}`
@@ -3324,13 +3348,8 @@
 
     } finally {
 
-      if (progressTimer1) {
-        clearTimeout(progressTimer1);
-      }
-
-      if (progressTimer2) {
-        clearTimeout(progressTimer2);
-      }
+      clearTimeout(timer1);
+      clearTimeout(timer2);
 
       setImageButtonsBusy(false);
 
@@ -3340,7 +3359,7 @@
 
 
   /* =========================================================
-     RE-RENDER
+     RERENDER
   ========================================================= */
 
   async function rerenderImage({
@@ -3348,44 +3367,11 @@
     prompt
   }) {
 
-    if (imageBusy) {
-      return;
-    }
+    if (!sourceImage) {
 
-    const cleanPrompt =
-      (
-        prompt ||
-        'Create a new variation of this image.'
-      ).trim();
-
-
-    if (sourceImage) {
-
-      const variationPrompt =
-
-`${cleanPrompt}
-
-Create a completely fresh variation of this image.
-
-Preserve the main subject and the user's original
-creative intention.
-
-If a person is present, preserve that person's
-identity, facial appearance, facial structure,
-body proportions and overall likeness as closely
-as possible.
-
-Do not replace the person with another person.
-
-Change suitable visual elements such as composition,
-camera angle, lighting, background, environment,
-clothing details, pose or styling so this is a new
-variation rather than an identical copy.`;
-
-
-      await editImage(
-        sourceImage,
-        variationPrompt
+      addTextMessage(
+        'assistant',
+        'This image was loaded from history. Upload the image again if you want to re-render it.'
       );
 
       return;
@@ -3393,40 +3379,45 @@ variation rather than an identical copy.`;
     }
 
 
-    const variationPrompt =
+    const newPrompt =
 
-`${cleanPrompt}
+`${prompt}
 
-Create a fresh new variation of this image concept.
+Create a fresh variation of this image.
 
-Keep the same main subject and original creative intent.
-
-Change the composition, camera angle, lighting,
-background, environment, pose or styling where
-appropriate.
-
-Make it clearly a new render rather than an exact copy.`;
+Keep the main subject and original creative intention,
+but create a noticeably different composition,
+lighting, camera angle, background or styling.`;
 
 
-    await generateImage(
-      variationPrompt
+
+    await editImage(
+      sourceImage,
+      newPrompt
     );
 
   }
 
 
   /* =========================================================
-     SEND CHAT MESSAGE
+     SEND MESSAGE
   ========================================================= */
 
   async function sendMessage() {
+
+    console.log(
+      'SEND BUTTON / SEND MESSAGE TRIGGERED'
+    );
+
 
     if (imageBusy) {
       return;
     }
 
+
     const text =
       messageInput.value.trim();
+
 
     if (
       !text &&
@@ -3439,10 +3430,16 @@ Make it clearly a new render rather than an exact copy.`;
 
     }
 
+
     const userText =
       text ||
       'Please edit this image.';
 
+
+    /*
+      Make sure a DB chat exists BEFORE
+      saving the message.
+    */
 
     const chatReady =
       await ensureCurrentChat(
@@ -3454,7 +3451,7 @@ Make it clearly a new render rather than an exact copy.`;
 
       addTextMessage(
         'assistant',
-        'I could not create the conversation. Please try again.'
+        'I could not create this conversation. Please try again.'
       );
 
       return;
@@ -3462,11 +3459,19 @@ Make it clearly a new render rather than an exact copy.`;
     }
 
 
+    /*
+      Add user message to UI.
+    */
+
     addTextMessage(
       'user',
       userText
     );
 
+
+    /*
+      Add it to conversation memory.
+    */
 
     conversationMessages.push({
 
@@ -3479,10 +3484,24 @@ Make it clearly a new render rather than an exact copy.`;
     });
 
 
-    await saveMessage(
-      'user',
-      userText
-    );
+    /*
+      SAVE USER MESSAGE
+    */
+
+    const saved =
+      await saveMessage(
+        'user',
+        userText
+      );
+
+
+    if (!saved) {
+
+      console.error(
+        'USER MESSAGE WAS NOT SAVED'
+      );
+
+    }
 
 
     await updateChatTitle(
@@ -3490,32 +3509,43 @@ Make it clearly a new render rather than an exact copy.`;
     );
 
 
-    /* IMAGE EDIT */
+    /*
+      IMAGE EDIT
+    */
 
     if (selectedImageData) {
 
       const image =
         selectedImageData;
 
+
       clearUpload();
+
 
       messageInput.value =
         '';
+
 
       await editImage(
         image,
         userText
       );
 
+
       return;
 
     }
 
 
-    /* NORMAL CHAT */
+    /*
+      NORMAL CHAT
+    */
 
     messageInput.value =
       '';
+
+    messageInput.style.height =
+      'auto';
 
 
     try {
@@ -3543,17 +3573,18 @@ Make it clearly a new render rather than an exact copy.`;
         );
 
 
-      let data = {};
+      let data;
+
 
       try {
 
         data =
           await response.json();
 
-      } catch (error) {
+      } catch {
 
         throw new Error(
-          `Server returned an invalid response (${response.status}).`
+          'Invalid response from chat server.'
         );
 
       }
@@ -3564,7 +3595,7 @@ Make it clearly a new render rather than an exact copy.`;
         throw new Error(
           data.error ||
           data.message ||
-          `Chat request failed (${response.status}).`
+          `Chat request failed (${response.status})`
         );
 
       }
@@ -3576,11 +3607,19 @@ Make it clearly a new render rather than an exact copy.`;
         'I could not generate a response.';
 
 
+      /*
+        Display assistant response.
+      */
+
       addTextMessage(
         'assistant',
         answer
       );
 
+
+      /*
+        Add to conversation state.
+      */
 
       conversationMessages.push({
 
@@ -3592,6 +3631,10 @@ Make it clearly a new render rather than an exact copy.`;
 
       });
 
+
+      /*
+        SAVE ASSISTANT MESSAGE
+      */
 
       await saveMessage(
         'assistant',
@@ -3612,61 +3655,114 @@ Make it clearly a new render rather than an exact copy.`;
         `Error: ${error.message}`
       );
 
-
-      conversationMessages =
-        conversationMessages.filter(
-          (message, index) => {
-
-            if (
-              index !==
-              conversationMessages.length - 1
-            ) {
-
-              return true;
-
-            }
-
-            return !(
-              message.role ===
-              'user' &&
-              message.content ===
-              userText
-            );
-
-          }
-        );
-
     }
 
   }
 
 
+  /*
+    IMPORTANT:
+    THIS WAS MISSING BEFORE.
+  */
+
+  sendButton.addEventListener(
+    'click',
+    sendMessage
+  );
+
+
   /* =========================================================
-     CREATE IMAGE BUTTON
+     IMAGE BUTTON
   ========================================================= */
 
-  async function createImageFromButton() {
+  imageButton.addEventListener(
+    'click',
+    async () => {
 
-    if (imageBusy) {
-      return;
-    }
-
-    const prompt =
-      messageInput.value.trim();
+      if (imageBusy) {
+        return;
+      }
 
 
-    /* UPLOADED IMAGE = EDIT */
+      const prompt =
+        messageInput.value.trim();
 
-    if (selectedImageData) {
+
+      if (
+        selectedImageData
+      ) {
+
+        if (!prompt) {
+
+          addTextMessage(
+            'assistant',
+            'Tell me what you want me to change in the uploaded image.'
+          );
+
+          messageInput.focus();
+
+          return;
+
+        }
+
+
+        const chatReady =
+          await ensureCurrentChat(
+            prompt
+          );
+
+
+        if (!chatReady) {
+          return;
+        }
+
+
+        addTextMessage(
+          'user',
+          prompt
+        );
+
+
+        await saveMessage(
+          'user',
+          prompt
+        );
+
+
+        await updateChatTitle(
+          prompt
+        );
+
+
+        const image =
+          selectedImageData;
+
+
+        clearUpload();
+
+        messageInput.value =
+          '';
+
+
+        await editImage(
+          image,
+          prompt
+        );
+
+
+        return;
+
+      }
+
 
       if (!prompt) {
 
-        messageInput.focus();
-
         addTextMessage(
           'assistant',
-          'Tell me what you want me to change in the uploaded image.'
+          'Type what you want me to create first.'
         );
+
+        messageInput.focus();
 
         return;
 
@@ -3680,14 +3776,7 @@ Make it clearly a new render rather than an exact copy.`;
 
 
       if (!chatReady) {
-
-        addTextMessage(
-          'assistant',
-          'I could not create the conversation. Please try again.'
-        );
-
         return;
-
       }
 
 
@@ -3708,90 +3797,18 @@ Make it clearly a new render rather than an exact copy.`;
       );
 
 
-      const image =
-        selectedImageData;
-
-      clearUpload();
-
       messageInput.value =
         '';
 
+      messageInput.style.height =
+        'auto';
 
-      await editImage(
-        image,
+
+      await generateImage(
         prompt
       );
 
-      return;
-
     }
-
-
-    /* NORMAL IMAGE GENERATION */
-
-    if (!prompt) {
-
-      messageInput.focus();
-
-      addTextMessage(
-        'assistant',
-        'Type what you want me to create first — for example: "A realistic husky running through a forest at sunset".'
-      );
-
-      return;
-
-    }
-
-
-    const chatReady =
-      await ensureCurrentChat(
-        prompt
-      );
-
-
-    if (!chatReady) {
-
-      addTextMessage(
-        'assistant',
-        'I could not create the conversation. Please try again.'
-      );
-
-      return;
-
-    }
-
-
-    addTextMessage(
-      'user',
-      prompt
-    );
-
-
-    await saveMessage(
-      'user',
-      prompt
-    );
-
-
-    await updateChatTitle(
-      prompt
-    );
-
-
-    messageInput.value =
-      '';
-
-
-    await generateImage(
-      prompt
-    );
-
-  }
-
-
-  imageButton.addEventListener(
-    'click',
-    createImageFromButton
   );
 
 
@@ -3803,11 +3820,9 @@ Make it clearly a new render rather than an exact copy.`;
     'click',
     () => {
 
-      if (imageBusy) {
-        return;
+      if (!imageBusy) {
+        fileInput.click();
       }
-
-      fileInput.click();
 
     }
   );
@@ -3820,17 +3835,20 @@ Make it clearly a new render rather than an exact copy.`;
       const file =
         event.target.files?.[0];
 
+
       if (!file) {
         return;
       }
 
 
       if (
-        !file.type.startsWith('image/')
+        !file.type.startsWith(
+          'image/'
+        )
       ) {
 
         alert(
-          'Please choose an image file.'
+          'Please select an image.'
         );
 
         return;
@@ -3852,24 +3870,16 @@ Make it clearly a new render rather than an exact copy.`;
           selectedImageData =
             reader.result;
 
+
           uploadPreviewImage.src =
             selectedImageData;
+
 
           uploadPreview.style.display =
             'block';
 
+
           messageInput.focus();
-
-        };
-
-
-      reader.onerror =
-        () => {
-
-          addTextMessage(
-            'assistant',
-            'I could not read that image. Please try another image.'
-          );
 
         };
 
@@ -3915,87 +3925,7 @@ Make it clearly a new render rather than an exact copy.`;
 
 
   /* =========================================================
-     NEW CHAT
-  ========================================================= */
-
-  document
-    .getElementById('newChatButton')
-    .addEventListener(
-      'click',
-      createNewChat
-    );
-
-
-  document
-    .getElementById('sidebarNewChatButton')
-    .addEventListener(
-      'click',
-      createNewChat
-    );
-
-
-  /* =========================================================
-     LOGOUT
-  ========================================================= */
-
-  document
-    .getElementById('logoutButton')
-    .addEventListener(
-      'click',
-      async () => {
-
-        closeMobileSidebar();
-
-        try {
-
-          if (supabaseClient) {
-
-            await supabaseClient.auth.signOut();
-
-          }
-
-        } catch (error) {
-
-          console.error(
-            'Logout error:',
-            error
-          );
-
-        }
-
-
-        currentUser =
-          null;
-
-        currentChatId =
-          null;
-
-        chats =
-          [];
-
-        memory =
-          '';
-
-        conversationMessages =
-          [];
-
-        initialised =
-          false;
-
-        clearUpload();
-
-        clearChatUI();
-
-        renderChatHistory();
-
-        showAuthScreen();
-
-      }
-    );
-
-
-  /* =========================================================
-     ENTER TO SEND
+     ENTER KEY
   ========================================================= */
 
   messageInput.addEventListener(
@@ -4028,6 +3958,7 @@ Make it clearly a new render rather than an exact copy.`;
       messageInput.style.height =
         'auto';
 
+
       messageInput.style.height =
         `${Math.min(
           messageInput.scrollHeight,
@@ -4039,41 +3970,48 @@ Make it clearly a new render rather than an exact copy.`;
 
 
   /* =========================================================
-     DOCK HEIGHT
+     LOGOUT
   ========================================================= */
 
-  function updateDockHeight() {
+  document
+    .getElementById('logoutButton')
+    .addEventListener(
+      'click',
+      async () => {
 
-    const dock =
-      document.querySelector(
-        '.dock'
-      );
+        await supabaseClient.auth.signOut();
 
-    if (!dock) {
-      return;
-    }
+        currentUser =
+          null;
 
-    document.documentElement
-      .style
-      .setProperty(
-        '--dock-height',
-        `${dock.offsetHeight}px`
-      );
+        currentChatId =
+          null;
 
-  }
+        chats =
+          [];
 
+        memory =
+          '';
 
-  window.addEventListener(
-    'resize',
-    updateDockHeight
-  );
+        conversationMessages =
+          [];
+
+        initialised =
+          false;
+
+        clearUpload();
+
+        clearChatUI();
+
+        showAuthScreen();
+
+      }
+    );
 
 
   /* =========================================================
-     START
+     START APP
   ========================================================= */
-
-  updateDockHeight();
 
   checkSession();
 
