@@ -6,14 +6,25 @@ import { toFile } from 'openai/uploads';
 
 const app = express();
 
-app.use(cors());
-app.use(express.json({ limit: '25mb' }));
+const PORT = process.env.PORT || 3000;
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 });
 
-const PORT = process.env.PORT || 3000;
+
+/* =========================================================
+   MIDDLEWARE
+========================================================= */
+
+app.use(cors());
+
+app.use(
+  express.json({
+    limit: '25mb'
+  })
+);
+
 
 /* =========================================================
    BASIC ROUTE
@@ -29,22 +40,29 @@ app.get('/', (req, res) => {
 ========================================================= */
 
 app.post('/api/chat', async (req, res) => {
+
   try {
+
     const { message } = req.body;
 
     if (!message || !message.trim()) {
+
       return res.status(400).json({
         error: 'Message is required.'
       });
+
     }
 
     console.log('CHAT:', message);
 
+
     const response =
       await openai.chat.completions.create({
+
         model: 'gpt-4o-mini',
 
         messages: [
+
           {
             role: 'system',
 
@@ -84,27 +102,39 @@ The user should feel like they are chatting with a personality, not a generic cu
             role: 'user',
             content: message
           }
+
         ]
+
       });
+
 
     const reply =
       response.choices?.[0]?.message?.content ||
       'Sorry, I could not generate a response.';
 
+
     res.json({
       reply
     });
 
+
   } catch (error) {
 
-    console.error('CHAT ERROR:', error);
+    console.error(
+      'CHAT ERROR:',
+      error
+    );
 
     res.status(500).json({
+
       error:
         error?.message ||
         'Chat request failed.'
+
     });
+
   }
+
 });
 
 
@@ -113,6 +143,7 @@ The user should feel like they are chatting with a personality, not a generic cu
 ========================================================= */
 
 app.post('/api/image', async (req, res) => {
+
   try {
 
     const {
@@ -120,27 +151,36 @@ app.post('/api/image', async (req, res) => {
       regenerate
     } = req.body;
 
+
     if (!prompt || !prompt.trim()) {
+
       return res.status(400).json({
         error: 'Image prompt is required.'
       });
+
     }
 
+
     console.log('========================================');
+
     console.log(
       regenerate
         ? 'IMAGE REGENERATION'
         : 'IMAGE GENERATION'
     );
 
-    console.log('PROMPT:', prompt);
+    console.log(
+      'PROMPT:',
+      prompt
+    );
+
 
     let finalPrompt = prompt.trim();
 
-    /*
-      When regenerating a text-only image, add a little
-      variation so the result isn't simply identical.
-    */
+
+    /* =====================================================
+       TEXT-ONLY IMAGE REGENERATION
+    ===================================================== */
 
     if (regenerate === true) {
 
@@ -177,29 +217,43 @@ Maintain the same core subject and idea but introduce
 small creative differences in framing, atmosphere,
 lighting or positioning.
 `
+
       ];
+
 
       const variation =
         variations[
           Math.floor(
-            Math.random() * variations.length
+            Math.random() *
+            variations.length
           )
         ];
 
+
       finalPrompt = `
+
 ${prompt.trim()}
 
 ${variation}
+
 `;
+
     }
+
 
     console.log(
       'FINAL IMAGE PROMPT:',
       finalPrompt
     );
 
+
+    /* =====================================================
+       OPENAI IMAGE GENERATION
+    ===================================================== */
+
     const response =
       await openai.images.generate({
+
         model: 'gpt-image-2',
 
         prompt: finalPrompt,
@@ -209,42 +263,64 @@ ${variation}
         quality: 'medium',
 
         n: 1
+
       });
+
 
     console.log(
       'IMAGE GENERATED SUCCESSFULLY'
     );
 
+
     const imageData =
       response.data?.[0];
 
+
     if (!imageData) {
+
       throw new Error(
         'No image returned from OpenAI.'
       );
+
     }
+
+
+    /* =====================================================
+       BASE64 IMAGE
+    ===================================================== */
 
     if (imageData.b64_json) {
 
       return res.json({
+
         image:
           `data:image/png;base64,${imageData.b64_json}`
+
       });
 
     }
+
+
+    /* =====================================================
+       IMAGE URL FALLBACK
+    ===================================================== */
 
     if (imageData.url) {
 
       return res.json({
+
         image:
           imageData.url
+
       });
 
     }
 
+
     throw new Error(
       'Image response contained no usable image.'
     );
+
 
   } catch (error) {
 
@@ -253,13 +329,18 @@ ${variation}
       error
     );
 
+
     res.status(500).json({
+
       error:
         error?.error?.message ||
         error?.message ||
         'Image generation failed.'
+
     });
+
   }
+
 });
 
 
@@ -277,28 +358,43 @@ app.post('/api/image/edit', async (req, res) => {
       regenerate
     } = req.body;
 
+
+    /* =====================================================
+       VALIDATION
+    ===================================================== */
+
     if (!prompt || !prompt.trim()) {
 
       return res.status(400).json({
-        error: 'Image edit prompt is required.'
+
+        error:
+          'Image edit prompt is required.'
+
       });
 
     }
+
 
     if (!image) {
 
       return res.status(400).json({
-        error: 'An image is required.'
+
+        error:
+          'An image is required.'
+
       });
 
     }
 
+
     console.log('========================================');
 
     console.log(
+
       regenerate
         ? 'IMAGE EDIT REGENERATION'
         : 'IMAGE EDIT'
+
     );
 
     console.log(
@@ -308,18 +404,22 @@ app.post('/api/image/edit', async (req, res) => {
 
 
     /* =====================================================
-       CONVERT DATA URL INTO BUFFER
+       CONVERT DATA URL TO BUFFER
     ===================================================== */
 
     let originalBuffer;
 
+
     if (
+
       typeof image === 'string' &&
       image.startsWith('data:')
+
     ) {
 
       const parts =
         image.split(',');
+
 
       if (parts.length < 2) {
 
@@ -329,8 +429,10 @@ app.post('/api/image/edit', async (req, res) => {
 
       }
 
+
       const base64Data =
         parts[1];
+
 
       originalBuffer =
         Buffer.from(
@@ -346,19 +448,26 @@ app.post('/api/image/edit', async (req, res) => {
 
     }
 
+
     console.log(
+
       'ORIGINAL UPLOADED PHOTO:',
       originalBuffer.length,
       'bytes'
+
     );
 
 
     /* =====================================================
-       NORMALISE ORIGINAL IMAGE
+       NORMALISE ORIGINAL PHOTO
 
-       This helps prevent OpenAI rejecting certain
-       phone photos, HEIC-style images, rotations,
-       transparency and unusual image formats.
+       Handles:
+       - Phone rotation
+       - Large images
+       - Transparency
+       - Unsupported formats
+       - HEIC-style uploads after browser conversion
+       - JPEG compatibility
     ===================================================== */
 
     const normalizedBuffer =
@@ -367,42 +476,58 @@ app.post('/api/image/edit', async (req, res) => {
         .rotate()
 
         .resize({
+
           width: 1536,
+
           height: 1536,
+
           fit: 'inside',
+
           withoutEnlargement: true
+
         })
 
         .flatten({
+
           background: '#ffffff'
+
         })
 
         .jpeg({
+
           quality: 95,
+
           mozjpeg: true
+
         })
 
         .toBuffer();
 
 
     console.log(
+
       'NORMALISED ORIGINAL:',
       normalizedBuffer.length,
       'bytes'
+
     );
 
 
     /* =====================================================
-       CREATE OPENAI IMAGE FILE
+       CREATE OPENAI FILE
     ===================================================== */
 
     const imageFile =
       await toFile(
+
         normalizedBuffer,
+
         'original-upload.jpg',
+
         {
           type: 'image/jpeg'
         }
+
       );
 
 
@@ -452,6 +577,7 @@ uploaded photograph.
 
 Do not change unrelated parts of the image unless
 necessary to complete the requested edit.
+
 `;
 
     }
@@ -462,8 +588,9 @@ necessary to complete the requested edit.
        
        IMPORTANT:
        The ORIGINAL uploaded photograph is sent again.
-       
-       The previous AI-generated image is NOT used.
+
+       The previous AI-generated result is NOT used
+       as the reference.
     ===================================================== */
 
     if (regenerate === true) {
@@ -532,15 +659,20 @@ Make changes only where appropriate to the edit.
 Avoid unnecessary changes to the person's face,
 body or identity.
 `
+
       ];
 
 
       const variation =
         regenerationVariations[
+
           Math.floor(
+
             Math.random() *
             regenerationVariations.length
+
           )
+
         ];
 
 
@@ -600,13 +732,14 @@ reference for the person's likeness.
 
 The requested edit should remain essentially the
 same, with only a modest visual variation.
+
 `;
 
     }
 
 
     /* =====================================================
-       OPENAI IMAGE EDIT
+       SEND ORIGINAL PHOTO TO OPENAI
     ===================================================== */
 
     console.log(
@@ -636,15 +769,19 @@ same, with only a modest visual variation.
 
         quality: 'medium',
 
+        input_fidelity: 'high',
+
         n: 1
 
       });
 
 
     console.log(
+
       regenerate
         ? 'IMAGE EDIT REGENERATED SUCCESSFULLY'
         : 'IMAGE EDITED SUCCESSFULLY'
+
     );
 
 
@@ -678,7 +815,7 @@ same, with only a modest visual variation.
 
 
     /* =====================================================
-       FALLBACK URL
+       RETURN URL IF PROVIDED
     ===================================================== */
 
     if (imageData.url) {
@@ -694,7 +831,9 @@ same, with only a modest visual variation.
 
 
     throw new Error(
+
       'Edited image response contained no usable image.'
+
     );
 
 
@@ -704,6 +843,7 @@ same, with only a modest visual variation.
       'IMAGE EDIT ERROR:',
       error
     );
+
 
     res.status(500).json({
 
@@ -724,7 +864,9 @@ same, with only a modest visual variation.
 ========================================================= */
 
 app.listen(
+
   PORT,
+
   () => {
 
     console.log(
@@ -732,4 +874,5 @@ app.listen(
     );
 
   }
+
 );
