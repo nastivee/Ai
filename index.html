@@ -5254,6 +5254,8 @@ async function handleAuth() {
 
     if (signupMode) {
 
+      pendingPassword = password;
+
       const {
         data,
         error
@@ -5272,11 +5274,12 @@ async function handleAuth() {
 
 
       if (error) {
+
+        pendingPassword = null;
+
         throw error;
+
       }
-
-
-      pendingPassword = password;
 
       if (data?.user && !data.session) {
 
@@ -5298,6 +5301,13 @@ async function handleAuth() {
 
     } else {
 
+      /*
+        Supabase can fire its auth event before this call
+        returns, and the vault is opened on that event, so
+        the password has to be waiting before we ask.
+      */
+      pendingPassword = password;
+
       const {
         error
       } =
@@ -5310,14 +5320,12 @@ async function handleAuth() {
 
 
       if (error) {
-        throw error;
-      }
 
-      /*
-        We have the password for exactly this moment, so
-        the vault opens here and nowhere else.
-      */
-      pendingPassword = password;
+        pendingPassword = null;
+
+        throw error;
+
+      }
 
     }
 
@@ -5370,7 +5378,26 @@ supabaseClient.auth.onAuthStateChange(
       currentUser =
         session.user;
 
-      await initialiseApp();
+      try {
+
+        await initialiseApp();
+
+      } catch (error) {
+
+        /*
+          Never leave somebody staring at the log in screen
+          with no idea why. Say what happened.
+        */
+        console.error('START UP FAILED:', error);
+
+        authError.style.color = '#ff8585';
+
+        authError.textContent =
+          'Signed in, but the app could not start: ' +
+          (error?.message || 'unknown error') +
+          '. Try again, or tell us what this says.';
+
+      }
 
     } else if (!guestMode) {
 
@@ -5533,21 +5560,29 @@ async function initialiseApp() {
     here. The server is the one that decides, the screen
     is just what the rest of the world sees.
   */
-  if (guestMode) {
+  try {
 
-    if (await siteIsHolding()) {
-      showHolding();
-      return;
+    if (guestMode) {
+
+      if (await siteIsHolding()) {
+        showHolding();
+        return;
+      }
+
+    } else {
+
+      await refreshAccount();
+
+      if (account.holding === true && account.admin !== true) {
+        showHolding();
+        return;
+      }
+
     }
 
-  } else {
+  } catch (error) {
 
-    await refreshAccount();
-
-    if (account.holding === true && account.admin !== true) {
-      showHolding();
-      return;
-    }
+    console.error('HOLDING CHECK FAILED:', error);
 
   }
 
@@ -9384,6 +9419,27 @@ document
 */
 async function unlockVault() {
 
+  try {
+
+    return await unlockVaultInner();
+
+  } catch (error) {
+
+    /*
+      Whatever went wrong, being locked out of your own
+      account is worse than being unencrypted for a session.
+    */
+    console.error('UNLOCK FAILED, CARRYING ON:', error);
+
+    return true;
+
+  }
+
+}
+
+
+async function unlockVaultInner() {
+
   if (!cryptoReady()) {
 
     /*
@@ -12653,7 +12709,7 @@ window.addEventListener('online', () => {
    clearing anything by hand.
 ===================================================== */
 
-const APP_VERSION = '2026-09-21-02';
+const APP_VERSION = '2026-09-21-03';
 
 const RELOAD_FLAG = 'nastivee_reloaded_for';
 
