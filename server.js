@@ -6,69 +6,56 @@ import { toFile } from 'openai/uploads';
 
 const app = express();
 
-app.use(cors());
-
-app.use(
-  express.json({
-    limit: '25mb'
-  })
-);
+const PORT = process.env.PORT || 3000;
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 });
 
-const PORT = process.env.PORT || 3000;
+app.use(cors());
+app.use(express.json({ limit: '25mb' }));
 
+// --------------------------------------------------
+// HEALTH CHECK
+// --------------------------------------------------
 
-/* =========================================================
-   CHAT
-========================================================= */
+app.get('/api/health', (req, res) => {
+  res.json({
+    ok: true,
+    service: 'Nastivee AI',
+    openaiConfigured: Boolean(process.env.OPENAI_API_KEY)
+  });
+});
+
+// --------------------------------------------------
+// CHAT
+// --------------------------------------------------
 
 app.post('/api/chat', async (req, res) => {
   try {
-
     const {
       message,
       history = [],
       memory = {}
-    } = req.body;
+    } = req.body || {};
 
-
-    if (
-      !message ||
-      typeof message !== 'string' ||
-      !message.trim()
-    ) {
+    if (!message || typeof message !== 'string') {
       return res.status(400).json({
-        error: 'Message is required.'
+        error: 'No message was provided.'
       });
     }
 
+    console.log('CHAT:', message);
 
-    /* -----------------------------------------------------
-       CLEAN HISTORY
-    ----------------------------------------------------- */
-
-    const safeHistory =
-      Array.isArray(history)
-        ? history
-            .filter(item =>
-              item &&
-              (
-                item.role === 'user' ||
-                item.role === 'assistant'
-              ) &&
-              typeof item.content === 'string' &&
-              item.content.trim()
-            )
-            .slice(-100)
-        : [];
-
-
-    /* -----------------------------------------------------
-       CLEAN MEMORY
-    ----------------------------------------------------- */
+    const safeHistory = Array.isArray(history)
+      ? history
+          .filter(item =>
+            item &&
+            (item.role === 'user' || item.role === 'assistant') &&
+            typeof item.content === 'string'
+          )
+          .slice(-100)
+      : [];
 
     const safeMemory =
       memory &&
@@ -77,384 +64,200 @@ app.post('/api/chat', async (req, res) => {
         ? memory
         : {};
 
+    const memoryEntries = Object.entries(safeMemory);
 
-    const memoryText =
-      Object.entries(safeMemory)
-        .filter(([key, value]) =>
-          key &&
-          value !== undefined &&
-          value !== null &&
-          String(value).trim()
-        )
-        .map(([key, value]) =>
-          `${key}: ${value}`
-        )
-        .join('\n');
-
-
-    /* -----------------------------------------------------
-       SYSTEM PERSONALITY
-    ----------------------------------------------------- */
+    const memoryText = memoryEntries.length
+      ? memoryEntries
+          .map(([key, value]) => `${key}: ${String(value)}`)
+          .join('\n')
+      : 'No long-term memory has been saved yet.';
 
     const systemPrompt = `
-
 You are Nastivee AI.
 
-You are a friendly, confident, natural AI companion.
+You are a friendly, natural, confident AI assistant.
 
-DEFAULT PERSONALITY:
-- Friendly
-- Helpful
-- Natural
-- Funny when appropriate
-- Relaxed
-- Warm
-- Playful when the user is playful
+IMPORTANT PERSONALITY RULES:
 
-IMPORTANT:
+- Be normal, conversational and helpful by default.
+- Do NOT constantly flirt with the user.
+- Do NOT randomly become sexual, horny, seductive or suggestive.
+- Only become flirty, cheeky or suggestive if the user clearly starts that kind of conversation or explicitly asks you to.
+- If the user changes back to a normal subject, immediately return to a normal conversational tone.
+- Do not force jokes or flirting into unrelated answers.
+- Speak naturally rather than sounding like a corporate assistant.
+- You can be playful when the conversation is genuinely playful.
+- Never claim that the user told you something if you do not actually have it in your available memory/history.
 
-Do NOT constantly flirt.
+LONG-TERM MEMORY:
 
-Do NOT randomly become sexual.
+The following information has been deliberately saved by the user/browser:
 
-Do NOT randomly use horny, seductive or sexual language.
+${memoryText}
 
-Do NOT turn normal conversations into sexual conversations.
+Use this information naturally when relevant.
 
-Only become flirty, cheeky or suggestive when the user clearly
-starts that type of conversation or specifically asks for it.
-
-If the user changes back to a normal subject, immediately return
-to a normal conversational tone.
-
-MEMORY:
-
-You have a separate long-term memory supplied below.
-
-These are facts the user has previously told Nastivee.
-
-You MUST use these facts when relevant.
-
-If the memory says:
+If the memory contains something such as:
 
 Dog's name: Rune
 
-and the user asks:
+then you KNOW the dog's name is Rune.
 
-"What is my dog's name?"
+Do NOT say that the user never told you their dog's name when the memory contains it.
 
-answer Rune.
+RECENT CONVERSATION:
 
-DO NOT say the user has never told you if the information is
-present in the memory.
+Use the supplied conversation history to maintain continuity.
 
-Do not claim to remember something that isn't present.
+Do not pretend that you remember conversations that are not included in either the memory or the supplied history.
 
-You also have recent conversation history below. Use both the
-long-term memory and recent conversation naturally.
-
-LONG-TERM MEMORY:
-${memoryText || 'No saved long-term facts yet.'}
-
-Do not mention the technical memory system to the user unless
-they ask about it.
-
-Do not constantly remind the user that you are an AI.
-
-Match the user's tone.
-
-Keep normal answers reasonably concise.
-
+The user's current message is the latest message in the conversation.
 `;
 
-
-    /* -----------------------------------------------------
-       OPENAI REQUEST
-    ----------------------------------------------------- */
-
     const messages = [
-
       {
         role: 'system',
         content: systemPrompt
       },
-
       ...safeHistory,
-
       {
         role: 'user',
-        content: message.trim()
+        content: message
       }
-
     ];
 
-
-    console.log(
-      'CHAT:',
-      message.trim()
-    );
-
-    console.log(
-      'HISTORY:',
-      safeHistory.length,
-      'messages'
-    );
-
-    console.log(
-      'MEMORY:',
-      Object.keys(safeMemory).length,
-      'facts'
-    );
-
-
-    const response =
-      await openai.chat.completions.create({
-
-        model: 'gpt-4o-mini',
-
-        messages,
-
-        temperature: 0.8
-
-      });
-
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages,
+      temperature: 0.8
+    });
 
     const reply =
-      response?.choices?.[0]?.message?.content?.trim();
+      completion.choices?.[0]?.message?.content ||
+      "Sorry, I couldn't generate a response.";
 
-
-    if (!reply) {
-
-      throw new Error(
-        'No response was generated.'
-      );
-
-    }
-
+    console.log('CHAT SUCCESS');
 
     res.json({
       reply
     });
 
-
   } catch (error) {
-
-    console.error(
-      'CHAT ERROR:',
-      error
-    );
+    console.error('CHAT ERROR:', error);
 
     res.status(500).json({
-
       error:
         error?.message ||
-        'Chat request failed.'
-
+        'Something went wrong while talking to Nastivee.'
     });
-
   }
-
 });
 
-
-/* =========================================================
-   IMAGE GENERATION
-========================================================= */
+// --------------------------------------------------
+// IMAGE GENERATION
+// --------------------------------------------------
 
 app.post('/api/image', async (req, res) => {
-
   try {
-
     const {
       prompt,
       regenerate = false
-    } = req.body;
+    } = req.body || {};
 
-
-    if (
-      !prompt ||
-      typeof prompt !== 'string' ||
-      !prompt.trim()
-    ) {
-
+    if (!prompt || typeof prompt !== 'string') {
       return res.status(400).json({
-        error: 'Image prompt is required.'
+        error: 'No image prompt was provided.'
       });
-
     }
-
-
-    let finalPrompt =
-      prompt.trim();
-
-
-    if (regenerate) {
-
-      const variations = [
-
-        'Create a fresh variation while keeping the same overall concept.',
-
-        'Create another distinct interpretation with subtle visual differences.',
-
-        'Create a new version with natural variation in composition, lighting and details.',
-
-        'Regenerate this as a slightly different creative interpretation.'
-
-      ];
-
-
-      finalPrompt +=
-        '\n\n' +
-        variations[
-          Math.floor(
-            Math.random() *
-            variations.length
-          )
-        ];
-
-    }
-
 
     console.log(
       'IMAGE GENERATION:',
-      prompt
+      regenerate ? 'Regenerating' : prompt
     );
 
+    const finalPrompt = regenerate
+      ? `
+Create another variation of this image request:
 
-    const response =
-      await openai.images.generate({
+${prompt}
 
-        model:
-          'gpt-image-2',
+Make it visually different from the previous result while keeping the same subject, concept and requested details.
+`
+      : prompt;
 
-        prompt:
-          finalPrompt,
+    const result = await openai.images.generate({
+      model: 'gpt-image-2',
+      prompt: finalPrompt,
+      size: '1024x1024',
+      quality: 'medium',
+      n: 1
+    });
 
-        size:
-          '1024x1024',
-
-        quality:
-          'medium',
-
-        n:
-          1
-
-      });
-
-
-    const image =
-      response?.data?.[0]?.b64_json;
-
+    const image = result.data?.[0];
 
     if (!image) {
-
-      throw new Error(
-        'No image was returned.'
-      );
-
+      throw new Error('OpenAI did not return an image.');
     }
 
-
-    console.log(
-      'IMAGE GENERATED SUCCESSFULLY'
-    );
-
+    console.log('IMAGE GENERATED SUCCESSFULLY');
 
     res.json({
-
       image:
-        `data:image/png;base64,${image}`
-
+        image.b64_json
+          ? `data:image/png;base64,${image.b64_json}`
+          : image.url
     });
-
 
   } catch (error) {
-
-    console.error(
-      'IMAGE GENERATION ERROR:',
-      error
-    );
-
+    console.error('IMAGE GENERATION ERROR:', error);
 
     res.status(500).json({
-
       error:
         error?.message ||
-        'Image generation failed.'
-
+        'Something went wrong while generating the image.'
     });
-
   }
-
 });
 
-
-/* =========================================================
-   IMAGE EDITING
-========================================================= */
+// --------------------------------------------------
+// IMAGE EDITING
+// --------------------------------------------------
 
 app.post('/api/image/edit', async (req, res) => {
-
   try {
-
     const {
       prompt,
       image,
       regenerate = false
-    } = req.body;
+    } = req.body || {};
 
-
-    if (
-      !prompt ||
-      typeof prompt !== 'string' ||
-      !prompt.trim()
-    ) {
-
+    if (!prompt) {
       return res.status(400).json({
-        error: 'Image edit prompt is required.'
+        error: 'No image edit instruction was provided.'
       });
-
     }
 
-
-    if (
-      !image ||
-      typeof image !== 'string'
-    ) {
-
+    if (!image) {
       return res.status(400).json({
-        error: 'An image is required.'
+        error: 'No image was uploaded.'
       });
-
     }
-
 
     console.log(
       'IMAGE EDIT:',
-      prompt
+      regenerate ? 'Regenerating edit' : prompt
     );
 
+    let base64Data = image;
 
-    let base64Data =
-      image;
-
-
-    if (
-      image.startsWith('data:')
-    ) {
-
-      base64Data =
-        image.split(',')[1];
-
+    if (base64Data.includes(',')) {
+      base64Data = base64Data.split(',')[1];
     }
 
-
-    const originalBuffer =
-      Buffer.from(
-        base64Data,
-        'base64'
-      );
-
+    const originalBuffer = Buffer.from(
+      base64Data,
+      'base64'
+    );
 
     console.log(
       'ORIGINAL IMAGE:',
@@ -462,41 +265,24 @@ app.post('/api/image/edit', async (req, res) => {
       'bytes'
     );
 
-
+    // Normalize the uploaded image into a safe JPEG.
     const normalizedBuffer =
       await sharp(originalBuffer)
-
         .rotate()
-
         .resize({
-
           width: 1536,
-
           height: 1536,
-
           fit: 'inside',
-
           withoutEnlargement: true
-
         })
-
         .flatten({
-
-          background:
-            '#ffffff'
-
+          background: '#ffffff'
         })
-
         .jpeg({
-
           quality: 95,
-
           mozjpeg: true
-
         })
-
         .toBuffer();
-
 
     console.log(
       'IMAGE CONVERTED:',
@@ -504,185 +290,109 @@ app.post('/api/image/edit', async (req, res) => {
       'bytes'
     );
 
-
-    const imageFile =
-      await toFile(
-
-        normalizedBuffer,
-
-        'original-upload.jpg',
-
-        {
-          type:
-            'image/jpeg'
-        }
-
-      );
-
-
-    let finalPrompt;
-
-
-    if (regenerate) {
-
-      finalPrompt = `
-
-The uploaded image is the authoritative original photograph.
-
-Create a fresh variation of the requested edit.
-
-IMPORTANT:
-- Preserve the person's identity.
-- Preserve facial likeness.
-- Preserve natural facial features.
-- Preserve important physical characteristics.
-- Do not replace the person with another person.
-- Do not use a previous AI-generated image as the source.
-- Work directly from the uploaded original photograph.
-- Keep the requested edit realistic.
-
-Requested edit:
-
-${prompt.trim()}
-
-Create a fresh variation with subtle differences while
-preserving the original person's identity.
-
-`;
-
-    } else {
-
-      finalPrompt = `
-
-Edit the uploaded photograph according to this request.
-
-IMPORTANT:
-- Preserve the person's identity.
-- Preserve facial likeness.
-- Preserve natural facial features.
-- Do not replace the person with another person.
-- Keep the result realistic.
-- Clearly perform the requested edit.
-
-Requested edit:
-
-${prompt.trim()}
-
-`;
-
-    }
-
-
-    console.log(
-      'SENDING IMAGE TO OPENAI...'
+    const imageFile = await toFile(
+      normalizedBuffer,
+      'original-upload.jpg',
+      {
+        type: 'image/jpeg'
+      }
     );
 
+    const finalPrompt = `
+Edit the uploaded image according to this instruction:
 
-    const response =
-      await openai.images.edit({
+${prompt}
 
-        model:
-          'gpt-image-2',
+IMPORTANT:
 
-        image:
-          imageFile,
+- The uploaded image is the authoritative source.
+- Preserve the original person's identity and facial appearance when a person is present.
+- Preserve the original subject's important characteristics.
+- Do not unnecessarily change the composition.
+- Only make the requested changes.
+- Make the result photorealistic unless the user specifically asks for another style.
 
-        prompt:
-          finalPrompt,
+${regenerate
+  ? 'Create a fresh variation of the requested edit while keeping the same subject and requested modification.'
+  : ''}
+`;
 
-        size:
-          '1024x1024',
+    console.log('SENDING IMAGE TO OPENAI...');
 
-        quality:
-          'medium',
+    const result = await openai.images.edit({
+      model: 'gpt-image-2',
+      image: imageFile,
+      prompt: finalPrompt,
+      size: '1024x1024',
+      quality: 'medium',
+      n: 1
+    });
 
-        n:
-          1
+    const outputImage = result.data?.[0];
 
-      });
-
-
-    const imageResult =
-      response?.data?.[0]?.b64_json;
-
-
-    if (!imageResult) {
-
+    if (!outputImage) {
       throw new Error(
-        'No edited image was returned.'
+        'OpenAI did not return an edited image.'
       );
-
     }
 
-
-    console.log(
-      'IMAGE EDITED SUCCESSFULLY'
-    );
-
+    console.log('IMAGE EDITED SUCCESSFULLY');
 
     res.json({
-
       image:
-        `data:image/png;base64,${imageResult}`
-
+        outputImage.b64_json
+          ? `data:image/png;base64,${outputImage.b64_json}`
+          : outputImage.url
     });
-
 
   } catch (error) {
-
-    console.error(
-      'IMAGE EDIT ERROR:',
-      error
-    );
-
+    console.error('IMAGE EDIT ERROR:', error);
 
     res.status(500).json({
-
       error:
         error?.message ||
-        'Image editing failed.'
-
+        'Something went wrong while editing the image.'
     });
-
   }
-
 });
 
-
-/* =========================================================
-   HOME
-========================================================= */
+// --------------------------------------------------
+// HOME
+// --------------------------------------------------
 
 app.get('/', (req, res) => {
-
   res.send(`
-    <!DOCTYPE html>
+    <!doctype html>
     <html>
       <head>
         <title>Nastivee AI</title>
       </head>
-
-      <body>
+      <body style="
+        background:#12001f;
+        color:white;
+        font-family:Arial,sans-serif;
+        text-align:center;
+        padding:50px;
+      ">
         <h1>Nastivee AI</h1>
         <p>Server is running.</p>
       </body>
     </html>
   `);
-
 });
 
+// --------------------------------------------------
+// START
+// --------------------------------------------------
 
-/* =========================================================
-   START
-========================================================= */
+if (!process.env.OPENAI_API_KEY) {
+  console.warn(
+    'WARNING: OPENAI_API_KEY is not configured.'
+  );
+}
 
-app.listen(
-  PORT,
-  () => {
-
-    console.log(
-      `Nastivee AI server running on port ${PORT}`
-    );
-
-  }
-);
+app.listen(PORT, () => {
+  console.log(
+    `Nastivee AI server running on port ${PORT}`
+  );
+});
