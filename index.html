@@ -1179,6 +1179,22 @@
   let imageRequestId = 0;
 
 
+  /*
+    Stores the original uploaded image for the current
+    browser session.
+
+    This gives us a permanent identity reference while
+    the current page is open.
+
+    The backend upgrade will later allow this original
+    reference to survive across refreshes and multiple
+    edits.
+  */
+
+  const originalImageReferences =
+    new Map();
+
+
   /* =========================================================
      ELEMENTS
   ========================================================= */
@@ -2433,6 +2449,11 @@
     );
 
 
+    originalImageReferences.delete(
+      String(chatId)
+    );
+
+
     chats =
       chats.filter(
         item =>
@@ -2491,9 +2512,6 @@
     loadSequence++;
     imageRequestId++;
 
-    /*
-      THIS FIXES THE LOADING BAR
-    */
     hideImageProgress();
 
     imageBusy =
@@ -2840,15 +2858,32 @@
       clearChatUI();
 
 
+      /*
+        When loading a saved image, image_url is itself
+        used as the source image.
+
+        This means the Re-render button can continue
+        working after a page refresh, provided the
+        stored image is a usable data URL.
+      */
+
+      let latestImageForRerender =
+        null;
+
+
       messages.forEach(
         message => {
 
           if (message.image_url) {
 
+            latestImageForRerender =
+              message.image_url;
+
+
             addImageMessage(
               message.image_url,
               message.content || '',
-              null,
+              message.image_url,
               message.content || ''
             );
 
@@ -2866,6 +2901,20 @@
 
         }
       );
+
+
+      /*
+        Store the latest image as the current source.
+      */
+
+      if (latestImageForRerender) {
+
+        originalImageReferences.set(
+          requestedChatId,
+          latestImageForRerender
+        );
+
+      }
 
 
       renderChatHistory();
@@ -2914,9 +2963,6 @@
 
   /* =========================================================
      SAVE MESSAGE
-     
-     IMPORTANT:
-     This now shows the REAL Supabase error.
   ========================================================= */
 
   async function saveMessage(
@@ -3033,10 +3079,6 @@
           '================================'
         );
 
-
-        /*
-          SHOW THE ACTUAL ERROR
-        */
 
         if (
           String(currentChatId) ===
@@ -3242,7 +3284,7 @@
   function addImageMessage(
     imageUrl,
     prompt,
-    originalImageData = null,
+    sourceImageData = null,
     originalPrompt = ''
   ) {
 
@@ -3322,6 +3364,10 @@
       'imageActions';
 
 
+    /* =========================
+       RE-RENDER
+    ========================= */
+
     const rerenderButton =
       document.createElement(
         'button'
@@ -3335,28 +3381,50 @@
       'imageActionButton';
 
     rerenderButton.textContent =
-      '🔄 Re-render';
+      '🔄 Improve / Re-render';
+
+
+    /*
+      If no source was explicitly supplied,
+      use the image currently being displayed.
+
+      This is important because every new version
+      should become the source for the next version.
+    */
+
+    const usableSource =
+      sourceImageData ||
+      imageUrl ||
+      null;
 
 
     rerenderButton.disabled =
-      !originalImageData;
+      !usableSource;
 
 
-    if (originalImageData) {
+    if (usableSource) {
 
       rerenderButton.addEventListener(
         'click',
         async () => {
 
+          if (imageBusy) {
+            return;
+          }
+
+
           await rerenderImage({
 
             sourceImage:
-              originalImageData,
+              usableSource,
 
             prompt:
               originalPrompt ||
               prompt ||
-              ''
+              '',
+
+            currentImage:
+              imageUrl
 
           });
 
@@ -3366,7 +3434,7 @@
     } else {
 
       rerenderButton.title =
-        'Upload the image again to edit it after refreshing.';
+        'This image has no usable source image.';
 
     }
 
@@ -3375,6 +3443,10 @@
       rerenderButton
     );
 
+
+    /* =========================
+       DOWNLOAD
+    ========================= */
 
     const downloadButton =
       document.createElement(
@@ -3660,7 +3732,7 @@
 
 
       /*
-        Save generated image to original chat.
+        Save generated image.
       */
 
       const saved =
@@ -3684,6 +3756,18 @@
       }
 
 
+      /*
+        IMPORTANT:
+        The generated image itself becomes the source
+        for the next re-render.
+      */
+
+      originalImageReferences.set(
+        String(targetChatId),
+        data.image
+      );
+
+
       if (
         thisImageRequest ===
           imageRequestId &&
@@ -3702,7 +3786,7 @@
         addImageMessage(
           data.image,
           prompt,
-          null,
+          data.image,
           prompt
         );
 
@@ -3776,7 +3860,8 @@
   async function editImage(
     imageData,
     prompt,
-    chatIdOverride = null
+    chatIdOverride = null,
+    identityImageData = null
   ) {
 
     if (imageBusy) {
@@ -3793,6 +3878,17 @@
       return;
     }
 
+
+    /*
+      imageData = the current image being edited.
+
+      identityImageData = the original uploaded image.
+
+      The backend currently accepts one image, so for now
+      we send imageData. The backend upgrade will allow
+      both to be supplied so identity can be preserved
+      across many generations.
+    */
 
     const thisImageRequest =
       ++imageRequestId;
@@ -3865,6 +3961,11 @@
         );
 
 
+      /*
+        For now the existing backend receives the current
+        image exactly as before.
+      */
+
       const response =
         await apiFetch(
           '/api/image/edit',
@@ -3925,6 +4026,10 @@
       }
 
 
+      /*
+        Save the NEWEST image.
+      */
+
       const saved =
         await saveMessage(
           'assistant',
@@ -3946,6 +4051,34 @@
       }
 
 
+      /*
+        MOST IMPORTANT PART:
+
+        The newly edited image becomes the source
+        for the NEXT re-render.
+
+        Therefore:
+
+        Original
+          ↓
+        Edit 1
+          ↓
+        Edit 2
+          ↓
+        Edit 3
+          ↓
+        Edit 4
+
+        Each step works from the image immediately
+        before it.
+      */
+
+      originalImageReferences.set(
+        String(targetChatId),
+        data.image
+      );
+
+
       if (
         thisImageRequest ===
           imageRequestId &&
@@ -3962,7 +4095,7 @@
         addImageMessage(
           data.image,
           prompt,
-          imageData,
+          data.image,
           prompt
         );
 
@@ -4023,19 +4156,20 @@
 
 
   /* =========================================================
-     RERENDER
+     RERENDER / IMPROVE IMAGE
   ========================================================= */
 
   async function rerenderImage({
     sourceImage,
-    prompt
+    prompt,
+    currentImage = null
   }) {
 
     if (!sourceImage) {
 
       addTextMessage(
         'assistant',
-        'Upload the image again if you want to re-render it after refreshing.'
+        'There is no source image available for this re-render.'
       );
 
       return;
@@ -4043,20 +4177,132 @@
     }
 
 
-    const newPrompt =
-`${prompt}
+    /*
+      If possible, always use the latest image associated
+      with this chat.
 
-Create a fresh variation of this image.
+      This prevents accidentally going back to an older
+      image when several versions exist.
+    */
 
-Keep the main subject and original creative intention,
-but create a noticeably different composition,
-lighting, camera angle, background or styling.`;
+    const storedLatest =
+      currentChatId
+        ? originalImageReferences.get(
+            String(currentChatId)
+          )
+        : null;
+
+
+    const latestSource =
+      storedLatest ||
+      sourceImage ||
+      currentImage;
+
+
+    /*
+      This is deliberately an IMPROVEMENT prompt.
+
+      It tells the image model not to throw away the
+      current design and start again.
+    */
+
+    const improvedPrompt =
+`IMPROVE AND REFINE THE EXISTING IMAGE.
+
+This is an EDIT of the supplied image.
+
+DO NOT create a completely new image from scratch.
+
+DO NOT restart the design from the original text prompt.
+
+The supplied image is the CURRENT VERSION and must remain
+the primary visual reference.
+
+Original creative request:
+${prompt || 'Improve the image.'}
+
+Your task is to improve the current image while keeping
+the same subject, same person if present, same overall
+creative intention and recognisable visual identity.
+
+KEEP EVERYTHING THAT IS ALREADY WORKING.
+
+Improve only where useful:
+- realism
+- image quality
+- lighting
+- shadows
+- depth
+- detail
+- sharpness
+- texture
+- composition
+- proportions
+- background quality
+- colour balance
+- professional finish
+
+Do not make unnecessary changes.
+
+PERSON / FACE PRESERVATION:
+
+If the image contains a person, preserve their likeness
+as closely as possible.
+
+Keep:
+- facial structure
+- face shape
+- eyes
+- eye spacing
+- eyebrows
+- nose
+- mouth
+- lips
+- cheeks
+- jawline
+- chin
+- ears
+- skin tone
+- hair
+- hairline
+- facial hair
+- distinctive facial characteristics
+- body proportions
+- recognisable features
+
+DO NOT replace the person's face.
+
+DO NOT substantially redesign the person's face.
+
+DO NOT make the person look like a different person.
+
+The final result should clearly look like the SAME person
+and the SAME image, professionally improved.
+
+If there is already a specific edit or creative direction
+in the image, preserve it.
+
+If the original request asked for something to be changed,
+keep that change.
+
+The priority is:
+
+1. Preserve the person's identity and likeness.
+2. Preserve the current image.
+3. Preserve the original creative intention.
+4. Improve quality and realism.
+5. Avoid unnecessary changes.
+
+Create a refined improved version of the supplied image.`;
 
 
     await editImage(
-      sourceImage,
-      newPrompt,
-      currentChatId
+      latestSource,
+      improvedPrompt,
+      currentChatId,
+      originalImageReferences.get(
+        String(currentChatId)
+      ) || latestSource
     );
 
   }
@@ -4189,6 +4435,25 @@ lighting, camera angle, background or styling.`;
         selectedImageData;
 
 
+      /*
+        Keep the original uploaded photo as the
+        identity reference for this browser session.
+      */
+
+      if (
+        !originalImageReferences.has(
+          String(requestChatId)
+        )
+      ) {
+
+        originalImageReferences.set(
+          String(requestChatId),
+          image
+        );
+
+      }
+
+
       clearUpload();
 
 
@@ -4202,7 +4467,8 @@ lighting, camera angle, background or styling.`;
       await editImage(
         image,
         userText,
-        requestChatId
+        requestChatId,
+        image
       );
 
 
@@ -4454,11 +4720,6 @@ lighting, camera angle, background or styling.`;
         'IMAGE PROMPT WAS NOT SAVED:',
         targetChatId
       );
-
-      /*
-        saveMessage() now shows the actual
-        Supabase error on screen.
-      */
 
       return;
 
@@ -4715,6 +4976,8 @@ lighting, camera angle, background or styling.`;
           '';
 
         chatConversations.clear();
+
+        originalImageReferences.clear();
 
         initialised =
           false;
