@@ -33,9 +33,7 @@
       cursor: pointer;
     }
 
-    /* =========================
-       AUTH
-    ========================= */
+    /* AUTH */
 
     #authScreen {
       position: fixed;
@@ -136,9 +134,7 @@
       font-size: 14px;
     }
 
-    /* =========================
-       APP
-    ========================= */
+    /* APP */
 
     #app {
       display: none;
@@ -152,9 +148,7 @@
       height: 100%;
     }
 
-    /* =========================
-       SIDEBAR
-    ========================= */
+    /* SIDEBAR */
 
     .sidebar {
       width: 270px;
@@ -242,9 +236,7 @@
       color: white;
     }
 
-    /* =========================
-       MOBILE SIDEBAR
-    ========================= */
+    /* MOBILE SIDEBAR */
 
     .sidebarOverlay {
       display: none;
@@ -275,9 +267,7 @@
       background: #241536;
     }
 
-    /* =========================
-       MAIN
-    ========================= */
+    /* MAIN */
 
     .main {
       flex: 1;
@@ -334,9 +324,7 @@
       background: #241536;
     }
 
-    /* =========================
-       MEMORY
-    ========================= */
+    /* MEMORY */
 
     #memoryPanel {
       display: none;
@@ -380,9 +368,7 @@
       font-weight: bold;
     }
 
-    /* =========================
-       CHAT
-    ========================= */
+    /* CHAT */
 
     #chat {
       flex: 1;
@@ -435,9 +421,7 @@
       border-bottom-left-radius: 5px;
     }
 
-    /* =========================
-       IMAGES
-    ========================= */
+    /* IMAGES */
 
     .imageMessage {
       max-width: 850px;
@@ -474,9 +458,12 @@
       background: #241433;
     }
 
-    /* =========================
-       PROGRESS
-    ========================= */
+    .imageActionButton:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    /* PROGRESS */
 
     #imageProgress {
       display: none;
@@ -515,9 +502,7 @@
       transition: width 0.4s ease;
     }
 
-    /* =========================
-       UPLOAD
-    ========================= */
+    /* UPLOAD */
 
     #uploadPreview {
       display: none;
@@ -551,9 +536,7 @@
       font-size: 12px;
     }
 
-    /* =========================
-       COMPOSER
-    ========================= */
+    /* COMPOSER */
 
     .dock {
       position: fixed;
@@ -624,9 +607,7 @@
       border: 0;
     }
 
-    /* =========================
-       MOBILE
-    ========================= */
+    /* MOBILE */
 
     @media (max-width: 750px) {
 
@@ -715,11 +696,7 @@
 
 <body>
 
-  <div
-    id="sidebarOverlay"
-    class="sidebarOverlay"
-  ></div>
-
+  <div id="sidebarOverlay" class="sidebarOverlay"></div>
 
   <!-- AUTH -->
 
@@ -739,7 +716,6 @@
         <p>Your personal AI assistant</p>
 
       </div>
-
 
       <div id="loginForm">
 
@@ -776,7 +752,6 @@
         </div>
 
       </div>
-
 
       <div
         id="signupForm"
@@ -830,7 +805,6 @@
 
   </div>
 
-
   <!-- APP -->
 
   <div id="app">
@@ -876,7 +850,6 @@
         </div>
 
       </aside>
-
 
       <!-- MAIN -->
 
@@ -924,7 +897,6 @@
 
         </header>
 
-
         <!-- MEMORY -->
 
         <div id="memoryPanel">
@@ -944,7 +916,6 @@
           </button>
 
         </div>
-
 
         <!-- CHAT -->
 
@@ -974,7 +945,6 @@
 
     </div>
 
-
     <!-- IMAGE PROGRESS -->
 
     <div id="imageProgress">
@@ -987,13 +957,10 @@
       </div>
 
       <div class="progressBar">
-
         <div id="progressFill"></div>
-
       </div>
 
     </div>
-
 
     <!-- COMPOSER -->
 
@@ -1018,7 +985,6 @@
 
         </div>
 
-
         <button
           type="button"
           class="dockButton"
@@ -1028,13 +994,11 @@
           📎
         </button>
 
-
         <textarea
           id="messageInput"
           rows="1"
           placeholder="Message Nastivee..."
         ></textarea>
-
 
         <button
           type="button"
@@ -1044,7 +1008,6 @@
         >
           🖼️
         </button>
-
 
         <button
           type="button"
@@ -1059,7 +1022,6 @@
 
     </div>
 
-
     <input
       id="fileInput"
       type="file"
@@ -1068,7 +1030,6 @@
     >
 
   </div>
-
 
 <script>
 
@@ -1121,12 +1082,33 @@
   let currentChatId = null;
   let chats = [];
   let memory = '';
+
   let selectedImageFile = null;
   let selectedImageData = null;
-  let conversationMessages = [];
+
+  /*
+    IMPORTANT:
+
+    Every chat gets its own conversation array.
+
+    This means switching from Chat A to Chat B
+    does NOT destroy Chat A's AI context.
+  */
+
+  const chatConversations = new Map();
+
   let initialised = false;
   let imageBusy = false;
   let loadingChat = false;
+
+  /*
+    Used to identify the chat an AI request started in.
+    This prevents an AI response being saved into
+    another chat if the user switches conversations
+    while the response is generating.
+  */
+
+  let activeRequestId = 0;
 
 
   /* =========================================================
@@ -1337,7 +1319,8 @@
       );
 
     button.disabled = true;
-    button.textContent = 'Logging in...';
+    button.textContent =
+      'Logging in...';
 
     try {
 
@@ -1373,7 +1356,8 @@
     } finally {
 
       button.disabled = false;
-      button.textContent = 'Login';
+      button.textContent =
+        'Login';
 
     }
 
@@ -1611,10 +1595,6 @@
 
     await loadChats();
 
-    /*
-      Open newest chat automatically.
-    */
-
     if (chats.length > 0) {
 
       await loadChat(
@@ -1626,8 +1606,9 @@
       currentChatId =
         null;
 
-      conversationMessages =
-        [];
+      conversationMessagesFor(
+        null
+      );
 
       clearChatUI();
 
@@ -1656,6 +1637,68 @@
 
     app.style.display =
       'block';
+
+  }
+
+
+  /* =========================================================
+     CHAT MEMORY HELPERS
+  ========================================================= */
+
+  function getConversation(
+    chatId
+  ) {
+
+    if (!chatId) {
+      return [];
+    }
+
+    if (
+      !chatConversations.has(
+        String(chatId)
+      )
+    ) {
+
+      chatConversations.set(
+        String(chatId),
+        []
+      );
+
+    }
+
+    return chatConversations.get(
+      String(chatId)
+    );
+
+  }
+
+
+  function setConversation(
+    chatId,
+    messages
+  ) {
+
+    if (!chatId) {
+      return;
+    }
+
+    chatConversations.set(
+      String(chatId),
+      Array.isArray(messages)
+        ? messages
+        : []
+    );
+
+  }
+
+
+  function conversationMessagesFor(
+    chatId
+  ) {
+
+    return getConversation(
+      chatId
+    );
 
   }
 
@@ -1785,6 +1828,10 @@
 
   async function saveMemory() {
 
+    if (!currentUser) {
+      return;
+    }
+
     memory =
       memoryText.value.trim();
 
@@ -1808,6 +1855,11 @@
       console.error(
         'Memory save error:',
         result.error
+      );
+
+      alert(
+        'Could not save memory: ' +
+        result.error.message
       );
 
       return;
@@ -2011,10 +2063,17 @@
           'click',
           async () => {
 
-            /*
-              IMPORTANT:
-              Always attempt to load the clicked chat.
-            */
+            if (
+              String(chatItem.id) ===
+              String(currentChatId)
+            ) {
+
+              closeMobileSidebar();
+
+              return;
+
+            }
+
 
             if (loadingChat) {
               return;
@@ -2022,7 +2081,7 @@
 
 
             console.log(
-              'CLICKED OLD CHAT:',
+              'CLICKED CHAT:',
               chatItem.id
             );
 
@@ -2054,13 +2113,20 @@
 
   function createNewChat() {
 
+    /*
+      Invalidate any old response that may still
+      be coming back from the previous conversation.
+    */
+
+    activeRequestId++;
+
+
     currentChatId =
       null;
 
-    conversationMessages =
-      [];
 
     clearUpload();
+
 
     messageInput.value =
       '';
@@ -2068,11 +2134,15 @@
     messageInput.style.height =
       'auto';
 
+
     clearChatUI();
+
 
     renderChatHistory();
 
+
     closeMobileSidebar();
+
 
     messageInput.focus();
 
@@ -2105,11 +2175,6 @@
 
     if (currentChatId) {
 
-      /*
-        Verify the chat actually belongs to
-        the current user before continuing.
-      */
-
       const existing =
         chats.find(
           item =>
@@ -2134,12 +2199,6 @@
         .trim()
         .slice(0, 50) ||
       'New chat';
-
-
-    console.log(
-      'CREATING CHAT FOR USER:',
-      currentUser.id
-    );
 
 
     const result =
@@ -2176,6 +2235,12 @@
 
     chats.unshift(
       result.data
+    );
+
+
+    setConversation(
+      currentChatId,
+      []
     );
 
 
@@ -2220,6 +2285,17 @@
       true;
 
 
+    const requestedChatId =
+      String(chatId);
+
+
+    /*
+      Invalidate responses belonging to another chat.
+    */
+
+    activeRequestId++;
+
+
     console.log(
       '================================'
     );
@@ -2229,17 +2305,11 @@
       chatId
     );
 
-    console.log(
-      'USER:',
-      currentUser.id
-    );
-
 
     try {
 
       /*
-        First verify that the selected chat
-        belongs to the current user.
+        VERIFY CHAT OWNERSHIP
       */
 
       const chatResult =
@@ -2264,12 +2334,6 @@
           chatResult.error
         );
 
-        addTextMessage(
-          'assistant',
-          'I could not open this conversation: ' +
-          chatResult.error.message
-        );
-
         return;
 
       }
@@ -2278,12 +2342,7 @@
       if (!chatResult.data) {
 
         console.error(
-          'CHAT NOT FOUND FOR CURRENT USER'
-        );
-
-        addTextMessage(
-          'assistant',
-          'This conversation could not be found.'
+          'CHAT NOT FOUND'
         );
 
         return;
@@ -2292,10 +2351,7 @@
 
 
       /*
-        Now load messages.
-
-        We deliberately use chat_id as the primary
-        filter. Supabase RLS will enforce ownership.
+        LOAD ALL MESSAGES FOR THIS CHAT.
       */
 
       const messageResult =
@@ -2306,6 +2362,10 @@
             'chat_id',
             chatId
           )
+          .eq(
+            'user_id',
+            currentUser.id
+          )
           .order(
             'created_at',
             {
@@ -2315,7 +2375,7 @@
 
 
       console.log(
-        'MESSAGE QUERY:',
+        'MESSAGE QUERY RESULT:',
         messageResult
       );
 
@@ -2327,13 +2387,26 @@
           messageResult.error
         );
 
-        clearChatUI();
+        /*
+          If we already have this conversation
+          cached locally, DON'T destroy it.
+        */
 
-        addTextMessage(
-          'assistant',
-          'Could not load this conversation: ' +
-          messageResult.error.message
-        );
+        const cached =
+          getConversation(
+            requestedChatId
+          );
+
+        if (cached.length) {
+
+          currentChatId =
+            chatId;
+
+          renderConversation(
+            cached
+          );
+
+        }
 
         return;
 
@@ -2356,25 +2429,12 @@
 
 
       /*
-        Switch active chat.
+        Build a completely separate conversation
+        for this chat.
       */
 
-      currentChatId =
-        chatId;
+      const rebuiltConversation = [];
 
-
-      conversationMessages =
-        [];
-
-
-      clearUpload();
-
-      clearChatUI();
-
-
-      /*
-        Rebuild messages.
-      */
 
       messages.forEach(
         message => {
@@ -2389,8 +2449,86 @@
 
 
           /*
-            IMAGE
+            Image messages don't form part of
+            normal GPT conversation context because
+            the stored database row only contains
+            the generated image URL.
           */
+
+          if (
+            message.image_url
+          ) {
+
+            return;
+
+          }
+
+
+          if (
+            role === 'user' ||
+            role === 'assistant'
+          ) {
+
+            rebuiltConversation.push({
+
+              role:
+                role,
+
+              content:
+                content
+
+            });
+
+          }
+
+        }
+      );
+
+
+      /*
+        SAVE THE RESTORED CONVERSATION IN ITS
+        OWN CHAT CACHE.
+      */
+
+      setConversation(
+        requestedChatId,
+        rebuiltConversation
+      );
+
+
+      /*
+        ONLY NOW change the active chat.
+
+        This is important:
+        a failed database load can no longer
+        wipe the currently displayed conversation.
+      */
+
+      currentChatId =
+        chatId;
+
+
+      clearUpload();
+
+
+      /*
+        Render the selected chat.
+      */
+
+      clearChatUI();
+
+
+      messages.forEach(
+        message => {
+
+          const role =
+            message.role ||
+            'assistant';
+
+          const content =
+            message.content ||
+            '';
+
 
           if (
             message.image_url
@@ -2408,32 +2546,17 @@
           }
 
 
-          /*
-            TEXT
-          */
-
           if (
             role === 'user' ||
             role === 'assistant'
           ) {
 
-            conversationMessages.push({
-
-              role:
-                role,
-
-              content:
-                content
-
-            });
+            addTextMessage(
+              role,
+              content
+            );
 
           }
-
-
-          addTextMessage(
-            role,
-            content
-          );
 
         }
       );
@@ -2453,12 +2576,13 @@
 
 
       console.log(
-        'CHAT SUCCESSFULLY LOADED'
+        'CHAT SUCCESSFULLY LOADED:',
+        chatId
       );
 
       console.log(
-        'CONVERSATION:',
-        conversationMessages
+        'RESTORED AI MEMORY:',
+        rebuiltConversation
       );
 
 
@@ -2469,13 +2593,26 @@
         error
       );
 
-      clearChatUI();
+      /*
+        Do NOT wipe the current conversation
+        if loading another chat fails.
+      */
 
-      addTextMessage(
-        'assistant',
-        'Could not load this conversation: ' +
-        error.message
-      );
+      const cached =
+        getConversation(
+          requestedChatId
+        );
+
+      if (cached.length) {
+
+        currentChatId =
+          chatId;
+
+        renderConversation(
+          cached
+        );
+
+      }
 
     } finally {
 
@@ -2487,6 +2624,51 @@
       );
 
     }
+
+  }
+
+
+  /* =========================================================
+     RENDER CONVERSATION
+  ========================================================= */
+
+  function renderConversation(
+    messages
+  ) {
+
+    clearChatUI();
+
+
+    if (
+      !messages ||
+      !messages.length
+    ) {
+
+      return;
+
+    }
+
+
+    messages.forEach(
+      message => {
+
+        addTextMessage(
+          message.role,
+          message.content
+        );
+
+      }
+    );
+
+
+    requestAnimationFrame(
+      () => {
+
+        chat.scrollTop =
+          chat.scrollHeight;
+
+      }
+    );
 
   }
 
@@ -2517,22 +2699,28 @@
   async function saveMessage(
     role,
     content,
-    imageUrl = null
+    imageUrl = null,
+    chatIdOverride = null
   ) {
+
+    const targetChatId =
+      chatIdOverride ||
+      currentChatId;
+
 
     if (
       !currentUser ||
-      !currentChatId
+      !targetChatId
     ) {
 
       console.error(
-        'SAVE MESSAGE FAILED: missing user or chat',
+        'SAVE MESSAGE FAILED: missing user/chat',
         {
           user:
             currentUser?.id,
 
           chat:
-            currentChatId
+            targetChatId
         }
       );
 
@@ -2545,7 +2733,7 @@
       'SAVING MESSAGE:',
       {
         chat_id:
-          currentChatId,
+          targetChatId,
 
         user_id:
           currentUser.id,
@@ -2564,7 +2752,7 @@
           .insert({
 
             chat_id:
-              currentChatId,
+              targetChatId,
 
             user_id:
               currentUser.id,
@@ -2588,13 +2776,18 @@
           result.error
         );
 
+        /*
+          Tell us exactly why persistence failed.
+        */
+
         return false;
 
       }
 
 
       console.log(
-        'MESSAGE SAVED'
+        'MESSAGE SAVED SUCCESSFULLY:',
+        targetChatId
       );
 
 
@@ -2619,10 +2812,16 @@
   ========================================================= */
 
   async function updateChatTitle(
-    text
+    text,
+    chatIdOverride = null
   ) {
 
-    if (!currentChatId) {
+    const targetChatId =
+      chatIdOverride ||
+      currentChatId;
+
+
+    if (!targetChatId) {
       return;
     }
 
@@ -2631,7 +2830,7 @@
       chats.find(
         item =>
           String(item.id) ===
-          String(currentChatId)
+          String(targetChatId)
       );
 
 
@@ -2661,7 +2860,7 @@
         })
         .eq(
           'id',
-          currentChatId
+          targetChatId
         )
         .eq(
           'user_id',
@@ -2858,14 +3057,6 @@
       '🔄 Re-render';
 
 
-    /*
-      If this image was loaded from history,
-      originalImageData is null.
-
-      We still show the button but don't pretend
-      we have the original source image.
-    */
-
     if (!originalImageData) {
 
       rerenderButton.disabled =
@@ -3031,12 +3222,18 @@
   ========================================================= */
 
   async function generateImage(
-    prompt
+    prompt,
+    chatIdOverride = null
   ) {
 
     if (imageBusy) {
       return;
     }
+
+
+    const targetChatId =
+      chatIdOverride ||
+      currentChatId;
 
 
     setImageButtonsBusy(true);
@@ -3145,19 +3342,32 @@
       );
 
 
-      addImageMessage(
-        data.image,
-        prompt,
-        null,
-        prompt
-      );
-
-
       await saveMessage(
         'assistant',
         prompt,
-        data.image
+        data.image,
+        targetChatId
       );
+
+
+      /*
+        Only show the result if the user is
+        still looking at the same chat.
+      */
+
+      if (
+        String(currentChatId) ===
+        String(targetChatId)
+      ) {
+
+        addImageMessage(
+          data.image,
+          prompt,
+          null,
+          prompt
+        );
+
+      }
 
 
       hideImageProgress();
@@ -3173,10 +3383,17 @@
       hideImageProgress();
 
 
-      addTextMessage(
-        'assistant',
-        `Image error: ${error.message}`
-      );
+      if (
+        String(currentChatId) ===
+        String(targetChatId)
+      ) {
+
+        addTextMessage(
+          'assistant',
+          `Image error: ${error.message}`
+        );
+
+      }
 
     } finally {
 
@@ -3196,12 +3413,18 @@
 
   async function editImage(
     imageData,
-    prompt
+    prompt,
+    chatIdOverride = null
   ) {
 
     if (imageBusy) {
       return;
     }
+
+
+    const targetChatId =
+      chatIdOverride ||
+      currentChatId;
 
 
     setImageButtonsBusy(true);
@@ -3313,19 +3536,27 @@
       );
 
 
-      addImageMessage(
-        data.image,
-        prompt,
-        imageData,
-        prompt
-      );
-
-
       await saveMessage(
         'assistant',
         prompt,
-        data.image
+        data.image,
+        targetChatId
       );
+
+
+      if (
+        String(currentChatId) ===
+        String(targetChatId)
+      ) {
+
+        addImageMessage(
+          data.image,
+          prompt,
+          imageData,
+          prompt
+        );
+
+      }
 
 
       hideImageProgress();
@@ -3341,10 +3572,17 @@
       hideImageProgress();
 
 
-      addTextMessage(
-        'assistant',
-        `Image edit error: ${error.message}`
-      );
+      if (
+        String(currentChatId) ===
+        String(targetChatId)
+      ) {
+
+        addTextMessage(
+          'assistant',
+          `Image edit error: ${error.message}`
+        );
+
+      }
 
     } finally {
 
@@ -3379,6 +3617,10 @@
     }
 
 
+    const targetChatId =
+      currentChatId;
+
+
     const newPrompt =
 
 `${prompt}
@@ -3390,10 +3632,10 @@ but create a noticeably different composition,
 lighting, camera angle, background or styling.`;
 
 
-
     await editImage(
       sourceImage,
-      newPrompt
+      newPrompt,
+      targetChatId
     );
 
   }
@@ -3406,7 +3648,7 @@ lighting, camera angle, background or styling.`;
   async function sendMessage() {
 
     console.log(
-      'SEND BUTTON / SEND MESSAGE TRIGGERED'
+      'SEND MESSAGE'
     );
 
 
@@ -3437,8 +3679,7 @@ lighting, camera angle, background or styling.`;
 
 
     /*
-      Make sure a DB chat exists BEFORE
-      saving the message.
+      Make sure this chat exists.
     */
 
     const chatReady =
@@ -3460,7 +3701,32 @@ lighting, camera angle, background or styling.`;
 
 
     /*
-      Add user message to UI.
+      CRITICAL:
+
+      Capture the chat ID NOW.
+
+      Everything belonging to this request will
+      be saved against this ID, even if the user
+      switches to another conversation while the
+      AI is thinking.
+    */
+
+    const requestChatId =
+      currentChatId;
+
+
+    const requestId =
+      ++activeRequestId;
+
+
+    const conversation =
+      getConversation(
+        requestChatId
+      );
+
+
+    /*
+      UI
     */
 
     addTextMessage(
@@ -3470,10 +3736,10 @@ lighting, camera angle, background or styling.`;
 
 
     /*
-      Add it to conversation memory.
+      CHAT MEMORY
     */
 
-    conversationMessages.push({
+    conversation.push({
 
       role:
         'user',
@@ -3485,27 +3751,30 @@ lighting, camera angle, background or styling.`;
 
 
     /*
-      SAVE USER MESSAGE
+      SAVE USER MESSAGE TO THE CORRECT CHAT.
     */
 
     const saved =
       await saveMessage(
         'user',
-        userText
+        userText,
+        null,
+        requestChatId
       );
 
 
     if (!saved) {
 
       console.error(
-        'USER MESSAGE WAS NOT SAVED'
+        'USER MESSAGE WAS NOT SAVED TO SUPABASE'
       );
 
     }
 
 
     await updateChatTitle(
-      userText
+      userText,
+      requestChatId
     );
 
 
@@ -3528,7 +3797,8 @@ lighting, camera angle, background or styling.`;
 
       await editImage(
         image,
-        userText
+        userText,
+        requestChatId
       );
 
 
@@ -3562,7 +3832,7 @@ lighting, camera angle, background or styling.`;
               JSON.stringify({
 
                 messages:
-                  conversationMessages.slice(-30),
+                  conversation.slice(-30),
 
                 memory:
                   memory
@@ -3608,20 +3878,24 @@ lighting, camera angle, background or styling.`;
 
 
       /*
-        Display assistant response.
+        ALWAYS save the assistant answer against
+        the chat that started the request.
       */
 
-      addTextMessage(
+      await saveMessage(
         'assistant',
-        answer
+        answer,
+        null,
+        requestChatId
       );
 
 
       /*
-        Add to conversation state.
+        Add assistant answer to that chat's
+        individual conversation memory.
       */
 
-      conversationMessages.push({
+      conversation.push({
 
         role:
           'assistant',
@@ -3633,13 +3907,29 @@ lighting, camera angle, background or styling.`;
 
 
       /*
-        SAVE ASSISTANT MESSAGE
+        Only render it if we're still looking
+        at that same chat.
       */
 
-      await saveMessage(
-        'assistant',
-        answer
-      );
+      if (
+        String(currentChatId) ===
+        String(requestChatId) &&
+        requestId === activeRequestId
+      ) {
+
+        addTextMessage(
+          'assistant',
+          answer
+        );
+
+      } else {
+
+        console.log(
+          'AI response completed in background chat:',
+          requestChatId
+        );
+
+      }
 
 
     } catch (error) {
@@ -3650,20 +3940,26 @@ lighting, camera angle, background or styling.`;
       );
 
 
-      addTextMessage(
-        'assistant',
-        `Error: ${error.message}`
-      );
+      if (
+        String(currentChatId) ===
+        String(requestChatId)
+      ) {
+
+        addTextMessage(
+          'assistant',
+          `Error: ${error.message}`
+        );
+
+      }
 
     }
 
   }
 
 
-  /*
-    IMPORTANT:
-    THIS WAS MISSING BEFORE.
-  */
+  /* =========================================================
+     SEND BUTTON
+  ========================================================= */
 
   sendButton.addEventListener(
     'click',
@@ -3717,20 +4013,44 @@ lighting, camera angle, background or styling.`;
         }
 
 
+        const targetChatId =
+          currentChatId;
+
+
         addTextMessage(
           'user',
           prompt
         );
 
 
+        const conversation =
+          getConversation(
+            targetChatId
+          );
+
+
+        conversation.push({
+
+          role:
+            'user',
+
+          content:
+            prompt
+
+        });
+
+
         await saveMessage(
           'user',
-          prompt
+          prompt,
+          null,
+          targetChatId
         );
 
 
         await updateChatTitle(
-          prompt
+          prompt,
+          targetChatId
         );
 
 
@@ -3746,7 +4066,8 @@ lighting, camera angle, background or styling.`;
 
         await editImage(
           image,
-          prompt
+          prompt,
+          targetChatId
         );
 
 
@@ -3780,20 +4101,44 @@ lighting, camera angle, background or styling.`;
       }
 
 
+      const targetChatId =
+        currentChatId;
+
+
       addTextMessage(
         'user',
         prompt
       );
 
 
+      const conversation =
+        getConversation(
+          targetChatId
+        );
+
+
+      conversation.push({
+
+        role:
+          'user',
+
+        content:
+          prompt
+
+      });
+
+
       await saveMessage(
         'user',
-        prompt
+        prompt,
+        null,
+        targetChatId
       );
 
 
       await updateChatTitle(
-        prompt
+        prompt,
+        targetChatId
       );
 
 
@@ -3805,7 +4150,8 @@ lighting, camera angle, background or styling.`;
 
 
       await generateImage(
-        prompt
+        prompt,
+        targetChatId
       );
 
     }
@@ -3979,7 +4325,15 @@ lighting, camera angle, background or styling.`;
       'click',
       async () => {
 
+        /*
+          Invalidate any active AI response.
+        */
+
+        activeRequestId++;
+
+
         await supabaseClient.auth.signOut();
+
 
         currentUser =
           null;
@@ -3993,8 +4347,7 @@ lighting, camera angle, background or styling.`;
         memory =
           '';
 
-        conversationMessages =
-          [];
+        chatConversations.clear();
 
         initialised =
           false;
