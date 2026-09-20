@@ -164,6 +164,8 @@
       flex-direction: column;
       padding: 15px;
       flex-shrink: 0;
+      position: relative;
+      z-index: 500;
     }
 
     .newChatButton {
@@ -191,6 +193,7 @@
     #chatHistory {
       overflow-y: auto;
       flex: 1;
+      min-height: 0;
     }
 
     .historyItem {
@@ -240,6 +243,43 @@
     }
 
     /* =========================
+       MOBILE SIDEBAR OVERLAY
+    ========================= */
+
+    .sidebarOverlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.58);
+      z-index: 450;
+    }
+
+    .sidebarOverlay.show {
+      display: block;
+    }
+
+    /* =========================
+       MOBILE MENU BUTTON
+    ========================= */
+
+    .mobileMenuButton {
+      display: none;
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      border: 1px solid #342044;
+      background: #171021;
+      color: white;
+      font-size: 20px;
+      margin-right: 8px;
+      flex-shrink: 0;
+    }
+
+    .mobileMenuButton:hover {
+      background: #241536;
+    }
+
+    /* =========================
        MAIN
     ========================= */
 
@@ -251,6 +291,7 @@
       flex-direction: column;
       background:
         radial-gradient(circle at 50% -20%, #241039 0%, #0b0711 55%);
+      position: relative;
     }
 
     header {
@@ -291,6 +332,10 @@
       border: 1px solid #342044;
       border-radius: 10px;
       padding: 9px 12px;
+    }
+
+    .headerButtons button:hover {
+      background: #241536;
     }
 
     /* =========================
@@ -348,6 +393,7 @@
       overflow-y: auto;
       padding: 25px;
       padding-bottom: 180px;
+      scroll-behavior: smooth;
     }
 
     .welcome {
@@ -452,7 +498,7 @@
       border: 1px solid #44265b;
       border-radius: 14px;
       padding: 13px 16px;
-      z-index: 200;
+      z-index: 600;
       box-shadow: 0 15px 40px rgba(0,0,0,0.4);
     }
 
@@ -595,16 +641,38 @@
     @media (max-width: 750px) {
 
       .sidebar {
-        display: none;
+        display: flex;
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: 285px;
+        max-width: 85vw;
+        transform: translateX(-100%);
+        transition: transform 0.25s ease;
+        box-shadow: 20px 0 50px rgba(0,0,0,0.45);
+      }
+
+      .sidebar.mobileOpen {
+        transform: translateX(0);
+      }
+
+      .mobileMenuButton {
+        display: block;
+      }
+
+      header {
+        padding: 0 12px;
+        justify-content: flex-start;
+      }
+
+      header .logo {
+        flex: 1;
       }
 
       .dock {
         left: 0;
         padding: 10px;
-      }
-
-      header {
-        padding: 0 12px;
       }
 
       .logo {
@@ -614,6 +682,10 @@
       .logo img {
         width: 36px;
         height: 36px;
+      }
+
+      .headerButtons {
+        gap: 5px;
       }
 
       .headerButtons button {
@@ -645,11 +717,26 @@
       .generatedImage {
         max-width: 100%;
       }
+
+      #memoryPanel {
+        right: 10px;
+        top: 72px;
+        width: calc(100vw - 20px);
+      }
+
     }
   </style>
 </head>
 
 <body>
+
+  <!-- MOBILE SIDEBAR OVERLAY -->
+
+  <div
+    id="sidebarOverlay"
+    class="sidebarOverlay"
+  ></div>
+
 
   <!-- =========================
        AUTH
@@ -821,6 +908,15 @@
       <main class="main">
 
         <header>
+
+          <button
+            type="button"
+            id="mobileMenuButton"
+            class="mobileMenuButton"
+            aria-label="Open menu"
+          >
+            ☰
+          </button>
 
           <div class="logo">
 
@@ -1132,6 +1228,81 @@
 
   const uploadButton =
     document.getElementById('uploadButton');
+
+  const sidebar =
+    document.querySelector('.sidebar');
+
+  const sidebarOverlay =
+    document.getElementById('sidebarOverlay');
+
+  const mobileMenuButton =
+    document.getElementById('mobileMenuButton');
+
+
+  /* =========================================================
+     MOBILE SIDEBAR
+  ========================================================= */
+
+  function openMobileSidebar() {
+
+    if (!sidebar) {
+      return;
+    }
+
+    sidebar.classList.add(
+      'mobileOpen'
+    );
+
+    if (sidebarOverlay) {
+
+      sidebarOverlay.classList.add(
+        'show'
+      );
+
+    }
+
+  }
+
+
+  function closeMobileSidebar() {
+
+    if (!sidebar) {
+      return;
+    }
+
+    sidebar.classList.remove(
+      'mobileOpen'
+    );
+
+    if (sidebarOverlay) {
+
+      sidebarOverlay.classList.remove(
+        'show'
+      );
+
+    }
+
+  }
+
+
+  if (mobileMenuButton) {
+
+    mobileMenuButton.addEventListener(
+      'click',
+      openMobileSidebar
+    );
+
+  }
+
+
+  if (sidebarOverlay) {
+
+    sidebarOverlay.addEventListener(
+      'click',
+      closeMobileSidebar
+    );
+
+  }
 
 
   /* =========================================================
@@ -1577,18 +1748,6 @@
 
     await loadChats();
 
-    /*
-      IMPORTANT:
-
-      Do NOT automatically create a new
-      database chat.
-
-      If chats already exist, open the
-      newest one.
-
-      If none exist, show a blank chat.
-    */
-
     if (chats.length > 0) {
 
       await loadChat(
@@ -1902,7 +2061,13 @@
     .getElementById('sidebarMemoryButton')
     .addEventListener(
       'click',
-      toggleMemory
+      () => {
+
+        toggleMemory();
+
+        closeMobileSidebar();
+
+      }
     );
 
 
@@ -2036,6 +2201,8 @@
               chatItem.id === currentChatId
             ) {
 
+              closeMobileSidebar();
+
               return;
 
             }
@@ -2043,6 +2210,8 @@
             await loadChat(
               chatItem.id
             );
+
+            closeMobileSidebar();
 
           }
         );
@@ -2057,18 +2226,9 @@
   }
 
 
-  /*
-    Start a blank NEW CHAT.
-
-    We deliberately do NOT insert the
-    chat into Supabase yet.
-
-    The database conversation is created
-    when the user actually sends something.
-
-    This prevents lots of empty "New chat"
-    entries appearing in history.
-  */
+  /* =========================================================
+     NEW CHAT
+  ========================================================= */
 
   function createNewChat() {
 
@@ -2090,16 +2250,16 @@
 
     renderChatHistory();
 
+    closeMobileSidebar();
+
     messageInput.focus();
 
   }
 
 
-  /*
-    Create the actual database chat
-    only when the user sends the first
-    message.
-  */
+  /* =========================================================
+     ENSURE CHAT
+  ========================================================= */
 
   async function ensureCurrentChat(
     firstMessage
@@ -2181,6 +2341,10 @@
   }
 
 
+  /* =========================================================
+     LOAD CHAT
+  ========================================================= */
+
   async function loadChat(
     chatId
   ) {
@@ -2233,9 +2397,6 @@
           'Message load error:',
           result.error
         );
-
-        loadingChat =
-          false;
 
         return;
 
@@ -2332,6 +2493,10 @@
   }
 
 
+  /* =========================================================
+     CLEAR CHAT
+  ========================================================= */
+
   function clearChatUI() {
 
     chat.innerHTML =
@@ -2346,6 +2511,10 @@
 
   }
 
+
+  /* =========================================================
+     SAVE MESSAGE
+  ========================================================= */
 
   async function saveMessage(
     role,
@@ -2414,6 +2583,10 @@
   }
 
 
+  /* =========================================================
+     UPDATE TITLE
+  ========================================================= */
+
   async function updateChatTitle(
     text
   ) {
@@ -2433,12 +2606,6 @@
           item.id ===
           currentChatId
       );
-
-    /*
-      Only set the title when the
-      conversation is still called
-      "New chat".
-    */
 
     if (
       found &&
@@ -2626,9 +2793,7 @@
       'imageActions';
 
 
-    /*
-      RE-RENDER
-    */
+    /* RE-RENDER */
 
     const rerenderButton =
       document.createElement(
@@ -2674,9 +2839,7 @@
     );
 
 
-    /*
-      DOWNLOAD
-    */
+    /* DOWNLOAD */
 
     const downloadButton =
       document.createElement(
@@ -3195,13 +3358,6 @@
       ).trim();
 
 
-    /*
-      Uploaded image available.
-
-      ALWAYS send the original uploaded
-      image again.
-    */
-
     if (sourceImage) {
 
       const variationPrompt =
@@ -3234,14 +3390,6 @@ variation rather than an identical copy.`;
 
     }
 
-
-    /*
-      Generated image.
-
-      There is no original uploaded file available
-      after a page reload, so generate a new version
-      from the original prompt.
-    */
 
     const variationPrompt =
 
@@ -3290,16 +3438,10 @@ Make it clearly a new render rather than an exact copy.`;
 
     }
 
-
     const userText =
       text ||
       'Please edit this image.';
 
-
-    /*
-      Create database chat only when
-      the user actually sends something.
-    */
 
     const chatReady =
       await ensureCurrentChat(
@@ -3324,12 +3466,6 @@ Make it clearly a new render rather than an exact copy.`;
     );
 
 
-    /*
-      Add the user message to the local
-      conversation history before sending
-      it to OpenAI.
-    */
-
     conversationMessages.push({
 
       role:
@@ -3352,9 +3488,7 @@ Make it clearly a new render rather than an exact copy.`;
     );
 
 
-    /*
-      IMAGE EDIT
-    */
+    /* IMAGE EDIT */
 
     if (selectedImageData) {
 
@@ -3376,9 +3510,7 @@ Make it clearly a new render rather than an exact copy.`;
     }
 
 
-    /*
-      NORMAL CHAT
-    */
+    /* NORMAL CHAT */
 
     messageInput.value =
       '';
@@ -3447,12 +3579,6 @@ Make it clearly a new render rather than an exact copy.`;
       );
 
 
-      /*
-        Store assistant response locally
-        so the next question knows the
-        previous answer.
-      */
-
       conversationMessages.push({
 
         role:
@@ -3483,13 +3609,6 @@ Make it clearly a new render rather than an exact copy.`;
         `Error: ${error.message}`
       );
 
-
-      /*
-        Remove the failed user message
-        from the local API history so
-        a failed request doesn't corrupt
-        the conversation.
-      */
 
       conversationMessages =
         conversationMessages.filter(
@@ -3535,9 +3654,7 @@ Make it clearly a new render rather than an exact copy.`;
       messageInput.value.trim();
 
 
-    /*
-      UPLOADED IMAGE = EDIT
-    */
+    /* UPLOADED IMAGE = EDIT */
 
     if (selectedImageData) {
 
@@ -3578,12 +3695,6 @@ Make it clearly a new render rather than an exact copy.`;
       );
 
 
-      /*
-        Image edit requests are stored
-        as messages but aren't sent to
-        the normal text conversation API.
-      */
-
       await saveMessage(
         'user',
         prompt
@@ -3613,9 +3724,7 @@ Make it clearly a new render rather than an exact copy.`;
     }
 
 
-    /*
-      NORMAL IMAGE GENERATION
-    */
+    /* NORMAL IMAGE GENERATION */
 
     if (!prompt) {
 
@@ -3829,6 +3938,8 @@ Make it clearly a new render rather than an exact copy.`;
     .addEventListener(
       'click',
       async () => {
+
+        closeMobileSidebar();
 
         try {
 
