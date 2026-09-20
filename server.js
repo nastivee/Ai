@@ -31,19 +31,21 @@ app.post('/api/chat', async (req, res) => {
   }
 });
 
-// Multi-word Reliable Image Route
+// Multi-Subject Image Route
 app.post('/api/image', async (req, res) => {
   try {
     const { prompt } = req.body;
     if (!prompt) return res.status(400).json({ error: 'Prompt is required' });
 
-    // 1. Clean multi-word text into a safe string
-    const safePrompt = prompt.replace(/[^a-zA-Z0-9 ]/g, "").trim();
-    const encoded = encodeURIComponent(safePrompt + ' realistic photo highly detailed');
-    const uniqueSeed = Date.now();
+    // Clean text and build an explicit multi-subject composition prompt
+    const cleanPrompt = prompt.replace(/[^a-zA-Z0-9 ]/g, "").trim();
+    const compositionPrompt = `photograph showing ${cleanPrompt} together in one scene, full body, realistic lighting, hyperdetailed photo, 8k`;
+    
+    const encoded = encodeURIComponent(compositionPrompt);
+    const uniqueSeed = Date.now() + Math.floor(Math.random() * 1000);
 
-    // 2. Direct high-speed link optimized for multi-word phrases
-    const imageUrl = `https://image.pollinations.ai/prompt/${encoded}?width=512&height=512&nologo=true&seed=${uniqueSeed}&model=flux`;
+    // Uses model=turbo for fast multi-object spatial reasoning
+    const imageUrl = `https://image.pollinations.ai/prompt/${encoded}?width=768&height=768&nologo=true&seed=${uniqueSeed}&model=turbo`;
 
     return res.json({ imageUrl });
   } catch (error) {
