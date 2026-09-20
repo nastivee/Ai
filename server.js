@@ -482,150 +482,35 @@ specifically requested another style.
     if (regenerate) {
 
       finalPrompt = `
-IMPROVE AND RE-RENDER THE SUPPLIED IMAGE.
-
-This is an edit of the supplied image.
-
-DO NOT create a completely unrelated new
-image.
-
-DO NOT restart the design from scratch.
-
-The supplied image is the CURRENT VERSION
-and must remain the primary visual source.
-
-
-USER'S ORIGINAL CREATIVE REQUEST:
+RE-RENDER THE SUPPLIED IMAGE AS A NEW VERSION.
 
 ${prompt}
 
+THE SUBJECT DOES NOT CHANGE:
 
-MAIN OBJECTIVE:
+Keep the same subject and identity as the supplied
+image. ${fromUpload
+  ? `The person in it is a real person. Keep their
+facial structure, features, skin tone and hair. A
+different face is a failed result.`
+  : `Same character, same species, same markings,
+same defining features.`}
 
-Improve and refine the current image while
-preserving the same subject, same person,
-same concept and same requested changes.
+THE SCENE DOES CHANGE:
 
+Move the lighting, the camera angle and the
+background. All three must be visibly different
+from the supplied image.
 
-PERSON IDENTITY — EXTREMELY IMPORTANT:
+Do not hand back the supplied image with small
+touch ups. Do not keep the same angle, the same
+light and the same backdrop.
 
-If the image contains a person, preserve
-their likeness as closely as possible.
+QUALITY:
 
-Keep the same person.
-
-Preserve:
-
-- facial structure
-- face shape
-- forehead
-- eyes
-- eye shape
-- eyebrows
-- nose
-- nose proportions
-- cheeks
-- cheek structure
-- mouth
-- lips
-- chin
-- jawline
-- ears
-- skin tone
-- hair
-- hairline
-- hairstyle
-- distinctive facial features
-- visible body proportions
-
-Do NOT replace the person.
-
-Do NOT make them look like a different person.
-
-Do NOT make their face generic.
-
-Do NOT unnecessarily beautify their face.
-
-Do NOT unnecessarily change their age.
-
-Do NOT unnecessarily change their ethnicity.
-
-Do NOT unnecessarily alter their facial
-proportions.
-
-Do NOT change their identity.
-
-
-PRESERVE THE EXISTING IMAGE:
-
-Keep the existing:
-
-- subject
-- person
-- identity
-- requested modification
-- overall concept
-- important composition
-- clothing unless requested otherwise
-- important objects
-- environment unless requested otherwise
-- overall visual intention
-
-
-IMPROVEMENT:
-
-Improve the image where appropriate by
-enhancing:
-
-- realism
-- detail
-- lighting
-- shadows
-- texture
-- clarity
-- depth
-- natural skin detail
-- photographic quality
-- composition
-- overall polish
-
-
-DO NOT OVER-EDIT:
-
-Do not make unnecessary changes.
-
-Do not completely redesign the image.
-
-Do not randomly change the person's face.
-
-Do not remove a change the user requested.
-
-Do not turn the image into a different
-concept.
-
-
-FRESHNESS:
-
-The result should be a refined new version
-of the CURRENT IMAGE.
-
-It should be recognisably the same image
-and the same person, but improved.
-
-Do not simply reproduce the exact same image.
-
-Make useful visual improvements while
-maintaining continuity.
-
-
-PRIORITY ORDER:
-
-1. Preserve the person's identity.
-2. Preserve the requested modification.
-3. Preserve the existing image and concept.
-4. Improve realism and quality.
-5. Make only useful changes.
-6. Avoid unnecessary redesign.
+Improve realism, detail, texture, shadow and
+clarity. Keep it photographic unless another
+style was requested.
 `;
 
 

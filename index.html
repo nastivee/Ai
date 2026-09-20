@@ -4713,16 +4713,33 @@ async function rerenderImage(
 
 
   /*
-    A different steer each press, so pressing Improve twice
-    does not return the same picture twice.
+    Every press must move the light, the background and the
+    camera. The list only decides which direction, so two
+    presses never land in the same place.
   */
 
-  const variations = [
-    'Re-light the scene: change the light direction, softness and mood.',
-    'Change the camera: a different angle, distance and framing.',
-    'Refresh the background and depth of field while keeping the setting.',
-    'Adjust the pose or arrangement slightly and sharpen the detail.',
-    'Warm or cool the colour grade and lift the texture and clarity.'
+  const lighting = [
+    'hard low sun from the side, long shadows',
+    'soft overcast light, gentle shadows',
+    'warm golden hour light from behind the subject',
+    'cool blue light with a bright rim on one edge',
+    'dim moody light with one strong source'
+  ];
+
+  const cameras = [
+    'a low angle looking up, close in',
+    'a high angle looking down, further back',
+    'eye level, tight crop on the subject',
+    'a wide shot with the subject off centre',
+    'a three quarter view from the side'
+  ];
+
+  const backgrounds = [
+    'a different setting with more depth behind the subject',
+    'a simpler, less cluttered background',
+    'a background thrown well out of focus',
+    'a different time of day in the same kind of place',
+    'a wider setting showing more of the surroundings'
   ];
 
   improveSequence++;
@@ -4730,43 +4747,48 @@ async function rerenderImage(
   state.improveCount =
     (state.improveCount || 0) + 1;
 
-  const variation =
-    variations[
-      (improveSequence - 1) % variations.length
-    ];
-
+  const pickFrom = list =>
+    list[(improveSequence - 1) % list.length];
 
   const improvementPrompt = `
-Produce an improved, visibly different version of the
-supplied image. This is attempt ${state.improveCount}.
+Create a new version of the supplied image.
+This is attempt ${state.improveCount}.
 
 ORIGINAL REQUEST:
 
 ${originalPrompt}
 
-THIS PASS:
+KEEP THE SUBJECT EXACTLY:
 
-${variation}
+The subject of the supplied image stays the same.
+Same subject, same character, same identity, same
+species, same clothing or markings, same defining
+features. If a person is present, keep their face,
+facial structure, skin tone and hair.
 
-KEEP:
+The subject must be recognisably the same in the
+new image.
 
-- the same subject and concept
-- the same person, if a person is present, with their
-  facial structure, features, skin tone and hair intact
-- anything the original request specifically asked for
+CHANGE ALL THREE OF THESE:
 
-IMPROVE:
+1. LIGHTING: ${pickFrom(lighting)}.
+2. CAMERA: ${pickFrom(cameras)}.
+3. BACKGROUND: ${pickFrom(backgrounds)}.
 
-realism, lighting, shadows, detail, texture, clarity,
-depth and overall polish.
+Each of the three must visibly change. A version
+that keeps the same lighting, the same angle and
+the same background is a failed result.
 
-AVOID:
+ALSO IMPROVE:
 
-a copy of the supplied image, a different person, a
-different subject, or an unrelated scene.
+realism, detail, texture, shadows, clarity and
+overall polish.
 
-The result must be recognisably the same subject, clearly
-improved, and clearly not identical to the supplied image.
+DO NOT:
+
+Do not swap the subject for a different one.
+Do not reproduce the supplied image.
+Do not drop anything the original request asked for.
 `;
 
 
@@ -5868,7 +5890,7 @@ window.addEventListener('online', () => {
    clearing anything by hand.
 ===================================================== */
 
-const APP_VERSION = '2026-09-20-15';
+const APP_VERSION = '2026-09-20-16';
 
 const RELOAD_FLAG = 'nastivee_reloaded_for';
 
