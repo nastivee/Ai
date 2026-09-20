@@ -33,7 +33,9 @@
       cursor: pointer;
     }
 
-    /* AUTH */
+    /* =========================
+       AUTH
+    ========================= */
 
     #authScreen {
       position: fixed;
@@ -134,7 +136,9 @@
       font-size: 14px;
     }
 
-    /* APP */
+    /* =========================
+       APP
+    ========================= */
 
     #app {
       display: none;
@@ -148,7 +152,9 @@
       height: 100%;
     }
 
-    /* SIDEBAR */
+    /* =========================
+       SIDEBAR
+    ========================= */
 
     .sidebar {
       width: 270px;
@@ -269,7 +275,9 @@
       color: white;
     }
 
-    /* MOBILE SIDEBAR */
+    /* =========================
+       MOBILE SIDEBAR
+    ========================= */
 
     .sidebarOverlay {
       display: none;
@@ -300,7 +308,9 @@
       background: #241536;
     }
 
-    /* MAIN */
+    /* =========================
+       MAIN
+    ========================= */
 
     .main {
       flex: 1;
@@ -357,7 +367,9 @@
       background: #241536;
     }
 
-    /* MEMORY */
+    /* =========================
+       MEMORY
+    ========================= */
 
     #memoryPanel {
       display: none;
@@ -401,7 +413,9 @@
       font-weight: bold;
     }
 
-    /* CHAT */
+    /* =========================
+       CHAT
+    ========================= */
 
     #chat {
       flex: 1;
@@ -454,7 +468,9 @@
       border-bottom-left-radius: 5px;
     }
 
-    /* IMAGES */
+    /* =========================
+       IMAGES
+    ========================= */
 
     .imageMessage {
       max-width: 850px;
@@ -496,7 +512,9 @@
       cursor: not-allowed;
     }
 
-    /* PROGRESS */
+    /* =========================
+       PROGRESS
+    ========================= */
 
     #imageProgress {
       display: none;
@@ -535,7 +553,9 @@
       transition: width 0.4s ease;
     }
 
-    /* UPLOAD */
+    /* =========================
+       UPLOAD
+    ========================= */
 
     #uploadPreview {
       display: none;
@@ -569,7 +589,9 @@
       font-size: 12px;
     }
 
-    /* COMPOSER */
+    /* =========================
+       COMPOSER
+    ========================= */
 
     .dock {
       position: fixed;
@@ -651,7 +673,9 @@
       border: 0;
     }
 
-    /* MOBILE */
+    /* =========================
+       MOBILE
+    ========================= */
 
     @media (max-width: 750px) {
 
@@ -746,7 +770,9 @@
 
   <div id="sidebarOverlay" class="sidebarOverlay"></div>
 
-  <!-- AUTH -->
+  <!-- =========================
+       AUTH
+  ========================= -->
 
   <div id="authScreen">
 
@@ -853,7 +879,10 @@
 
   </div>
 
-  <!-- APP -->
+
+  <!-- =========================
+       APP
+  ========================= -->
 
   <div id="app">
 
@@ -898,6 +927,7 @@
         </div>
 
       </aside>
+
 
       <!-- MAIN -->
 
@@ -945,6 +975,7 @@
 
         </header>
 
+
         <!-- MEMORY -->
 
         <div id="memoryPanel">
@@ -964,6 +995,7 @@
           </button>
 
         </div>
+
 
         <!-- CHAT -->
 
@@ -993,6 +1025,7 @@
 
     </div>
 
+
     <!-- IMAGE PROGRESS -->
 
     <div id="imageProgress">
@@ -1005,10 +1038,13 @@
       </div>
 
       <div class="progressBar">
+
         <div id="progressFill"></div>
+
       </div>
 
     </div>
+
 
     <!-- COMPOSER -->
 
@@ -1033,6 +1069,7 @@
 
         </div>
 
+
         <button
           type="button"
           class="dockButton"
@@ -1042,11 +1079,13 @@
           📎
         </button>
 
+
         <textarea
           id="messageInput"
           rows="1"
           placeholder="Message Nastivee..."
         ></textarea>
+
 
         <button
           type="button"
@@ -1058,6 +1097,7 @@
         >
           🖼️
         </button>
+
 
         <button
           type="button"
@@ -1073,6 +1113,7 @@
 
     </div>
 
+
     <input
       id="fileInput"
       type="file"
@@ -1081,6 +1122,7 @@
     >
 
   </div>
+
 
 <script>
 
@@ -1105,24 +1147,11 @@
      SUPABASE
   ========================================================= */
 
-  let supabaseClient = null;
-
-  try {
-
-    supabaseClient =
-      window.supabase.createClient(
-        SUPABASE_URL,
-        SUPABASE_KEY
-      );
-
-  } catch (error) {
-
-    console.error(
-      'Supabase initialisation error:',
-      error
+  const supabaseClient =
+    window.supabase.createClient(
+      SUPABASE_URL,
+      SUPABASE_KEY
     );
-
-  }
 
 
   /* =========================================================
@@ -1139,24 +1168,14 @@
 
   let imageMode = false;
 
-  const chatConversations = new Map();
+  const chatConversations =
+    new Map();
 
   let initialised = false;
   let imageBusy = false;
 
-  /*
-    Protects chat switching from old database loads.
-  */
   let loadSequence = 0;
-
-  /*
-    Protects normal AI requests.
-  */
   let activeRequestId = 0;
-
-  /*
-    Protects image-generation UI.
-  */
   let imageRequestId = 0;
 
 
@@ -1277,10 +1296,13 @@
      IMAGE MODE
   ========================================================= */
 
-  function setImageMode(enabled) {
+  function setImageMode(
+    enabled
+  ) {
 
     imageMode =
       Boolean(enabled);
+
 
     if (imageMode) {
 
@@ -1301,17 +1323,10 @@
 
     } else {
 
-      if (selectedImageData) {
-
-        messageInput.placeholder =
-          'Describe what you want me to change...';
-
-      } else {
-
-        messageInput.placeholder =
-          'Message Nastivee...';
-
-      }
+      messageInput.placeholder =
+        selectedImageData
+          ? 'Describe what you want me to change...'
+          : 'Message Nastivee...';
 
       imageButton.classList.remove(
         'imageModeActive'
@@ -1338,9 +1353,7 @@
         return;
       }
 
-      /*
-        Uploaded images are already in edit mode.
-      */
+
       if (selectedImageData) {
 
         messageInput.focus();
@@ -1348,6 +1361,7 @@
         return;
 
       }
+
 
       setImageMode(
         !imageMode
@@ -1360,7 +1374,7 @@
 
 
   /* =========================================================
-     AUTH
+     AUTH MESSAGE
   ========================================================= */
 
   function setAuthMessage(
@@ -1438,6 +1452,7 @@
         .getElementById('loginPassword')
         .value;
 
+
     if (!email || !password) {
 
       setAuthMessage(
@@ -1448,22 +1463,28 @@
 
     }
 
+
     const button =
       document.getElementById(
         'loginButton'
       );
 
+
     button.disabled = true;
     button.textContent =
       'Logging in...';
+
 
     try {
 
       const result =
         await supabaseClient.auth.signInWithPassword({
+
           email,
           password
+
         });
+
 
       if (result.error) {
 
@@ -1475,7 +1496,9 @@
 
       }
 
+
       setAuthMessage('');
+
 
     } catch (error) {
 
@@ -1488,9 +1511,11 @@
         error.message
       );
 
+
     } finally {
 
       button.disabled = false;
+
       button.textContent =
         'Login';
 
@@ -1529,6 +1554,7 @@
         .getElementById('signupPasswordConfirm')
         .value;
 
+
     if (!email || !password) {
 
       setAuthMessage(
@@ -1539,7 +1565,11 @@
 
     }
 
-    if (password !== confirmPassword) {
+
+    if (
+      password !==
+      confirmPassword
+    ) {
 
       setAuthMessage(
         'Passwords do not match.'
@@ -1549,14 +1579,18 @@
 
     }
 
+
     const button =
       document.getElementById(
         'signupButton'
       );
 
+
     button.disabled = true;
+
     button.textContent =
       'Creating account...';
+
 
     try {
 
@@ -1604,6 +1638,7 @@
 
       }
 
+
     } catch (error) {
 
       console.error(
@@ -1615,9 +1650,11 @@
         error.message
       );
 
+
     } finally {
 
       button.disabled = false;
+
       button.textContent =
         'Create account';
 
@@ -1652,6 +1689,7 @@
         currentUser =
           session.user;
 
+
         if (!initialised) {
 
           await initialiseUser();
@@ -1671,16 +1709,13 @@
   );
 
 
-  /* =========================================================
-     SESSION
-  ========================================================= */
-
   async function checkSession() {
 
     try {
 
       const result =
         await supabaseClient.auth.getSession();
+
 
       if (
         result.data &&
@@ -1698,6 +1733,7 @@
 
       }
 
+
     } catch (error) {
 
       console.error(
@@ -1712,23 +1748,24 @@
   }
 
 
-  /* =========================================================
-     INITIALISE
-  ========================================================= */
-
   async function initialiseUser() {
 
     if (initialised) {
       return;
     }
 
-    initialised = true;
+
+    initialised =
+      true;
+
 
     showApp();
+
 
     await loadCloudMemory();
 
     await loadChats();
+
 
     if (chats.length > 0) {
 
@@ -1738,9 +1775,8 @@
 
     } else {
 
-      currentChatId = null;
-
-      imageMode = false;
+      currentChatId =
+        null;
 
       clearUpload();
 
@@ -1778,7 +1814,7 @@
 
 
   /* =========================================================
-     CHAT MEMORY HELPERS
+     CONVERSATION MEMORY
   ========================================================= */
 
   function getConversation(
@@ -1789,21 +1825,25 @@
       return [];
     }
 
+
+    const key =
+      String(chatId);
+
+
     if (
-      !chatConversations.has(
-        String(chatId)
-      )
+      !chatConversations.has(key)
     ) {
 
       chatConversations.set(
-        String(chatId),
+        key,
         []
       );
 
     }
 
+
     return chatConversations.get(
-      String(chatId)
+      key
     );
 
   }
@@ -1818,22 +1858,12 @@
       return;
     }
 
+
     chatConversations.set(
       String(chatId),
       Array.isArray(messages)
         ? messages
         : []
-    );
-
-  }
-
-
-  function conversationMessagesFor(
-    chatId
-  ) {
-
-    return getConversation(
-      chatId
     );
 
   }
@@ -1872,11 +1902,13 @@
       const sessionResult =
         await supabaseClient.auth.getSession();
 
+
       const token =
         sessionResult
           .data
           ?.session
           ?.access_token;
+
 
       if (token) {
 
@@ -1918,6 +1950,7 @@
       return;
     }
 
+
     try {
 
       const result =
@@ -1947,8 +1980,10 @@
         result.data?.memory ||
         '';
 
+
       memoryText.value =
         memory;
+
 
     } catch (error) {
 
@@ -1967,6 +2002,7 @@
     if (!currentUser) {
       return;
     }
+
 
     memory =
       memoryText.value.trim();
@@ -2072,6 +2108,7 @@
       return;
     }
 
+
     try {
 
       const result =
@@ -2108,13 +2145,8 @@
         result.data || [];
 
 
-      console.log(
-        'CHAT HISTORY LOADED:',
-        chats
-      );
-
-
       renderChatHistory();
+
 
     } catch (error) {
 
@@ -2129,7 +2161,7 @@
 
 
   /* =========================================================
-     RENDER CHAT HISTORY
+     CHAT HISTORY
   ========================================================= */
 
   function renderChatHistory() {
@@ -2138,6 +2170,7 @@
       document.getElementById(
         'chatHistory'
       );
+
 
     container.innerHTML =
       '';
@@ -2199,7 +2232,6 @@
         title.className =
           'historyTitleText';
 
-
         title.textContent =
           chatItem.title ||
           'New chat';
@@ -2227,11 +2259,6 @@
 
         deleteButton.title =
           'Delete conversation';
-
-        deleteButton.setAttribute(
-          'aria-label',
-          'Delete conversation'
-        );
 
 
         deleteButton.addEventListener(
@@ -2321,30 +2348,23 @@
       'this conversation';
 
 
-    const confirmed =
-      confirm(
+    if (
+      !confirm(
         `Delete "${title}"?\n\nThis will permanently delete this conversation and its messages.`
-      );
+      )
+    ) {
 
-
-    if (!confirmed) {
       return;
+
     }
 
 
-    /*
-      Invalidate all old activity.
-    */
     activeRequestId++;
     loadSequence++;
     imageRequestId++;
 
     hideImageProgress();
 
-
-    /*
-      Delete messages first.
-    */
 
     const messageDelete =
       await supabaseClient
@@ -2376,10 +2396,6 @@
 
     }
 
-
-    /*
-      Delete chat.
-    */
 
     const chatDelete =
       await supabaseClient
@@ -2433,9 +2449,6 @@
       currentChatId =
         null;
 
-      imageMode =
-        false;
-
       clearUpload();
 
       messageInput.value =
@@ -2469,28 +2482,26 @@
 
 
   /* =========================================================
-     CREATE NEW CHAT
+     NEW CHAT
   ========================================================= */
 
   function createNewChat() {
 
-    /*
-      Immediately invalidate old activity.
-    */
     activeRequestId++;
     loadSequence++;
     imageRequestId++;
 
     /*
-      IMPORTANT:
-      Remove the global image progress immediately.
+      THIS FIXES THE LOADING BAR
     */
     hideImageProgress();
 
-    /*
-      Stop image mode.
-    */
-    imageMode = false;
+    imageBusy =
+      false;
+
+    imageMode =
+      false;
+
 
     if (currentChatId) {
 
@@ -2560,7 +2571,7 @@
 
 
   /* =========================================================
-     CREATE CHAT IN DATABASE
+     ENSURE CHAT
   ========================================================= */
 
   async function ensureCurrentChat(
@@ -2575,6 +2586,7 @@
             String(item.id) ===
             String(currentChatId)
         );
+
 
       if (existing) {
         return true;
@@ -2618,6 +2630,11 @@
         result.error
       );
 
+      alert(
+        'Could not create chat:\n\n' +
+        result.error.message
+      );
+
       return false;
 
     }
@@ -2639,12 +2656,6 @@
 
 
     renderChatHistory();
-
-
-    console.log(
-      'NEW CHAT CREATED:',
-      currentChatId
-    );
 
 
     return true;
@@ -2678,33 +2689,10 @@
       String(chatId);
 
 
-    /*
-      Selecting another chat invalidates the
-      previous normal AI response.
-    */
     activeRequestId++;
-
-
-    /*
-      Image UI must also be disconnected from
-      the previous chat.
-    */
     imageRequestId++;
 
-
     hideImageProgress();
-
-
-    console.log(
-      '================================'
-    );
-
-    console.log(
-      'LOADING CHAT:',
-      chatId,
-      'LOAD:',
-      thisLoad
-    );
 
 
     try {
@@ -2740,25 +2728,6 @@
           'CHAT VERIFY ERROR:',
           chatResult.error
         );
-
-        const cached =
-          getConversation(
-            requestedChatId
-          );
-
-
-        if (cached.length) {
-
-          currentChatId =
-            chatId;
-
-          renderConversation(
-            cached
-          );
-
-          renderChatHistory();
-
-        }
 
         return;
 
@@ -2814,25 +2783,6 @@
           messageResult.error
         );
 
-        const cached =
-          getConversation(
-            requestedChatId
-          );
-
-
-        if (cached.length) {
-
-          currentChatId =
-            chatId;
-
-          renderConversation(
-            cached
-          );
-
-          renderChatHistory();
-
-        }
-
         return;
 
       }
@@ -2842,46 +2792,28 @@
         messageResult.data || [];
 
 
-      const rebuiltConversation =
+      const conversation =
         [];
 
 
       messages.forEach(
         message => {
 
-          const role =
-            message.role ||
-            'assistant';
-
-          const content =
-            message.content ||
-            '';
-
-
-          /*
-            Image rows are displayed separately.
-          */
           if (
-            message.image_url
+            !message.image_url &&
+            (
+              message.role === 'user' ||
+              message.role === 'assistant'
+            )
           ) {
 
-            return;
-
-          }
-
-
-          if (
-            role === 'user' ||
-            role === 'assistant'
-          ) {
-
-            rebuiltConversation.push({
+            conversation.push({
 
               role:
-                role,
+                message.role,
 
               content:
-                content
+                message.content || ''
 
             });
 
@@ -2893,27 +2825,17 @@
 
       setConversation(
         requestedChatId,
-        rebuiltConversation
+        conversation
       );
 
-
-      /*
-        Now activate the requested chat.
-      */
 
       currentChatId =
         chatId;
 
 
-      imageMode =
-        false;
-
-
       clearUpload();
 
-
       setImageMode(false);
-
 
       clearChatUI();
 
@@ -2921,39 +2843,23 @@
       messages.forEach(
         message => {
 
-          const role =
-            message.role ||
-            'assistant';
-
-          const content =
-            message.content ||
-            '';
-
-
-          if (
-            message.image_url
-          ) {
+          if (message.image_url) {
 
             addImageMessage(
               message.image_url,
-              content,
+              message.content || '',
               null,
-              content
+              message.content || ''
             );
 
-            return;
-
-          }
-
-
-          if (
-            role === 'user' ||
-            role === 'assistant'
+          } else if (
+            message.role === 'user' ||
+            message.role === 'assistant'
           ) {
 
             addTextMessage(
-              role,
-              content
+              message.role,
+              message.content || ''
             );
 
           }
@@ -2975,17 +2881,6 @@
       );
 
 
-      console.log(
-        'CHAT SUCCESSFULLY LOADED:',
-        chatId
-      );
-
-      console.log(
-        'MESSAGES FOUND:',
-        messages.length
-      );
-
-
     } catch (error) {
 
       console.error(
@@ -2993,82 +2888,7 @@
         error
       );
 
-
-      if (
-        thisLoad !==
-        loadSequence
-      ) {
-
-        return;
-
-      }
-
-
-      const cached =
-        getConversation(
-          requestedChatId
-        );
-
-
-      if (cached.length) {
-
-        currentChatId =
-          chatId;
-
-        renderConversation(
-          cached
-        );
-
-        renderChatHistory();
-
-      }
-
     }
-
-  }
-
-
-  /* =========================================================
-     RENDER CONVERSATION
-  ========================================================= */
-
-  function renderConversation(
-    messages
-  ) {
-
-    clearChatUI();
-
-
-    if (
-      !messages ||
-      !messages.length
-    ) {
-
-      return;
-
-    }
-
-
-    messages.forEach(
-      message => {
-
-        addTextMessage(
-          message.role,
-          message.content
-        );
-
-      }
-    );
-
-
-    requestAnimationFrame(
-      () => {
-
-        chat.scrollTop =
-          chat.scrollHeight;
-
-      }
-    );
 
   }
 
@@ -3094,6 +2914,9 @@
 
   /* =========================================================
      SAVE MESSAGE
+     
+     IMPORTANT:
+     This now shows the REAL Supabase error.
   ========================================================= */
 
   async function saveMessage(
@@ -3114,12 +2937,12 @@
     ) {
 
       console.error(
-        'SAVE MESSAGE FAILED: missing user/chat',
+        'SAVE MESSAGE FAILED — missing user/chat:',
         {
           user:
             currentUser?.id,
 
-          chat:
+          chatId:
             targetChatId
         }
       );
@@ -3130,7 +2953,7 @@
 
 
     console.log(
-      'SAVING MESSAGE:',
+      'ATTEMPTING MESSAGE SAVE:',
       {
         chat_id:
           targetChatId,
@@ -3141,9 +2964,11 @@
         role:
           role,
 
+        content:
+          content,
+
         hasImage:
           Boolean(imageUrl)
-
       }
     );
 
@@ -3176,9 +3001,55 @@
       if (result.error) {
 
         console.error(
-          'SAVE MESSAGE ERROR:',
+          '================================'
+        );
+
+        console.error(
+          'SUPABASE MESSAGE SAVE ERROR:',
           result.error
         );
+
+        console.error(
+          'ERROR CODE:',
+          result.error.code
+        );
+
+        console.error(
+          'ERROR MESSAGE:',
+          result.error.message
+        );
+
+        console.error(
+          'ERROR DETAILS:',
+          result.error.details
+        );
+
+        console.error(
+          'ERROR HINT:',
+          result.error.hint
+        );
+
+        console.error(
+          '================================'
+        );
+
+
+        /*
+          SHOW THE ACTUAL ERROR
+        */
+
+        if (
+          String(currentChatId) ===
+          String(targetChatId)
+        ) {
+
+          addTextMessage(
+            'assistant',
+            `Supabase save error:\n${result.error.message}`
+          );
+
+        }
+
 
         return false;
 
@@ -3193,12 +3064,27 @@
 
       return true;
 
+
     } catch (error) {
 
       console.error(
-        'SAVE MESSAGE EXCEPTION:',
+        'MESSAGE SAVE EXCEPTION:',
         error
       );
+
+
+      if (
+        String(currentChatId) ===
+        String(targetChatId)
+      ) {
+
+        addTextMessage(
+          'assistant',
+          `Message save error:\n${error.message}`
+        );
+
+      }
+
 
       return false;
 
@@ -3208,7 +3094,7 @@
 
 
   /* =========================================================
-     UPDATE TITLE
+     UPDATE CHAT TITLE
   ========================================================= */
 
   async function updateChatTitle(
@@ -3294,7 +3180,7 @@
 
 
   /* =========================================================
-     TEXT MESSAGE UI
+     TEXT MESSAGE
   ========================================================= */
 
   function addTextMessage(
@@ -3350,14 +3236,14 @@
 
 
   /* =========================================================
-     IMAGE UI
+     IMAGE MESSAGE
   ========================================================= */
 
   function addImageMessage(
     imageUrl,
     prompt,
-    originalImageData,
-    originalPrompt
+    originalImageData = null,
+    originalPrompt = ''
   ) {
 
     welcome.style.display =
@@ -3452,15 +3338,11 @@
       '🔄 Re-render';
 
 
-    if (!originalImageData) {
+    rerenderButton.disabled =
+      !originalImageData;
 
-      rerenderButton.disabled =
-        true;
 
-      rerenderButton.title =
-        'Re-render is available for images from the current session';
-
-    } else {
+    if (originalImageData) {
 
       rerenderButton.addEventListener(
         'click',
@@ -3480,6 +3362,11 @@
 
         }
       );
+
+    } else {
+
+      rerenderButton.title =
+        'Upload the image again to edit it after refreshing.';
 
     }
 
@@ -3514,6 +3401,7 @@
             'a'
           );
 
+
         link.href =
           imageUrl;
 
@@ -3522,6 +3410,7 @@
 
         link.target =
           '_blank';
+
 
         document.body.appendChild(
           link
@@ -3560,7 +3449,7 @@
 
 
   /* =========================================================
-     PROGRESS
+     IMAGE PROGRESS
   ========================================================= */
 
   function showImageProgress(
@@ -3666,7 +3555,8 @@
           () => {
 
             if (
-              thisImageRequest !== imageRequestId ||
+              thisImageRequest !==
+                imageRequestId ||
               String(currentChatId) !==
                 String(targetChatId)
             ) {
@@ -3691,7 +3581,8 @@
           () => {
 
             if (
-              thisImageRequest !== imageRequestId ||
+              thisImageRequest !==
+                imageRequestId ||
               String(currentChatId) !==
                 String(targetChatId)
             ) {
@@ -3769,9 +3660,7 @@
 
 
       /*
-        IMPORTANT:
-        Save the generated image to the ORIGINAL
-        conversation, regardless of the current UI.
+        Save generated image to original chat.
       */
 
       const saved =
@@ -3790,36 +3679,18 @@
           targetChatId
         );
 
-
-        if (
-          String(currentChatId) ===
-          String(targetChatId)
-        ) {
-
-          hideImageProgress();
-
-          addTextMessage(
-            'assistant',
-            'The image was generated, but I could not save it to this conversation.'
-          );
-
-        }
-
         return;
 
       }
 
 
-      /*
-        Only update the UI if the original chat
-        is still open.
-      */
-
       if (
-        thisImageRequest === imageRequestId &&
+        thisImageRequest ===
+          imageRequestId &&
         String(currentChatId) ===
           String(targetChatId) &&
-        thisRequestId === activeRequestId
+        thisRequestId ===
+          activeRequestId
       ) {
 
         showImageProgress(
@@ -3857,16 +3728,18 @@
 
 
       if (
-        thisImageRequest === imageRequestId &&
+        thisImageRequest ===
+          imageRequestId &&
         String(currentChatId) ===
           String(targetChatId)
       ) {
 
         hideImageProgress();
 
+
         addTextMessage(
           'assistant',
-          `Image error: ${error.message}`
+          `Image error:\n${error.message}`
         );
 
       }
@@ -3878,18 +3751,16 @@
       clearTimeout(timer2);
 
 
-      /*
-        An old image request cannot hide or
-        alter a newer request's state.
-      */
-
       if (
-        thisImageRequest === imageRequestId
+        thisImageRequest ===
+        imageRequestId
       ) {
 
         hideImageProgress();
 
-        setImageButtonsBusy(false);
+        setImageButtonsBusy(
+          false
+        );
 
       }
 
@@ -3947,7 +3818,8 @@
           () => {
 
             if (
-              thisImageRequest !== imageRequestId ||
+              thisImageRequest !==
+                imageRequestId ||
               String(currentChatId) !==
                 String(targetChatId)
             ) {
@@ -3972,7 +3844,8 @@
           () => {
 
             if (
-              thisImageRequest !== imageRequestId ||
+              thisImageRequest !==
+                imageRequestId ||
               String(currentChatId) !==
                 String(targetChatId)
             ) {
@@ -4052,10 +3925,6 @@
       }
 
 
-      /*
-        Save edited image against original chat.
-      */
-
       const saved =
         await saveMessage(
           'assistant',
@@ -4072,28 +3941,14 @@
           targetChatId
         );
 
-
-        if (
-          String(currentChatId) ===
-          String(targetChatId)
-        ) {
-
-          hideImageProgress();
-
-          addTextMessage(
-            'assistant',
-            'The image was edited, but I could not save it to this conversation.'
-          );
-
-        }
-
         return;
 
       }
 
 
       if (
-        thisImageRequest === imageRequestId &&
+        thisImageRequest ===
+          imageRequestId &&
         String(currentChatId) ===
           String(targetChatId)
       ) {
@@ -4126,16 +3981,18 @@
 
 
       if (
-        thisImageRequest === imageRequestId &&
+        thisImageRequest ===
+          imageRequestId &&
         String(currentChatId) ===
           String(targetChatId)
       ) {
 
         hideImageProgress();
 
+
         addTextMessage(
           'assistant',
-          `Image edit error: ${error.message}`
+          `Image edit error:\n${error.message}`
         );
 
       }
@@ -4148,12 +4005,15 @@
 
 
       if (
-        thisImageRequest === imageRequestId
+        thisImageRequest ===
+        imageRequestId
       ) {
 
         hideImageProgress();
 
-        setImageButtonsBusy(false);
+        setImageButtonsBusy(
+          false
+        );
 
       }
 
@@ -4175,7 +4035,7 @@
 
       addTextMessage(
         'assistant',
-        'This image was loaded from history. Upload the image again if you want to re-render it.'
+        'Upload the image again if you want to re-render it after refreshing.'
       );
 
       return;
@@ -4183,12 +4043,7 @@
     }
 
 
-    const targetChatId =
-      currentChatId;
-
-
     const newPrompt =
-
 `${prompt}
 
 Create a fresh variation of this image.
@@ -4201,14 +4056,14 @@ lighting, camera angle, background or styling.`;
     await editImage(
       sourceImage,
       newPrompt,
-      targetChatId
+      currentChatId
     );
 
   }
 
 
   /* =========================================================
-     SEND MESSAGE
+     NORMAL SEND
   ========================================================= */
 
   async function sendMessage() {
@@ -4235,8 +4090,7 @@ lighting, camera angle, background or styling.`;
 
 
     /*
-      IMAGE MODE:
-      The normal send button creates the image.
+      IMAGE CREATION MODE
     */
 
     if (
@@ -4259,10 +4113,6 @@ lighting, camera angle, background or styling.`;
       'Please edit this image.';
 
 
-    /*
-      Make sure the chat exists.
-    */
-
     const chatReady =
       await ensureCurrentChat(
         userText
@@ -4271,19 +4121,10 @@ lighting, camera angle, background or styling.`;
 
     if (!chatReady) {
 
-      addTextMessage(
-        'assistant',
-        'I could not create this conversation. Please try again.'
-      );
-
       return;
 
     }
 
-
-    /*
-      Lock request to this chat.
-    */
 
     const requestChatId =
       currentChatId;
@@ -4298,10 +4139,6 @@ lighting, camera angle, background or styling.`;
         requestChatId
       );
 
-
-    /*
-      Display user message.
-    */
 
     addTextMessage(
       'user',
@@ -4320,10 +4157,6 @@ lighting, camera angle, background or styling.`;
     });
 
 
-    /*
-      Save user message.
-    */
-
     const saved =
       await saveMessage(
         'user',
@@ -4334,11 +4167,6 @@ lighting, camera angle, background or styling.`;
 
 
     if (!saved) {
-
-      addTextMessage(
-        'assistant',
-        'I could not save your message. Please try again.'
-      );
 
       return;
 
@@ -4384,7 +4212,7 @@ lighting, camera angle, background or styling.`;
 
 
     /*
-      NORMAL CHAT
+      NORMAL AI CHAT
     */
 
     messageInput.value =
@@ -4453,10 +4281,6 @@ lighting, camera angle, background or styling.`;
         'I could not generate a response.';
 
 
-      /*
-        Save against original chat.
-      */
-
       const assistantSaved =
         await saveMessage(
           'assistant',
@@ -4487,26 +4311,16 @@ lighting, camera angle, background or styling.`;
       });
 
 
-      /*
-        Only display if still in original chat.
-      */
-
       if (
         String(currentChatId) ===
-        String(requestChatId) &&
-        requestId === activeRequestId
+          String(requestChatId) &&
+        requestId ===
+          activeRequestId
       ) {
 
         addTextMessage(
           'assistant',
           answer
-        );
-
-      } else {
-
-        console.log(
-          'AI RESPONSE COMPLETED IN BACKGROUND CHAT:',
-          requestChatId
         );
 
       }
@@ -4522,13 +4336,14 @@ lighting, camera angle, background or styling.`;
 
       if (
         String(currentChatId) ===
-        String(requestChatId) &&
-        requestId === activeRequestId
+          String(requestChatId) &&
+        requestId ===
+          activeRequestId
       ) {
 
         addTextMessage(
           'assistant',
-          `Error: ${error.message}`
+          `Error:\n${error.message}`
         );
 
       }
@@ -4539,7 +4354,7 @@ lighting, camera angle, background or styling.`;
 
 
   /* =========================================================
-     IMAGE FROM CHAT BOX
+     IMAGE CREATION FROM CHAT BOX
   ========================================================= */
 
   async function sendImageFromChatBox(
@@ -4557,7 +4372,7 @@ lighting, camera angle, background or styling.`;
 
 
     /*
-      Create the chat FIRST.
+      Create chat first.
     */
 
     const chatReady =
@@ -4568,19 +4383,13 @@ lighting, camera angle, background or styling.`;
 
     if (!chatReady) {
 
-      addTextMessage(
-        'assistant',
-        'I could not create this conversation. Please try again.'
-      );
-
       return;
 
     }
 
 
     /*
-      Permanently lock this image request
-      to this conversation.
+      Lock everything to this chat.
     */
 
     const targetChatId =
@@ -4602,7 +4411,7 @@ lighting, camera angle, background or styling.`;
 
 
     /*
-      Show user prompt.
+      SHOW PROMPT
     */
 
     addTextMessage(
@@ -4612,7 +4421,7 @@ lighting, camera angle, background or styling.`;
 
 
     /*
-      Store it locally.
+      STORE PROMPT LOCALLY
     */
 
     conversation.push({
@@ -4627,7 +4436,7 @@ lighting, camera angle, background or styling.`;
 
 
     /*
-      SAVE USER IMAGE PROMPT.
+      SAVE IMAGE PROMPT
     */
 
     const saved =
@@ -4646,18 +4455,10 @@ lighting, camera angle, background or styling.`;
         targetChatId
       );
 
-
-      if (
-        String(currentChatId) ===
-        String(targetChatId)
-      ) {
-
-        addTextMessage(
-          'assistant',
-          'I could not save this image request. Please try again.'
-        );
-
-      }
+      /*
+        saveMessage() now shows the actual
+        Supabase error on screen.
+      */
 
       return;
 
@@ -4681,7 +4482,7 @@ lighting, camera angle, background or styling.`;
 
 
     /*
-      Generate using the locked chat ID.
+      GENERATE
     */
 
     await generateImage(
@@ -4773,11 +4574,6 @@ lighting, camera angle, background or styling.`;
             'block';
 
 
-          /*
-            Uploaded image automatically means
-            edit mode.
-          */
-
           messageInput.placeholder =
             'Describe what you want me to change...';
 
@@ -4822,17 +4618,10 @@ lighting, camera angle, background or styling.`;
       '';
 
 
-    if (imageMode) {
-
-      messageInput.placeholder =
-        'Describe the image you want me to create...';
-
-    } else {
-
-      messageInput.placeholder =
-        'Message Nastivee...';
-
-    }
+    messageInput.placeholder =
+      imageMode
+        ? 'Describe the image you want me to create...'
+        : 'Message Nastivee...';
 
   }
 
@@ -4846,7 +4635,7 @@ lighting, camera angle, background or styling.`;
 
 
   /* =========================================================
-     ENTER KEY
+     ENTER TO SEND
   ========================================================= */
 
   messageInput.addEventListener(
@@ -4900,17 +4689,14 @@ lighting, camera angle, background or styling.`;
       'click',
       async () => {
 
-        /*
-          Invalidate absolutely everything.
-        */
-
         activeRequestId++;
         loadSequence++;
         imageRequestId++;
 
         hideImageProgress();
 
-        imageBusy = false;
+        imageBusy =
+          false;
 
 
         await supabaseClient.auth.signOut();
@@ -4938,9 +4724,7 @@ lighting, camera angle, background or styling.`;
 
         clearUpload();
 
-        setImageMode(
-          false
-        );
+        setImageMode(false);
 
         clearChatUI();
 
@@ -4951,7 +4735,7 @@ lighting, camera angle, background or styling.`;
 
 
   /* =========================================================
-     START APP
+     START
   ========================================================= */
 
   checkSession();
