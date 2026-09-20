@@ -6,13 +6,14 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
 
+// This connects directly to your OpenAI API account using your key
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 });
 
-// Chat Route
+// Chat Route (GPT-4o Mini)
 app.post('/api/chat', async (req, res) => {
   try {
     const { message } = req.body;
@@ -31,29 +32,34 @@ app.post('/api/chat', async (req, res) => {
   }
 });
 
-// Multi-Subject Image Route
+// DALL-E 3 Image Route
 app.post('/api/image', async (req, res) => {
   try {
     const { prompt } = req.body;
     if (!prompt) return res.status(400).json({ error: 'Prompt is required' });
 
-    // Clean text and build an explicit multi-subject composition prompt
-    const cleanPrompt = prompt.replace(/[^a-zA-Z0-9 ]/g, "").trim();
-    const compositionPrompt = `photograph showing ${cleanPrompt} together in one scene, full body, realistic lighting, hyperdetailed photo, 8k`;
-    
-    const encoded = encodeURIComponent(compositionPrompt);
-    const uniqueSeed = Date.now() + Math.floor(Math.random() * 1000);
+    // Sends the request to OpenAI's DALL-E 3 model
+    const response = await openai.images.generate({
+      model: "dall-e-3",
+      prompt: prompt + ", realistic photograph, highly detailed, 8k resolution, natural lighting",
+      n: 1,
+      size: "1024x1024",
+      quality: "standard"
+    });
 
-    // Uses model=turbo for fast multi-object spatial reasoning
-    const imageUrl = `https://image.pollinations.ai/prompt/${encoded}?width=768&height=768&nologo=true&seed=${uniqueSeed}&model=turbo`;
-
-    return res.json({ imageUrl });
+    if (response.data && response.data[0]?.url) {
+      return res.json({ imageUrl: response.data[0].url });
+    } else {
+      return res.status(500).json({ error: 'No image URL returned by OpenAI' });
+    }
   } catch (error) {
-    console.error('Image route error:', error);
-    return res.status(500).json({ error: 'Failed to generate image' });
+    console.error('OpenAI DALL-E 3 Error:', error);
+    // Returns the exact OpenAI error message to your chat window if it fails
+    return res.status(500).json({ error: error.message || 'DALL-E 3 generation failed' });
   }
 });
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
+
