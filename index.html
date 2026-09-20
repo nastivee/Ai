@@ -3,12 +3,41 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="theme-color" content="#171126">
+<meta name="theme-color" content="#09051a">
 <title>Nastivee AI</title>
+<meta name="description" content="Nastivee AI — chat and image generation, in one place.">
 
+<!-- Installable app -->
+<link rel="manifest" href="./manifest.webmanifest">
+<meta name="application-name" content="Nastivee AI">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Nastivee">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+<link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="./icon-512.png">
+<link rel="icon" type="image/svg+xml" href="./icon.svg">
 <link rel="icon" type="image/webp" href="./NAI-Logo.webp">
-<link rel="icon" type="image/png" href="./NAI-Logo-512.png">
-<link rel="apple-touch-icon" href="./NAI-Logo-512.png">
+<link rel="apple-touch-icon" sizes="180x180" href="./icon-192-maskable.png">
+
+<!-- Share card -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Nastivee AI">
+<meta property="og:title" content="Nastivee AI">
+<meta property="og:description" content="Chat and image generation, in one place.">
+<meta property="og:url" content="https://nastivee.github.io/Ai/">
+<meta property="og:image" content="https://nastivee.github.io/Ai/og-image.png">
+<meta property="og:image:secure_url" content="https://nastivee.github.io/Ai/og-image.png">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Nastivee AI">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Nastivee AI">
+<meta name="twitter:description" content="Chat and image generation, in one place.">
+<meta name="twitter:image" content="https://nastivee.github.io/Ai/og-image.png">
+<meta name="twitter:image:alt" content="Nastivee AI">
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
@@ -296,15 +325,29 @@ button {
   color: #a875ff;
 }
 
-.newChatButton {
-  width: 100%;
+.newChatRow {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
   margin-top: 20px;
-  padding: 13px 18px;
+}
+
+.newChatButton {
+  flex: 3 1 0;
+  min-width: 0;
+  height: 46px;
+  padding: 0 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  white-space: nowrap;
   border-radius: 13px;
   border: 0;
   background: linear-gradient(135deg, #7c3aed, #9333ea);
   color: white;
   font-weight: 700;
+  font-size: 14px;
   letter-spacing: .1px;
 }
 
@@ -312,8 +355,39 @@ button {
   filter: brightness(1.08);
 }
 
+.searchToggle {
+  flex: 1 1 0;
+  min-width: 0;
+  height: 46px;
+  padding: 0 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #382d47;
+  background: transparent;
+  color: #b3a7bf;
+  border-radius: 13px;
+  cursor: pointer;
+  transition:
+    color .15s var(--ease),
+    border-color .15s var(--ease),
+    background .15s var(--ease);
+}
+
+.searchToggle:hover,
+.searchToggle.open {
+  border-color: #6d4fb8;
+  background: rgba(124, 58, 237, .14);
+  color: #d7c4ff;
+}
+
 .chatSearchWrap {
-  padding: 0 14px 6px;
+  display: none;
+  padding: 10px 14px 6px;
+}
+
+.chatSearchWrap.open {
+  display: block;
 }
 
 .chatSearch {
@@ -853,6 +927,17 @@ button {
   display: flex;
 }
 
+.installHint {
+  margin: -2px 0 10px;
+  padding: 8px 11px;
+  border: 1px solid #3b5a44;
+  border-radius: 10px;
+  background: rgba(22, 40, 28, .6);
+  color: #9fd8b3;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
 .accountRow {
   display: flex;
   gap: 8px;
@@ -1068,6 +1153,13 @@ button {
   line-height: 1.6;
 }
 
+.emptyNote {
+  margin-top: 10px;
+  color: #6f6580;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
 .messageRow {
   display: flex;
   margin-bottom: 22px;
@@ -1266,26 +1358,77 @@ button {
   color: #cfc4da;
 }
 
+.bubbleWrap {
+  position: relative;
+  max-width: min(760px, 88%);
+}
+
+.bubbleWrap .messageBubble {
+  max-width: 100%;
+}
+
 .replyTools {
+  position: absolute;
+  top: -11px;
+  right: 10px;
   display: flex;
-  gap: 6px;
-  margin-top: 8px;
+  gap: 5px;
+  opacity: 0;
+  transform: translateY(3px);
+  transition:
+    opacity .16s var(--ease),
+    transform .16s var(--ease);
+  pointer-events: none;
+}
+
+.bubbleWrap:hover .replyTools,
+.replyTools:focus-within {
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
 }
 
 .replyTool {
-  padding: 6px 13px;
+  width: 27px;
+  height: 27px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
   border: 1px solid #332645;
   border-radius: 9px;
-  background: transparent;
+  background: rgba(11, 7, 20, .92);
   color: #9b90ab;
-  font-size: 11.5px;
-  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, .35);
+  transition:
+    color .15s var(--ease),
+    border-color .15s var(--ease),
+    background .15s var(--ease);
 }
 
 .replyTool:hover {
   color: #e2d7f0;
-  border-color: #4a3568;
+  border-color: #6d4fb8;
   background: #1c1430;
+}
+
+.replyTool.done {
+  color: #a78bfa;
+  border-color: #6d4fb8;
+}
+
+/*
+  Touch screens have no hover, so keep them gently visible.
+*/
+@media (hover: none) {
+
+  .replyTools {
+    opacity: .6;
+    transform: none;
+    pointer-events: auto;
+  }
+
 }
 
 .messageRow.assistant .messageRow {
@@ -1766,13 +1909,6 @@ button {
   display: none;
 }
 
-.composerHint {
-  width: min(900px, 100%);
-  margin: 7px auto 0;
-  text-align: center;
-  color: #62596c;
-  font-size: 10px;
-}
 
 /* =====================================================
    MOBILE OVERLAY
@@ -1867,13 +2003,14 @@ button {
     max-width: 92%;
   }
 
+  .bubbleWrap {
+    max-width: 92%;
+  }
+
   .composerArea {
     padding: 8px 9px 12px;
   }
 
-  .composerHint {
-    display: none;
-  }
 
   .authCard {
     padding: 27px 22px;
@@ -2150,16 +2287,44 @@ button {
         Nastivee<span>AI</span>
       </div>
 
-      <button
-        class="newChatButton"
-        id="newChatButton"
-      >
-        ＋ New chat
-      </button>
+      <div class="newChatRow">
+
+        <button
+          class="newChatButton"
+          id="newChatButton"
+          type="button"
+        >
+          <svg viewBox="0 0 24 24" width="17" height="17" fill="none"
+               stroke="currentColor" stroke-width="2.2"
+               stroke-linecap="round" stroke-linejoin="round"
+               aria-hidden="true">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+          New chat
+        </button>
+
+        <button
+          class="searchToggle"
+          id="searchToggle"
+          type="button"
+          title="Search chats"
+          aria-label="Search chats"
+          aria-expanded="false"
+        >
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none"
+               stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="7"></circle>
+            <line x1="20" y1="20" x2="16.05" y2="16.05"></line>
+          </svg>
+        </button>
+
+      </div>
 
     </div>
 
-    <div class="chatSearchWrap">
+    <div class="chatSearchWrap" id="chatSearchWrap">
 
       <input
         id="chatSearch"
@@ -2367,6 +2532,10 @@ button {
             or create something with AI.
           </div>
 
+          <div class="emptyNote">
+            Nastivee can remember your chats and edit images.
+          </div>
+
         </div>
 
       </div>
@@ -2530,10 +2699,6 @@ button {
 
         </div>
 
-      </div>
-
-      <div class="composerHint">
-        Nastivee can remember your chats and edit images.
       </div>
 
     </div>
@@ -2953,6 +3118,12 @@ const headerStatus =
 
 const chatSearch =
   document.getElementById('chatSearch');
+
+const chatSearchWrap =
+  document.getElementById('chatSearchWrap');
+
+const searchToggle =
+  document.getElementById('searchToggle');
 
 const chatHistoryList =
   document.getElementById('chatHistoryList');
@@ -4659,6 +4830,40 @@ async function deleteChat(
    NEW CHAT
 ===================================================== */
 
+/*
+  The search box hides behind its icon until it is wanted.
+*/
+
+searchToggle?.addEventListener('click', () => {
+
+  const open =
+    !chatSearchWrap.classList.contains('open');
+
+  chatSearchWrap.classList.toggle('open', open);
+  searchToggle.classList.toggle('open', open);
+
+  searchToggle.setAttribute(
+    'aria-expanded',
+    open ? 'true' : 'false'
+  );
+
+  if (open) {
+
+    chatSearch.focus();
+
+  } else if (chatSearch.value) {
+
+    chatSearch.value = '';
+
+    chatSearch.dispatchEvent(
+      new Event('input')
+    );
+
+  }
+
+});
+
+
 newChatButton.addEventListener(
   'click',
   () => newChat()
@@ -4721,6 +4926,10 @@ function clearChatUI() {
       <div class="emptyText">
         Ask me anything, upload an image,
         or create something with AI.
+      </div>
+
+      <div class="emptyNote">
+        Nastivee can remember your chats and edit images.
       </div>
     </div>
   `;
@@ -5690,10 +5899,19 @@ function addTextMessage(
 
 
   /*
-    Copy and retry, under every reply.
+    Copy and retry, as two small icons on the top right
+    corner of the reply itself.
   */
 
   if (role === 'assistant') {
+
+    const wrap =
+      document.createElement('div');
+
+    wrap.className = 'bubbleWrap';
+
+    row.replaceChild(wrap, bubble);
+    wrap.appendChild(bubble);
 
     const tools =
       document.createElement('div');
@@ -5705,17 +5923,26 @@ function addTextMessage(
 
     copy.type = 'button';
     copy.className = 'replyTool';
-    copy.textContent = 'Copy';
+    copy.title = 'Copy';
+    copy.setAttribute('aria-label', 'Copy');
+    copy.innerHTML = icon('copy', 14);
 
     copy.addEventListener('click', () => {
 
       navigator.clipboard
         ?.writeText(bubble.textContent || '')
         .then(() => {
-          copy.textContent = 'Copied';
+
+          copy.innerHTML = icon('check', 14);
+          copy.classList.add('done');
+          copy.title = 'Copied';
+
           setTimeout(() => {
-            copy.textContent = 'Copy';
+            copy.innerHTML = icon('copy', 14);
+            copy.classList.remove('done');
+            copy.title = 'Copy';
           }, 1200);
+
         })
         .catch(() => {});
 
@@ -5726,7 +5953,9 @@ function addTextMessage(
 
     retry.type = 'button';
     retry.className = 'replyTool';
-    retry.textContent = 'Try again';
+    retry.title = 'Try again';
+    retry.setAttribute('aria-label', 'Try again');
+    retry.innerHTML = icon('refresh', 14);
 
     retry.addEventListener(
       'click',
@@ -5736,7 +5965,7 @@ function addTextMessage(
     tools.appendChild(copy);
     tools.appendChild(retry);
 
-    bubble.insertAdjacentElement('afterend', tools);
+    wrap.appendChild(tools);
 
   }
 
@@ -6803,7 +7032,11 @@ const ICONS = {
   share:
     '<circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.6" y1="10.5" x2="15.4" y2="6.5"></line><line x1="8.6" y1="13.5" x2="15.4" y2="17.5"></line>',
   download:
-    '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line>'
+    '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line>',
+  copy:
+    '<rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>',
+  check:
+    '<polyline points="20 6 9 17 4 12"></polyline>'
 };
 
 function icon(name, size = 15) {
@@ -6857,10 +7090,59 @@ installButton.addEventListener('click', async () => {
 window.addEventListener('appinstalled', () => {
 
   installButton.classList.remove('show');
+  installHint?.remove();
 
   installPrompt = null;
 
 });
+
+
+/*
+  iPhones and iPads never fire beforeinstallprompt, so offer
+  the Share sheet route instead.
+*/
+
+let installHint = null;
+
+const standalone =
+  window.matchMedia?.('(display-mode: standalone)')?.matches === true ||
+  window.navigator.standalone === true;
+
+const isApple =
+  /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+  (navigator.platform === 'MacIntel' &&
+   navigator.maxTouchPoints > 1);
+
+if (isApple && !standalone && installButton) {
+
+  installButton.classList.add('show');
+
+  installButton.addEventListener('click', () => {
+
+    if (installPrompt) return;
+
+    if (installHint) {
+      installHint.remove();
+      installHint = null;
+      return;
+    }
+
+    installHint =
+      document.createElement('div');
+
+    installHint.className = 'installHint';
+
+    installHint.textContent =
+      'Tap Share, then "Add to Home Screen".';
+
+    installButton.insertAdjacentElement(
+      'afterend',
+      installHint
+    );
+
+  });
+
+}
 
 
 /* =====================================================
@@ -8641,7 +8923,7 @@ window.addEventListener('online', () => {
    clearing anything by hand.
 ===================================================== */
 
-const APP_VERSION = '2026-09-20-39';
+const APP_VERSION = '2026-09-20-40';
 
 const RELOAD_FLAG = 'nastivee_reloaded_for';
 
