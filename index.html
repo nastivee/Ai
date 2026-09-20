@@ -1035,6 +1035,21 @@ button {
   border-bottom-left-radius: 6px;
 }
 
+.userImageWrap {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  max-width: min(420px, 82%);
+}
+
+.userImage {
+  width: 100%;
+  border-radius: 16px;
+  border: 1px solid #3a2b4e;
+  display: block;
+}
+
 .messageImageWrap {
   max-width: 760px;
   width: min(100%, 760px);
@@ -1181,6 +1196,28 @@ button {
 .uploadInfo {
   flex: 1;
   min-width: 0;
+}
+
+.photoChoice {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.photoChoiceButton {
+  padding: 7px 14px;
+  border: 1px solid #3d2f56;
+  border-radius: 9px;
+  background: transparent;
+  color: #b7abc6;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.photoChoiceButton.active {
+  background: #6d42ae;
+  border-color: transparent;
+  color: white;
 }
 
 .uploadName {
@@ -1867,6 +1904,26 @@ button {
               class="uploadName"
             ></div>
 
+            <div class="photoChoice" id="photoChoice">
+
+              <button
+                type="button"
+                class="photoChoiceButton active"
+                data-action="edit"
+              >
+                Edit it
+              </button>
+
+              <button
+                type="button"
+                class="photoChoiceButton"
+                data-action="ask"
+              >
+                Ask about it
+              </button>
+
+            </div>
+
           </div>
 
           <button
@@ -1996,6 +2053,9 @@ let selectedImageFile = null;
 let selectedImageData = null;
 
 let imageMode = false;
+
+/* what to do with an attached photo: 'edit' or 'ask' */
+let photoAction = 'edit';
 
 let initialised = false;
 let imageBusy = false;
@@ -2252,6 +2312,9 @@ const uploadThumb =
 
 const uploadName =
   document.getElementById('uploadName');
+
+const photoChoice =
+  document.getElementById('photoChoice');
 
 const clearUploadButton =
   document.getElementById('clearUploadButton');
@@ -4061,7 +4124,19 @@ async function loadChat(
 
         if (message.role === 'user') {
 
-          addTextMessage('user', message.content || '');
+          if (message.image_url) {
+
+            addUserImage(
+              chatId,
+              message.image_url,
+              message.content || ''
+            );
+
+          } else {
+
+            addTextMessage('user', message.content || '');
+
+          }
 
         } else if (message.image_url) {
 
@@ -4492,6 +4567,37 @@ async function updateChatTitle(
 ===================================================== */
 
 /* =====================================================
+   WHAT TO DO WITH AN ATTACHED PHOTO
+===================================================== */
+
+photoChoice.addEventListener('click', event => {
+
+  const button =
+    event.target.closest('.photoChoiceButton');
+
+  if (!button) return;
+
+  photoAction =
+    button.dataset.action;
+
+  [...photoChoice.children].forEach(item => {
+    item.classList.toggle(
+      'active',
+      item === button
+    );
+  });
+
+  messageInput.placeholder =
+    photoAction === 'ask'
+      ? 'Ask a question about this photo...'
+      : 'Describe what you want changed...';
+
+  messageInput.focus();
+
+});
+
+
+/* =====================================================
    IMAGE STORAGE
 
    Generated images used to be kept as base64 text inside
@@ -4804,6 +4910,61 @@ function addTextMessage(
 
 
   return row;
+
+}
+
+
+/* =====================================================
+   A PHOTO THE USER SENT
+===================================================== */
+
+function addUserImage(chatId, imageUrl, caption) {
+
+  if (!isCurrentChat(chatId)) {
+    return;
+  }
+
+  emptyState?.remove();
+
+  const row =
+    document.createElement('div');
+
+  row.className = 'messageRow user';
+
+  const wrap =
+    document.createElement('div');
+
+  wrap.className = 'userImageWrap';
+
+  const img =
+    document.createElement('img');
+
+  img.className = 'userImage';
+
+  img.src = imageUrl;
+
+  img.alt = 'Photo you sent';
+
+  wrap.appendChild(img);
+
+  if (caption) {
+
+    const text =
+      document.createElement('div');
+
+    text.className = 'messageBubble';
+
+    text.textContent = caption;
+
+    wrap.appendChild(text);
+
+  }
+
+  row.appendChild(wrap);
+
+  chat.appendChild(row);
+
+  scrollToBottom();
 
 }
 
@@ -5792,7 +5953,8 @@ async function streamReply(response, requestChatId) {
 
 async function sendNormalMessage(
   text,
-  requestChatId
+  requestChatId,
+  image = null
 ) {
 
   const jobId =
@@ -5883,6 +6045,8 @@ async function sendNormalMessage(
               messages,
 
               memory,
+
+              image,
 
               stream: true
 
@@ -6157,6 +6321,8 @@ async function sendMessage() {
     const image =
       selectedImageData;
 
+    const action = photoAction;
+
 
     clearUpload();
 
@@ -6165,6 +6331,42 @@ async function sendMessage() {
       '';
 
     resizeTextarea();
+
+
+    /*
+      ASK ABOUT IT
+
+      The photo goes with the question, so Nastivee can
+      answer about what is in it instead of editing it.
+    */
+
+    if (action === 'ask') {
+
+      const storedUrl =
+        await storeImage(image);
+
+      addUserImage(
+        requestChatId,
+        image,
+        userText
+      );
+
+      await saveMessage(
+        'user',
+        userText,
+        storedUrl,
+        requestChatId
+      );
+
+      sendNormalMessage(
+        userText,
+        requestChatId,
+        image
+      );
+
+      return;
+
+    }
 
 
     editImage(
@@ -6483,6 +6685,13 @@ clearUploadButton.addEventListener(
 
 
 function clearUpload() {
+
+  photoAction = 'edit';
+
+  [...photoChoice.children].forEach((item, index) => {
+    item.classList.toggle('active', index === 0);
+  });
+
 
   selectedImageFile =
     null;
@@ -6833,7 +7042,7 @@ window.addEventListener('online', () => {
    clearing anything by hand.
 ===================================================== */
 
-const APP_VERSION = '2026-09-20-27';
+const APP_VERSION = '2026-09-20-28';
 
 const RELOAD_FLAG = 'nastivee_reloaded_for';
 
