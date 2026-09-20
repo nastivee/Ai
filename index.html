@@ -6,8 +6,9 @@
 <meta name="theme-color" content="#171126">
 <title>Nastivee AI</title>
 
-<link rel="icon" href="./NAI-Logo.png">
-<link rel="apple-touch-icon" href="./NAI-Logo.png">
+<link rel="icon" type="image/webp" href="./NAI-Logo.webp">
+<link rel="icon" type="image/png" href="./NAI-Logo-512.png">
+<link rel="apple-touch-icon" href="./NAI-Logo-512.png">
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
@@ -693,7 +694,13 @@ button {
   width: min(46vmin, 360px);
   height: min(46vmin, 360px);
   transform: translate(-50%, -50%);
-  background: url('./NAI-Logo.png') center / contain no-repeat;
+  /* Fallback first, then the lighter webp where it is supported */
+  background: url('./NAI-Logo-512.png') center / contain no-repeat;
+  background-image:
+    image-set(
+      url('./NAI-Logo.webp') type('image/webp'),
+      url('./NAI-Logo-512.png') type('image/png')
+    );
   opacity: .07;
   pointer-events: none;
   z-index: 0;
@@ -1446,7 +1453,7 @@ button {
 
           <img
             class="emptyIcon"
-            src="./NAI-Logo.png"
+            src="./NAI-Logo.webp"
             alt="Nastivee AI"
           >
 
@@ -3312,7 +3319,7 @@ function clearChatUI() {
 
   emptyState.innerHTML = `
     <div class="emptyInner">
-      <img class="emptyIcon" src="./NAI-Logo.png" alt="Nastivee AI">
+      <img class="emptyIcon" src="./NAI-Logo.webp" alt="Nastivee AI">
 
       <div class="emptyText">
         Ask me anything, upload an image,
@@ -5784,7 +5791,7 @@ window.addEventListener('online', () => {
    clearing anything by hand.
 ===================================================== */
 
-const APP_VERSION = '2026-09-20-13';
+const APP_VERSION = '2026-09-20-14';
 
 const RELOAD_FLAG = 'nastivee_reloaded_for';
 
