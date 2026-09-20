@@ -2880,13 +2880,13 @@ async function loadChats() {
 
     renderChatHistory();
 
-    return;
+    return true;
 
   }
 
 
   if (!currentUser) {
-    return;
+    return false;
   }
 
 
@@ -2921,6 +2921,8 @@ async function loadChats() {
 
     renderChatHistory();
 
+    return true;
+
 
   } catch (error) {
 
@@ -2928,6 +2930,8 @@ async function loadChats() {
       'CHAT LOAD ERROR:',
       error
     );
+
+    return false;
 
   }
 
@@ -3156,20 +3160,6 @@ async function finishDelete(deletedChatId) {
     isCurrentChat(deletedChatId);
 
 
-  /*
-    Take it out of the list straight away, so the sidebar
-    is right even if the reload is slow.
-  */
-
-  chats =
-    chats.filter(
-      item =>
-        String(item.id) !== String(deletedChatId)
-    );
-
-  renderChatHistory();
-
-
   if (wasOpen) {
 
     imageState.clear();
@@ -3179,7 +3169,30 @@ async function finishDelete(deletedChatId) {
   }
 
 
-  await loadChats();
+  /*
+    The list comes back from the database, the same way a
+    refresh builds it, so what you see after a delete is
+    what is actually stored.
+  */
+
+  const loaded =
+    await loadChats();
+
+
+  /*
+    Only if that read failed do we fall back to editing
+    the list we already had.
+  */
+
+  if (loaded === false) {
+
+    chats =
+      chats.filter(
+        item =>
+          String(item.id) !== String(deletedChatId)
+      );
+
+  }
 
 
   if (wasOpen) {
@@ -5973,7 +5986,7 @@ window.addEventListener('online', () => {
    clearing anything by hand.
 ===================================================== */
 
-const APP_VERSION = '2026-09-20-18';
+const APP_VERSION = '2026-09-20-19';
 
 const RELOAD_FLAG = 'nastivee_reloaded_for';
 
