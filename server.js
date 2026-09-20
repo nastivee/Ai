@@ -31,20 +31,28 @@ app.post('/api/chat', async (req, res) => {
   }
 });
 
-// Free Image Generation Route (No OpenAI Key / Payment Needed!)
+// Image Route - Downloads on server & sends pure Base64 (Safari cannot block this)
 app.post('/api/image', async (req, res) => {
   try {
     const { prompt } = req.body;
     if (!prompt) return res.status(400).json({ error: 'Prompt is required' });
 
-    // Creates a direct, realistic 8K photo URL using Pollinations AI
+    const seed = Math.floor(Math.random() * 100000);
     const encodedPrompt = encodeURIComponent(prompt + ', realistic photo, highly detailed, 8k resolution');
-    const imageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1024&height=1024&nologo=true&seed=${Math.floor(Math.random() * 100000)}`;
+    const imageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1024&height=1024&nologo=true&seed=${seed}`;
 
-    return res.json({ imageUrl });
+    // Download image buffer directly on Render backend
+    const imageResponse = await fetch(imageUrl);
+    const arrayBuffer = await imageResponse.arrayBuffer();
+    const base64Data = Buffer.from(arrayBuffer).toString('base64');
+    
+    // Send back as a raw data URI string
+    const dataUri = `data:image/jpeg;base64,${base64Data}`;
+
+    return res.json({ imageUrl: dataUri });
   } catch (error) {
-    console.error('Image route error:', error);
-    return res.status(500).json({ error: 'Failed to generate image' });
+    console.error('Image generation error:', error);
+    return res.status(500).json({ error: 'Failed to process image' });
   }
 });
 
