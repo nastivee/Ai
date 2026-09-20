@@ -61,10 +61,6 @@
       flex-direction: column;
     }
 
-    /* =====================================================
-       HEADER
-    ===================================================== */
-
     .header {
       height: 65px;
       flex-shrink: 0;
@@ -88,7 +84,14 @@
       color: #c76cff;
     }
 
-    .new-chat {
+    .header-buttons {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .new-chat,
+    .memory-button {
       border: none;
       color: white;
       background: rgba(255,255,255,0.08);
@@ -98,13 +101,10 @@
       cursor: pointer;
     }
 
-    .new-chat:active {
+    .new-chat:active,
+    .memory-button:active {
       transform: scale(.96);
     }
-
-    /* =====================================================
-       CHAT
-    ===================================================== */
 
     .chat {
       flex: 1;
@@ -174,10 +174,6 @@
       border-bottom-left-radius: 5px;
     }
 
-    /* =====================================================
-       IMAGE MESSAGE
-    ===================================================== */
-
     .image-message {
       max-width: 92%;
       padding: 8px;
@@ -214,10 +210,6 @@
       background:
         rgba(255,255,255,.16);
     }
-
-    /* =====================================================
-       INPUT AREA
-    ===================================================== */
 
     .input-area {
       position: fixed;
@@ -262,7 +254,6 @@
       color: white;
       font-size: 15px;
       padding: 11px 9px;
-      font-family: inherit;
       line-height: 20px;
     }
 
@@ -271,17 +262,21 @@
         rgba(255,255,255,.42);
     }
 
-    .icon-button {
+    .icon-button,
+    .send-button {
       width: 42px;
       height: 42px;
       flex-shrink: 0;
       border: none;
       border-radius: 13px;
-      background:
-        rgba(255,255,255,.08);
       color: white;
       cursor: pointer;
       font-size: 18px;
+    }
+
+    .icon-button {
+      background:
+        rgba(255,255,255,.08);
     }
 
     .icon-button.active {
@@ -293,36 +288,20 @@
         );
     }
 
-    .icon-button:disabled {
+    .icon-button:disabled,
+    .send-button:disabled {
       opacity: .45;
       cursor: default;
     }
 
     .send-button {
-      width: 42px;
-      height: 42px;
-      flex-shrink: 0;
-      border: none;
-      border-radius: 13px;
       background:
         linear-gradient(
           135deg,
           #873cff,
           #c84fff
         );
-      color: white;
-      font-size: 18px;
-      cursor: pointer;
     }
-
-    .send-button:disabled {
-      opacity: .45;
-      cursor: default;
-    }
-
-    /* =====================================================
-       IMAGE PANEL
-    ===================================================== */
 
     .image-panel {
       display: none;
@@ -381,10 +360,6 @@
       cursor: pointer;
     }
 
-    /* =====================================================
-       TYPING
-    ===================================================== */
-
     .typing {
       display: flex;
       gap: 5px;
@@ -413,40 +388,104 @@
       0%,
       60%,
       100% {
-        transform:
-          translateY(0);
+        transform: translateY(0);
         opacity: .4;
       }
 
       30% {
-        transform:
-          translateY(-5px);
+        transform: translateY(-5px);
         opacity: 1;
       }
 
     }
 
-    /* =====================================================
-       EMPTY / ERROR
-    ===================================================== */
+    /* MEMORY PANEL */
 
-    .error-message {
-      color: #ff9b9b;
+    .memory-panel {
+      display: none;
+      position: fixed;
+      z-index: 50;
+      top: 70px;
+      right: 12px;
+      width: min(360px, calc(100vw - 24px));
+      max-height: 70vh;
+      overflow-y: auto;
+      background:
+        rgba(25,13,38,.98);
+      border:
+        1px solid rgba(255,255,255,.12);
+      border-radius: 17px;
+      padding: 15px;
+      box-shadow:
+        0 20px 60px rgba(0,0,0,.5);
     }
 
-    /* =====================================================
-       MOBILE
-    ===================================================== */
+    .memory-panel.show {
+      display: block;
+    }
+
+    .memory-title {
+      font-size: 16px;
+      font-weight: 800;
+      margin-bottom: 4px;
+    }
+
+    .memory-subtitle {
+      font-size: 12px;
+      color: rgba(255,255,255,.5);
+      margin-bottom: 13px;
+      line-height: 1.4;
+    }
+
+    .memory-item {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 10px;
+      margin-bottom: 7px;
+      background:
+        rgba(255,255,255,.06);
+      border-radius: 11px;
+    }
+
+    .memory-item-text {
+      font-size: 13px;
+      line-height: 1.4;
+      word-break: break-word;
+    }
+
+    .memory-delete {
+      flex-shrink: 0;
+      border: none;
+      background:
+        rgba(255,80,80,.12);
+      color: #ff9292;
+      border-radius: 7px;
+      padding: 4px 7px;
+      cursor: pointer;
+    }
+
+    .no-memory {
+      color: rgba(255,255,255,.45);
+      font-size: 13px;
+      padding: 10px 0;
+    }
 
     @media (max-width: 600px) {
 
       .header {
         height: 60px;
-        padding: 0 12px;
+        padding: 0 10px;
       }
 
       .logo {
         font-size: 19px;
+      }
+
+      .new-chat,
+      .memory-button {
+        padding: 8px 9px;
+        font-size: 12px;
       }
 
       .welcome {
@@ -489,9 +528,7 @@
 <div class="app">
 
 
-  <!-- =====================================================
-       HEADER
-  ====================================================== -->
+  <!-- HEADER -->
 
   <header class="header">
 
@@ -499,20 +536,51 @@
       Nastivee <span>AI</span>
     </div>
 
-    <button
-      class="new-chat"
-      id="newChat"
-      type="button"
-    >
-      + New chat
-    </button>
+    <div class="header-buttons">
+
+      <button
+        class="memory-button"
+        id="memoryButton"
+        type="button"
+      >
+        🧠 Memory
+      </button>
+
+      <button
+        class="new-chat"
+        id="newChat"
+        type="button"
+      >
+        + New chat
+      </button>
+
+    </div>
 
   </header>
 
 
-  <!-- =====================================================
-       CHAT
-  ====================================================== -->
+  <!-- MEMORY PANEL -->
+
+  <div
+    class="memory-panel"
+    id="memoryPanel"
+  >
+
+    <div class="memory-title">
+      🧠 Nastivee Memory
+    </div>
+
+    <div class="memory-subtitle">
+      Things Nastivee has saved about you.
+      These memories stay on this device.
+    </div>
+
+    <div id="memoryList"></div>
+
+  </div>
+
+
+  <!-- CHAT -->
 
   <main
     class="chat"
@@ -538,9 +606,7 @@
   </main>
 
 
-  <!-- =====================================================
-       INPUT AREA
-  ====================================================== -->
+  <!-- INPUT -->
 
   <div class="input-area">
 
@@ -590,8 +656,6 @@
     <div class="composer">
 
 
-      <!-- IMAGE MODE -->
-
       <button
         class="icon-button"
         id="imageButton"
@@ -601,8 +665,6 @@
         🎨
       </button>
 
-
-      <!-- PHOTO UPLOAD -->
 
       <button
         class="icon-button"
@@ -622,8 +684,6 @@
       >
 
 
-      <!-- TEXT -->
-
       <textarea
         id="messageInput"
         placeholder="Message Nastivee..."
@@ -632,8 +692,6 @@
         spellcheck="true"
       ></textarea>
 
-
-      <!-- SEND -->
 
       <button
         class="send-button"
@@ -693,20 +751,30 @@ const removePhoto =
 const newChat =
   document.getElementById('newChat');
 
+const memoryButton =
+  document.getElementById('memoryButton');
+
+const memoryPanel =
+  document.getElementById('memoryPanel');
+
+const memoryList =
+  document.getElementById('memoryList');
+
 
 /* =========================================================
-   CHAT MEMORY
+   STORAGE
 ========================================================= */
 
 const MEMORY_KEY =
-  'nastivee_conversation_v2';
+  'nastivee_conversation_v3';
+
+const LONG_MEMORY_KEY =
+  'nastivee_long_term_memory_v1';
+
 
 let conversation = [];
 
-
-/* =========================================================
-   IMAGE STATE
-========================================================= */
+let memory = {};
 
 let imageMode = false;
 
@@ -734,7 +802,6 @@ function loadConversation() {
         MEMORY_KEY
       );
 
-
     if (!saved) {
 
       conversation = [];
@@ -743,10 +810,8 @@ function loadConversation() {
 
     }
 
-
     const parsed =
       JSON.parse(saved);
-
 
     if (!Array.isArray(parsed)) {
 
@@ -755,7 +820,6 @@ function loadConversation() {
       return;
 
     }
-
 
     conversation =
       parsed.filter(item => {
@@ -772,19 +836,13 @@ function loadConversation() {
 
       });
 
-
-    /*
-      Keep the browser memory manageable.
-    */
-
     conversation =
-      conversation.slice(-80);
-
+      conversation.slice(-100);
 
   } catch (error) {
 
     console.error(
-      'MEMORY LOAD ERROR:',
+      'CONVERSATION LOAD ERROR:',
       error
     );
 
@@ -804,8 +862,7 @@ function saveConversation() {
   try {
 
     conversation =
-      conversation.slice(-80);
-
+      conversation.slice(-100);
 
     localStorage.setItem(
 
@@ -817,6 +874,87 @@ function saveConversation() {
 
     );
 
+  } catch (error) {
+
+    console.error(
+      'CONVERSATION SAVE ERROR:',
+      error
+    );
+
+  }
+
+}
+
+
+/* =========================================================
+   LOAD LONG-TERM MEMORY
+========================================================= */
+
+function loadMemory() {
+
+  try {
+
+    const saved =
+      localStorage.getItem(
+        LONG_MEMORY_KEY
+      );
+
+    if (!saved) {
+
+      memory = {};
+
+      return;
+
+    }
+
+    const parsed =
+      JSON.parse(saved);
+
+    if (
+      parsed &&
+      typeof parsed === 'object' &&
+      !Array.isArray(parsed)
+    ) {
+
+      memory = parsed;
+
+    } else {
+
+      memory = {};
+
+    }
+
+  } catch (error) {
+
+    console.error(
+      'MEMORY LOAD ERROR:',
+      error
+    );
+
+    memory = {};
+
+  }
+
+}
+
+
+/* =========================================================
+   SAVE LONG-TERM MEMORY
+========================================================= */
+
+function saveMemory() {
+
+  try {
+
+    localStorage.setItem(
+
+      LONG_MEMORY_KEY,
+
+      JSON.stringify(
+        memory
+      )
+
+    );
 
   } catch (error) {
 
@@ -831,7 +969,237 @@ function saveConversation() {
 
 
 /* =========================================================
-   RESTORE CONVERSATION
+   AUTOMATIC MEMORY DETECTION
+========================================================= */
+
+function rememberFromMessage(message) {
+
+  const text =
+    message.trim();
+
+
+  /* DOG NAME */
+
+  let match =
+    text.match(
+      /my\s+(?:dog|dogs|puppy)'?s?\s+(?:name\s+is|is\s+called|is\s+named)\s+([A-Za-z][A-Za-z0-9_-]{1,30})/i
+    );
+
+
+  if (match) {
+
+    memory.dog_name =
+      match[1];
+
+  }
+
+
+  /* MY DOG IS CALLED */
+
+  match =
+    text.match(
+      /my\s+dog\s+(?:is\s+called|is\s+named)\s+([A-Za-z][A-Za-z0-9_-]{1,30})/i
+    );
+
+
+  if (match) {
+
+    memory.dog_name =
+      match[1];
+
+  }
+
+
+  /* DOG BREED */
+
+  match =
+    text.match(
+      /my\s+(?:dog|puppy)\s+is\s+(?:a\s+)?(siberian husky|husky|golden retriever|labrador|german shepherd|french bulldog|bulldog|staffy|staffordshire bull terrier|border collie|beagle|rottweiler|poodle)/i
+    );
+
+
+  if (match) {
+
+    memory.dog_breed =
+      match[1];
+
+  }
+
+
+  /* USER NAME */
+
+  match =
+    text.match(
+      /(?:my\s+name\s+is|i\s+am|i'm)\s+([A-Za-z][A-Za-z'-]{1,30})/i
+    );
+
+
+  if (
+    match &&
+    !/^(happy|fine|good|okay|ok|tired|hungry|sad|angry|bored|going)$/i.test(
+      match[1]
+    )
+  ) {
+
+    memory.user_name =
+      match[1];
+
+  }
+
+
+  /* FAVOURITES */
+
+  match =
+    text.match(
+      /my\s+(?:favourite|favorite)\s+([A-Za-z ]{2,25})\s+is\s+([^.!?]{1,80})/i
+    );
+
+
+  if (match) {
+
+    const category =
+      match[1]
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, '_');
+
+    const value =
+      match[2]
+        .trim();
+
+    if (
+      category &&
+      value
+    ) {
+
+      memory[
+        `favourite_${category}`
+      ] =
+        value;
+
+    }
+
+  }
+
+
+  saveMemory();
+
+  renderMemory();
+
+}
+
+
+/* =========================================================
+   MEMORY DISPLAY
+========================================================= */
+
+function renderMemory() {
+
+  memoryList.innerHTML =
+    '';
+
+
+  const entries =
+    Object.entries(
+      memory
+    );
+
+
+  if (!entries.length) {
+
+    const empty =
+      document.createElement('div');
+
+    empty.className =
+      'no-memory';
+
+    empty.textContent =
+      'Nothing saved yet. Tell me something about yourself.';
+
+    memoryList.appendChild(
+      empty
+    );
+
+    return;
+
+  }
+
+
+  entries.forEach(
+    ([key, value]) => {
+
+      const item =
+        document.createElement('div');
+
+      item.className =
+        'memory-item';
+
+
+      const text =
+        document.createElement('div');
+
+      text.className =
+        'memory-item-text';
+
+
+      const readableKey =
+        key
+          .replace(/_/g, ' ')
+          .replace(/\b\w/g, char =>
+            char.toUpperCase()
+          );
+
+
+      text.textContent =
+        `${readableKey}: ${value}`;
+
+
+      const deleteButton =
+        document.createElement('button');
+
+      deleteButton.className =
+        'memory-delete';
+
+      deleteButton.textContent =
+        '×';
+
+      deleteButton.type =
+        'button';
+
+
+      deleteButton.onclick =
+        () => {
+
+          delete memory[key];
+
+          saveMemory();
+
+          renderMemory();
+
+        };
+
+
+      item.appendChild(
+        text
+      );
+
+      item.appendChild(
+        deleteButton
+      );
+
+
+      memoryList.appendChild(
+        item
+      );
+
+    }
+  );
+
+}
+
+
+/* =========================================================
+   RESTORE CHAT
 ========================================================= */
 
 function restoreConversation() {
@@ -850,11 +1218,8 @@ function restoreConversation() {
   conversation.forEach(item => {
 
     addMessageToScreen(
-
       item.role,
-
       item.content
-
     );
 
   });
@@ -955,8 +1320,6 @@ function addImageToScreen(
     'image-actions';
 
 
-  /* DOWNLOAD */
-
   const download =
     document.createElement('button');
 
@@ -993,8 +1356,6 @@ function addImageToScreen(
     };
 
 
-  /* REGENERATE */
-
   const regenerate =
     document.createElement('button');
 
@@ -1017,13 +1378,9 @@ function addImageToScreen(
 
       }
 
-
       createImg(
-
         lastImagePrompt,
-
         true
-
       );
 
     };
@@ -1091,9 +1448,11 @@ function showTyping() {
   bubble.innerHTML = `
 
     <div class="typing">
+
       <span></span>
       <span></span>
       <span></span>
+
     </div>
 
   `;
@@ -1102,7 +1461,6 @@ function showTyping() {
   row.appendChild(
     bubble
   );
-
 
   chat.appendChild(
     row
@@ -1148,7 +1506,7 @@ function scrollToBottom() {
 
 
 /* =========================================================
-   FILE TO DATA URL
+   FILE READER
 ========================================================= */
 
 function fileToDataURL(file) {
@@ -1193,7 +1551,7 @@ function fileToDataURL(file) {
 
 
 /* =========================================================
-   SEND NORMAL CHAT
+   SEND MESSAGE
 ========================================================= */
 
 async function sendMessage() {
@@ -1208,11 +1566,6 @@ async function sendMessage() {
 
   }
 
-
-  /*
-    If image mode is active, send the prompt
-    to the image system instead.
-  */
 
   if (imageMode) {
 
@@ -1236,9 +1589,12 @@ async function sendMessage() {
     'none';
 
 
-  /*
-    Display user message immediately.
-  */
+  /* SAVE IMPORTANT FACTS FIRST */
+
+  rememberFromMessage(
+    message
+  );
+
 
   addMessageToScreen(
     'user',
@@ -1246,15 +1602,13 @@ async function sendMessage() {
   );
 
 
-  /*
-    Save user message.
-  */
-
   conversation.push({
 
-    role: 'user',
+    role:
+      'user',
 
-    content: message
+    content:
+      message
 
   });
 
@@ -1271,17 +1625,10 @@ async function sendMessage() {
 
   try {
 
-    /*
-      Send the previous conversation to the server.
-
-      We remove the newest message because the
-      current message is sent separately.
-    */
-
     const history =
       conversation
         .slice(0, -1)
-        .slice(-80);
+        .slice(-100);
 
 
     const response =
@@ -1291,7 +1638,8 @@ async function sendMessage() {
 
         {
 
-          method: 'POST',
+          method:
+            'POST',
 
           headers: {
 
@@ -1305,7 +1653,9 @@ async function sendMessage() {
 
               message,
 
-              history
+              history,
+
+              memory
 
             })
 
@@ -1339,33 +1689,19 @@ async function sendMessage() {
       'Sorry, I could not generate a response.';
 
 
-    /*
-      Display AI response.
-    */
-
     addMessageToScreen(
-
       'assistant',
-
       reply
-
     );
 
 
-    /*
-      Save AI response.
-
-      This means Nastivee remembers BOTH:
-
-      - what you said
-      - what Nastivee said
-    */
-
     conversation.push({
 
-      role: 'assistant',
+      role:
+        'assistant',
 
-      content: reply
+      content:
+        reply
 
     });
 
@@ -1393,11 +1729,6 @@ async function sendMessage() {
     );
 
 
-    /*
-      Remove the failed user message
-      from memory.
-    */
-
     const last =
       conversation[
         conversation.length - 1
@@ -1405,11 +1736,9 @@ async function sendMessage() {
 
 
     if (
-
       last &&
       last.role === 'user' &&
       last.content === message
-
     ) {
 
       conversation.pop();
@@ -1433,7 +1762,7 @@ async function sendMessage() {
 
 
 /* =========================================================
-   CREATE IMAGE
+   IMAGE CREATION / EDITING
 ========================================================= */
 
 async function createImg(
@@ -1448,7 +1777,7 @@ async function createImg(
   }
 
 
-  let prompt =
+  const prompt =
     customPrompt !== null
       ? customPrompt.trim()
       : messageInput.value.trim();
@@ -1479,10 +1808,6 @@ async function createImg(
     'none';
 
 
-  /*
-    Remember the original prompt for regeneration.
-  */
-
   if (!isRegenerate) {
 
     lastImagePrompt =
@@ -1491,26 +1816,16 @@ async function createImg(
   }
 
 
-  /*
-    ORIGINAL PHOTO RULE:
-
-    If regenerating an edited image,
-    always use the original uploaded photo.
-
-    Never use the previous AI-generated result.
-  */
-
-  let photoData = null;
+  let photoData =
+    null;
 
 
   try {
 
     if (
-
       isRegenerate &&
       lastImageWasEdit &&
       lastEditedPhoto
-
     ) {
 
       photoData =
@@ -1530,18 +1845,11 @@ async function createImg(
     }
 
 
-    /*
-      Show user's original image request.
-    */
-
     if (!isRegenerate) {
 
       addMessageToScreen(
-
         'user',
-
         prompt
-
       );
 
     }
@@ -1550,19 +1858,11 @@ async function createImg(
     showTyping();
 
 
-    /*
-      Choose correct backend endpoint.
-    */
-
     const endpoint =
       photoData
         ? '/api/image/edit'
         : '/api/image';
 
-
-    /*
-      Build request.
-    */
 
     const body =
       photoData
@@ -1589,10 +1889,6 @@ async function createImg(
           };
 
 
-    /*
-      Send request.
-    */
-
     const response =
       await fetch(
 
@@ -1600,7 +1896,8 @@ async function createImg(
 
         {
 
-          method: 'POST',
+          method:
+            'POST',
 
           headers: {
 
@@ -1610,9 +1907,7 @@ async function createImg(
           },
 
           body:
-            JSON.stringify(
-              body
-            )
+            JSON.stringify(body)
 
         }
 
@@ -1647,12 +1942,6 @@ async function createImg(
     }
 
 
-    /*
-      Remember original uploaded photo.
-
-      This is important for regeneration.
-    */
-
     if (
       photoData &&
       !isRegenerate
@@ -1672,16 +1961,9 @@ async function createImg(
     }
 
 
-    /*
-      Display image.
-    */
-
     addImageToScreen(
-
       data.image,
-
       prompt
-
     );
 
 
@@ -1732,7 +2014,7 @@ async function createImg(
 
 
 /* =========================================================
-   IMAGE MODE
+   IMAGE BUTTON
 ========================================================= */
 
 imageButton.onclick =
@@ -1743,20 +2025,14 @@ imageButton.onclick =
 
 
     imageButton.classList.toggle(
-
       'active',
-
       imageMode
-
     );
 
 
     imagePanel.classList.toggle(
-
       'show',
-
       imageMode
-
     );
 
 
@@ -1778,7 +2054,7 @@ imageButton.onclick =
 
 
 /* =========================================================
-   UPLOAD PHOTO
+   UPLOAD
 ========================================================= */
 
 uploadButton.onclick =
@@ -1822,11 +2098,6 @@ photoInput.onchange =
     selectedPhoto =
       file;
 
-
-    /*
-      Uploading a photo automatically switches
-      into image editing mode.
-    */
 
     imageMode =
       true;
@@ -1880,18 +2151,14 @@ removePhoto.onclick =
     selectedPhoto =
       null;
 
-
     lastEditedPhoto =
       null;
-
 
     lastImageWasEdit =
       false;
 
-
     photoInput.value =
       '';
-
 
     photoPreview.classList.remove(
       'show'
@@ -1909,6 +2176,45 @@ removePhoto.onclick =
 
 
 /* =========================================================
+   MEMORY BUTTON
+========================================================= */
+
+memoryButton.onclick =
+  () => {
+
+    memoryPanel.classList.toggle(
+      'show'
+    );
+
+    renderMemory();
+
+  };
+
+
+/* =========================================================
+   CLOSE MEMORY WHEN CLICKING OUTSIDE
+========================================================= */
+
+document.addEventListener(
+  'click',
+  event => {
+
+    if (
+      !memoryPanel.contains(event.target) &&
+      !memoryButton.contains(event.target)
+    ) {
+
+      memoryPanel.classList.remove(
+        'show'
+      );
+
+    }
+
+  }
+);
+
+
+/* =========================================================
    NEW CHAT
 ========================================================= */
 
@@ -1918,7 +2224,7 @@ newChat.onclick =
     const confirmed =
       confirm(
 
-        'Start a new chat? This will clear the current conversation memory on this device.'
+        'Start a new chat?\n\nYour saved long-term memories will NOT be deleted.'
 
       );
 
@@ -1930,10 +2236,6 @@ newChat.onclick =
     }
 
 
-    /*
-      Clear conversation memory.
-    */
-
     conversation =
       [];
 
@@ -1942,10 +2244,6 @@ newChat.onclick =
       MEMORY_KEY
     );
 
-
-    /*
-      Reset image memory.
-    */
 
     selectedPhoto =
       null;
@@ -1969,10 +2267,6 @@ newChat.onclick =
     );
 
 
-    /*
-      Clear chat.
-    */
-
     chat.innerHTML =
       '';
 
@@ -1985,10 +2279,6 @@ newChat.onclick =
     welcome.style.display =
       'block';
 
-
-    /*
-      Reset image mode.
-    */
 
     imageMode =
       false;
@@ -2024,22 +2314,12 @@ newChat.onclick =
 ========================================================= */
 
 messageInput.addEventListener(
-
   'keydown',
-
   event => {
 
-    /*
-      Enter = send
-
-      Shift + Enter = new line
-    */
-
     if (
-
       event.key === 'Enter' &&
       !event.shiftKey
-
     ) {
 
       event.preventDefault();
@@ -2049,12 +2329,11 @@ messageInput.addEventListener(
     }
 
   }
-
 );
 
 
 /* =========================================================
-   AUTO RESIZE TEXTAREA
+   AUTO RESIZE
 ========================================================= */
 
 function autoResize() {
@@ -2065,11 +2344,8 @@ function autoResize() {
 
   const newHeight =
     Math.min(
-
       messageInput.scrollHeight,
-
       140
-
     );
 
 
@@ -2080,11 +2356,8 @@ function autoResize() {
 
 
 messageInput.addEventListener(
-
   'input',
-
   autoResize
-
 );
 
 
@@ -2101,12 +2374,16 @@ sendButton.onclick =
 
 
 /* =========================================================
-   START APPLICATION
+   STARTUP
 ========================================================= */
+
+loadMemory();
 
 loadConversation();
 
 restoreConversation();
+
+renderMemory();
 
 autoResize();
 
