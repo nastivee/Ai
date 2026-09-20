@@ -121,6 +121,29 @@ button {
   color: #fff;
 }
 
+.resetScreen {
+  display: none;
+  position: fixed;
+  inset: 0;
+  align-items: center;
+  justify-content: center;
+  background:
+    radial-gradient(circle at 50% 20%, #38205f 0%, #171026 35%, #0d0917 75%);
+  padding: 20px;
+  z-index: 1001;
+}
+
+.resetScreen.show {
+  display: flex;
+}
+
+.resetHint {
+  color: #aaa0bb;
+  font-size: 14px;
+  text-align: center;
+  margin-bottom: 18px;
+}
+
 .authForgot {
   text-align: right;
   margin: -4px 0 4px;
@@ -847,6 +870,89 @@ button {
 
 
 <!-- =====================================================
+     SET A NEW PASSWORD
+===================================================== -->
+
+<div class="resetScreen" id="resetScreen">
+
+  <div class="authCard">
+
+    <div class="logoLarge">
+      Nastivee<span>AI</span>
+    </div>
+
+    <div class="resetHint">
+      Choose a new password for your account.
+    </div>
+
+    <div class="authPasswordWrap">
+
+      <input
+        id="resetPassword"
+        class="authInput"
+        type="password"
+        placeholder="New password"
+        autocomplete="new-password"
+      >
+
+      <button
+        id="resetPasswordToggle"
+        class="passwordToggle"
+        type="button"
+        aria-label="Show password"
+        title="Show password"
+      >
+        Show
+      </button>
+
+    </div>
+
+    <div class="authPasswordWrap">
+
+      <input
+        id="resetPasswordConfirm"
+        class="authInput"
+        type="password"
+        placeholder="Confirm new password"
+        autocomplete="new-password"
+      >
+
+      <button
+        id="resetPasswordConfirmToggle"
+        class="passwordToggle"
+        type="button"
+        aria-label="Show password"
+        title="Show password"
+      >
+        Show
+      </button>
+
+    </div>
+
+    <button
+      id="resetSaveButton"
+      class="authButton"
+    >
+      Save new password
+    </button>
+
+    <div
+      id="resetError"
+      class="authError"
+    ></div>
+
+    <div class="authSwitch">
+      <button id="resetCancelButton" type="button">
+        Back to log in
+      </button>
+    </div>
+
+  </div>
+
+</div>
+
+
+<!-- =====================================================
      APP
 ===================================================== -->
 
@@ -1321,35 +1427,253 @@ sidebarOverlay.addEventListener(
    PASSWORD VIEW / HIDE
 ===================================================== */
 
-const passwordToggle =
-  document.getElementById('passwordToggle');
+function wirePasswordToggle(toggleId, inputId) {
 
-passwordToggle.addEventListener(
+  const toggle =
+    document.getElementById(toggleId);
+
+  const input =
+    document.getElementById(inputId);
+
+  if (!toggle || !input) return;
+
+  toggle.addEventListener(
+    'click',
+    () => {
+
+      const showing =
+        input.type === 'text';
+
+      input.type =
+        showing
+          ? 'password'
+          : 'text';
+
+      toggle.textContent =
+        showing
+          ? 'Show'
+          : 'Hide';
+
+      const label =
+        showing
+          ? 'Show password'
+          : 'Hide password';
+
+      toggle.setAttribute('aria-label', label);
+      toggle.title = label;
+
+      input.focus();
+
+    }
+  );
+
+}
+
+wirePasswordToggle('passwordToggle', 'authPassword');
+wirePasswordToggle('resetPasswordToggle', 'resetPassword');
+wirePasswordToggle('resetPasswordConfirmToggle', 'resetPasswordConfirm');
+
+
+/* =====================================================
+   SET A NEW PASSWORD
+
+   The reset email brings the user back with a recovery
+   session. We hold the app back and ask for the new
+   password first.
+===================================================== */
+
+let recoveryMode = false;
+
+const resetScreen =
+  document.getElementById('resetScreen');
+
+const resetPassword =
+  document.getElementById('resetPassword');
+
+const resetPasswordConfirm =
+  document.getElementById('resetPasswordConfirm');
+
+const resetSaveButton =
+  document.getElementById('resetSaveButton');
+
+const resetError =
+  document.getElementById('resetError');
+
+const resetCancelButton =
+  document.getElementById('resetCancelButton');
+
+
+function isRecoveryLink() {
+
+  const hash =
+    window.location.hash || '';
+
+  const search =
+    window.location.search || '';
+
+  return (
+    hash.includes('type=recovery') ||
+    search.includes('type=recovery')
+  );
+
+}
+
+
+function showResetScreen() {
+
+  recoveryMode = true;
+
+  resetError.textContent = '';
+
+  resetScreen.classList.add('show');
+
+  authScreen.style.display = 'none';
+
+  app.classList.remove('visible');
+
+  resetPassword.focus();
+
+}
+
+
+function hideResetScreen() {
+
+  recoveryMode = false;
+
+  resetScreen.classList.remove('show');
+
+}
+
+
+async function saveNewPassword() {
+
+  const password =
+    resetPassword.value;
+
+  const confirmation =
+    resetPasswordConfirm.value;
+
+  resetError.style.color = '#ff8585';
+
+  if (!password || password.length < 6) {
+
+    resetError.textContent =
+      'Your new password must be at least 6 characters.';
+
+    return;
+  }
+
+  if (password !== confirmation) {
+
+    resetError.textContent =
+      'The two passwords do not match.';
+
+    return;
+  }
+
+  resetSaveButton.disabled = true;
+
+  resetError.textContent = '';
+
+  try {
+
+    const { error } =
+      await supabaseClient.auth.updateUser({
+        password
+      });
+
+    if (error) throw error;
+
+    resetError.style.color = '#9ee6bd';
+
+    resetError.textContent =
+      'Password updated. Opening your account...';
+
+    resetPassword.value = '';
+    resetPasswordConfirm.value = '';
+
+    /*
+      Clear the recovery link out of the address bar
+      so a refresh does not reopen this screen.
+    */
+
+    if (window.history?.replaceState) {
+
+      window.history.replaceState(
+        null,
+        '',
+        window.location.pathname + window.location.search
+      );
+
+    }
+
+    setTimeout(
+      async () => {
+
+        hideResetScreen();
+
+        const { data } =
+          await supabaseClient.auth.getSession();
+
+        if (data?.session?.user) {
+
+          currentUser = data.session.user;
+
+          await initialiseApp();
+
+        } else {
+
+          showAuth();
+
+        }
+
+      },
+      900
+    );
+
+  } catch (error) {
+
+    resetError.style.color = '#ff8585';
+
+    resetError.textContent =
+      error?.message ||
+      'Could not update your password.';
+
+  } finally {
+
+    resetSaveButton.disabled = false;
+
+  }
+
+}
+
+
+resetSaveButton.addEventListener(
   'click',
-  () => {
+  saveNewPassword
+);
 
-    const showing =
-      authPassword.type === 'text';
+resetPasswordConfirm.addEventListener(
+  'keydown',
+  event => {
 
-    authPassword.type =
-      showing
-        ? 'password'
-        : 'text';
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      saveNewPassword();
+    }
 
-    passwordToggle.textContent =
-      showing
-        ? 'Show'
-        : 'Hide';
+  }
+);
 
-    const label =
-      showing
-        ? 'Show password'
-        : 'Hide password';
+resetCancelButton.addEventListener(
+  'click',
+  async () => {
 
-    passwordToggle.setAttribute('aria-label', label);
-    passwordToggle.title = label;
+    hideResetScreen();
 
-    authPassword.focus();
+    await supabaseClient.auth.signOut();
+
+    showAuth();
 
   }
 );
@@ -1392,7 +1716,7 @@ authForgotButton.addEventListener(
         await supabaseClient.auth.resetPasswordForEmail(
           email,
           {
-            redirectTo: window.location.href
+            redirectTo: LIVE_SITE_URL
           }
         );
 
@@ -1613,6 +1937,21 @@ async function handleAuth() {
 supabaseClient.auth.onAuthStateChange(
   async (_event, session) => {
 
+    if (_event === 'PASSWORD_RECOVERY') {
+
+      currentUser =
+        session?.user || null;
+
+      showResetScreen();
+
+      return;
+
+    }
+
+    if (recoveryMode) {
+      return;
+    }
+
     if (session?.user) {
 
       currentUser =
@@ -1638,6 +1977,17 @@ async function checkSession() {
     data
   } =
     await supabaseClient.auth.getSession();
+
+  if (data?.session?.user && isRecoveryLink()) {
+
+    currentUser =
+      data.session.user;
+
+    showResetScreen();
+
+    return;
+
+  }
 
   if (data?.session?.user) {
 
