@@ -3174,12 +3174,30 @@ async function deleteChat(
     }
 
 
+    /*
+      An empty result does not always mean failure: the
+      rows a delete returns are themselves subject to row
+      level security. So when nothing comes back, ask
+      whether the chat is still there before complaining.
+    */
+
     if (!removed || !removed.length) {
 
-      throw new Error(
-        'The database refused to delete this chat. ' +
-        'Its delete policy is missing in Supabase.'
-      );
+      const { data: stillThere } =
+        await supabaseClient
+          .from('chats')
+          .select('id')
+          .eq('id', chatId)
+          .maybeSingle();
+
+      if (stillThere) {
+
+        throw new Error(
+          'The database would not delete this chat. ' +
+          'Check the delete policy on the chats table.'
+        );
+
+      }
 
     }
 
@@ -5716,7 +5734,7 @@ window.addEventListener('online', () => {
    clearing anything by hand.
 ===================================================== */
 
-const APP_VERSION = '2026-09-20-7';
+const APP_VERSION = '2026-09-20-8';
 
 const RELOAD_FLAG = 'nastivee_reloaded_for';
 
