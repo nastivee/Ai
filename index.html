@@ -9165,6 +9165,49 @@ function forgetDataKey() {
 
 
 /*
+  Is there anything to unlock? An account made before
+  encryption existed has no vault, and asking such a user
+  for a password would strand them on a screen that cannot
+  help them.
+
+  Anything that goes wrong here answers no, because the
+  worst case is carrying on unencrypted, and the worst case
+  of answering yes is locking somebody out of their own
+  account.
+*/
+async function vaultExists() {
+
+  try {
+
+    const { data, error } =
+      await supabaseClient
+        .from('profiles')
+        .select('key_wrapped')
+        .eq('id', currentUser.id)
+        .maybeSingle();
+
+    if (error) {
+
+      console.warn('VAULT CHECK FAILED:', error.message);
+
+      return false;
+
+    }
+
+    return Boolean(data?.key_wrapped);
+
+  } catch (error) {
+
+    console.warn('VAULT CHECK EXCEPTION:', error);
+
+    return false;
+
+  }
+
+}
+
+
+/*
   Opens the vault with a password. Makes one on the first
   visit, opens it on every visit after.
 
@@ -9385,6 +9428,15 @@ async function unlockVault() {
 
   /* Same device as last time */
   if (await recallDataKey()) {
+    return true;
+  }
+
+  /*
+    No vault yet, so there is nothing to unlock. They carry
+    on as before and one is made the next time they sign in
+    with their password.
+  */
+  if (!(await vaultExists())) {
     return true;
   }
 
@@ -12601,7 +12653,7 @@ window.addEventListener('online', () => {
    clearing anything by hand.
 ===================================================== */
 
-const APP_VERSION = '2026-09-21-01';
+const APP_VERSION = '2026-09-21-02';
 
 const RELOAD_FLAG = 'nastivee_reloaded_for';
 
