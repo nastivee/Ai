@@ -10199,7 +10199,8 @@ function paintAdmin() {
         ? 'Working'
         : (present.serviceKey
             ? (problems.serviceKey || 'Rejected')
-            : 'Not set on Render')
+            : 'Not set on Render, Supabase Settings, API, ' +
+              'the Secret keys section')
     ],
     [
       'Stripe secret key',

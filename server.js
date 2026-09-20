@@ -8,6 +8,14 @@ import Stripe from 'stripe';
 
 const app = express();
 
+/*
+  Render sits in front of this, so the real scheme and the
+  real client address arrive in headers. Without this the
+  webhook URL comes out as http, which Stripe will not take,
+  and every caller looks like the same IP to the rate limit.
+*/
+app.set('trust proxy', 1);
+
 const PORT = process.env.PORT || 3000;
 
 const openai = new OpenAI({
@@ -48,8 +56,18 @@ const supabase =
 // can read its own balance and nothing more.
 // =====================================================
 
+/*
+  Keys copied out of a dashboard pick up stray whitespace,
+  and a masked field can even put a space in the middle of
+  one. No key of ours contains whitespace, so take it all
+  out rather than failing on an invisible character.
+*/
+function cleanKey(value) {
+  return String(value || '').replace(/\s+/g, '');
+}
+
 const SUPABASE_SERVICE_KEY =
-  (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
+  cleanKey(process.env.SUPABASE_SERVICE_ROLE_KEY);
 
 const supabaseAdmin =
   SUPABASE_SERVICE_KEY
@@ -78,10 +96,10 @@ const LIVE_SITE_URL =
   'https://nastivee.github.io/Ai/';
 
 const STRIPE_SECRET_KEY =
-  (process.env.STRIPE_SECRET_KEY || '').trim();
+  cleanKey(process.env.STRIPE_SECRET_KEY);
 
 const STRIPE_WEBHOOK_SECRET =
-  (process.env.STRIPE_WEBHOOK_SECRET || '').trim();
+  cleanKey(process.env.STRIPE_WEBHOOK_SECRET);
 
 const stripe =
   STRIPE_SECRET_KEY
