@@ -133,8 +133,7 @@ app.post('/api/image', async (req, res) => {
   try {
 
     const {
-      prompt,
-      regenerate = false
+      prompt
     } = req.body;
 
     if (!prompt || !prompt.trim()) {
@@ -146,90 +145,40 @@ app.post('/api/image', async (req, res) => {
     }
 
     console.log(
-      regenerate
-        ? `IMAGE RE-RENDER: ${prompt}`
-        : `IMAGE GENERATION: ${prompt}`
+      `IMAGE GENERATION: ${prompt}`
     );
 
 
-    /*
-      NORMAL IMAGE
-    */
-
-    let finalPrompt = `
+    const finalPrompt = `
 Create an image according to this user request:
 
 ${prompt}
 
-Follow the user's requested subject, appearance,
-environment and style closely.
 
-Make the result visually polished,
+IMPORTANT:
+
+Follow the user's requested subject,
+appearance, environment and style closely.
+
+Do not add unnecessary changes.
+
+Make the image visually polished,
 detailed and coherent.
 
-Make the result realistic unless
-the user specifically requests another style.
+Make it realistic unless the user
+specifically requests another visual style.
+
+If the user describes a specific person,
+animal, object or design, follow those
+details carefully.
+
+Do not invent important characteristics
+that contradict the user's request.
 `;
-
-
-    /*
-      RE-RENDER
-
-      The user wants a new version of the
-      same idea rather than a duplicate.
-    */
-
-    if (regenerate) {
-
-      finalPrompt = `
-Create a fresh new variation of the image
-requested below.
-
-ORIGINAL USER REQUEST:
-
-${prompt}
-
-
-RE-RENDER INSTRUCTIONS:
-
-Keep the user's original request and
-intended subject.
-
-Do not remove or contradict anything
-specifically requested.
-
-Create a genuinely fresh variation
-rather than simply repeating the previous
-composition.
-
-You may subtly vary:
-
-- composition
-- camera angle
-- framing
-- lighting
-- background
-- pose
-- atmosphere
-- visual arrangement
-
-Keep the same overall concept.
-
-Do not turn the image into a completely
-different scene.
-
-Make the result polished, realistic and
-visually coherent unless the user
-requested another style.
-`;
-
-    }
 
 
     console.log(
-      regenerate
-        ? 'SENDING RE-RENDER TO OPENAI...'
-        : 'SENDING IMAGE TO OPENAI...'
+      'SENDING IMAGE TO OPENAI...'
     );
 
 
@@ -263,9 +212,7 @@ requested another style.
 
 
     console.log(
-      regenerate
-        ? 'IMAGE RE-RENDER SUCCESSFUL'
-        : 'IMAGE GENERATED SUCCESSFULLY'
+      'IMAGE GENERATED SUCCESSFULLY'
     );
 
 
@@ -299,7 +246,7 @@ requested another style.
 
 
 // =====================================================
-// IMAGE EDIT / IMAGE RE-RENDER
+// IMAGE EDIT / RE-RENDER
 // =====================================================
 
 app.post('/api/image/edit', async (req, res) => {
@@ -335,13 +282,13 @@ app.post('/api/image/edit', async (req, res) => {
 
     console.log(
       regenerate
-        ? `IMAGE EDIT RE-RENDER: ${prompt}`
+        ? `IMAGE RE-RENDER: ${prompt}`
         : `IMAGE EDIT: ${prompt}`
     );
 
 
     // =================================================
-    // GET ORIGINAL IMAGE DATA
+    // GET IMAGE DATA
     // =================================================
 
     const match =
@@ -364,12 +311,21 @@ app.post('/api/image/edit', async (req, res) => {
 
 
     console.log(
-      `ORIGINAL IMAGE: ${originalBuffer.length} bytes`
+      `SOURCE IMAGE: ${originalBuffer.length} bytes`
     );
 
 
+    if (!originalBuffer.length) {
+
+      throw new Error(
+        'The supplied image could not be decoded.'
+      );
+
+    }
+
+
     // =================================================
-    // NORMALISE ORIGINAL IMAGE
+    // NORMALISE IMAGE
     // =================================================
 
     const normalizedBuffer =
@@ -418,7 +374,7 @@ app.post('/api/image/edit', async (req, res) => {
 
         normalizedBuffer,
 
-        'original-upload.jpg',
+        'source-image.jpg',
 
         {
           type: 'image/jpeg'
@@ -428,154 +384,241 @@ app.post('/api/image/edit', async (req, res) => {
 
 
     // =================================================
-    // NORMAL EDIT PROMPT
+    // NORMAL EDIT
     // =================================================
 
     let finalPrompt = `
-Edit the uploaded image according to this
+Edit the supplied image according to this
 user instruction:
 
 ${prompt}
 
 
-IMPORTANT:
+SOURCE IMAGE:
 
-The uploaded image is the authoritative
-source.
+The supplied image is the authoritative
+visual source.
 
-Preserve the person's identity and
-facial appearance when a person is present.
+Preserve the existing subject and identity.
+
+Only make changes necessary to satisfy
+the user's request.
+
+
+PERSON PRESERVATION:
+
+If a person is present, preserve their
+likeness as closely as possible.
 
 Preserve:
 
 - facial structure
+- face shape
 - facial proportions
 - eyes
+- eyebrows
 - nose
 - mouth
+- lips
+- cheeks
 - jawline
+- ears
 - skin tone
+- hair
 - hairline
 - hairstyle
-- distinctive characteristics
-- body proportions where visible
+- distinctive facial characteristics
+- visible body proportions
 
-Do not replace the person with another person.
+Do not replace the person.
 
-Do not unnecessarily change the composition.
+Do not create a generic person.
 
-Only make the requested changes.
+Do not unnecessarily change their face.
 
-Make the result photorealistic unless
-another style is requested.
+Do not unnecessarily beautify them.
+
+Do not unnecessarily age or de-age them.
+
+Do not change their identity.
+
+
+IMPORTANT:
+
+Make the requested change while keeping
+the rest of the image as consistent as
+reasonably possible.
+
+Do not redesign the entire image.
+
+Do not introduce unrelated changes.
+
+Keep the result realistic unless the user
+specifically requested another style.
 `;
 
 
     // =================================================
-    // RE-RENDER PROMPT
+    // RE-RENDER
     // =================================================
 
     if (regenerate) {
 
       finalPrompt = `
-Create a fresh re-render of the
-uploaded ORIGINAL photograph.
+IMPROVE AND RE-RENDER THE SUPPLIED IMAGE.
 
-ORIGINAL USER REQUEST:
+This is an edit of the supplied image.
+
+DO NOT create a completely unrelated new
+image.
+
+DO NOT restart the design from scratch.
+
+The supplied image is the CURRENT VERSION
+and must remain the primary visual source.
+
+
+USER'S ORIGINAL CREATIVE REQUEST:
 
 ${prompt}
 
 
-VERY IMPORTANT:
+MAIN OBJECTIVE:
 
-The uploaded original photograph is the
-authoritative source for the person's
-identity and appearance.
-
-The previous generated image is NOT the
-identity reference.
-
-Use the uploaded original photograph as
-the primary likeness reference.
+Improve and refine the current image while
+preserving the same subject, same person,
+same concept and same requested changes.
 
 
-PRESERVE THE PERSON'S LIKENESS:
+PERSON IDENTITY — EXTREMELY IMPORTANT:
 
-- Preserve facial structure.
-- Preserve facial proportions.
-- Preserve the eyes and their shape.
-- Preserve nose shape.
-- Preserve mouth and lips.
-- Preserve jawline.
-- Preserve cheek structure.
-- Preserve skin tone.
-- Preserve hairline.
-- Preserve hairstyle unless the user
-  specifically requested a hairstyle change.
-- Preserve distinctive facial features.
-- Preserve visible body proportions.
-- Do not replace the person with another person.
-- Do not make the person look generic.
-- Do not unnecessarily beautify the person.
-- Do not unnecessarily age the person.
-- Do not unnecessarily de-age the person.
-- Do not change their identity.
+If the image contains a person, preserve
+their likeness as closely as possible.
+
+Keep the same person.
+
+Preserve:
+
+- facial structure
+- face shape
+- forehead
+- eyes
+- eye shape
+- eyebrows
+- nose
+- nose proportions
+- cheeks
+- cheek structure
+- mouth
+- lips
+- chin
+- jawline
+- ears
+- skin tone
+- hair
+- hairline
+- hairstyle
+- distinctive facial features
+- visible body proportions
+
+Do NOT replace the person.
+
+Do NOT make them look like a different person.
+
+Do NOT make their face generic.
+
+Do NOT unnecessarily beautify their face.
+
+Do NOT unnecessarily change their age.
+
+Do NOT unnecessarily change their ethnicity.
+
+Do NOT unnecessarily alter their facial
+proportions.
+
+Do NOT change their identity.
 
 
-KEEP THE USER'S REQUEST:
+PRESERVE THE EXISTING IMAGE:
 
-The requested edit must remain the same.
+Keep the existing:
 
-Do not remove the user's requested change.
+- subject
+- person
+- identity
+- requested modification
+- overall concept
+- important composition
+- clothing unless requested otherwise
+- important objects
+- environment unless requested otherwise
+- overall visual intention
 
-Do not contradict the user's request.
 
+IMPROVEMENT:
 
-CREATE A FRESH VARIATION:
+Improve the image where appropriate by
+enhancing:
 
-Create a genuinely new version rather
-than reproducing the previous generated
-image.
-
-Where appropriate, subtly vary:
-
-- camera angle
-- composition
-- framing
+- realism
+- detail
 - lighting
-- background
-- pose
-- atmosphere
-- visual arrangement
+- shadows
+- texture
+- clarity
+- depth
+- natural skin detail
+- photographic quality
+- composition
+- overall polish
 
-These variations must not change the
-person's identity or remove the requested
-edit.
+
+DO NOT OVER-EDIT:
+
+Do not make unnecessary changes.
+
+Do not completely redesign the image.
+
+Do not randomly change the person's face.
+
+Do not remove a change the user requested.
+
+Do not turn the image into a different
+concept.
 
 
-IMPORTANT:
+FRESHNESS:
 
-The uploaded ORIGINAL image is the source
-of truth for the person's likeness.
+The result should be a refined new version
+of the CURRENT IMAGE.
 
-Do NOT use the previous AI-generated
-result as the likeness reference.
+It should be recognisably the same image
+and the same person, but improved.
 
-The final result should look like a fresh
-photograph/render of the same person
-with the requested modification.
+Do not simply reproduce the exact same image.
 
-Make it realistic and high quality unless
-the user requested another style.
+Make useful visual improvements while
+maintaining continuity.
+
+
+PRIORITY ORDER:
+
+1. Preserve the person's identity.
+2. Preserve the requested modification.
+3. Preserve the existing image and concept.
+4. Improve realism and quality.
+5. Make only useful changes.
+6. Avoid unnecessary redesign.
 `;
+
 
     }
 
 
     console.log(
       regenerate
-        ? 'SENDING ORIGINAL IMAGE FOR RE-RENDER...'
-        : 'SENDING IMAGE TO OPENAI...'
+        ? 'SENDING CURRENT IMAGE FOR IMPROVEMENT...'
+        : 'SENDING IMAGE FOR EDIT...'
     );
 
 
