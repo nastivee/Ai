@@ -13,49 +13,65 @@ const openai = new OpenAI({
 });
 
 app.use(cors());
-app.use(express.json({ limit: '25mb' }));
 
-// --------------------------------------------------
+app.use(express.json({
+  limit: '25mb'
+}));
+
+// ==================================================
 // HEALTH CHECK
-// --------------------------------------------------
+// ==================================================
 
 app.get('/api/health', (req, res) => {
   res.json({
     ok: true,
     service: 'Nastivee AI',
-    openaiConfigured: Boolean(process.env.OPENAI_API_KEY)
+    openaiConfigured: Boolean(
+      process.env.OPENAI_API_KEY
+    )
   });
 });
 
-// --------------------------------------------------
+// ==================================================
 // CHAT
-// --------------------------------------------------
+// ==================================================
 
 app.post('/api/chat', async (req, res) => {
   try {
+
     const {
       message,
       history = [],
       memory = {}
     } = req.body || {};
 
-    if (!message || typeof message !== 'string') {
+    if (
+      !message ||
+      typeof message !== 'string'
+    ) {
       return res.status(400).json({
         error: 'No message was provided.'
       });
     }
 
-    console.log('CHAT:', message);
+    console.log(
+      'CHAT:',
+      message
+    );
 
-    const safeHistory = Array.isArray(history)
-      ? history
-          .filter(item =>
-            item &&
-            (item.role === 'user' || item.role === 'assistant') &&
-            typeof item.content === 'string'
-          )
-          .slice(-100)
-      : [];
+    const safeHistory =
+      Array.isArray(history)
+        ? history
+            .filter(item =>
+              item &&
+              (
+                item.role === 'user' ||
+                item.role === 'assistant'
+              ) &&
+              typeof item.content === 'string'
+            )
+            .slice(-100)
+        : [];
 
     const safeMemory =
       memory &&
@@ -64,54 +80,63 @@ app.post('/api/chat', async (req, res) => {
         ? memory
         : {};
 
-    const memoryEntries = Object.entries(safeMemory);
+    const memoryEntries =
+      Object.entries(safeMemory);
 
-    const memoryText = memoryEntries.length
-      ? memoryEntries
-          .map(([key, value]) => `${key}: ${String(value)}`)
-          .join('\n')
-      : 'No long-term memory has been saved yet.';
+    const memoryText =
+      memoryEntries.length
+        ? memoryEntries
+            .map(
+              ([key, value]) =>
+                `${key}: ${String(value)}`
+            )
+            .join('\n')
+        : 'No long-term memory has been saved yet.';
 
     const systemPrompt = `
 You are Nastivee AI.
 
-You are a friendly, natural, confident AI assistant.
+You are friendly, natural, confident and conversational.
 
-IMPORTANT PERSONALITY RULES:
+PERSONALITY:
 
-- Be normal, conversational and helpful by default.
-- Do NOT constantly flirt with the user.
-- Do NOT randomly become sexual, horny, seductive or suggestive.
-- Only become flirty, cheeky or suggestive if the user clearly starts that kind of conversation or explicitly asks you to.
-- If the user changes back to a normal subject, immediately return to a normal conversational tone.
-- Do not force jokes or flirting into unrelated answers.
-- Speak naturally rather than sounding like a corporate assistant.
-- You can be playful when the conversation is genuinely playful.
-- Never claim that the user told you something if you do not actually have it in your available memory/history.
+- Be normal, friendly and helpful by default.
+- Do not constantly flirt.
+- Do not randomly become sexual, horny, seductive or suggestive.
+- Only become flirty or cheeky when the user clearly starts that kind of conversation or explicitly asks for it.
+- If the user returns to a normal subject, immediately return to a normal tone.
+- Do not force flirting into unrelated conversations.
+- Be playful when the conversation naturally calls for it.
+- Do not sound overly corporate or robotic.
+- Do not repeatedly remind the user that you are an AI.
 
 LONG-TERM MEMORY:
 
-The following information has been deliberately saved by the user/browser:
+The following information has been deliberately saved:
 
 ${memoryText}
 
 Use this information naturally when relevant.
 
-If the memory contains something such as:
+IMPORTANT:
+
+If the memory says:
 
 Dog's name: Rune
 
-then you KNOW the dog's name is Rune.
+then the dog's name is Rune.
 
-Do NOT say that the user never told you their dog's name when the memory contains it.
+Never tell the user that they have not told you their dog's name if the memory contains the dog's name.
+
+Do not invent memories.
 
 RECENT CONVERSATION:
 
 Use the supplied conversation history to maintain continuity.
 
-Do not pretend that you remember conversations that are not included in either the memory or the supplied history.
+Do not claim to remember conversations that are not contained in the supplied history or memory.
 
-The user's current message is the latest message in the conversation.
+Always answer the user's latest message naturally.
 `;
 
     const messages = [
@@ -126,24 +151,34 @@ The user's current message is the latest message in the conversation.
       }
     ];
 
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      messages,
-      temperature: 0.8
-    });
+    const completion =
+      await openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages,
+        temperature: 0.8
+      });
 
     const reply =
-      completion.choices?.[0]?.message?.content ||
-      "Sorry, I couldn't generate a response.";
+      completion
+        .choices?.[0]
+        ?.message
+        ?.content ||
+      'Sorry, I could not generate a response.';
 
-    console.log('CHAT SUCCESS');
+    console.log(
+      'CHAT SUCCESS'
+    );
 
     res.json({
       reply
     });
 
   } catch (error) {
-    console.error('CHAT ERROR:', error);
+
+    console.error(
+      'CHAT ERROR:',
+      error
+    );
 
     res.status(500).json({
       error:
@@ -153,18 +188,22 @@ The user's current message is the latest message in the conversation.
   }
 });
 
-// --------------------------------------------------
+// ==================================================
 // IMAGE GENERATION
-// --------------------------------------------------
+// ==================================================
 
 app.post('/api/image', async (req, res) => {
   try {
+
     const {
       prompt,
       regenerate = false
     } = req.body || {};
 
-    if (!prompt || typeof prompt !== 'string') {
+    if (
+      !prompt ||
+      typeof prompt !== 'string'
+    ) {
       return res.status(400).json({
         error: 'No image prompt was provided.'
       });
@@ -172,34 +211,41 @@ app.post('/api/image', async (req, res) => {
 
     console.log(
       'IMAGE GENERATION:',
-      regenerate ? 'Regenerating' : prompt
+      prompt
     );
 
-    const finalPrompt = regenerate
-      ? `
+    const finalPrompt =
+      regenerate
+        ? `
 Create another variation of this image request:
 
 ${prompt}
 
-Make it visually different from the previous result while keeping the same subject, concept and requested details.
+Make the new result visually different while preserving the same main subject and requested details.
 `
-      : prompt;
+        : prompt;
 
-    const result = await openai.images.generate({
-      model: 'gpt-image-2',
-      prompt: finalPrompt,
-      size: '1024x1024',
-      quality: 'medium',
-      n: 1
-    });
+    const result =
+      await openai.images.generate({
+        model: 'gpt-image-2',
+        prompt: finalPrompt,
+        size: '1024x1024',
+        quality: 'medium',
+        n: 1
+      });
 
-    const image = result.data?.[0];
+    const image =
+      result.data?.[0];
 
     if (!image) {
-      throw new Error('OpenAI did not return an image.');
+      throw new Error(
+        'OpenAI did not return an image.'
+      );
     }
 
-    console.log('IMAGE GENERATED SUCCESSFULLY');
+    console.log(
+      'IMAGE GENERATED SUCCESSFULLY'
+    );
 
     res.json({
       image:
@@ -209,7 +255,11 @@ Make it visually different from the previous result while keeping the same subje
     });
 
   } catch (error) {
-    console.error('IMAGE GENERATION ERROR:', error);
+
+    console.error(
+      'IMAGE GENERATION ERROR:',
+      error
+    );
 
     res.status(500).json({
       error:
@@ -219,12 +269,13 @@ Make it visually different from the previous result while keeping the same subje
   }
 });
 
-// --------------------------------------------------
+// ==================================================
 // IMAGE EDITING
-// --------------------------------------------------
+// ==================================================
 
 app.post('/api/image/edit', async (req, res) => {
   try {
+
     const {
       prompt,
       image,
@@ -233,31 +284,38 @@ app.post('/api/image/edit', async (req, res) => {
 
     if (!prompt) {
       return res.status(400).json({
-        error: 'No image edit instruction was provided.'
+        error:
+          'No image edit instruction was provided.'
       });
     }
 
     if (!image) {
       return res.status(400).json({
-        error: 'No image was uploaded.'
+        error:
+          'No image was uploaded.'
       });
     }
 
     console.log(
       'IMAGE EDIT:',
-      regenerate ? 'Regenerating edit' : prompt
+      prompt
     );
 
-    let base64Data = image;
+    let base64Data =
+      image;
 
-    if (base64Data.includes(',')) {
-      base64Data = base64Data.split(',')[1];
+    if (
+      base64Data.includes(',')
+    ) {
+      base64Data =
+        base64Data.split(',')[1];
     }
 
-    const originalBuffer = Buffer.from(
-      base64Data,
-      'base64'
-    );
+    const originalBuffer =
+      Buffer.from(
+        base64Data,
+        'base64'
+      );
 
     console.log(
       'ORIGINAL IMAGE:',
@@ -265,7 +323,6 @@ app.post('/api/image/edit', async (req, res) => {
       'bytes'
     );
 
-    // Normalize the uploaded image into a safe JPEG.
     const normalizedBuffer =
       await sharp(originalBuffer)
         .rotate()
@@ -290,13 +347,14 @@ app.post('/api/image/edit', async (req, res) => {
       'bytes'
     );
 
-    const imageFile = await toFile(
-      normalizedBuffer,
-      'original-upload.jpg',
-      {
-        type: 'image/jpeg'
-      }
-    );
+    const imageFile =
+      await toFile(
+        normalizedBuffer,
+        'original-upload.jpg',
+        {
+          type: 'image/jpeg'
+        }
+      );
 
     const finalPrompt = `
 Edit the uploaded image according to this instruction:
@@ -306,29 +364,35 @@ ${prompt}
 IMPORTANT:
 
 - The uploaded image is the authoritative source.
-- Preserve the original person's identity and facial appearance when a person is present.
+- Preserve the person's identity and facial appearance when a person is present.
 - Preserve the original subject's important characteristics.
 - Do not unnecessarily change the composition.
 - Only make the requested changes.
-- Make the result photorealistic unless the user specifically asks for another style.
+- Make the result photorealistic unless another style is requested.
 
-${regenerate
-  ? 'Create a fresh variation of the requested edit while keeping the same subject and requested modification.'
-  : ''}
+${
+  regenerate
+    ? 'Create a fresh variation of the requested edit while keeping the same subject and requested modification.'
+    : ''
+}
 `;
 
-    console.log('SENDING IMAGE TO OPENAI...');
+    console.log(
+      'SENDING IMAGE TO OPENAI...'
+    );
 
-    const result = await openai.images.edit({
-      model: 'gpt-image-2',
-      image: imageFile,
-      prompt: finalPrompt,
-      size: '1024x1024',
-      quality: 'medium',
-      n: 1
-    });
+    const result =
+      await openai.images.edit({
+        model: 'gpt-image-2',
+        image: imageFile,
+        prompt: finalPrompt,
+        size: '1024x1024',
+        quality: 'medium',
+        n: 1
+      });
 
-    const outputImage = result.data?.[0];
+    const outputImage =
+      result.data?.[0];
 
     if (!outputImage) {
       throw new Error(
@@ -336,7 +400,9 @@ ${regenerate
       );
     }
 
-    console.log('IMAGE EDITED SUCCESSFULLY');
+    console.log(
+      'IMAGE EDITED SUCCESSFULLY'
+    );
 
     res.json({
       image:
@@ -346,7 +412,11 @@ ${regenerate
     });
 
   } catch (error) {
-    console.error('IMAGE EDIT ERROR:', error);
+
+    console.error(
+      'IMAGE EDIT ERROR:',
+      error
+    );
 
     res.status(500).json({
       error:
@@ -356,43 +426,65 @@ ${regenerate
   }
 });
 
-// --------------------------------------------------
+// ==================================================
 // HOME
-// --------------------------------------------------
+// ==================================================
 
 app.get('/', (req, res) => {
+
   res.send(`
-    <!doctype html>
+    <!DOCTYPE html>
+
     <html>
+
       <head>
         <title>Nastivee AI</title>
       </head>
-      <body style="
-        background:#12001f;
-        color:white;
-        font-family:Arial,sans-serif;
-        text-align:center;
-        padding:50px;
-      ">
+
+      <body
+        style="
+          background:#12001f;
+          color:white;
+          font-family:Arial;
+          text-align:center;
+          padding:50px;
+        "
+      >
+
         <h1>Nastivee AI</h1>
-        <p>Server is running.</p>
+
+        <p>
+          Nastivee AI server is running.
+        </p>
+
       </body>
+
     </html>
   `);
+
 });
 
-// --------------------------------------------------
-// START
-// --------------------------------------------------
+// ==================================================
+// START SERVER
+// ==================================================
 
-if (!process.env.OPENAI_API_KEY) {
+if (
+  !process.env.OPENAI_API_KEY
+) {
+
   console.warn(
     'WARNING: OPENAI_API_KEY is not configured.'
   );
+
 }
 
-app.listen(PORT, () => {
-  console.log(
-    `Nastivee AI server running on port ${PORT}`
-  );
-});
+app.listen(
+  PORT,
+  () => {
+
+    console.log(
+      `Nastivee AI server running on port ${PORT}`
+    );
+
+  }
+);
