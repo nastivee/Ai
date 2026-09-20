@@ -149,32 +149,16 @@ app.post('/api/image', async (req, res) => {
     );
 
 
-    const finalPrompt = `
-Create an image according to this user request:
+    /*
+      FREE REIN
 
-${prompt}
+      Text to image is the user's own idea, so their words
+      go to the model as they wrote them. No house style,
+      no extra subject rules, nothing added that they did
+      not ask for.
+    */
 
-
-IMPORTANT:
-
-Follow the user's requested subject,
-appearance, environment and style closely.
-
-Do not add unnecessary changes.
-
-Make the image visually polished,
-detailed and coherent.
-
-Make it realistic unless the user
-specifically requests another visual style.
-
-If the user describes a specific person,
-animal, object or design, follow those
-details carefully.
-
-Do not invent important characteristics
-that contradict the user's request.
-`;
+    const finalPrompt = prompt;
 
 
     console.log(
@@ -256,7 +240,13 @@ app.post('/api/image/edit', async (req, res) => {
     const {
       prompt,
       image,
-      regenerate = false
+      regenerate = false,
+
+      /*
+        true when the source is a photograph the user
+        uploaded, which is when likeness must be locked.
+      */
+      fromUpload = false
     } = req.body;
 
 
@@ -388,8 +378,18 @@ app.post('/api/image/edit', async (req, res) => {
     // =================================================
 
     let finalPrompt = `
-Edit the supplied image according to this
-user instruction:
+${fromUpload
+  ? `THIS IS A PHOTO EDIT, NOT A NEW IMAGE.
+
+The supplied photograph is a real photograph
+of a real person, and they must come out the
+other side as the same person.`
+  : `EDIT THE SUPPLIED IMAGE.
+
+The supplied image is an existing picture.
+Keep its subject and concept.`}
+
+EDIT REQUESTED BY THE USER:
 
 ${prompt}
 
@@ -397,7 +397,10 @@ ${prompt}
 SOURCE IMAGE:
 
 The supplied image is the authoritative
-visual source.
+visual source. Copy the face from it.
+
+Treat the face as fixed. Change only what
+the requested edit needs.
 
 Preserve the existing subject and identity.
 
@@ -442,6 +445,20 @@ Do not unnecessarily age or de-age them.
 
 Do not change their identity.
 
+
+${fromUpload
+  ? `LIKENESS IS THE FIRST PRIORITY:
+
+If the requested edit and the person's
+likeness ever pull against each other,
+the likeness wins.
+
+A result showing a different face is a
+failed result, however good it looks.
+
+Someone who knows this person must
+recognise them instantly.`
+  : ''}
 
 IMPORTANT:
 

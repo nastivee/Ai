@@ -6,6 +6,9 @@
 <meta name="theme-color" content="#171126">
 <title>Nastivee AI</title>
 
+<link rel="icon" href="./IMG_0471.jpeg">
+<link rel="apple-touch-icon" href="./IMG_0471.jpeg">
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
@@ -690,7 +693,8 @@ button {
   width: min(46vmin, 360px);
   height: min(46vmin, 360px);
   transform: translate(-50%, -50%);
-  background: url('./icon.svg') center / contain no-repeat;
+  background: url('./IMG_0471.jpeg') center / contain no-repeat;
+  border-radius: 28px;
   opacity: .05;
   pointer-events: none;
   z-index: 0;
@@ -714,8 +718,9 @@ button {
 }
 
 .emptyIcon {
-  width: 96px;
-  height: 96px;
+  width: 104px;
+  height: 104px;
+  object-fit: cover;
   margin: 0 auto 18px;
   display: block;
   border-radius: 24px;
@@ -1443,7 +1448,7 @@ button {
 
           <img
             class="emptyIcon"
-            src="./icon.svg"
+            src="./IMG_0471.jpeg"
             alt="Nastivee AI"
           >
 
@@ -3309,7 +3314,7 @@ function clearChatUI() {
 
   emptyState.innerHTML = `
     <div class="emptyInner">
-      <img class="emptyIcon" src="./icon.svg" alt="Nastivee AI">
+      <img class="emptyIcon" src="./IMG_0471.jpeg" alt="Nastivee AI">
 
       <div class="emptyText">
         Ask me anything, upload an image,
@@ -3962,7 +3967,8 @@ function addImageMessage(
   imageData,
   prompt = '',
   originalImageData = null,
-  originalPrompt = ''
+  originalPrompt = '',
+  fromUpload = false
 ) {
 
   emptyState?.remove();
@@ -4120,7 +4126,10 @@ function addImageMessage(
       originalPrompt:
         originalPrompt ||
         prompt ||
-        ''
+        '',
+
+      fromUpload:
+        fromUpload === true
 
     }
   );
@@ -4283,7 +4292,8 @@ function addImageMessageTo(
   imageData,
   prompt,
   originalImageData,
-  originalPrompt
+  originalPrompt,
+  fromUpload = false
 ) {
 
   if (!isCurrentChat(chatId)) {
@@ -4294,7 +4304,8 @@ function addImageMessageTo(
     imageData,
     prompt,
     originalImageData,
-    originalPrompt
+    originalPrompt,
+    fromUpload
   );
 
 }
@@ -4479,7 +4490,13 @@ async function editImage(
 
               image,
 
-              regenerate
+              regenerate,
+
+              /*
+                Tells the server this is a real photograph,
+                which is when likeness is locked down hard.
+              */
+              fromUpload
 
             })
 
@@ -4535,7 +4552,8 @@ async function editImage(
       data.image,
       shownPrompt,
       data.image,
-      shownPrompt
+      shownPrompt,
+      fromUpload
     );
 
 
@@ -4684,7 +4702,8 @@ improved, and clearly not identical to the supplied image.
         improvementPrompt,
         requestChatId,
         true,
-        originalPrompt
+        originalPrompt,
+        state.fromUpload === true
       );
 
 
@@ -5131,7 +5150,9 @@ async function sendMessage() {
       image,
       userText,
       requestChatId,
-      false
+      false,
+      null,
+      true
     ).catch(async error => {
 
       console.error(
@@ -5764,7 +5785,7 @@ window.addEventListener('online', () => {
    clearing anything by hand.
 ===================================================== */
 
-const APP_VERSION = '2026-09-20-9';
+const APP_VERSION = '2026-09-20-11';
 
 const RELOAD_FLAG = 'nastivee_reloaded_for';
 

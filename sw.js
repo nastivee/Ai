@@ -25,7 +25,8 @@ const ASSETS = [
   './',
   './index.html',
   './manifest.webmanifest',
-  './icon.svg'
+  './icon.svg',
+  './IMG_0471.jpeg'
 ];
 
 self.addEventListener('install', event => {
