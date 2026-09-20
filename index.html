@@ -1012,12 +1012,23 @@ button {
   color: white;
 }
 
-/* CREATE IMAGE */
+/* =====================================================
+   COMPOSER TOOLS
 
-.createImageButton {
-  width: auto;
+   Wide screens: the two buttons sit beside the text box.
+   Narrow screens: they stack above it, half the width
+   each, with their wording showing.
+===================================================== */
+
+.composerTools {
+  display: flex;
   gap: 8px;
-  padding: 0 15px;
+}
+
+.toolButton {
+  width: auto;
+  gap: 9px;
+  padding: 0 16px;
   background: #251a38;
   border: 1px solid #4a3568;
   color: #e4d9f1;
@@ -1026,29 +1037,46 @@ button {
   white-space: nowrap;
 }
 
-.createImageButton:hover {
+.toolButton:hover {
   background: #2f2145;
 }
 
-.createImageButton.imageModeActive {
+.toolButton.imageModeActive {
   background: linear-gradient(135deg, #7c3aed, #9333ea);
   border-color: transparent;
   color: white;
 }
 
-.createImageIcon {
-  font-size: 15px;
+.toolIcon {
+  font-size: 16px;
+  line-height: 1;
 }
 
 @media (max-width: 760px) {
 
-  .createImageLabel {
-    display: none;
+  .composerBottom {
+    flex-wrap: wrap;
   }
 
-  .createImageButton {
-    width: 42px;
-    padding: 0;
+  /* above the text box */
+  .composerTools {
+    order: -1;
+    width: 100%;
+    margin-bottom: 2px;
+  }
+
+  /* half each */
+  .toolButton {
+    flex: 1 1 0;
+    min-width: 0;
+    height: 46px;
+    padding: 0 10px;
+    font-size: 13.5px;
+  }
+
+  .toolLabel {
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
 }
@@ -1557,26 +1585,30 @@ button {
 
         <div class="composerBottom">
 
-          <button
-            id="imageButton"
-            class="composerButton createImageButton"
-            type="button"
-            title="Create an image from your description"
-            aria-pressed="false"
-          >
-            <span class="createImageIcon">✨</span>
-            <span class="createImageLabel">Create image</span>
-          </button>
+          <div class="composerTools">
 
-          <button
-            id="uploadButton"
-            class="composerButton"
-            type="button"
-            title="Upload a photo to edit"
-            aria-label="Upload a photo to edit"
-          >
-            📎
-          </button>
+            <button
+              id="imageButton"
+              class="composerButton toolButton createImageButton"
+              type="button"
+              title="Create an image from your description"
+              aria-pressed="false"
+            >
+              <span class="toolIcon">✨</span>
+              <span class="toolLabel">Create image</span>
+            </button>
+
+            <button
+              id="uploadButton"
+              class="composerButton toolButton"
+              type="button"
+              title="Upload a photo to edit"
+            >
+              <span class="toolIcon">📎</span>
+              <span class="toolLabel">Edit a photo</span>
+            </button>
+
+          </div>
 
           <textarea
             id="messageInput"
@@ -5986,7 +6018,7 @@ window.addEventListener('online', () => {
    clearing anything by hand.
 ===================================================== */
 
-const APP_VERSION = '2026-09-20-19';
+const APP_VERSION = '2026-09-20-20';
 
 const RELOAD_FLAG = 'nastivee_reloaded_for';
 
