@@ -31,12 +31,12 @@ app.post('/api/chat', async (req, res) => {
   }
 });
 
-// Bulletproof Image Route with Auto-Fallback
+// Image Route
 app.post('/api/image', async (req, res) => {
   const { prompt } = req.body;
   if (!prompt) return res.status(400).json({ error: 'Prompt is required' });
 
-  // 1. First Attempt: OpenAI DALL-E 3
+  // 1. Try DALL-E 3
   try {
     console.log('Attempting DALL-E 3 generation...');
     const response = await openai.images.generate({
@@ -50,31 +50,20 @@ app.post('/api/image', async (req, res) => {
     if (response.data && response.data[0]?.url) {
       return res.json({ imageUrl: response.data[0].url });
     }
-  } catch (dalle3Error) {
-    console.warn('DALL-E 3 failed/unauthorized, attempting DALL-E 2 fallback...', dalle3Error.message);
-    
-    // 2. Second Attempt: OpenAI DALL-E 2 (Works on all active API keys)
-    try {
-      const response2 = await openai.images.generate({
-        model: "dall-e-2",
-        prompt: prompt + ", realistic photograph, highly detailed",
-        n: 1,
-        size: "512x512"
-      });
+  } catch (dalleError) {
+    console.warn('DALL-E 3 unavailable, using fallback:', dalleError.message);
+  }
 
-      if (response2.data && response2.data[0]?.url) {
-        return res.json({ imageUrl: response2.data[0].url });
-      }
-    } catch (dalle2Error) {
-      console.warn('DALL-E 2 failed, using high-reliability backup generator...', dalle2Error.message);
-      
-      // 3. Final Fail-Safe: Fast direct render so your app NEVER fails for the user
-      const cleanPrompt = encodeURIComponent(prompt.replace(/[^a-zA-Z0-9 ]/g, "").trim() + ' realistic photo');
-      const seed = Date.now();
-      const backupUrl = `https://image.pollinations.ai/prompt/${cleanPrompt}?width=512&height=512&nologo=true&seed=${seed}`;
-      
-      return res.json({ imageUrl: backupUrl });
-    }
+  // 2. High-reliability Fallback (Triggers if API key lacks DALL-E access)
+  try {
+    const safePrompt = encodeURIComponent(prompt.replace(/[^a-zA-Z0-9 ]/g, "").trim() + ', realistic photo');
+    const seed = Date.now();
+    const backupUrl = `https://image.pollinations.ai/prompt/${safePrompt}?width=768&height=768&nologo=true&seed=${seed}&model=flux`;
+
+    return res.json({ imageUrl: backupUrl });
+  } catch (fallbackError) {
+    console.error('All image paths failed:', fallbackError);
+    return res.status(500).json({ error: 'Failed to generate image' });
   }
 });
 
