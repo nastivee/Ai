@@ -670,6 +670,61 @@ button {
   white-space: nowrap;
 }
 
+.chatMenuButton {
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  padding: 0 10px;
+  border: 1px solid #2c2340;
+  border-radius: 10px;
+  background: #16101f;
+  color: #b3a7bf;
+  font-size: 17px;
+  line-height: 1;
+}
+
+.chatMenuButton:hover {
+  color: #fff;
+  border-color: #4a3568;
+}
+
+.chatMenu {
+  display: none;
+  position: absolute;
+  top: 58px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 60;
+  min-width: 180px;
+  padding: 6px;
+  border: 1px solid #33264a;
+  border-radius: 14px;
+  background: #17112a;
+  /* room for the shadow so it is never clipped */
+  box-shadow: 0 18px 40px rgba(0,0,0,.5);
+}
+
+.chatMenu.show {
+  display: block;
+}
+
+.chatMenuItem {
+  display: block;
+  width: 100%;
+  padding: 11px 14px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: #ded4ec;
+  text-align: left;
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+.chatMenuItem:hover {
+  background: #241839;
+}
+
 .modeSwitch {
   margin-left: auto;
   display: flex;
@@ -1092,6 +1147,61 @@ button {
   color: white;
   border-bottom-right-radius: 6px;
   box-shadow: 0 8px 24px rgba(124,58,237,.18);
+}
+
+.rememberOffer {
+  max-width: min(520px, 92%);
+  padding: 15px 17px;
+  border: 1px solid #3f2f5c;
+  border-radius: 16px;
+  background: #1a1330;
+}
+
+.rememberOffer.saved {
+  border-color: #2f5a3d;
+  background: #14251a;
+}
+
+.rememberText {
+  color: #d9cfe6;
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+
+.rememberQuote {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-left: 3px solid #7c3aed;
+  border-radius: 0 8px 8px 0;
+  background: rgba(255,255,255,.04);
+  color: #efe7f9;
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+
+.rememberButtons {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.rememberSave,
+.rememberNo {
+  padding: 9px 16px;
+  border: 0;
+  border-radius: 10px;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+.rememberSave {
+  background: linear-gradient(135deg, #7c3aed, #9333ea);
+  color: white;
+}
+
+.rememberNo {
+  background: #2b2238;
+  color: #cfc4da;
 }
 
 .replyTools {
@@ -2010,6 +2120,28 @@ button {
         New chat
       </div>
 
+      <button
+        class="chatMenuButton"
+        id="chatMenuButton"
+        type="button"
+        title="Chat options"
+        aria-label="Chat options"
+      >
+        ⋯
+      </button>
+
+      <div class="chatMenu" id="chatMenu">
+
+        <button type="button" class="chatMenuItem" data-action="rename">
+          Rename chat
+        </button>
+
+        <button type="button" class="chatMenuItem" data-action="export">
+          Export chat
+        </button>
+
+      </div>
+
       <div class="modeSwitch" id="modeSwitch" title="How much thinking to use">
 
         <button
@@ -2450,6 +2582,8 @@ function startJob(chatId, label) {
 
   refreshJobUI();
 
+  watchForSlowStart(label);
+
   return id;
 
 }
@@ -2457,6 +2591,10 @@ function startJob(chatId, label) {
 function endJob(id) {
 
   jobs.delete(id);
+
+  if (!jobs.size) {
+    stopWatchingSlowStart();
+  }
 
   refreshJobUI();
 
@@ -2469,6 +2607,41 @@ function jobsForChat(chatId) {
   );
 
 }
+
+/*
+  The server sleeps when it is not being used, and waking
+  it takes the best part of a minute. Say so, rather than
+  leaving the user watching a silent spinner.
+*/
+
+let wakeTimer = null;
+
+function watchForSlowStart(label) {
+
+  clearTimeout(wakeTimer);
+
+  wakeTimer = setTimeout(() => {
+
+    const running =
+      jobsForChat(currentChatId);
+
+    if (running.length) {
+
+      progressText.textContent =
+        'Waking the server, this can take up to a minute...';
+
+    }
+
+  }, 6000);
+
+}
+
+function stopWatchingSlowStart() {
+
+  clearTimeout(wakeTimer);
+
+}
+
 
 function refreshJobUI() {
 
@@ -2573,6 +2746,12 @@ const uploadThumb =
 
 const uploadName =
   document.getElementById('uploadName');
+
+const chatMenuButton =
+  document.getElementById('chatMenuButton');
+
+const chatMenu =
+  document.getElementById('chatMenu');
 
 const jumpButton =
   document.getElementById('jumpButton');
@@ -6261,6 +6440,319 @@ stopButton.addEventListener('click', () => {
 
 
 /* =====================================================
+   OFFER TO REMEMBER
+
+   When someone says something that sounds worth keeping,
+   suggest adding it to their profile. Nothing is saved
+   without them pressing the button.
+===================================================== */
+
+const rememberPatterns = [
+  /\bremember (?:that )?(.+)/i,
+  /\bmy name is ([^.,!?\n]{2,40})/i,
+  /\bi(?:'m| am) (?:a|an|the) ([^.,!?\n]{3,60})/i,
+  /\bi (?:work|live) (?:at|in|for) ([^.,!?\n]{2,60})/i,
+  /\bi (?:prefer|like|always want) ([^.,!?\n]{3,80})/i,
+  /\bcall me ([^.,!?\n]{2,30})/i
+];
+
+function noteWorthKeeping(text) {
+
+  const clean =
+    String(text || '').trim();
+
+  if (clean.length < 8 || clean.length > 300) {
+    return null;
+  }
+
+  for (const pattern of rememberPatterns) {
+
+    if (pattern.test(clean)) {
+      return clean;
+    }
+
+  }
+
+  return null;
+
+}
+
+
+function offerToRemember(text) {
+
+  const note =
+    noteWorthKeeping(text);
+
+  if (!note) return;
+
+  /* already in the profile, nothing to do */
+  if (
+    (memory || '')
+      .toLowerCase()
+      .includes(note.toLowerCase().slice(0, 40))
+  ) {
+    return;
+  }
+
+  const existing =
+    chat.querySelector('.rememberOffer');
+
+  existing?.remove();
+
+  const row =
+    document.createElement('div');
+
+  row.className = 'messageRow assistant';
+
+  const card =
+    document.createElement('div');
+
+  card.className = 'rememberOffer';
+
+  const label =
+    document.createElement('div');
+
+  label.className = 'rememberText';
+
+  label.textContent =
+    'Add this to your profile so I remember it in every chat?';
+
+  const quote =
+    document.createElement('div');
+
+  quote.className = 'rememberQuote';
+
+  quote.textContent = note;
+
+  const buttons =
+    document.createElement('div');
+
+  buttons.className = 'rememberButtons';
+
+  const save =
+    document.createElement('button');
+
+  save.type = 'button';
+  save.className = 'rememberSave';
+  save.textContent = 'Save to profile';
+
+  save.addEventListener('click', async () => {
+
+    save.disabled = true;
+
+    save.textContent = 'Saving...';
+
+    memory =
+      [memory, note].filter(Boolean).join('\n');
+
+    memoryTextarea.value = memory;
+
+    await saveMemory();
+
+    card.classList.add('saved');
+
+    label.textContent = 'Saved to your profile.';
+
+    quote.remove();
+
+    buttons.remove();
+
+  });
+
+  const dismiss =
+    document.createElement('button');
+
+  dismiss.type = 'button';
+  dismiss.className = 'rememberNo';
+  dismiss.textContent = 'No thanks';
+
+  dismiss.addEventListener('click', () => row.remove());
+
+  buttons.appendChild(dismiss);
+  buttons.appendChild(save);
+
+  card.appendChild(label);
+  card.appendChild(quote);
+  card.appendChild(buttons);
+
+  row.appendChild(card);
+
+  chat.appendChild(row);
+
+  scrollToBottom();
+
+}
+
+
+/* =====================================================
+   CHAT OPTIONS: RENAME AND EXPORT
+===================================================== */
+
+chatMenuButton.addEventListener('click', event => {
+
+  event.stopPropagation();
+
+  chatMenu.classList.toggle('show');
+
+});
+
+document.addEventListener('click', () => {
+  chatMenu.classList.remove('show');
+});
+
+chatMenu.addEventListener('click', async event => {
+
+  const button =
+    event.target.closest('.chatMenuItem');
+
+  if (!button) return;
+
+  chatMenu.classList.remove('show');
+
+  if (button.dataset.action === 'rename') {
+    await renameCurrentChat();
+  }
+
+  if (button.dataset.action === 'export') {
+    await exportCurrentChat();
+  }
+
+});
+
+
+async function renameCurrentChat() {
+
+  if (!currentChatId) {
+
+    addTextMessage(
+      'assistant',
+      'Send a message first, then this chat can be renamed.'
+    );
+
+    return;
+
+  }
+
+  const current =
+    chats.find(
+      item => String(item.id) === String(currentChatId)
+    );
+
+  const name =
+    prompt(
+      'Name this chat',
+      current?.title || ''
+    );
+
+  if (name === null) return;
+
+  const trimmed = name.trim();
+
+  if (!trimmed) return;
+
+  /*
+    A name the user chose should not be replaced later by
+    the automatic one.
+  */
+  titledChats.add(String(currentChatId));
+
+  await updateChatTitle(currentChatId, trimmed);
+
+}
+
+
+async function exportCurrentChat() {
+
+  if (!currentChatId) {
+
+    addTextMessage(
+      'assistant',
+      'There is nothing to export from an empty chat.'
+    );
+
+    return;
+
+  }
+
+  let rows = [];
+
+  if (guestMode) {
+
+    rows = guestMessages(currentChatId);
+
+  } else {
+
+    const { data } =
+      await supabaseClient
+        .from('messages')
+        .select('role,content,image_url,created_at')
+        .eq('chat_id', currentChatId)
+        .order('created_at', { ascending: true });
+
+    rows = data || [];
+
+  }
+
+  const title =
+    chats.find(
+      item => String(item.id) === String(currentChatId)
+    )?.title || 'Nastivee chat';
+
+  const lines = [
+    `# ${title}`,
+    '',
+    `Exported ${new Date().toLocaleString()}`,
+    ''
+  ];
+
+  rows.forEach(row => {
+
+    lines.push(
+      row.role === 'user' ? '## You' : '## Nastivee'
+    );
+
+    if (row.content) {
+      lines.push(row.content);
+    }
+
+    if (row.image_url) {
+      lines.push(
+        row.image_url.startsWith('http')
+          ? `Image: ${row.image_url}`
+          : 'Image: saved in this chat'
+      );
+    }
+
+    lines.push('');
+
+  });
+
+  const blob =
+    new Blob([lines.join('\n')], {
+      type: 'text/markdown'
+    });
+
+  const url = URL.createObjectURL(blob);
+
+  const link = document.createElement('a');
+
+  link.href = url;
+
+  link.download =
+    `${title.replace(/[^\w\s-]/g, '').trim().slice(0, 40) || 'nastivee-chat'}.md`;
+
+  document.body.appendChild(link);
+
+  link.click();
+
+  link.remove();
+
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+
+}
+
+
+/* =====================================================
    TRY AGAIN
 
    Removes this reply and asks the same question once more.
@@ -6661,6 +7153,10 @@ async function sendNormalMessage(
 
 
     nameChatFromContent(requestChatId);
+
+    if (isCurrentChat(requestChatId)) {
+      offerToRemember(text);
+    }
 
 
   } catch (error) {
@@ -7661,7 +8157,7 @@ window.addEventListener('online', () => {
    clearing anything by hand.
 ===================================================== */
 
-const APP_VERSION = '2026-09-20-32';
+const APP_VERSION = '2026-09-20-33';
 
 const RELOAD_FLAG = 'nastivee_reloaded_for';
 
