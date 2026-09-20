@@ -36,7 +36,6 @@
 
 <title>Nastivee AI Bot</title>
 
-
 <style>
 
 *{
@@ -45,25 +44,18 @@
 
 html,
 body{
-
   margin:0;
-
   min-height:100%;
-
   background:#070511;
-
   color:#f8f7ff;
-
   font-family:
     -apple-system,
     BlinkMacSystemFont,
     "Segoe UI",
     sans-serif;
-
 }
 
 body{
-
   background:
     radial-gradient(
       circle at 50% -10%,
@@ -71,23 +63,15 @@ body{
       #100b24 34%,
       #070511 72%
     );
-
 }
 
 .app{
-
   max-width:760px;
-
   margin:auto;
-
   min-height:100vh;
-
   display:flex;
-
   flex-direction:column;
-
   position:relative;
-
 }
 
 
@@ -96,7 +80,6 @@ body{
 ========================= */
 
 .head{
-
   padding:
     calc(15px + env(safe-area-inset-top))
     17px
@@ -113,25 +96,17 @@ body{
     blur(18px);
 
   position:sticky;
-
   top:0;
-
   z-index:10;
 
   display:flex;
-
   align-items:center;
-
   gap:12px;
-
 }
 
 .avatar{
-
   width:48px;
-
   height:48px;
-
   border-radius:16px;
 
   background:
@@ -142,7 +117,6 @@ body{
     );
 
   display:grid;
-
   place-items:center;
 
   box-shadow:
@@ -150,51 +124,33 @@ body{
     rgba(124,58,237,.35);
 
   font-size:27px;
-
 }
 
 .title{
-
   font-size:20px;
-
   font-weight:800;
-
   letter-spacing:-.3px;
-
 }
 
 .sub{
-
   font-size:12px;
-
   color:#b7b0ce;
-
   margin-top:2px;
-
 }
 
 .online{
-
   margin-left:auto;
-
   font-size:11px;
-
   color:#b8ffd9;
 
   display:flex;
-
   align-items:center;
-
   gap:6px;
-
 }
 
 .dot{
-
   width:7px;
-
   height:7px;
-
   border-radius:50%;
 
   background:#34d399;
@@ -202,7 +158,6 @@ body{
   box-shadow:
     0 0 10px
     #34d399;
-
 }
 
 
@@ -211,7 +166,6 @@ body{
 ========================= */
 
 .chat{
-
   flex:1;
 
   padding:
@@ -220,11 +174,9 @@ body{
     20px;
 
   overflow:auto;
-
 }
 
 .msg{
-
   max-width:88%;
 
   padding:
@@ -243,11 +195,9 @@ body{
   box-shadow:
     0 5px 22px
     rgba(0,0,0,.16);
-
 }
 
 .ai{
-
   background:
     linear-gradient(
       145deg,
@@ -258,11 +208,9 @@ body{
   border:
     1px solid
     rgba(139,92,246,.22);
-
 }
 
 .user{
-
   margin-left:auto;
 
   background:
@@ -275,13 +223,10 @@ body{
   border:
     1px solid
     rgba(255,255,255,.12);
-
 }
 
 .msg img{
-
   width:100%;
-
   height:auto;
 
   border-radius:14px;
@@ -289,7 +234,6 @@ body{
   margin-top:10px;
 
   display:block;
-
 }
 
 
@@ -298,9 +242,7 @@ body{
 ========================= */
 
 .generated-image{
-
   width:100%;
-
   max-width:720px;
 
   border-radius:16px;
@@ -312,7 +254,6 @@ body{
   box-shadow:
     0 12px 40px
     rgba(0,0,0,.4);
-
 }
 
 
@@ -321,19 +262,13 @@ body{
 ========================= */
 
 .image-actions{
-
   display:flex;
-
   flex-wrap:wrap;
-
   gap:8px;
-
   margin-top:10px;
-
 }
 
 .image-action{
-
   min-height:38px!important;
 
   padding:
@@ -350,7 +285,6 @@ body{
     rgba(139,92,246,.25)!important;
 
   box-shadow:none!important;
-
 }
 
 
@@ -359,7 +293,6 @@ body{
 ========================= */
 
 .bottom{
-
   padding:
     10px
     13px
@@ -374,7 +307,6 @@ body{
 
   backdrop-filter:
     blur(18px);
-
 }
 
 
@@ -383,7 +315,6 @@ body{
 ========================= */
 
 .image-panel{
-
   display:none;
 
   margin-bottom:10px;
@@ -398,37 +329,25 @@ body{
   border:
     1px solid
     rgba(139,92,246,.3);
-
 }
 
 .image-panel.active{
-
   display:block;
-
 }
 
 .image-panel-top{
-
   display:flex;
-
   align-items:center;
-
   justify-content:space-between;
-
   margin-bottom:10px;
-
 }
 
 .image-title{
-
   font-weight:800;
-
   font-size:14px;
-
 }
 
 .close-image{
-
   min-height:30px!important;
 
   padding:
@@ -441,11 +360,9 @@ body{
     rgba(255,255,255,.08)!important;
 
   box-shadow:none!important;
-
 }
 
 .image-hint{
-
   color:#aaa2c4;
 
   font-size:12px;
@@ -453,21 +370,15 @@ body{
   line-height:1.4;
 
   margin-bottom:10px;
-
 }
 
 .upload-row{
-
   display:flex;
-
   gap:8px;
-
   align-items:center;
-
 }
 
 .upload-button{
-
   min-height:40px!important;
 
   background:
@@ -480,11 +391,9 @@ body{
   box-shadow:none!important;
 
   font-size:13px!important;
-
 }
 
 #fileName{
-
   color:#aaa2c4;
 
   font-size:11px;
@@ -494,27 +403,21 @@ body{
   text-overflow:ellipsis;
 
   white-space:nowrap;
-
 }
 
 .preview{
-
   display:none;
 
   margin-top:10px;
 
   position:relative;
-
 }
 
 .preview.active{
-
   display:block;
-
 }
 
 .preview img{
-
   width:100%;
 
   max-height:220px;
@@ -522,15 +425,12 @@ body{
   object-fit:cover;
 
   border-radius:13px;
-
 }
 
 .remove-photo{
-
   position:absolute;
 
   right:8px;
-
   top:8px;
 
   min-height:32px!important;
@@ -545,7 +445,6 @@ body{
     rgba(0,0,0,.7)!important;
 
   box-shadow:none!important;
-
 }
 
 
@@ -554,17 +453,12 @@ body{
 ========================= */
 
 .inputrow{
-
   display:flex;
-
   gap:8px;
-
   align-items:flex-end;
-
 }
 
 textarea{
-
   flex:1;
 
   min-height:50px;
@@ -598,21 +492,17 @@ textarea{
     inset
     0 1px 0
     rgba(255,255,255,.03);
-
 }
 
 textarea:focus{
-
   border-color:#8b5cf6;
 
   box-shadow:
     0 0 0 3px
     rgba(139,92,246,.12);
-
 }
 
 button{
-
   min-height:48px;
 
   border:0;
@@ -641,15 +531,11 @@ button{
     rgba(79,70,229,.28);
 
   cursor:pointer;
-
 }
 
 button:disabled{
-
   opacity:.55;
-
   cursor:not-allowed;
-
 }
 
 
@@ -658,7 +544,6 @@ button:disabled{
 ========================= */
 
 .actions{
-
   display:flex;
 
   gap:8px;
@@ -666,11 +551,9 @@ button:disabled{
   margin-top:9px;
 
   flex-wrap:wrap;
-
 }
 
 .actions button{
-
   background:
     rgba(37,28,65,.9);
 
@@ -683,11 +566,9 @@ button:disabled{
   font-size:13px;
 
   min-height:40px;
-
 }
 
 .actions #imgBtn{
-
   background:
     linear-gradient(
       135deg,
@@ -696,11 +577,9 @@ button:disabled{
     );
 
   border:none;
-
 }
 
 .status{
-
   font-size:11px;
 
   color:#9f97b9;
@@ -708,7 +587,6 @@ button:disabled{
   margin-top:7px;
 
   text-align:center;
-
 }
 
 
@@ -717,19 +595,13 @@ button:disabled{
 ========================= */
 
 .loading{
-
   display:flex;
-
   align-items:center;
-
   gap:10px;
-
 }
 
 .spinner{
-
   width:19px;
-
   height:19px;
 
   border:
@@ -742,15 +614,12 @@ button:disabled{
 
   animation:
     spin .8s linear infinite;
-
 }
 
 @keyframes spin{
-
   to{
     transform:rotate(360deg);
   }
-
 }
 
 
@@ -759,14 +628,15 @@ button:disabled{
 ========================= */
 
 .image-loading{
-
   position:relative;
 
   overflow:hidden;
 
   border-radius:16px;
 
-  padding:25px 18px;
+  padding:
+    25px
+    18px;
 
   min-height:180px;
 
@@ -790,24 +660,17 @@ button:disabled{
   border:
     1px solid
     rgba(139,92,246,.25);
-
 }
 
-
-/* animated shine */
-
 .image-loading::before{
-
   content:"";
 
   position:absolute;
 
   top:0;
-
   left:-100%;
 
   width:100%;
-
   height:100%;
 
   background:
@@ -820,11 +683,9 @@ button:disabled{
 
   animation:
     shimmer 2s infinite;
-
 }
 
 @keyframes shimmer{
-
   0%{
     left:-100%;
   }
@@ -832,24 +693,19 @@ button:disabled{
   100%{
     left:100%;
   }
-
 }
 
 .big-spinner{
-
   width:42px;
-
   height:42px;
 
   border:
     4px solid
     rgba(255,255,255,.12);
 
-  border-top-color:
-    #a78bfa;
+  border-top-color:#a78bfa;
 
-  border-right-color:
-    #8b5cf6;
+  border-right-color:#8b5cf6;
 
   border-radius:50%;
 
@@ -857,38 +713,30 @@ button:disabled{
     spin .9s linear infinite;
 
   margin-bottom:15px;
-
 }
 
 .image-loading-title{
-
   font-size:16px;
 
   font-weight:800;
 
   margin-bottom:6px;
-
 }
 
 .image-loading-text{
-
   font-size:12px;
 
   color:#aaa2c4;
-
 }
 
 .loading-dots::after{
-
   content:"";
 
   animation:
     dots 1.5s steps(4,end) infinite;
-
 }
 
 @keyframes dots{
-
   0%{
     content:"";
   }
@@ -905,7 +753,6 @@ button:disabled{
   100%{
     content:"...";
   }
-
 }
 
 
@@ -914,7 +761,6 @@ button:disabled{
 ========================= */
 
 .image-error{
-
   padding:16px;
 
   border-radius:14px;
@@ -925,7 +771,6 @@ button:disabled{
   border:
     1px solid
     rgba(239,68,68,.2);
-
 }
 
 
@@ -936,19 +781,15 @@ button:disabled{
 @media(max-width:380px){
 
   .actions button{
-
     flex:1;
 
     padding:
       8px
       6px;
-
   }
 
   .online{
-
     display:none;
-
   }
 
 }
@@ -1159,7 +1000,6 @@ button:disabled{
 
 <script>
 
-
 /* =========================
    CONFIG
 ========================= */
@@ -1173,79 +1013,49 @@ const BACKEND =
 ========================= */
 
 const chat =
-  document.getElementById(
-    'chat'
-  );
+  document.getElementById('chat');
 
 const input =
-  document.getElementById(
-    'input'
-  );
+  document.getElementById('input');
 
 const send =
-  document.getElementById(
-    'send'
-  );
+  document.getElementById('send');
 
 const imgBtn =
-  document.getElementById(
-    'imgBtn'
-  );
+  document.getElementById('imgBtn');
 
 const improve =
-  document.getElementById(
-    'improve'
-  );
+  document.getElementById('improve');
 
 const clear =
-  document.getElementById(
-    'clear'
-  );
+  document.getElementById('clear');
 
 const status =
-  document.getElementById(
-    'status'
-  );
+  document.getElementById('status');
 
 const imagePanel =
-  document.getElementById(
-    'imagePanel'
-  );
+  document.getElementById('imagePanel');
 
 const closeImage =
-  document.getElementById(
-    'closeImage'
-  );
+  document.getElementById('closeImage');
 
 const uploadBtn =
-  document.getElementById(
-    'uploadBtn'
-  );
+  document.getElementById('uploadBtn');
 
 const photoInput =
-  document.getElementById(
-    'photoInput'
-  );
+  document.getElementById('photoInput');
 
 const preview =
-  document.getElementById(
-    'preview'
-  );
+  document.getElementById('preview');
 
 const previewImage =
-  document.getElementById(
-    'previewImage'
-  );
+  document.getElementById('previewImage');
 
 const removePhoto =
-  document.getElementById(
-    'removePhoto'
-  );
+  document.getElementById('removePhoto');
 
 const fileName =
-  document.getElementById(
-    'fileName'
-  );
+  document.getElementById('fileName');
 
 
 /* =========================
@@ -1253,23 +1063,23 @@ const fileName =
 ========================= */
 
 let lastQ = '';
-
 let lastA = '';
 
-let imageMode =
-  false;
+let imageMode = false;
 
-let selectedPhoto =
-  null;
+let selectedPhoto = null;
 
-let lastImagePrompt =
-  '';
+let lastImagePrompt = '';
 
-let lastImageWasEdit =
-  false;
+let lastImageWasEdit = false;
 
-let imageBusy =
-  false;
+/*
+ * Keeps the original uploaded photo available
+ * for Regenerate after an edit.
+ */
+let lastEditedPhoto = null;
+
+let imageBusy = false;
 
 
 /* =========================
@@ -1283,9 +1093,7 @@ function add(
 ){
 
   const d =
-    document.createElement(
-      'div'
-    );
+    document.createElement('div');
 
   d.className =
     'msg ' + kind;
@@ -1294,9 +1102,7 @@ function add(
   if(text){
 
     const t =
-      document.createElement(
-        'div'
-      );
+      document.createElement('div');
 
     t.textContent =
       text;
@@ -1309,9 +1115,7 @@ function add(
   if(imageUrl){
 
     const img =
-      document.createElement(
-        'img'
-      );
+      document.createElement('img');
 
     img.className =
       'generated-image';
@@ -1331,26 +1135,21 @@ function add(
 
   scrollChat();
 
-
   return d;
-
 }
 
 
 /* =========================
-   LOADING CARD
+   IMAGE LOADING
 ========================= */
 
 function createImageLoading(){
 
   const d =
-    document.createElement(
-      'div'
-    );
+    document.createElement('div');
 
   d.className =
     'msg ai';
-
 
   d.innerHTML = `
 
@@ -1370,20 +1169,13 @@ function createImageLoading(){
 
   `;
 
-
   chat.appendChild(d);
 
   scrollChat();
 
-
   return d;
-
 }
 
-
-/* =========================
-   UPDATE LOADING
-========================= */
 
 function updateImageLoading(
   element,
@@ -1427,8 +1219,7 @@ function updateImageLoading(
 
 function openImageMode(){
 
-  imageMode =
-    true;
+  imageMode = true;
 
   imagePanel.classList.add(
     'active'
@@ -1437,9 +1228,7 @@ function openImageMode(){
 
   input.placeholder =
     selectedPhoto
-
       ? 'Describe how you want to edit the photo...'
-
       : 'Describe the image you want to create...';
 
 
@@ -1448,7 +1237,6 @@ function openImageMode(){
 
 
   input.focus();
-
 }
 
 
@@ -1458,29 +1246,27 @@ function openImageMode(){
 
 function closeImageMode(){
 
-  imageMode =
-    false;
+  imageMode = false;
 
   imagePanel.classList.remove(
     'active'
   );
 
 
+  clearPhoto();
+
+
   input.placeholder =
     'Talk to Nastivee or describe an image...';
 
 
-  clearPhoto();
-
-
   status.textContent =
     'Nastivee is online';
-
 }
 
 
 /* =========================
-   UPLOAD
+   UPLOAD PHOTO
 ========================= */
 
 uploadBtn.onclick =
@@ -1506,9 +1292,7 @@ photoInput.addEventListener(
     }
 
 
-    if(!file.type.startsWith(
-      'image/'
-    )){
+    if(!file.type.startsWith('image/')){
 
       alert(
         'Please choose an image.'
@@ -1544,9 +1328,7 @@ photoInput.addEventListener(
       };
 
 
-    reader.readAsDataURL(
-      file
-    );
+    reader.readAsDataURL(file);
 
 
     input.placeholder =
@@ -1566,26 +1348,18 @@ photoInput.addEventListener(
 
 function clearPhoto(){
 
-  selectedPhoto =
-    null;
+  selectedPhoto = null;
 
+  photoInput.value = '';
 
-  photoInput.value =
-    '';
-
-
-  previewImage.src =
-    '';
-
+  previewImage.src = '';
 
   preview.classList.remove(
     'active'
   );
 
-
   fileName.textContent =
     'No photo selected';
-
 }
 
 
@@ -1597,9 +1371,7 @@ removePhoto.onclick =
    FILE TO DATA URL
 ========================= */
 
-function fileToDataURL(
-  file
-){
+function fileToDataURL(file){
 
   return new Promise(
     (
@@ -1625,9 +1397,7 @@ function fileToDataURL(
         reject;
 
 
-      reader.readAsDataURL(
-        file
-      );
+      reader.readAsDataURL(file);
 
     }
   );
@@ -1640,7 +1410,8 @@ function fileToDataURL(
 ========================= */
 
 async function createImg(
-  customPrompt = null
+  customPrompt = null,
+  isRegenerate = false
 ){
 
   if(imageBusy){
@@ -1652,9 +1423,7 @@ async function createImg(
 
   const prompt =
     customPrompt !== null
-
       ? customPrompt.trim()
-
       : input.value.trim();
 
 
@@ -1670,8 +1439,7 @@ async function createImg(
   }
 
 
-  imageBusy =
-    true;
+  imageBusy = true;
 
 
   lastQ =
@@ -1682,21 +1450,24 @@ async function createImg(
     prompt;
 
 
-  lastImageWasEdit =
-    !!selectedPhoto;
+  /*
+   * Determine whether this is an edit.
+   *
+   * For regeneration we use the saved photo
+   * from the previous edit.
+   */
 
-
-  let photoData =
-    null;
+  let photoData = null;
 
 
   try{
 
-    /*
-     * READ PHOTO FIRST
-     */
+    if(isRegenerate && lastImageWasEdit){
 
-    if(selectedPhoto){
+      photoData =
+        lastEditedPhoto;
+
+    }else if(selectedPhoto){
 
       photoData =
         await fileToDataURL(
@@ -1707,45 +1478,99 @@ async function createImg(
 
 
     /*
-     * ADD USER MESSAGE
+     * Save the photo for future regenerations.
      */
 
-    add(
+    if(photoData && !isRegenerate){
 
-      photoData
+      lastEditedPhoto =
+        photoData;
 
-        ? '📷 Edit photo: "' +
-          prompt +
-          '"'
-
-        : '🎨 Create image: "' +
-          prompt +
-          '"',
-
-      'user'
-
-    );
-
-
-    input.value =
-      '';
-
-    input.style.height =
-      'auto';
+    }
 
 
     /*
-     * CREATE IMMEDIATE LOADING CARD
+     * Remember whether this image
+     * is an edit.
+     */
+
+    if(!isRegenerate){
+
+      lastImageWasEdit =
+        !!photoData;
+
+    }
+
+
+    /*
+     * USER MESSAGE
+     */
+
+    if(!isRegenerate){
+
+      add(
+
+        photoData
+          ? '📷 Edit photo: "' + prompt + '"'
+          : '🎨 Create image: "' + prompt + '"',
+
+        'user'
+
+      );
+
+      input.value = '';
+
+      input.style.height =
+        'auto';
+
+    }
+
+
+    /*
+     * LOADING
      */
 
     const loading =
       createImageLoading();
 
 
+    if(isRegenerate){
+
+      updateImageLoading(
+
+        loading,
+
+        'Creating a new version',
+
+        'Changing the composition, perspective and visual details.'
+
+      );
+
+    }else{
+
+      updateImageLoading(
+
+        loading,
+
+        photoData
+          ? 'Editing your photo'
+          : 'Creating your image',
+
+        photoData
+          ? 'Applying your changes while keeping the subject recognisable.'
+          : 'Nastivee is working on the details.'
+
+      );
+
+    }
+
+
     status.textContent =
-      photoData
-        ? 'Editing your photo…'
-        : 'Creating your image…';
+      isRegenerate
+        ? 'Creating a different version…'
+        : photoData
+          ? 'Editing your photo…'
+          : 'Creating your image…';
 
 
     send.disabled =
@@ -1756,7 +1581,7 @@ async function createImg(
 
 
     /*
-     * UPDATE AFTER A MOMENT
+     * PROGRESS MESSAGE
      */
 
     const progressTimer =
@@ -1767,11 +1592,13 @@ async function createImg(
 
             loading,
 
-            photoData
-              ? 'Editing your photo'
-              : 'Rendering your image',
+            isRegenerate
+              ? 'Adding a fresh variation'
+              : photoData
+                ? 'Finishing your edit'
+                : 'Rendering your image',
 
-            'Adding detail and finishing the image.'
+            'This can take a little while.'
 
           );
 
@@ -1787,14 +1614,16 @@ async function createImg(
 
     const endpoint =
       photoData
-
         ? '/api/image/edit'
-
         : '/api/image';
 
 
     /*
-     * BODY
+     * REQUEST BODY
+     *
+     * IMPORTANT:
+     * regenerate:true is sent only when
+     * Regenerate was actually pressed.
      */
 
     const body =
@@ -1806,20 +1635,32 @@ async function createImg(
               prompt,
 
             image:
-              photoData
+              photoData,
+
+            regenerate:
+              isRegenerate
 
           }
 
         : {
 
             prompt:
-              prompt
+              prompt,
+
+            regenerate:
+              isRegenerate
 
           };
 
 
+    console.log(
+      'IMAGE REQUEST:',
+      body
+    );
+
+
     /*
-     * REQUEST
+     * SEND REQUEST
      */
 
     const r =
@@ -1841,9 +1682,7 @@ async function createImg(
           },
 
           body:
-            JSON.stringify(
-              body
-            )
+            JSON.stringify(body)
 
         }
 
@@ -1867,9 +1706,7 @@ async function createImg(
       throw new Error(
 
         data.error ||
-
-        ('HTTP ' +
-        r.status)
+        ('HTTP ' + r.status)
 
       );
 
@@ -1877,7 +1714,7 @@ async function createImg(
 
 
     /*
-     * GET IMAGE
+     * IMAGE RESULT
      */
 
     const imgData =
@@ -1903,17 +1740,17 @@ async function createImg(
 
 
     /*
-     * ADD RESULT
+     * ADD IMAGE
      */
 
     const result =
       add(
 
-        photoData
-
-          ? 'Here is your edited image, boss:'
-
-          : 'Here is your image, boss:',
+        isRegenerate
+          ? 'Here is your new version, boss:'
+          : photoData
+            ? 'Here is your edited image, boss:'
+            : 'Here is your image, boss:',
 
         'ai',
 
@@ -1923,13 +1760,11 @@ async function createImg(
 
 
     /*
-     * ACTIONS
+     * ACTION BUTTONS
      */
 
     const actions =
-      document.createElement(
-        'div'
-      );
+      document.createElement('div');
 
     actions.className =
       'image-actions';
@@ -1940,9 +1775,7 @@ async function createImg(
      */
 
     const regenerate =
-      document.createElement(
-        'button'
-      );
+      document.createElement('button');
 
     regenerate.type =
       'button';
@@ -1957,8 +1790,16 @@ async function createImg(
     regenerate.onclick =
       () => {
 
+        if(imageBusy){
+
+          return;
+
+        }
+
+
         createImg(
-          lastImagePrompt
+          lastImagePrompt,
+          true
         );
 
       };
@@ -1969,9 +1810,7 @@ async function createImg(
      */
 
     const download =
-      document.createElement(
-        'button'
-      );
+      document.createElement('button');
 
     download.type =
       'button';
@@ -1994,13 +1833,11 @@ async function createImg(
 
 
     /*
-     * EDIT AGAIN
+     * EDIT ANOTHER PHOTO
      */
 
     const editAgain =
-      document.createElement(
-        'button'
-      );
+      document.createElement('button');
 
     editAgain.type =
       'button';
@@ -2043,10 +1880,18 @@ async function createImg(
 
 
     /*
-     * RESET PHOTO
+     * Only clear the currently selected
+     * upload after a normal generation.
+     *
+     * The saved copy remains available
+     * for Regenerate.
      */
 
-    clearPhoto();
+    if(!isRegenerate){
+
+      clearPhoto();
+
+    }
 
 
   }catch(e){
@@ -2058,7 +1903,7 @@ async function createImg(
 
 
     /*
-     * REMOVE LOADING IF IT EXISTS
+     * Remove loading cards.
      */
 
     const loadingCards =
@@ -2067,9 +1912,7 @@ async function createImg(
       );
 
 
-    if(
-      loadingCards.length
-    ){
+    if(loadingCards.length){
 
       const last =
         loadingCards[
@@ -2077,9 +1920,8 @@ async function createImg(
         ];
 
       const parent =
-        last.closest(
-          '.msg'
-        );
+        last.closest('.msg');
+
 
       if(parent){
 
@@ -2103,18 +1945,14 @@ async function createImg(
     status.textContent =
       'Image generation error';
 
+
   }finally{
 
-    imageBusy =
-      false;
+    imageBusy = false;
 
+    send.disabled = false;
 
-    send.disabled =
-      false;
-
-    imgBtn.disabled =
-      false;
-
+    imgBtn.disabled = false;
 
     input.focus();
 
@@ -2134,25 +1972,18 @@ async function downloadImage(
   try{
 
     const response =
-      await fetch(
-        imageUrl
-      );
-
+      await fetch(imageUrl);
 
     const blob =
       await response.blob();
 
 
     const url =
-      URL.createObjectURL(
-        blob
-      );
+      URL.createObjectURL(blob);
 
 
     const a =
-      document.createElement(
-        'a'
-      );
+      document.createElement('a');
 
 
     a.href =
@@ -2162,32 +1993,21 @@ async function downloadImage(
       'nastivee-ai-image.png';
 
 
-    document.body.appendChild(
-      a
-    );
-
+    document.body.appendChild(a);
 
     a.click();
-
 
     a.remove();
 
 
-    URL.revokeObjectURL(
-      url
-    );
+    URL.revokeObjectURL(url);
 
 
   }catch(e){
 
-    /*
-     * FALLBACK
-     */
-
     const a =
-      document.createElement(
-        'a'
-      );
+      document.createElement('a');
+
 
     a.href =
       imageUrl;
@@ -2199,13 +2019,9 @@ async function downloadImage(
       'noopener';
 
 
-    document.body.appendChild(
-      a
-    );
-
+    document.body.appendChild(a);
 
     a.click();
-
 
     a.remove();
 
@@ -2321,8 +2137,7 @@ async function sendMsg(){
       throw new Error(
 
         data.error ||
-        ('HTTP ' +
-        r.status)
+        ('HTTP ' + r.status)
 
       );
 
@@ -2335,6 +2150,7 @@ async function sendMsg(){
 
     lastA =
       data.answer ||
+      data.reply ||
       'No response received.';
 
 
@@ -2437,8 +2253,7 @@ input.addEventListener(
       Math.min(
         input.scrollHeight,
         140
-      ) +
-      'px';
+      ) + 'px';
 
   }
 );
@@ -2494,6 +2309,12 @@ clear.onclick =
 
     lastImagePrompt =
       '';
+
+    lastImageWasEdit =
+      false;
+
+    lastEditedPhoto =
+      null;
 
 
     closeImageMode();
@@ -2551,9 +2372,7 @@ if(
 ){
 
   navigator.serviceWorker
-    .register(
-      'sw.js'
-    )
+    .register('sw.js')
     .catch(
       () => {}
     );
