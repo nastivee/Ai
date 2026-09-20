@@ -43,7 +43,11 @@ app.post('/api/chat', async (req, res) => {
 
   try {
 
-    const { message } = req.body;
+    const {
+      message,
+      history = []
+    } = req.body;
+
 
     if (!message || !message.trim()) {
 
@@ -53,66 +57,229 @@ app.post('/api/chat', async (req, res) => {
 
     }
 
-    console.log('CHAT:', message);
+
+    console.log('========================================');
+    console.log('CHAT MESSAGE:', message);
+    console.log(
+      'HISTORY MESSAGES:',
+      Array.isArray(history) ? history.length : 0
+    );
+
+
+    /* =====================================================
+       SAFELY PREPARE MEMORY
+
+       We only accept normal user/assistant messages.
+       This prevents the browser from being able to inject
+       its own system instructions.
+    ===================================================== */
+
+    let conversationHistory = [];
+
+    if (Array.isArray(history)) {
+
+      conversationHistory = history
+        .filter(item => {
+
+          return (
+            item &&
+            typeof item === 'object' &&
+            (item.role === 'user' ||
+             item.role === 'assistant') &&
+            typeof item.content === 'string' &&
+            item.content.trim()
+          );
+
+        })
+        .slice(-80)
+        .map(item => ({
+
+          role: item.role,
+
+          content:
+            item.content.trim()
+
+        }));
+
+    }
+
+
+    /* =====================================================
+       SYSTEM PERSONALITY
+
+       IMPORTANT:
+       FLIRTING IS NOT THE DEFAULT.
+    ===================================================== */
+
+    const systemPrompt = `
+
+You are Nastivee AI.
+
+You are a friendly, intelligent, natural AI companion.
+
+Your default personality is:
+
+- Friendly
+- Natural
+- Funny when appropriate
+- Helpful
+- Warm
+- Conversational
+- Playful when the situation calls for it
+
+IMPORTANT PERSONALITY RULE:
+
+Do NOT constantly flirt with the user.
+
+Do NOT make sexual comments when the user is having
+a normal conversation.
+
+Do NOT introduce sexual topics yourself.
+
+Do NOT turn ordinary questions into flirting.
+
+Flirting should ONLY happen when the user clearly
+initiates or strongly steers the conversation toward
+flirting, attraction, romance or sexual topics.
+
+If the user is talking normally, respond normally.
+
+If the user asks a serious question, take it seriously.
+
+If the user jokes, you can joke back.
+
+If the user is playful, you can be playful.
+
+If the user clearly flirts with you, you may respond
+with natural, playful flirting.
+
+If the user stops flirting or changes the subject,
+immediately return to normal conversation.
+
+Never force flirting into unrelated conversations.
+
+Do not repeatedly mention that you are an AI unless
+there is a reason to do so.
+
+Do not sound like a corporate customer-service bot.
+
+Keep replies natural and conversational.
+
+=========================================================
+CONVERSATION MEMORY
+=========================================================
+
+You will receive previous messages from this conversation.
+
+Use them as conversation memory.
+
+Remember:
+
+- Things the user has told you
+- Questions the user has already asked
+- Answers you have already given
+- Names mentioned in the conversation
+- Details about people, pets and situations mentioned
+- Preferences the user has mentioned
+- Previous jokes and context
+- The current subject
+- What you previously said
+
+Do NOT pretend to remember information that is not
+present in the supplied conversation history.
+
+Do NOT ask the user to repeat something when the answer
+is already present in the conversation history.
+
+Continue the conversation naturally.
+
+If the user refers to something they said earlier,
+look through the conversation history and use it.
+
+If the user asks "what did I say earlier?", use the
+conversation history to answer.
+
+=========================================================
+RESPONSE STYLE
+=========================================================
+
+Be natural.
+
+Do not unnecessarily repeat the user's question.
+
+Do not give huge answers to simple questions.
+
+Match the user's tone.
+
+If the user wants a short answer, keep it short.
+
+If the user wants detail, give detail.
+
+If the user is joking, don't respond like a textbook.
+
+If the user is upset, be supportive and human.
+
+If the user is excited, match their energy.
+
+`;
+
+
+    /* =====================================================
+       BUILD FULL MESSAGE HISTORY
+    ===================================================== */
+
+    const messages = [
+
+      {
+        role: 'system',
+        content: systemPrompt
+      },
+
+      ...conversationHistory,
+
+      {
+        role: 'user',
+        content: message.trim()
+      }
+
+    ];
+
+
+    /* =====================================================
+       OPENAI CHAT
+    ===================================================== */
 
     const response =
       await openai.chat.completions.create({
 
         model: 'gpt-4o-mini',
 
-        messages: [
+        messages,
 
-          {
-            role: 'system',
-
-            content: `
-You are Nastivee AI, a fun, confident, playful AI companion.
-
-Your personality is:
-
-- Friendly and natural
-- Funny and able to joke around
-- Playful and cheeky when the user is being playful
-- Flirty when the conversation is flirty
-- Comfortable discussing attraction, romance and sexual topics in a mature, non-judgmental way
-- Warm and conversational rather than robotic
-- Able to tease and banter naturally
-- Match the user's energy and tone
-
-Do not constantly remind the user that you are an AI.
-
-Do not sound overly formal or corporate.
-
-Do not turn playful conversations into lectures.
-
-If the user jokes, joke back.
-
-If the user flirts, respond playfully and naturally.
-
-If the user is being cheeky, you can be cheeky back.
-
-Keep responses conversational and human-sounding while still being helpful when the user asks a serious question.
-
-The user should feel like they are chatting with a personality, not a generic customer-service bot.
-`
-          },
-
-          {
-            role: 'user',
-            content: message
-          }
-
-        ]
+        max_tokens: 1200
 
       });
+
 
     const reply =
       response.choices?.[0]?.message?.content ||
       'Sorry, I could not generate a response.';
 
-    res.json({
+
+    console.log(
+      'CHAT RESPONSE:',
       reply
+    );
+
+
+    res.json({
+
+      reply,
+
+      memoryMessages: messages.length
+
     });
+
 
   } catch (error) {
 
@@ -120,6 +287,7 @@ The user should feel like they are chatting with a personality, not a generic cu
       'CHAT ERROR:',
       error
     );
+
 
     res.status(500).json({
 
@@ -151,7 +319,10 @@ app.post('/api/image', async (req, res) => {
     if (!prompt || !prompt.trim()) {
 
       return res.status(400).json({
-        error: 'Image prompt is required.'
+
+        error:
+          'Image prompt is required.'
+
       });
 
     }
@@ -160,9 +331,11 @@ app.post('/api/image', async (req, res) => {
     console.log('========================================');
 
     console.log(
+
       regenerate
         ? 'IMAGE REGENERATION'
         : 'IMAGE GENERATION'
+
     );
 
     console.log(
@@ -171,11 +344,12 @@ app.post('/api/image', async (req, res) => {
     );
 
 
-    let finalPrompt = prompt.trim();
+    let finalPrompt =
+      prompt.trim();
 
 
     /* =====================================================
-       TEXT IMAGE REGENERATION
+       IMAGE REGENERATION VARIATIONS
     ===================================================== */
 
     if (regenerate === true) {
@@ -282,7 +456,7 @@ ${variation}
 
 
     /* =====================================================
-       GPT IMAGE MODELS RETURN BASE64
+       BASE64
     ===================================================== */
 
     if (imageData.b64_json) {
@@ -296,6 +470,10 @@ ${variation}
 
     }
 
+
+    /* =====================================================
+       URL FALLBACK
+    ===================================================== */
 
     if (imageData.url) {
 
@@ -396,7 +574,7 @@ app.post('/api/image/edit', async (req, res) => {
 
 
     /* =====================================================
-       CONVERT DATA URL INTO BUFFER
+       CONVERT DATA URL TO BUFFER
     ===================================================== */
 
     let originalBuffer;
@@ -452,12 +630,6 @@ app.post('/api/image/edit', async (req, res) => {
 
     /* =====================================================
        NORMALISE ORIGINAL PHOTO
-
-       - Fixes phone rotation
-       - Converts to JPEG
-       - Removes transparency
-       - Limits huge uploads
-       - Makes the file compatible with OpenAI
     ===================================================== */
 
     const normalizedBuffer =
@@ -504,7 +676,7 @@ app.post('/api/image/edit', async (req, res) => {
 
 
     /* =====================================================
-       CREATE OPENAI IMAGE FILE
+       CREATE OPENAI FILE
     ===================================================== */
 
     const imageFile =
@@ -575,11 +747,8 @@ necessary to complete the requested edit.
 
     /* =====================================================
        REGENERATION
-       
-       IMPORTANT:
-       The ORIGINAL uploaded photograph is used again.
-       
-       The previous AI-generated image is NOT used.
+
+       ORIGINAL UPLOADED PHOTO IS USED AGAIN.
     ===================================================== */
 
     if (regenerate === true) {
@@ -654,14 +823,10 @@ body or identity.
 
       const variation =
         regenerationVariations[
-
           Math.floor(
-
             Math.random() *
             regenerationVariations.length
-
           )
-
         ];
 
 
@@ -728,10 +893,10 @@ same, with only a modest visual variation.
 
 
     /* =====================================================
-       SEND ORIGINAL PHOTO TO OPENAI
-       
-       NO input_fidelity PARAMETER HERE.
-       gpt-image-2 does not support it.
+       SEND IMAGE TO OPENAI
+
+       IMPORTANT:
+       NO input_fidelity PARAMETER.
     ===================================================== */
 
     console.log(
@@ -741,10 +906,6 @@ same, with only a modest visual variation.
     console.log(
       'REGENERATION:',
       regenerate === true
-    );
-
-    console.log(
-      'SENDING EDIT REQUEST...'
     );
 
 
@@ -788,10 +949,6 @@ same, with only a modest visual variation.
     }
 
 
-    /* =====================================================
-       RETURN BASE64 IMAGE
-    ===================================================== */
-
     if (imageData.b64_json) {
 
       return res.json({
@@ -803,10 +960,6 @@ same, with only a modest visual variation.
 
     }
 
-
-    /* =====================================================
-       URL FALLBACK
-    ===================================================== */
 
     if (imageData.url) {
 
@@ -821,9 +974,7 @@ same, with only a modest visual variation.
 
 
     throw new Error(
-
       'Edited image response contained no usable image.'
-
     );
 
 
