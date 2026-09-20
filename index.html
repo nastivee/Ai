@@ -914,6 +914,111 @@ button {
   to { opacity: 1; transform: none; }
 }
 
+/* =====================================================
+   MARKDOWN IN REPLIES
+===================================================== */
+
+.markdown > *:first-child { margin-top: 0; }
+.markdown > *:last-child { margin-bottom: 0; }
+
+.markdown p {
+  margin: 0 0 10px;
+}
+
+.markdown h3,
+.markdown h4 {
+  margin: 16px 0 8px;
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: -.2px;
+}
+
+.markdown h4 {
+  font-size: 15px;
+  color: #d9cfe6;
+}
+
+.markdown ul,
+.markdown ol {
+  margin: 0 0 10px;
+  padding-left: 22px;
+}
+
+.markdown li {
+  margin-bottom: 5px;
+}
+
+.markdown a {
+  color: #c4a2ff;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.markdown strong {
+  color: #fff;
+  font-weight: 700;
+}
+
+.inlineCode {
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: rgba(255,255,255,.08);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 13px;
+}
+
+.codeBlock {
+  position: relative;
+  margin: 12px 0;
+  padding: 14px 14px 14px;
+  border: 1px solid #33264a;
+  border-radius: 12px;
+  background: #100b1c;
+  overflow-x: auto;
+}
+
+.codeBlock code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 13px;
+  line-height: 1.55;
+  white-space: pre;
+}
+
+.copyCode {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  padding: 5px 12px;
+  border: 1px solid #3d2f56;
+  border-radius: 8px;
+  background: #1b1430;
+  color: #cbbfda;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.copyCode:hover {
+  background: #261a3d;
+}
+
+/* the cursor while a reply is streaming in */
+.streaming::after {
+  content: '';
+  display: inline-block;
+  width: 7px;
+  height: 15px;
+  margin-left: 3px;
+  vertical-align: -2px;
+  border-radius: 2px;
+  background: #b98aff;
+  animation: caret 1s steps(2) infinite;
+}
+
+@keyframes caret {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
 .messageRow.user .messageBubble {
   background: linear-gradient(135deg, #6f42c1, #8b5cf6);
   color: white;
@@ -4383,6 +4488,171 @@ async function updateChatTitle(
    ADD TEXT MESSAGE
 ===================================================== */
 
+/* =====================================================
+   API HEADERS
+
+   Image routes need a signed in user, so every call
+   carries the Supabase access token when there is one.
+===================================================== */
+
+async function apiHeaders() {
+
+  const headers = {
+    'Content-Type': 'application/json'
+  };
+
+  if (guestMode) {
+    return headers;
+  }
+
+  try {
+
+    const { data } =
+      await supabaseClient.auth.getSession();
+
+    const token =
+      data?.session?.access_token;
+
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+
+  } catch {}
+
+  return headers;
+
+}
+
+
+/* =====================================================
+   MARKDOWN
+
+   Everything is escaped first, then a small set of marks
+   is turned back into HTML. No library, nothing from the
+   text is ever treated as markup.
+===================================================== */
+
+function escapeHtml(text) {
+  return String(text)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function renderMarkdown(text) {
+
+  const codeBlocks = [];
+
+  let out = escapeHtml(text || '');
+
+  // fenced code, held aside so nothing else touches it
+  out = out.replace(
+    /```(\w+)?\n?([\s\S]*?)```/g,
+    (match, lang, code) => {
+      const index = codeBlocks.length;
+      codeBlocks.push(
+        `<pre class="codeBlock"><button class="copyCode" type="button">Copy</button><code>${code.replace(/\n$/, '')}</code></pre>`
+      );
+      return `\u0000CODE${index}\u0000`;
+    }
+  );
+
+  out = out.replace(
+    /`([^`\n]+)`/g,
+    '<code class="inlineCode">$1</code>'
+  );
+
+  // headings
+  out = out.replace(/^###\s+(.+)$/gm, '<h4>$1</h4>');
+  out = out.replace(/^##\s+(.+)$/gm, '<h3>$1</h3>');
+  out = out.replace(/^#\s+(.+)$/gm, '<h3>$1</h3>');
+
+  // bold, then italic
+  out = out.replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>');
+  out = out.replace(/(^|[^*])\*([^*\n]+)\*/g, '$1<em>$2</em>');
+
+  // links, only http and https
+  out = out.replace(
+    /\[([^\]\n]+)\]\((https?:\/\/[^\s)]+)\)/g,
+    '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>'
+  );
+
+  // lists
+  out = out.replace(
+    /(?:^|\n)((?:\s*[-*]\s+.+(?:\n|$))+)/g,
+    (match, block) => {
+      const items = block
+        .trim()
+        .split(/\n/)
+        .map(line => line.replace(/^\s*[-*]\s+/, ''))
+        .map(item => `<li>${item}</li>`)
+        .join('');
+      return `\n<ul>${items}</ul>`;
+    }
+  );
+
+  out = out.replace(
+    /(?:^|\n)((?:\s*\d+\.\s+.+(?:\n|$))+)/g,
+    (match, block) => {
+      const items = block
+        .trim()
+        .split(/\n/)
+        .map(line => line.replace(/^\s*\d+\.\s+/, ''))
+        .map(item => `<li>${item}</li>`)
+        .join('');
+      return `\n<ol>${items}</ol>`;
+    }
+  );
+
+  // paragraphs and line breaks
+  out = out
+    .split(/\n{2,}/)
+    .map(block =>
+      /^\s*<(h3|h4|ul|ol|pre|\u0000)/.test(block)
+        ? block
+        : `<p>${block.replace(/\n/g, '<br>')}</p>`
+    )
+    .join('');
+
+  // put the code blocks back
+  out = out.replace(
+    /\u0000CODE(\d+)\u0000/g,
+    (match, index) => codeBlocks[Number(index)]
+  );
+
+  return out;
+
+}
+
+
+/*
+  Copy buttons on code blocks, wired once for the whole chat.
+*/
+chat.addEventListener('click', event => {
+
+  const button =
+    event.target.closest?.('.copyCode');
+
+  if (!button) return;
+
+  const code =
+    button.parentElement.querySelector('code');
+
+  navigator.clipboard
+    ?.writeText(code?.textContent || '')
+    .then(() => {
+      button.textContent = 'Copied';
+      setTimeout(() => {
+        button.textContent = 'Copy';
+      }, 1200);
+    })
+    .catch(() => {});
+
+});
+
+
 function addTextMessage(
   role,
   content
@@ -4408,8 +4678,19 @@ function addTextMessage(
   bubble.className =
     'messageBubble';
 
-  bubble.textContent =
-    content;
+  if (role === 'assistant') {
+
+    bubble.classList.add('markdown');
+
+    bubble.innerHTML =
+      renderMarkdown(content);
+
+  } else {
+
+    bubble.textContent =
+      content;
+
+  }
 
 
   row.appendChild(
@@ -4813,10 +5094,8 @@ async function generateImage(
           method:
             'POST',
 
-          headers: {
-            'Content-Type':
-              'application/json'
-          },
+          headers:
+            await apiHeaders(),
 
           body:
             JSON.stringify({
@@ -4950,10 +5229,8 @@ async function editImage(
           method:
             'POST',
 
-          headers: {
-            'Content-Type':
-              'application/json'
-          },
+          headers:
+            await apiHeaders(),
 
           body:
             JSON.stringify({
@@ -5263,6 +5540,143 @@ Do not drop anything the original request asked for.
 
 
 /* =====================================================
+   STREAMED REPLY
+===================================================== */
+
+async function streamReply(response, requestChatId) {
+
+  const showing =
+    isCurrentChat(requestChatId);
+
+  let bubble = null;
+
+  if (showing) {
+
+    const row =
+      addTextMessage('assistant', '');
+
+    bubble = row.querySelector('.messageBubble');
+
+    bubble.classList.add('streaming');
+
+  }
+
+
+  const reader =
+    response.body?.getReader();
+
+
+  /*
+    No streaming support: fall back to the whole body.
+  */
+  if (!reader) {
+
+    const text = await response.text();
+
+    const data =
+      JSON.parse(text || '{}');
+
+    const reply =
+      data.reply ||
+      'Sorry, I could not generate a response.';
+
+    if (bubble) {
+      bubble.classList.remove('streaming');
+      bubble.innerHTML = renderMarkdown(reply);
+    }
+
+    return reply;
+
+  }
+
+
+  const decoder = new TextDecoder();
+
+  let buffer = '';
+  let reply = '';
+  let lastDrawn = 0;
+
+  while (true) {
+
+    const { value, done } = await reader.read();
+
+    if (done) break;
+
+    buffer += decoder.decode(value, { stream: true });
+
+    const lines = buffer.split('\n');
+
+    // keep the last, possibly incomplete, line
+    buffer = lines.pop() || '';
+
+    for (const line of lines) {
+
+      if (!line.startsWith('data: ')) continue;
+
+      const payload = line.slice(6).trim();
+
+      if (!payload || payload === '[DONE]') continue;
+
+      let parsed;
+
+      try {
+        parsed = JSON.parse(payload);
+      } catch {
+        continue;
+      }
+
+      if (parsed.error) {
+        throw new Error(parsed.error);
+      }
+
+      if (parsed.text) {
+
+        reply += parsed.text;
+
+        /*
+          Redraw at most every few characters, so long
+          replies do not thrash the layout.
+        */
+        if (bubble && reply.length - lastDrawn > 12) {
+
+          lastDrawn = reply.length;
+
+          bubble.innerHTML = renderMarkdown(reply);
+
+          scrollToBottom();
+
+        }
+
+      }
+
+    }
+
+  }
+
+
+  if (bubble) {
+
+    bubble.classList.remove('streaming');
+
+    bubble.innerHTML =
+      renderMarkdown(
+        reply || 'Sorry, I could not generate a response.'
+      );
+
+    scrollToBottom();
+
+  }
+
+
+  return (
+    reply ||
+    'Sorry, I could not generate a response.'
+  );
+
+}
+
+
+/* =====================================================
    NORMAL CHAT
 ===================================================== */
 
@@ -5350,17 +5764,17 @@ async function sendNormalMessage(
           method:
             'POST',
 
-          headers: {
-            'Content-Type':
-              'application/json'
-          },
+          headers:
+            await apiHeaders(),
 
           body:
             JSON.stringify({
 
               messages,
 
-              memory
+              memory,
+
+              stream: true
 
             })
 
@@ -5368,31 +5782,36 @@ async function sendNormalMessage(
       );
 
 
-    const data =
-      await response.json();
-
-
     if (!response.ok) {
 
-      throw new Error(
-        data?.details ||
-        data?.error ||
-        'Chat request failed.'
-      );
+      let message = 'Chat request failed.';
+
+      try {
+        const failed = await response.json();
+        message =
+          failed?.details ||
+          failed?.error ||
+          message;
+      } catch {}
+
+      throw new Error(message);
 
     }
 
 
+    /*
+      STREAMING
+
+      The reply is drawn as it arrives, in the chat it
+      belongs to. If the user is reading another chat it
+      is saved quietly and shown when they come back.
+    */
+
     const reply =
-      data?.reply ||
-      'Sorry, I could not generate a response.';
-
-
-    addTextMessageTo(
-      requestChatId,
-      'assistant',
-      reply
-    );
+      await streamReply(
+        response,
+        requestChatId
+      );
 
 
     await saveMessage(
@@ -5513,9 +5932,7 @@ async function nameChatFromContent(chatId) {
         `${API_BASE}/api/chat`,
         {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
+          headers: await apiHeaders(),
           body: JSON.stringify({
             messages: [
               {
@@ -6306,7 +6723,7 @@ window.addEventListener('online', () => {
    clearing anything by hand.
 ===================================================== */
 
-const APP_VERSION = '2026-09-20-24';
+const APP_VERSION = '2026-09-20-25';
 
 const RELOAD_FLAG = 'nastivee_reloaded_for';
 
