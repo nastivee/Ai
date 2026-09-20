@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import OpenAI, { toFile } from 'openai';
+import sharp from 'sharp';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -8,33 +9,33 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 
 /*
-  Larger limit because uploaded photos are sent
-  from the browser as base64.
+  Large limit because the browser sends uploaded
+  photos as base64 data.
 */
 app.use(express.json({ limit: '50mb' }));
 
 
-/* =========================
-   OPENAI CLIENT
-========================= */
+/* =========================================
+   OPENAI
+========================================= */
 
 function getOpenAIClient() {
-
   const apiKey = process.env.OPENAI_API_KEY;
 
-  if (!apiKey) return null;
+  if (!apiKey) {
+    return null;
+  }
 
   return new OpenAI({
     apiKey,
     timeout: 180000
   });
-
 }
 
 
-/* =========================
+/* =========================================
    CHAT
-========================= */
+========================================= */
 
 app.post('/api/chat', async (req, res) => {
 
@@ -43,21 +44,17 @@ app.post('/api/chat', async (req, res) => {
     const { message } = req.body;
 
     if (!message) {
-
       return res.status(400).json({
-        error: 'Message is required'
+        error: 'Message is required.'
       });
-
     }
 
     const openai = getOpenAIClient();
 
     if (!openai) {
-
       return res.status(500).json({
         error: 'OPENAI_API_KEY is missing on Render.'
       });
-
     }
 
     const completion =
@@ -78,18 +75,22 @@ app.post('/api/chat', async (req, res) => {
       completion.choices?.[0]?.message?.content ||
       'No response received.';
 
-    return res.json({
+    res.json({
       answer
     });
 
   } catch (error) {
 
-    console.error('Chat error:', error);
+    console.error(
+      'CHAT ERROR:',
+      error?.status,
+      error?.message || error
+    );
 
-    return res.status(500).json({
+    res.status(500).json({
       error:
         error?.message ||
-        'Chat service error'
+        'Chat service error.'
     });
 
   }
@@ -97,9 +98,9 @@ app.post('/api/chat', async (req, res) => {
 });
 
 
-/* =========================
-   NEW IMAGE
-========================= */
+/* =========================================
+   CREATE NEW IMAGE
+========================================= */
 
 app.post('/api/image', async (req, res) => {
 
@@ -108,25 +109,21 @@ app.post('/api/image', async (req, res) => {
     const { prompt } = req.body;
 
     if (!prompt) {
-
       return res.status(400).json({
-        error: 'Prompt is required'
+        error: 'Prompt is required.'
       });
-
     }
 
     const openai = getOpenAIClient();
 
     if (!openai) {
-
       return res.status(500).json({
         error: 'OPENAI_API_KEY is missing on Render.'
       });
-
     }
 
     console.log(
-      'Generating new image:',
+      'IMAGE GENERATION:',
       prompt
     );
 
@@ -136,7 +133,7 @@ app.post('/api/image', async (req, res) => {
 
         model: 'gpt-image-2',
 
-        prompt: prompt,
+        prompt,
 
         size: '1024x1024',
 
@@ -147,19 +144,13 @@ app.post('/api/image', async (req, res) => {
       });
 
 
-    const image =
-      response?.data?.[0];
+    const image = response?.data?.[0];
 
-
-    /*
-      GPT image models normally return
-      base64 image data.
-    */
 
     if (image?.b64_json) {
 
       console.log(
-        'Image generated successfully.'
+        'IMAGE GENERATED SUCCESSFULLY'
       );
 
       return res.json({
@@ -172,24 +163,17 @@ app.post('/api/image', async (req, res) => {
     }
 
 
-    /*
-      Keep URL support in case the API
-      returns one.
-    */
-
     if (image?.url) {
 
       return res.json({
-
         imageUrl: image.url
-
       });
 
     }
 
 
     throw new Error(
-      'OpenAI returned no image data.'
+      'OpenAI returned no image.'
     );
 
 
@@ -214,9 +198,9 @@ app.post('/api/image', async (req, res) => {
 });
 
 
-/* =========================
-   EDIT UPLOADED PHOTO
-========================= */
+/* =========================================
+   EDIT UPLOADED IMAGE
+========================================= */
 
 app.post('/api/image/edit', async (req, res) => {
 
@@ -240,7 +224,7 @@ app.post('/api/image/edit', async (req, res) => {
     if (!image) {
 
       return res.status(400).json({
-        error: 'An image is required for editing.'
+        error: 'No image was uploaded.'
       });
 
     }
@@ -258,36 +242,42 @@ app.post('/api/image/edit', async (req, res) => {
 
 
     console.log(
-      'Editing uploaded image:',
+      'IMAGE EDIT:',
       prompt
     );
 
 
     /*
-      Convert the browser's data URL into
-      an image buffer.
+      Browser sends:
+
+      data:image/jpeg;base64,...
+
+      or
+
+      data:image/png;base64,...
+
+      etc.
     */
 
-    const match =
-      image.match(
-        /^data:(image\/[a-zA-Z0-9.+-]+);base64,(.+)$/
-      );
+    const match = image.match(
+      /^data:image\/[a-zA-Z0-9.+-]+;base64,(.+)$/
+    );
 
 
     if (!match) {
 
       return res.status(400).json({
-        error: 'Invalid image format.'
+        error:
+          'Invalid uploaded image data.'
       });
 
     }
 
 
-    const mimeType = match[1];
+    const base64Data = match[1];
 
-    const base64Data = match[2];
 
-    const imageBuffer =
+    const originalBuffer =
       Buffer.from(
         base64Data,
         'base64'
@@ -295,18 +285,52 @@ app.post('/api/image/edit', async (req, res) => {
 
 
     /*
-      Send the uploaded image to OpenAI.
+      Convert the uploaded image into a
+      standard PNG before sending it to OpenAI.
+
+      This handles:
+      JPEG
+      PNG
+      WebP
+      HEIC/HEIF where Sharp supports it
+      different colour modes
+      EXIF rotation
+    */
+
+    const pngBuffer =
+      await sharp(originalBuffer)
+        .rotate()
+        .flatten({
+          background: '#ffffff'
+        })
+        .png()
+        .toBuffer();
+
+
+    console.log(
+      'IMAGE CONVERTED TO PNG:',
+      pngBuffer.length,
+      'bytes'
+    );
+
+
+    /*
+      Give OpenAI a real image file.
     */
 
     const imageFile =
       await toFile(
-        imageBuffer,
+        pngBuffer,
         'uploaded-image.png',
         {
-          type: mimeType
+          type: 'image/png'
         }
       );
 
+
+    /*
+      Send the photo + editing instructions.
+    */
 
     const response =
       await openai.images.edit({
@@ -315,7 +339,7 @@ app.post('/api/image/edit', async (req, res) => {
 
         image: imageFile,
 
-        prompt: prompt,
+        prompt,
 
         size: '1024x1024',
 
@@ -333,7 +357,7 @@ app.post('/api/image/edit', async (req, res) => {
     if (result?.b64_json) {
 
       console.log(
-        'Image edited successfully.'
+        'IMAGE EDITED SUCCESSFULLY'
       );
 
       return res.json({
@@ -383,9 +407,9 @@ app.post('/api/image/edit', async (req, res) => {
 });
 
 
-/* =========================
-   HEALTH CHECK
-========================= */
+/* =========================================
+   SERVER STATUS
+========================================= */
 
 app.get('/', (req, res) => {
 
@@ -394,6 +418,8 @@ app.get('/', (req, res) => {
     status: 'online',
 
     service: 'Nastivee AI Bot',
+
+    chat: true,
 
     imageGeneration: true,
 
@@ -404,9 +430,9 @@ app.get('/', (req, res) => {
 });
 
 
-/* =========================
-   START SERVER
-========================= */
+/* =========================================
+   START
+========================================= */
 
 app.listen(PORT, () => {
 
