@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 
 <title>Nastivee AI</title>
 
@@ -11,10 +11,16 @@
   box-sizing: border-box;
 }
 
+:root {
+  --header-h: 65px;
+  --dock-h: 90px; /* updated live by JS to the real dock height */
+}
+
 body {
   margin: 0;
   font-family: Arial, sans-serif;
   background: linear-gradient(160deg, #241044, #0b0615);
+  background-attachment: fixed;
   color: white;
   min-height: 100vh;
 }
@@ -35,7 +41,7 @@ textarea {
 /* HEADER */
 
 header {
-  height: 65px;
+  height: var(--header-h);
   padding: 0 15px;
   display: flex;
   align-items: center;
@@ -94,13 +100,16 @@ header {
 
 #chat {
   flex: 1;
-  padding: 20px 14px 150px;
-  overflow-y: auto;
+  padding: 20px 14px;
+  /* Always leave room for the whole dock, whatever is stacked in it */
+  padding-bottom: calc(var(--dock-h) + 24px);
 }
 
 .message {
   display: flex;
   margin-bottom: 15px;
+  /* When a message is scrolled to, it lands just under the header */
+  scroll-margin-top: calc(var(--header-h) + 10px);
 }
 
 .message.user {
@@ -159,14 +168,39 @@ header {
   opacity: .55;
 }
 
+/* =====================================================
+   DOCK
+   Everything pinned to the bottom lives in here and
+   stacks vertically: preview, progress, composer.
+   Nothing overlaps.
+===================================================== */
+
+.dock {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  justify-content: center;
+  padding: 10px 10px calc(10px + env(safe-area-inset-bottom));
+  background: linear-gradient(transparent, rgba(8,5,16,.97) 22%);
+  z-index: 7;
+}
+
+.dockInner {
+  width: min(100%, 970px);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
 /* PROGRESS */
 
 .imageProgress {
   display: none;
-  margin: 10px 14px;
   padding: 14px;
   border-radius: 14px;
-  background: rgba(124,60,255,.13);
+  background: rgba(36,20,64,.97);
   border: 1px solid rgba(124,60,255,.3);
 }
 
@@ -184,10 +218,15 @@ header {
 .progressSpinner {
   width: 18px;
   height: 18px;
+  flex-shrink: 0;
   border: 3px solid rgba(255,255,255,.2);
   border-top-color: white;
   border-radius: 50%;
   animation: spin .8s linear infinite;
+}
+
+.imageProgress.done .progressSpinner {
+  display: none;
 }
 
 @keyframes spin {
@@ -220,18 +259,31 @@ header {
   transition: width .7s ease;
 }
 
+/* Before the panel closes itself, the bar drains so it never just vanishes */
+.imageProgress.closing .progressFill {
+  transition: width var(--drain-ms, 1000ms) linear;
+  width: 0 !important;
+}
+
+.imageProgress.failed {
+  border-color: rgba(249,115,22,.6);
+}
+
+.imageProgress.failed .progressFill {
+  background: #f97316;
+}
+
 /* UPLOAD PREVIEW */
 
 .uploadPreview {
   display: none;
-  position: fixed;
-  bottom: 82px;
-  left: 14px;
-  z-index: 8;
+  align-items: flex-start;
+  gap: 2px;
+  align-self: flex-start;
 }
 
 .uploadPreview.open {
-  display: block;
+  display: flex;
 }
 
 .uploadPreview img {
@@ -242,34 +294,20 @@ header {
   border: 1px solid rgba(255,255,255,.2);
 }
 
+/* Close mark: large, no background, no border */
 .removePhoto {
-  position: absolute;
-  right: -7px;
-  top: -7px;
-  width: 23px;
-  height: 23px;
   border: 0;
-  border-radius: 50%;
-  background: #ef4444;
+  background: none;
   color: white;
+  font-size: 34px;
+  line-height: 1;
+  padding: 0 10px;
+  cursor: pointer;
 }
 
 /* COMPOSER */
 
-.composerWrap {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  display: flex;
-  justify-content: center;
-  padding: 10px;
-  background: linear-gradient(transparent,rgba(8,5,16,.97) 30%);
-  z-index: 7;
-}
-
 .composer {
-  width: min(100%,970px);
   display: flex;
   align-items: flex-end;
   gap: 7px;
@@ -359,41 +397,44 @@ header {
 
 <main id="chat"></main>
 
-<!-- IMAGE PROGRESS -->
+<!-- DOCK: everything at the bottom, stacked -->
 
-<div id="imageProgress" class="imageProgress">
+<div id="dock" class="dock">
+<div class="dockInner">
 
-  <div class="progressTop">
-    <div class="progressSpinner"></div>
+  <!-- UPLOAD PREVIEW -->
 
-    <div id="progressTitle" class="progressTitle">
-      Creating your image…
+  <div id="uploadPreview" class="uploadPreview">
+    <img id="uploadPreviewImage" src="" alt="Uploaded image">
+
+    <button id="removePhoto" class="removePhoto" title="Remove photo" aria-label="Remove photo">
+      ×
+    </button>
+  </div>
+
+  <!-- IMAGE PROGRESS -->
+
+  <div id="imageProgress" class="imageProgress">
+
+    <div class="progressTop">
+      <div class="progressSpinner"></div>
+
+      <div id="progressTitle" class="progressTitle">
+        Creating your image…
+      </div>
     </div>
+
+    <div id="progressStage" class="progressStage">
+      Preparing…
+    </div>
+
+    <div class="progressBar">
+      <div id="progressFill" class="progressFill"></div>
+    </div>
+
   </div>
 
-  <div id="progressStage" class="progressStage">
-    Preparing…
-  </div>
-
-  <div class="progressBar">
-    <div id="progressFill" class="progressFill"></div>
-  </div>
-
-</div>
-
-<!-- UPLOAD PREVIEW -->
-
-<div id="uploadPreview" class="uploadPreview">
-  <img id="uploadPreviewImage" src="" alt="Uploaded image">
-
-  <button id="removePhoto" class="removePhoto">
-    ×
-  </button>
-</div>
-
-<!-- COMPOSER -->
-
-<div class="composerWrap">
+  <!-- COMPOSER -->
 
   <div id="composer" class="composer">
 
@@ -435,6 +476,8 @@ header {
     >
 
   </div>
+
+</div>
 </div>
 
 </div>
@@ -467,6 +510,9 @@ let chatBusy = false;
 let imageBusy = false;
 
 let progressTimer = null;
+let progressCloseTimer = null;
+
+let messageCount = 0;
 
 
 /*
@@ -492,6 +538,9 @@ let lastImage = {
 
 const chat =
   document.getElementById('chat');
+
+const dock =
+  document.getElementById('dock');
 
 const messageInput =
   document.getElementById('messageInput');
@@ -546,6 +595,26 @@ const removePhoto =
 
 
 /* =====================================================
+   DOCK HEIGHT
+   Keeps the chat's bottom padding equal to the real
+   height of the dock, so nothing hides behind it.
+===================================================== */
+
+function updateDockHeight() {
+  document.documentElement.style.setProperty(
+    '--dock-h',
+    `${dock.offsetHeight}px`
+  );
+}
+
+if ('ResizeObserver' in window) {
+  new ResizeObserver(updateDockHeight).observe(dock);
+}
+
+window.addEventListener('resize', updateDockHeight);
+
+
+/* =====================================================
    LOAD STORAGE
 ===================================================== */
 
@@ -573,19 +642,38 @@ try {
 ===================================================== */
 
 function saveConversation() {
-  localStorage.setItem(
-    CONVERSATION_KEY,
-    JSON.stringify(
-      conversation.slice(-100)
-    )
-  );
+  try {
+    localStorage.setItem(
+      CONVERSATION_KEY,
+      JSON.stringify(
+        conversation.slice(-100)
+      )
+    );
+  } catch {
+    /*
+      Images are large. If storage is full,
+      save the text messages only.
+    */
+    try {
+      localStorage.setItem(
+        CONVERSATION_KEY,
+        JSON.stringify(
+          conversation
+            .filter(m => m.type !== 'image')
+            .slice(-100)
+        )
+      );
+    } catch {}
+  }
 }
 
 function saveMemory() {
-  localStorage.setItem(
-    MEMORY_KEY,
-    JSON.stringify(memory)
-  );
+  try {
+    localStorage.setItem(
+      MEMORY_KEY,
+      JSON.stringify(memory)
+    );
+  } catch {}
 }
 
 
@@ -702,8 +790,8 @@ async function apiFetch(path, options = {}) {
 
   if (!response.ok) {
     throw new Error(
-      data.error ||
       data.details ||
+      data.error ||
       `HTTP ${response.status}`
     );
   }
@@ -713,16 +801,35 @@ async function apiFetch(path, options = {}) {
 
 
 /* =====================================================
-   CHAT MESSAGE
+   MESSAGE WRAPPER
+   Every message gets its own anchor id.
 ===================================================== */
 
-function addMessage(role, content) {
+function createMessageWrapper(role) {
 
   const wrapper =
     document.createElement('div');
 
+  messageCount++;
+
+  wrapper.id =
+    `msg-${messageCount}`;
+
   wrapper.className =
     `message ${role}`;
+
+  return wrapper;
+}
+
+
+/* =====================================================
+   CHAT MESSAGE
+===================================================== */
+
+function addMessage(role, content, options = {}) {
+
+  const wrapper =
+    createMessageWrapper(role);
 
   const bubble =
     document.createElement('div');
@@ -736,7 +843,11 @@ function addMessage(role, content) {
   wrapper.appendChild(bubble);
   chat.appendChild(wrapper);
 
-  scrollChat();
+  if (!options.silent) {
+    showMessage(wrapper);
+  }
+
+  return wrapper;
 }
 
 
@@ -748,14 +859,12 @@ function addImageMessage(
   imageUrl,
   sourceImage,
   prompt,
-  wasEdit
+  wasEdit,
+  options = {}
 ) {
 
   const wrapper =
-    document.createElement('div');
-
-  wrapper.className =
-    'message assistant';
+    createMessageWrapper('assistant');
 
   const card =
     document.createElement('div');
@@ -822,17 +931,45 @@ function addImageMessage(
 
   chat.appendChild(wrapper);
 
-  scrollChat();
+  if (!options.silent) {
+    /*
+      Scroll once now, and again when the image has
+      loaded and the card has its full height.
+    */
+    showMessage(wrapper);
+    img.addEventListener(
+      'load',
+      () => showMessage(wrapper),
+      { once: true }
+    );
+  }
+
+  return wrapper;
 }
 
 
 /* =====================================================
    SCROLL
+   New content lands at the TOP of the screen,
+   just under the header.
 ===================================================== */
 
-function scrollChat() {
-  chat.scrollTop =
-    chat.scrollHeight;
+function showMessage(element) {
+  requestAnimationFrame(() => {
+    element.scrollIntoView({
+      block: 'start',
+      behavior: 'smooth'
+    });
+  });
+}
+
+function scrollToBottom() {
+  requestAnimationFrame(() => {
+    window.scrollTo(
+      0,
+      document.documentElement.scrollHeight
+    );
+  });
 }
 
 
@@ -843,6 +980,13 @@ function scrollChat() {
 function startImageProgress(isRerender) {
 
   clearInterval(progressTimer);
+  clearTimeout(progressCloseTimer);
+
+  imageProgress.classList.remove(
+    'closing',
+    'done',
+    'failed'
+  );
 
   imageProgress.classList.add('open');
 
@@ -897,9 +1041,49 @@ function startImageProgress(isRerender) {
 }
 
 
+/*
+  Closes the panel after a delay. The bar drains
+  across that delay so the user can see it going.
+*/
+
+function closeProgressAfter(ms) {
+
+  clearTimeout(progressCloseTimer);
+
+  imageProgress.style.setProperty(
+    '--drain-ms',
+    `${ms}ms`
+  );
+
+  // let the full bar paint first, then drain it
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      imageProgress.classList.add('closing');
+    });
+  });
+
+  progressCloseTimer =
+    setTimeout(() => {
+
+      imageProgress.classList.remove(
+        'open',
+        'closing',
+        'done',
+        'failed'
+      );
+
+      progressFill.style.width =
+        '5%';
+
+    }, ms);
+}
+
+
 function finishImageProgress() {
 
   clearInterval(progressTimer);
+
+  imageProgress.classList.add('done');
 
   progressStage.textContent =
     'Done ✓';
@@ -907,14 +1091,7 @@ function finishImageProgress() {
   progressFill.style.width =
     '100%';
 
-  setTimeout(() => {
-
-    imageProgress.classList.remove('open');
-
-    progressFill.style.width =
-      '5%';
-
-  }, 700);
+  closeProgressAfter(1200);
 }
 
 
@@ -922,18 +1099,44 @@ function failImageProgress() {
 
   clearInterval(progressTimer);
 
+  imageProgress.classList.add(
+    'done',
+    'failed'
+  );
+
   progressStage.textContent =
     'Something went wrong.';
 
-  setTimeout(() => {
-    imageProgress.classList.remove('open');
-  }, 1000);
+  progressFill.style.width =
+    '100%';
+
+  closeProgressAfter(2000);
 }
 
 
 /* =====================================================
    NORMAL CHAT
 ===================================================== */
+
+/*
+  Only text turns go to the chat API, as plain
+  { role, content }. Generated images are stored in
+  the conversation as huge data URLs and must not
+  be sent back as chat text.
+*/
+
+function chatHistoryForApi() {
+  return conversation
+    .filter(m =>
+      m.type !== 'image' &&
+      typeof m.content === 'string'
+    )
+    .slice(-30)
+    .map(m => ({
+      role: m.role,
+      content: m.content
+    }));
+}
 
 async function sendMessage() {
 
@@ -945,6 +1148,8 @@ async function sendMessage() {
   if (chatBusy || imageBusy) return;
 
   if (imageMode) {
+    messageInput.value = '';
+    resizeInput();
     await createImage(text);
     return;
   }
@@ -962,14 +1167,12 @@ async function sendMessage() {
   extractMemory(text);
 
   messageInput.value = '';
+  resizeInput();
 
   saveConversation();
 
   const thinking =
-    document.createElement('div');
-
-  thinking.className =
-    'message assistant';
+    createMessageWrapper('assistant');
 
   const thinkingBubble =
     document.createElement('div');
@@ -983,8 +1186,6 @@ async function sendMessage() {
   thinking.appendChild(thinkingBubble);
   chat.appendChild(thinking);
 
-  scrollChat();
-
   try {
 
     const data =
@@ -995,7 +1196,7 @@ async function sendMessage() {
 
           body: JSON.stringify({
             messages:
-              conversation.slice(-30),
+              chatHistoryForApi(),
 
             memory
           })
@@ -1420,11 +1621,15 @@ newChatButton.addEventListener(
 
     conversation = [];
 
-    localStorage.removeItem(
-      CONVERSATION_KEY
-    );
+    try {
+      localStorage.removeItem(
+        CONVERSATION_KEY
+      );
+    } catch {}
 
     chat.innerHTML = '';
+
+    messageCount = 0;
 
     selectedPhoto =
       null;
@@ -1485,20 +1690,21 @@ messageInput.addEventListener(
    TEXTAREA RESIZE
 ===================================================== */
 
+function resizeInput() {
+
+  messageInput.style.height =
+    'auto';
+
+  messageInput.style.height =
+    `${Math.min(
+      messageInput.scrollHeight,
+      140
+    )}px`;
+}
+
 messageInput.addEventListener(
   'input',
-  () => {
-
-    messageInput.style.height =
-      'auto';
-
-    messageInput.style.height =
-      `${Math.min(
-        messageInput.scrollHeight,
-        140
-      )}px`;
-
-  }
+  resizeInput
 );
 
 
@@ -1512,7 +1718,8 @@ function restoreConversation() {
 
     addMessage(
       'assistant',
-      'Hi 👋 I’m Nastivee. What would you like to do?'
+      'Hi 👋 I’m Nastivee. What would you like to do?',
+      { silent: true }
     );
 
     return;
@@ -1529,7 +1736,8 @@ function restoreConversation() {
           message.content,
           null,
           '',
-          false
+          false,
+          { silent: true }
         );
 
       } else {
@@ -1538,19 +1746,26 @@ function restoreConversation() {
           message.role === 'user'
             ? 'user'
             : 'assistant',
-          message.content
+          message.content,
+          { silent: true }
         );
 
       }
 
     }
   );
+
+  // On load, open at the latest message
+  scrollToBottom();
+  window.addEventListener('load', scrollToBottom, { once: true });
 }
 
 
 /* =====================================================
    START
 ===================================================== */
+
+updateDockHeight();
 
 renderMemory();
 
