@@ -1619,12 +1619,6 @@ button {
   line-height: 1.6;
 }
 
-.emptyNote {
-  margin-top: 10px;
-  color: #6f6580;
-  font-size: 13px;
-  line-height: 1.55;
-}
 
 .messageRow {
   display: flex;
@@ -3241,12 +3235,9 @@ button {
           >
 
           <div class="emptyText">
-            Ask me anything, upload an image,
-            or create something with AI.
-          </div>
-
-          <div class="emptyNote">
-            Nastivee can remember your chats and edit images.
+            Ask me anything, upload an image to edit,
+            or create something new, and I will remember
+            the chat as we go.
           </div>
 
         </div>
@@ -5641,12 +5632,9 @@ function clearChatUI() {
       <img class="emptyIcon" src="./NAI-Logo.webp" alt="Nastivee AI">
 
       <div class="emptyText">
-        Ask me anything, upload an image,
-        or create something with AI.
-      </div>
-
-      <div class="emptyNote">
-        Nastivee can remember your chats and edit images.
+        Ask me anything, upload an image to edit,
+        or create something new, and I will remember
+        the chat as we go.
       </div>
     </div>
   `;
@@ -10384,7 +10372,7 @@ window.addEventListener('online', () => {
    clearing anything by hand.
 ===================================================== */
 
-const APP_VERSION = '2026-09-20-44';
+const APP_VERSION = '2026-09-20-45';
 
 const RELOAD_FLAG = 'nastivee_reloaded_for';
 
