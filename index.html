@@ -842,6 +842,8 @@ button {
 }
 
 .headerStatus {
+  /* always the last thing on the row, hard right */
+  margin-left: auto;
   flex-shrink: 0;
   cursor: pointer;
   transition: padding .18s var(--ease);
@@ -9154,7 +9156,7 @@ window.addEventListener('online', () => {
    clearing anything by hand.
 ===================================================== */
 
-const APP_VERSION = '2026-09-20-41';
+const APP_VERSION = '2026-09-20-42';
 
 const RELOAD_FLAG = 'nastivee_reloaded_for';
 
