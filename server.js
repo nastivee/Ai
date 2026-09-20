@@ -8,7 +8,7 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 
-// Helper function to safely load OpenAI only when called
+// Helper function to load OpenAI dynamically per request
 function getOpenAIClient() {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) return null;
@@ -23,7 +23,7 @@ app.post('/api/chat', async (req, res) => {
 
     const openai = getOpenAIClient();
     if (!openai) {
-      return res.status(500).json({ error: 'OPENAI_API_KEY environment variable is missing on Render.' });
+      return res.status(500).json({ error: 'OPENAI_API_KEY environment variable is missing in Render.' });
     }
 
     const completion = await openai.chat.completions.create({
@@ -46,29 +46,29 @@ app.post('/api/image', async (req, res) => {
 
   const openai = getOpenAIClient();
 
-  // 1. Try DALL-E 3 if API Key exists
+  // 1. Primary Attempt: OpenAI gpt-image-1
   if (openai) {
     try {
-      console.log('Attempting DALL-E 3 generation...');
+      console.log('Attempting OpenAI gpt-image-1 generation...');
       const response = await openai.images.generate({
-        model: "dall-e-3",
+        model: "gpt-image-1",
         prompt: prompt + ", realistic photograph, highly detailed, 8k resolution",
         n: 1,
         size: "1024x1024",
-        quality: "standard"
+        quality: "high"
       });
 
       if (response.data && response.data[0]?.url) {
         return res.json({ imageUrl: response.data[0].url });
       }
-    } catch (dalleError) {
-      console.warn('DALL-E 3 request failed, using backup engine:', dalleError.message);
+    } catch (openAiError) {
+      console.warn('OpenAI image generation failed, switching to backup:', openAiError.message);
     }
   } else {
     console.warn('OPENAI_API_KEY missing, using backup engine directly...');
   }
 
-  // 2. High-speed Backup Engine (Always returns an image even without key)
+  // 2. High-speed Backup Fallback
   try {
     const safePrompt = encodeURIComponent(prompt.replace(/[^a-zA-Z0-9 ]/g, "").trim() + ', realistic photo');
     const seed = Date.now();
@@ -76,7 +76,7 @@ app.post('/api/image', async (req, res) => {
 
     return res.json({ imageUrl: backupUrl });
   } catch (fallbackError) {
-    console.error('All image paths failed:', fallbackError);
+    console.error('All image generation paths failed:', fallbackError);
     return res.status(500).json({ error: 'Failed to generate image' });
   }
 });
