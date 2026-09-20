@@ -191,21 +191,54 @@
     }
 
     .historyItem {
-      padding: 11px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 7px 8px 11px;
       border-radius: 10px;
       margin-bottom: 5px;
       color: #ccc;
       cursor: pointer;
       font-size: 14px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      min-width: 0;
     }
 
     .historyItem:hover,
     .historyItem.active {
       background: #21132f;
       color: white;
+    }
+
+    .historyTitleText {
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .deleteChatButton {
+      flex-shrink: 0;
+      width: 30px;
+      height: 30px;
+      border: 0;
+      border-radius: 8px;
+      background: transparent;
+      color: #777;
+      font-size: 14px;
+      cursor: pointer;
+      opacity: 0;
+      transition: all 0.15s ease;
+    }
+
+    .historyItem:hover .deleteChatButton,
+    .historyItem.active .deleteChatButton {
+      opacity: 1;
+    }
+
+    .deleteChatButton:hover {
+      background: rgba(255, 70, 100, 0.15);
+      color: #ff647c;
     }
 
     .emptyHistory {
@@ -578,6 +611,10 @@
       font-size: 15px;
     }
 
+    #messageInput::placeholder {
+      color: #777;
+    }
+
     .dockButton {
       width: 42px;
       height: 42px;
@@ -600,6 +637,13 @@
     #imageButton {
       background: linear-gradient(135deg, #5d2cc9, #a341dc);
       border: 0;
+      transition: all 0.2s ease;
+    }
+
+    #imageButton.imageModeActive {
+      background: linear-gradient(135deg, #9b42ff, #e15cff);
+      box-shadow: 0 0 18px rgba(180, 75, 255, 0.35);
+      transform: scale(1.03);
     }
 
     #sendButton {
@@ -689,6 +733,10 @@
         right: 10px;
         top: 72px;
         width: calc(100vw - 20px);
+      }
+
+      .deleteChatButton {
+        opacity: 1;
       }
     }
   </style>
@@ -1005,6 +1053,7 @@
           class="dockButton"
           id="imageButton"
           title="Create image"
+          aria-label="Image mode"
         >
           🖼️
         </button>
@@ -1014,6 +1063,7 @@
           class="dockButton"
           id="sendButton"
           title="Send message"
+          aria-label="Send"
         >
           ➤
         </button>
@@ -1087,25 +1137,35 @@
   let selectedImageData = null;
 
   /*
-    IMPORTANT:
+    Image mode is deliberately just a mode for
+    the normal chat box.
 
+    Press the image button once:
+      Normal mode -> Image mode
+
+    Then type a description and press SEND.
+  */
+
+  let imageMode = false;
+
+  /*
     Every chat gets its own conversation array.
-
-    This means switching from Chat A to Chat B
-    does NOT destroy Chat A's AI context.
   */
 
   const chatConversations = new Map();
 
   let initialised = false;
   let imageBusy = false;
-  let loadingChat = false;
 
   /*
-    Used to identify the chat an AI request started in.
-    This prevents an AI response being saved into
-    another chat if the user switches conversations
-    while the response is generating.
+    Prevents an older chat-loading request from
+    overwriting a newer chat selection.
+  */
+
+  let loadSequence = 0;
+
+  /*
+    Identifies the chat an AI request started in.
   */
 
   let activeRequestId = 0;
@@ -1221,6 +1281,72 @@
   sidebarOverlay.addEventListener(
     'click',
     closeMobileSidebar
+  );
+
+
+  /* =========================================================
+     IMAGE MODE
+  ========================================================= */
+
+  function setImageMode(enabled) {
+
+    imageMode =
+      Boolean(enabled);
+
+    if (imageMode) {
+
+      messageInput.placeholder =
+        'Describe the image you want me to create...';
+
+      imageButton.classList.add(
+        'imageModeActive'
+      );
+
+      imageButton.title =
+        'Image mode on — press again to turn off';
+
+      imageButton.setAttribute(
+        'aria-pressed',
+        'true'
+      );
+
+    } else {
+
+      messageInput.placeholder =
+        'Message Nastivee...';
+
+      imageButton.classList.remove(
+        'imageModeActive'
+      );
+
+      imageButton.title =
+        'Create image';
+
+      imageButton.setAttribute(
+        'aria-pressed',
+        'false'
+      );
+
+    }
+
+  }
+
+
+  imageButton.addEventListener(
+    'click',
+    () => {
+
+      if (imageBusy) {
+        return;
+      }
+
+      setImageMode(
+        !imageMode
+      );
+
+      messageInput.focus();
+
+    }
   );
 
 
@@ -1605,10 +1731,6 @@
 
       currentChatId =
         null;
-
-      conversationMessagesFor(
-        null
-      );
 
       clearChatUI();
 
@@ -2054,9 +2176,71 @@
         }
 
 
-        item.textContent =
+        const title =
+          document.createElement(
+            'div'
+          );
+
+
+        title.className =
+          'historyTitleText';
+
+
+        title.textContent =
           chatItem.title ||
           'New chat';
+
+
+        item.appendChild(
+          title
+        );
+
+
+        const deleteButton =
+          document.createElement(
+            'button'
+          );
+
+
+        deleteButton.type =
+          'button';
+
+
+        deleteButton.className =
+          'deleteChatButton';
+
+
+        deleteButton.textContent =
+          '🗑️';
+
+
+        deleteButton.title =
+          'Delete conversation';
+
+
+        deleteButton.setAttribute(
+          'aria-label',
+          'Delete conversation'
+        );
+
+
+        deleteButton.addEventListener(
+          'click',
+          async event => {
+
+            event.stopPropagation();
+
+            await deleteChat(
+              chatItem.id
+            );
+
+          }
+        );
+
+
+        item.appendChild(
+          deleteButton
+        );
 
 
         item.addEventListener(
@@ -2072,11 +2256,6 @@
 
               return;
 
-            }
-
-
-            if (loadingChat) {
-              return;
             }
 
 
@@ -2108,17 +2287,233 @@
 
 
   /* =========================================================
+     DELETE CHAT
+  ========================================================= */
+
+  async function deleteChat(
+    chatId
+  ) {
+
+    if (
+      !currentUser ||
+      !chatId
+    ) {
+
+      return;
+
+    }
+
+
+    const chatItem =
+      chats.find(
+        item =>
+          String(item.id) ===
+          String(chatId)
+      );
+
+
+    const title =
+      chatItem?.title ||
+      'this conversation';
+
+
+    const confirmed =
+      confirm(
+        `Delete "${title}"?\n\nThis will permanently delete this conversation and its messages.`
+      );
+
+
+    if (!confirmed) {
+      return;
+    }
+
+
+    /*
+      Invalidate any AI response and any
+      chat loading operation.
+    */
+
+    activeRequestId++;
+    loadSequence++;
+
+
+    /*
+      Delete messages first.
+    */
+
+    const messageDelete =
+      await supabaseClient
+        .from('messages')
+        .delete()
+        .eq(
+          'chat_id',
+          chatId
+        )
+        .eq(
+          'user_id',
+          currentUser.id
+        );
+
+
+    if (messageDelete.error) {
+
+      console.error(
+        'DELETE MESSAGES ERROR:',
+        messageDelete.error
+      );
+
+      alert(
+        'Could not delete the messages:\n\n' +
+        messageDelete.error.message
+      );
+
+      return;
+
+    }
+
+
+    /*
+      Then delete the chat itself.
+    */
+
+    const chatDelete =
+      await supabaseClient
+        .from('chats')
+        .delete()
+        .eq(
+          'id',
+          chatId
+        )
+        .eq(
+          'user_id',
+          currentUser.id
+        );
+
+
+    if (chatDelete.error) {
+
+      console.error(
+        'DELETE CHAT ERROR:',
+        chatDelete.error
+      );
+
+      alert(
+        'Could not delete the conversation:\n\n' +
+        chatDelete.error.message
+      );
+
+      return;
+
+    }
+
+
+    /*
+      Remove it from local memory.
+    */
+
+    chatConversations.delete(
+      String(chatId)
+    );
+
+
+    chats =
+      chats.filter(
+        item =>
+          String(item.id) !==
+          String(chatId)
+      );
+
+
+    /*
+      If we deleted the currently open
+      conversation, open another one.
+    */
+
+    if (
+      String(currentChatId) ===
+      String(chatId)
+    ) {
+
+      currentChatId =
+        null;
+
+
+      clearUpload();
+
+
+      messageInput.value =
+        '';
+
+      messageInput.style.height =
+        'auto';
+
+
+      clearChatUI();
+
+
+      renderChatHistory();
+
+
+      if (chats.length > 0) {
+
+        await loadChat(
+          chats[0].id
+        );
+
+      }
+
+    } else {
+
+      renderChatHistory();
+
+    }
+
+  }
+
+
+  /* =========================================================
      CREATE NEW CHAT
   ========================================================= */
 
   function createNewChat() {
 
     /*
-      Invalidate any old response that may still
-      be coming back from the previous conversation.
+      Preserve the currently displayed conversation
+      in memory before starting a blank chat.
+    */
+
+    if (currentChatId) {
+
+      const currentConversation =
+        getConversation(
+          currentChatId
+        );
+
+
+      chatConversations.set(
+        String(currentChatId),
+        currentConversation.map(
+          message => ({
+            ...message
+          })
+        )
+      );
+
+    }
+
+
+    /*
+      Invalidate old AI responses.
     */
 
     activeRequestId++;
+
+
+    /*
+      Invalidate old chat loads.
+    */
+
+    loadSequence++;
 
 
     currentChatId =
@@ -2276,22 +2671,21 @@
     }
 
 
-    if (loadingChat) {
-      return;
-    }
+    /*
+      Every load gets a unique sequence number.
 
+      If the user clicks Chat A then immediately
+      clicks Chat B, Chat A cannot overwrite Chat B
+      when its database request eventually finishes.
+    */
 
-    loadingChat =
-      true;
+    const thisLoad =
+      ++loadSequence;
 
 
     const requestedChatId =
       String(chatId);
 
-
-    /*
-      Invalidate responses belonging to another chat.
-    */
 
     activeRequestId++;
 
@@ -2302,7 +2696,9 @@
 
     console.log(
       'LOADING CHAT:',
-      chatId
+      chatId,
+      'LOAD:',
+      thisLoad
     );
 
 
@@ -2327,12 +2723,46 @@
           .maybeSingle();
 
 
+      if (
+        thisLoad !==
+        loadSequence
+      ) {
+
+        console.log(
+          'IGNORING OLD CHAT LOAD:',
+          chatId
+        );
+
+        return;
+
+      }
+
+
       if (chatResult.error) {
 
         console.error(
           'CHAT VERIFY ERROR:',
           chatResult.error
         );
+
+        const cached =
+          getConversation(
+            requestedChatId
+          );
+
+
+        if (cached.length) {
+
+          currentChatId =
+            chatId;
+
+          renderConversation(
+            cached
+          );
+
+          renderChatHistory();
+
+        }
 
         return;
 
@@ -2342,7 +2772,8 @@
       if (!chatResult.data) {
 
         console.error(
-          'CHAT NOT FOUND'
+          'CHAT NOT FOUND:',
+          chatId
         );
 
         return;
@@ -2351,7 +2782,7 @@
 
 
       /*
-        LOAD ALL MESSAGES FOR THIS CHAT.
+        LOAD ALL MESSAGES
       */
 
       const messageResult =
@@ -2374,6 +2805,21 @@
           );
 
 
+      if (
+        thisLoad !==
+        loadSequence
+      ) {
+
+        console.log(
+          'IGNORING OLD MESSAGE LOAD:',
+          chatId
+        );
+
+        return;
+
+      }
+
+
       console.log(
         'MESSAGE QUERY RESULT:',
         messageResult
@@ -2387,15 +2833,12 @@
           messageResult.error
         );
 
-        /*
-          If we already have this conversation
-          cached locally, DON'T destroy it.
-        */
 
         const cached =
           getConversation(
             requestedChatId
           );
+
 
         if (cached.length) {
 
@@ -2405,6 +2848,8 @@
           renderConversation(
             cached
           );
+
+          renderChatHistory();
 
         }
 
@@ -2423,17 +2868,12 @@
       );
 
 
-      console.table(
-        messages
-      );
-
-
       /*
-        Build a completely separate conversation
-        for this chat.
+        Build separate conversation memory.
       */
 
-      const rebuiltConversation = [];
+      const rebuiltConversation =
+        [];
 
 
       messages.forEach(
@@ -2449,10 +2889,8 @@
 
 
           /*
-            Image messages don't form part of
-            normal GPT conversation context because
-            the stored database row only contains
-            the generated image URL.
+            Generated image rows do not form
+            normal text GPT context.
           */
 
           if (
@@ -2485,11 +2923,6 @@
       );
 
 
-      /*
-        SAVE THE RESTORED CONVERSATION IN ITS
-        OWN CHAT CACHE.
-      */
-
       setConversation(
         requestedChatId,
         rebuiltConversation
@@ -2497,11 +2930,7 @@
 
 
       /*
-        ONLY NOW change the active chat.
-
-        This is important:
-        a failed database load can no longer
-        wipe the currently displayed conversation.
+        Only now change the active chat.
       */
 
       currentChatId =
@@ -2511,12 +2940,12 @@
       clearUpload();
 
 
-      /*
-        Render the selected chat.
-      */
-
       clearChatUI();
 
+
+      /*
+        Render messages.
+      */
 
       messages.forEach(
         message => {
@@ -2580,6 +3009,7 @@
         chatId
       );
 
+
       console.log(
         'RESTORED AI MEMORY:',
         rebuiltConversation
@@ -2593,15 +3023,22 @@
         error
       );
 
-      /*
-        Do NOT wipe the current conversation
-        if loading another chat fails.
-      */
+
+      if (
+        thisLoad !==
+        loadSequence
+      ) {
+
+        return;
+
+      }
+
 
       const cached =
         getConversation(
           requestedChatId
         );
+
 
       if (cached.length) {
 
@@ -2612,16 +3049,9 @@
           cached
         );
 
+        renderChatHistory();
+
       }
-
-    } finally {
-
-      loadingChat =
-        false;
-
-      console.log(
-        '================================'
-      );
 
     }
 
@@ -2775,10 +3205,6 @@
           'SAVE MESSAGE ERROR:',
           result.error
         );
-
-        /*
-          Tell us exactly why persistence failed.
-        */
 
         return false;
 
@@ -3350,11 +3776,6 @@
       );
 
 
-      /*
-        Only show the result if the user is
-        still looking at the same chat.
-      */
-
       if (
         String(currentChatId) ===
         String(targetChatId)
@@ -3673,6 +4094,30 @@ lighting, camera angle, background or styling.`;
     }
 
 
+    /*
+      If IMAGE MODE is enabled, the normal SEND
+      button creates the image.
+
+      This makes the image function look like
+      ordinary chat instead of an obvious
+      separate image generator.
+    */
+
+    if (
+      imageMode &&
+      !selectedImageData &&
+      text
+    ) {
+
+      await sendImageFromChatBox(
+        text
+      );
+
+      return;
+
+    }
+
+
     const userText =
       text ||
       'Please edit this image.';
@@ -3701,14 +4146,7 @@ lighting, camera angle, background or styling.`;
 
 
     /*
-      CRITICAL:
-
-      Capture the chat ID NOW.
-
-      Everything belonging to this request will
-      be saved against this ID, even if the user
-      switches to another conversation while the
-      AI is thinking.
+      Capture the chat ID now.
     */
 
     const requestChatId =
@@ -3751,7 +4189,7 @@ lighting, camera angle, background or styling.`;
 
 
     /*
-      SAVE USER MESSAGE TO THE CORRECT CHAT.
+      SAVE USER MESSAGE
     */
 
     const saved =
@@ -3878,8 +4316,7 @@ lighting, camera angle, background or styling.`;
 
 
       /*
-        ALWAYS save the assistant answer against
-        the chat that started the request.
+        Save against original chat.
       */
 
       await saveMessage(
@@ -3889,11 +4326,6 @@ lighting, camera angle, background or styling.`;
         requestChatId
       );
 
-
-      /*
-        Add assistant answer to that chat's
-        individual conversation memory.
-      */
 
       conversation.push({
 
@@ -3907,8 +4339,7 @@ lighting, camera angle, background or styling.`;
 
 
       /*
-        Only render it if we're still looking
-        at that same chat.
+        Only display if still on that chat.
       */
 
       if (
@@ -3958,203 +4389,115 @@ lighting, camera angle, background or styling.`;
 
 
   /* =========================================================
+     IMAGE FROM NORMAL CHAT BOX
+  ========================================================= */
+
+  async function sendImageFromChatBox(
+    prompt
+  ) {
+
+    if (!prompt) {
+      return;
+    }
+
+
+    const chatReady =
+      await ensureCurrentChat(
+        prompt
+      );
+
+
+    if (!chatReady) {
+
+      addTextMessage(
+        'assistant',
+        'I could not create this conversation. Please try again.'
+      );
+
+      return;
+
+    }
+
+
+    const targetChatId =
+      currentChatId;
+
+
+    const conversation =
+      getConversation(
+        targetChatId
+      );
+
+
+    /*
+      Show the user's prompt like a normal message.
+    */
+
+    addTextMessage(
+      'user',
+      prompt
+    );
+
+
+    conversation.push({
+
+      role:
+        'user',
+
+      content:
+        prompt
+
+    });
+
+
+    await saveMessage(
+      'user',
+      prompt,
+      null,
+      targetChatId
+    );
+
+
+    await updateChatTitle(
+      prompt,
+      targetChatId
+    );
+
+
+    messageInput.value =
+      '';
+
+    messageInput.style.height =
+      'auto';
+
+
+    /*
+      Turn image mode off after sending.
+
+      This makes the next message automatically
+      behave like a normal chat message.
+    */
+
+    setImageMode(
+      false
+    );
+
+
+    await generateImage(
+      prompt,
+      targetChatId
+    );
+
+  }
+
+
+  /* =========================================================
      SEND BUTTON
   ========================================================= */
 
   sendButton.addEventListener(
     'click',
     sendMessage
-  );
-
-
-  /* =========================================================
-     IMAGE BUTTON
-  ========================================================= */
-
-  imageButton.addEventListener(
-    'click',
-    async () => {
-
-      if (imageBusy) {
-        return;
-      }
-
-
-      const prompt =
-        messageInput.value.trim();
-
-
-      if (
-        selectedImageData
-      ) {
-
-        if (!prompt) {
-
-          addTextMessage(
-            'assistant',
-            'Tell me what you want me to change in the uploaded image.'
-          );
-
-          messageInput.focus();
-
-          return;
-
-        }
-
-
-        const chatReady =
-          await ensureCurrentChat(
-            prompt
-          );
-
-
-        if (!chatReady) {
-          return;
-        }
-
-
-        const targetChatId =
-          currentChatId;
-
-
-        addTextMessage(
-          'user',
-          prompt
-        );
-
-
-        const conversation =
-          getConversation(
-            targetChatId
-          );
-
-
-        conversation.push({
-
-          role:
-            'user',
-
-          content:
-            prompt
-
-        });
-
-
-        await saveMessage(
-          'user',
-          prompt,
-          null,
-          targetChatId
-        );
-
-
-        await updateChatTitle(
-          prompt,
-          targetChatId
-        );
-
-
-        const image =
-          selectedImageData;
-
-
-        clearUpload();
-
-        messageInput.value =
-          '';
-
-
-        await editImage(
-          image,
-          prompt,
-          targetChatId
-        );
-
-
-        return;
-
-      }
-
-
-      if (!prompt) {
-
-        addTextMessage(
-          'assistant',
-          'Type what you want me to create first.'
-        );
-
-        messageInput.focus();
-
-        return;
-
-      }
-
-
-      const chatReady =
-        await ensureCurrentChat(
-          prompt
-        );
-
-
-      if (!chatReady) {
-        return;
-      }
-
-
-      const targetChatId =
-        currentChatId;
-
-
-      addTextMessage(
-        'user',
-        prompt
-      );
-
-
-      const conversation =
-        getConversation(
-          targetChatId
-        );
-
-
-      conversation.push({
-
-        role:
-          'user',
-
-        content:
-          prompt
-
-      });
-
-
-      await saveMessage(
-        'user',
-        prompt,
-        null,
-        targetChatId
-      );
-
-
-      await updateChatTitle(
-        prompt,
-        targetChatId
-      );
-
-
-      messageInput.value =
-        '';
-
-      messageInput.style.height =
-        'auto';
-
-
-      await generateImage(
-        prompt,
-        targetChatId
-      );
-
-    }
   );
 
 
@@ -4225,6 +4568,15 @@ lighting, camera angle, background or styling.`;
             'block';
 
 
+          /*
+            Uploading an image automatically puts
+            the composer into edit mode.
+          */
+
+          messageInput.placeholder =
+            'Describe what you want me to change...';
+
+
           messageInput.focus();
 
         };
@@ -4258,6 +4610,23 @@ lighting, camera angle, background or styling.`;
 
     uploadPreviewImage.src =
       '';
+
+
+    /*
+      Restore placeholder depending on mode.
+    */
+
+    if (imageMode) {
+
+      messageInput.placeholder =
+        'Describe the image you want me to create...';
+
+    } else {
+
+      messageInput.placeholder =
+        'Message Nastivee...';
+
+    }
 
   }
 
@@ -4326,10 +4695,12 @@ lighting, camera angle, background or styling.`;
       async () => {
 
         /*
-          Invalidate any active AI response.
+          Invalidate active requests.
         */
 
         activeRequestId++;
+
+        loadSequence++;
 
 
         await supabaseClient.auth.signOut();
@@ -4352,7 +4723,14 @@ lighting, camera angle, background or styling.`;
         initialised =
           false;
 
+        imageMode =
+          false;
+
         clearUpload();
+
+        setImageMode(
+          false
+        );
 
         clearChatUI();
 
