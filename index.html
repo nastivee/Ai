@@ -3216,6 +3216,26 @@ async function deleteChat(
   }
 
 
+  /*
+    Never run a delete without knowing exactly which chat,
+    so a missing id can never match more than one row.
+  */
+
+  if (
+    chatId === undefined ||
+    chatId === null ||
+    chatId === ''
+  ) {
+
+    console.error('DELETE CHAT: no chat id supplied');
+
+    renderChatHistory();
+
+    return;
+
+  }
+
+
 
 
   if (guestMode) {
@@ -3299,6 +3319,16 @@ async function deleteChat(
       level security. So when nothing comes back, ask
       whether the chat is still there before complaining.
     */
+
+    if (removed && removed.length > 1) {
+
+      console.error(
+        'DELETE CHAT: expected one row, removed',
+        removed.length
+      );
+
+    }
+
 
     if (!removed || !removed.length) {
 
@@ -5890,7 +5920,7 @@ window.addEventListener('online', () => {
    clearing anything by hand.
 ===================================================== */
 
-const APP_VERSION = '2026-09-20-16';
+const APP_VERSION = '2026-09-20-17';
 
 const RELOAD_FLAG = 'nastivee_reloaded_for';
 
