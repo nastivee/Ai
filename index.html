@@ -3047,6 +3047,44 @@ function askToDelete(row, chatItem) {
 
 
 /* =====================================================
+   AFTER A DELETE
+
+   Only the chat that was deleted goes. If the user is
+   reading a different chat, that stays on screen.
+===================================================== */
+
+async function finishDelete(deletedChatId) {
+
+  const wasOpen =
+    isCurrentChat(deletedChatId);
+
+
+  if (wasOpen) {
+
+    imageState.clear();
+
+    currentChatId = null;
+
+  }
+
+
+  await loadChats();
+
+
+  if (wasOpen) {
+
+    newChat();
+
+  } else {
+
+    renderChatHistory();
+
+  }
+
+}
+
+
+/* =====================================================
    DELETE CHAT
 ===================================================== */
 
@@ -3076,13 +3114,7 @@ async function deleteChat(
       )
     );
 
-    imageState.clear();
-
-    currentChatId = null;
-
-    await loadChats();
-
-    newChat();
+    await finishDelete(chatId);
 
     return;
 
@@ -3152,13 +3184,7 @@ async function deleteChat(
     }
 
 
-    imageState.clear();
-
-    currentChatId = null;
-
-    await loadChats();
-
-    newChat();
+    await finishDelete(chatId);
 
 
   } catch (error) {
@@ -5690,7 +5716,7 @@ window.addEventListener('online', () => {
    clearing anything by hand.
 ===================================================== */
 
-const APP_VERSION = '2026-09-20-6';
+const APP_VERSION = '2026-09-20-7';
 
 const RELOAD_FLAG = 'nastivee_reloaded_for';
 
