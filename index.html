@@ -4447,7 +4447,8 @@ async function editImage(
   prompt,
   requestChatId,
   regenerate = false,
-  caption = null
+  caption = null,
+  fromUpload = false
 ) {
 
   if (!image) {
@@ -5785,7 +5786,7 @@ window.addEventListener('online', () => {
    clearing anything by hand.
 ===================================================== */
 
-const APP_VERSION = '2026-09-20-11';
+const APP_VERSION = '2026-09-20-12';
 
 const RELOAD_FLAG = 'nastivee_reloaded_for';
 
