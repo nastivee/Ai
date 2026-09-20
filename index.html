@@ -4489,6 +4489,100 @@ async function updateChatTitle(
 ===================================================== */
 
 /* =====================================================
+   IMAGE STORAGE
+
+   Generated images used to be kept as base64 text inside
+   the database, about 1.4MB per picture. Now the file goes
+   to Supabase Storage and only its address is stored, so
+   chats load quickly and stay small.
+===================================================== */
+
+const IMAGE_BUCKET = 'images';
+
+function dataUrlToBlob(dataUrl) {
+
+  const [head, body] = String(dataUrl).split(',');
+
+  if (!body) return null;
+
+  const type =
+    (head.match(/data:([^;]+)/) || [])[1] ||
+    'image/png';
+
+  const binary = atob(body);
+
+  const bytes = new Uint8Array(binary.length);
+
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+
+  return new Blob([bytes], { type });
+
+}
+
+
+/*
+  Returns a public URL for the image. Falls back to the
+  data URL it was given if anything goes wrong, so an
+  image is never lost to a storage problem.
+*/
+async function storeImage(dataUrl) {
+
+  if (
+    guestMode ||
+    !currentUser ||
+    typeof dataUrl !== 'string' ||
+    !dataUrl.startsWith('data:')
+  ) {
+    return dataUrl;
+  }
+
+  try {
+
+    const blob = dataUrlToBlob(dataUrl);
+
+    if (!blob) return dataUrl;
+
+    const extension =
+      blob.type === 'image/jpeg' ? 'jpg' : 'png';
+
+    const path =
+      `${currentUser.id}/${Date.now()}-${Math.random()
+        .toString(36)
+        .slice(2, 8)}.${extension}`;
+
+    const { error } =
+      await supabaseClient
+        .storage
+        .from(IMAGE_BUCKET)
+        .upload(path, blob, {
+          contentType: blob.type,
+          upsert: false
+        });
+
+    if (error) throw error;
+
+    const { data } =
+      supabaseClient
+        .storage
+        .from(IMAGE_BUCKET)
+        .getPublicUrl(path);
+
+    return data?.publicUrl || dataUrl;
+
+  } catch (error) {
+
+    console.error('IMAGE STORE ERROR:', error);
+
+    return dataUrl;
+
+  }
+
+}
+
+
+/* =====================================================
    API HEADERS
 
    Image routes need a signed in user, so every call
@@ -5138,11 +5232,20 @@ async function generateImage(
       re-render.
     */
 
+    /*
+      Draw straight away from what came back, then keep
+      only the stored address in the chat history.
+    */
+
+    const storedUrl =
+      await storeImage(data.image);
+
+
     addImageMessageTo(
       requestChatId,
       data.image,
       prompt,
-      data.image,
+      storedUrl,
       prompt
     );
 
@@ -5150,7 +5253,7 @@ async function generateImage(
     await saveMessage(
       'assistant',
       prompt,
-      data.image,
+      storedUrl,
       requestChatId
     );
 
@@ -5296,11 +5399,15 @@ async function editImage(
       caption || prompt;
 
 
+    const storedUrl =
+      await storeImage(data.image);
+
+
     addImageMessageTo(
       requestChatId,
       data.image,
       shownPrompt,
-      data.image,
+      storedUrl,
       shownPrompt,
       fromUpload
     );
@@ -5309,7 +5416,7 @@ async function editImage(
     await saveMessage(
       'assistant',
       shownPrompt,
-      data.image,
+      storedUrl,
       requestChatId
     );
 
@@ -6723,7 +6830,7 @@ window.addEventListener('online', () => {
    clearing anything by hand.
 ===================================================== */
 
-const APP_VERSION = '2026-09-20-25';
+const APP_VERSION = '2026-09-20-26';
 
 const RELOAD_FLAG = 'nastivee_reloaded_for';
 

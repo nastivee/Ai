@@ -564,23 +564,48 @@ app.post('/api/image/edit', async (req, res) => {
     // GET IMAGE DATA
     // =================================================
 
-    const match =
-      image.match(
-        /^data:image\/[^;]+;base64,(.+)$/s
-      );
+    /*
+      The image arrives either as a data URL from the
+      browser, or as a link to Supabase Storage once the
+      picture has been saved there.
+    */
 
+    let originalBuffer;
 
-    const base64Data =
-      match
-        ? match[1]
-        : image;
+    if (/^https?:\/\//i.test(image)) {
 
+      const fetched = await fetch(image);
 
-    const originalBuffer =
-      Buffer.from(
-        base64Data,
-        'base64'
-      );
+      if (!fetched.ok) {
+
+        throw new Error(
+          `Could not fetch the source image (${fetched.status}).`
+        );
+
+      }
+
+      originalBuffer =
+        Buffer.from(await fetched.arrayBuffer());
+
+    } else {
+
+      const match =
+        image.match(
+          /^data:image\/[^;]+;base64,(.+)$/s
+        );
+
+      const base64Data =
+        match
+          ? match[1]
+          : image;
+
+      originalBuffer =
+        Buffer.from(
+          base64Data,
+          'base64'
+        );
+
+    }
 
 
     console.log(
