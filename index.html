@@ -94,6 +94,46 @@ button {
   border-color: #8b5cf6;
 }
 
+/* PASSWORD FIELD WITH VIEW/HIDE TOGGLE */
+
+.authPasswordWrap {
+  position: relative;
+}
+
+.authPasswordWrap .authInput {
+  padding-right: 52px;
+}
+
+.passwordToggle {
+  position: absolute;
+  top: 0;
+  right: 0;
+  height: 51px;
+  border: 0;
+  background: none;
+  color: #b1a5c2;
+  font-size: 18px;
+  padding: 0 14px;
+  line-height: 1;
+}
+
+.passwordToggle:hover {
+  color: #fff;
+}
+
+.authForgot {
+  text-align: right;
+  margin: -4px 0 4px;
+}
+
+.authForgot button {
+  border: 0;
+  background: none;
+  color: #b98aff;
+  font-size: 13px;
+  padding: 4px 2px;
+}
+
 .authButton {
   width: 100%;
   border: 0;
@@ -751,13 +791,33 @@ button {
       autocomplete="email"
     >
 
-    <input
-      id="authPassword"
-      class="authInput"
-      type="password"
-      placeholder="Password"
-      autocomplete="current-password"
-    >
+    <div class="authPasswordWrap">
+
+      <input
+        id="authPassword"
+        class="authInput"
+        type="password"
+        placeholder="Password"
+        autocomplete="current-password"
+      >
+
+      <button
+        id="passwordToggle"
+        class="passwordToggle"
+        type="button"
+        aria-label="Show password"
+        title="Show password"
+      >
+        Show
+      </button>
+
+    </div>
+
+    <div class="authForgot">
+      <button id="authForgotButton" type="button">
+        Forgotten your password?
+      </button>
+    </div>
 
     <button
       id="authButton"
@@ -1254,6 +1314,110 @@ mobileMenuButton.addEventListener(
 sidebarOverlay.addEventListener(
   'click',
   closeMobileSidebar
+);
+
+
+/* =====================================================
+   PASSWORD VIEW / HIDE
+===================================================== */
+
+const passwordToggle =
+  document.getElementById('passwordToggle');
+
+passwordToggle.addEventListener(
+  'click',
+  () => {
+
+    const showing =
+      authPassword.type === 'text';
+
+    authPassword.type =
+      showing
+        ? 'password'
+        : 'text';
+
+    passwordToggle.textContent =
+      showing
+        ? 'Show'
+        : 'Hide';
+
+    const label =
+      showing
+        ? 'Show password'
+        : 'Hide password';
+
+    passwordToggle.setAttribute('aria-label', label);
+    passwordToggle.title = label;
+
+    authPassword.focus();
+
+  }
+);
+
+
+/* =====================================================
+   FORGOTTEN PASSWORD
+===================================================== */
+
+const authForgotButton =
+  document.getElementById('authForgotButton');
+
+authForgotButton.addEventListener(
+  'click',
+  async () => {
+
+    const email =
+      authEmail.value.trim();
+
+    if (!email) {
+
+      authError.style.color = '#ff8585';
+
+      authError.textContent =
+        'Enter your email address first, then tap Forgotten your password.';
+
+      authEmail.focus();
+
+      return;
+    }
+
+    authForgotButton.disabled = true;
+
+    authError.style.color = '#ff8585';
+    authError.textContent = '';
+
+    try {
+
+      const { error } =
+        await supabaseClient.auth.resetPasswordForEmail(
+          email,
+          {
+            redirectTo: window.location.href
+          }
+        );
+
+      if (error) throw error;
+
+      authError.style.color = '#8ee6a1';
+
+      authError.textContent =
+        'Password reset email sent. Check your inbox.';
+
+    } catch (error) {
+
+      authError.style.color = '#ff8585';
+
+      authError.textContent =
+        error?.message ||
+        'Could not send the reset email.';
+
+    } finally {
+
+      authForgotButton.disabled = false;
+
+    }
+
+  }
 );
 
 
