@@ -780,7 +780,8 @@ button {
 }
 
 .chatMenuMode {
-  display: none;
+  /* the switch lives in the header now */
+  display: none !important;
   padding: 10px 12px 12px;
   border-bottom: 1px solid #2b2140;
   margin-bottom: 6px;
@@ -848,8 +849,7 @@ button {
 }
 
 .headerStatus {
-  /* always the last thing on the row, hard right */
-  margin-left: auto;
+  /* the switch takes the free space, so the pair sits hard right */
   flex-shrink: 0;
   cursor: pointer;
   transition: padding .18s var(--ease);
@@ -952,6 +952,283 @@ button {
 }
 
 /* ---- the guided install sheet ---- */
+
+.creditsRow {
+  display: none;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 10px;
+  padding: 9px 12px;
+  border: 1px solid #2c2244;
+  border-radius: 12px;
+  background: #140f24;
+}
+
+.creditsRow.show {
+  display: flex;
+}
+
+.creditsRow.low {
+  border-color: #6b4a22;
+  background: #221704;
+}
+
+.creditsRow.empty {
+  border-color: #6b3341;
+  background: #24101a;
+}
+
+.creditsBody {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.creditsCount {
+  color: #ded3ec;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.creditsRow.low .creditsCount {
+  color: #f6c98a;
+}
+
+.creditsRow.empty .creditsCount {
+  color: #ff9d9d;
+}
+
+.creditsSub {
+  margin-top: 1px;
+  color: #6f6580;
+  font-size: 11px;
+}
+
+.topUpButton {
+  flex-shrink: 0;
+  min-height: 32px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #7c3aed, #9333ea);
+  color: white;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.topUpButton:hover {
+  filter: brightness(1.08);
+}
+
+
+/* ---- the paywall sheet ---- */
+
+.payOverlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 960;
+  padding: 20px;
+  align-items: center;
+  justify-content: center;
+  background: rgba(6, 4, 12, .74);
+  backdrop-filter: blur(4px);
+}
+
+.payOverlay.show {
+  display: flex;
+}
+
+.payCard {
+  width: 100%;
+  max-width: 420px;
+  max-height: 88vh;
+  overflow-y: auto;
+  padding: 24px;
+  border: 1px solid #33264a;
+  border-radius: 22px;
+  background: #17112a;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, .5);
+}
+
+.payHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.payTitle {
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -.3px;
+}
+
+/* Close mark: large, no background, no border */
+.payClose {
+  border: 0;
+  background: none;
+  color: #cfc3dd;
+  font-size: 34px;
+  line-height: 1;
+  padding: 0 8px;
+}
+
+.payClose:hover {
+  color: #fff;
+}
+
+.payLead {
+  margin: 10px 0 0;
+  color: #b9adc8;
+  font-size: 13.5px;
+  line-height: 1.55;
+}
+
+.payPack {
+  margin-top: 18px;
+  padding: 18px;
+  border: 1px solid #4a3568;
+  border-radius: 16px;
+  background:
+    linear-gradient(135deg, #241740, #1a1230);
+  text-align: center;
+}
+
+.payPrice {
+  font-size: 34px;
+  font-weight: 800;
+  letter-spacing: -1px;
+  color: #fff;
+}
+
+.payPackText {
+  margin-top: 2px;
+  color: #c4a6ff;
+  font-size: 13.5px;
+  font-weight: 700;
+}
+
+.payPackSub {
+  margin-top: 6px;
+  color: #8a7e99;
+  font-size: 12px;
+}
+
+.payBuy {
+  width: 100%;
+  min-height: 48px;
+  margin-top: 16px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 13px;
+  background: linear-gradient(135deg, #7c3aed, #9333ea);
+  color: white;
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.payBuy:hover {
+  filter: brightness(1.08);
+}
+
+.payBuy:disabled {
+  opacity: .5;
+}
+
+.paySecure {
+  margin-top: 10px;
+  text-align: center;
+  color: #6f6580;
+  font-size: 11.5px;
+}
+
+.payDivider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 20px 0 14px;
+  color: #5f566f;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .6px;
+}
+
+.payDivider::before,
+.payDivider::after {
+  content: '';
+  flex: 1 1 auto;
+  height: 1px;
+  background: #271d38;
+}
+
+.payCouponRow {
+  display: flex;
+  gap: 8px;
+}
+
+.payCouponInput {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid #2e2344;
+  border-radius: 12px;
+  background: #170f26;
+  color: #e6ddf0;
+  font-size: 14px;
+  outline: none;
+}
+
+.payCouponInput::placeholder {
+  color: #6f6580;
+}
+
+.payCouponInput:focus {
+  border-color: #6d4fb8;
+}
+
+.payCouponButton {
+  flex-shrink: 0;
+  min-height: 44px;
+  padding: 0 18px;
+  border: 1px solid #4a3568;
+  border-radius: 12px;
+  background:
+    linear-gradient(135deg, #2a1c44, #1d1430);
+  color: #efe7f9;
+  font-weight: 700;
+  font-size: 13.5px;
+}
+
+.payCouponButton:hover {
+  border-color: #6d4fb8;
+}
+
+.payMessage {
+  display: none;
+  margin-top: 12px;
+  padding: 10px 13px;
+  border-radius: 11px;
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+.payMessage.show {
+  display: block;
+}
+
+.payMessage.good {
+  border: 1px solid #3b5a44;
+  background: rgba(22, 40, 28, .7);
+  color: #9fd8b3;
+}
+
+.payMessage.bad {
+  border: 1px solid #6b3341;
+  background: rgba(60, 20, 28, .55);
+  color: #ff9d9d;
+}
 
 .installOverlay {
   display: none;
@@ -2225,13 +2502,14 @@ button {
     gap: 8px;
   }
 
-  /* the header keeps the title, the rest moves or shrinks */
-  #modeSwitch {
-    display: none;
+  /* the switch stays in the header, just tighter */
+  .modeButton {
+    padding: 5px 11px;
+    font-size: 11px;
   }
 
-  .chatMenuMode {
-    display: block;
+  .modeSwitch {
+    padding: 2px;
   }
 
   .headerStatus {
@@ -2487,6 +2765,84 @@ button {
      MY PROFILE
 ===================================================== -->
 
+<div class="payOverlay" id="payOverlay">
+
+  <div class="payCard">
+
+    <div class="payHead">
+
+      <div class="payTitle" id="payTitle">Out of images</div>
+
+      <button
+        class="payClose"
+        id="payClose"
+        type="button"
+        aria-label="Close"
+      >
+        &times;
+      </button>
+
+    </div>
+
+    <p class="payLead" id="payLead"></p>
+
+    <div class="payPack">
+
+      <div class="payPrice" id="payPrice">&pound;5</div>
+
+      <div class="payPackText" id="payPackText">
+        100 images
+      </div>
+
+      <div class="payPackSub">
+        Yours to keep, they never expire.
+      </div>
+
+    </div>
+
+    <button
+      class="payBuy"
+      id="payBuy"
+      type="button"
+    >
+      Buy with card
+    </button>
+
+    <div class="paySecure">
+      Card details are handled by Stripe, never by Nastivee.
+    </div>
+
+    <div class="payDivider">OR</div>
+
+    <div class="payCouponRow">
+
+      <input
+        id="payCoupon"
+        class="payCouponInput"
+        type="text"
+        placeholder="Coupon code"
+        autocomplete="off"
+        autocapitalize="none"
+        spellcheck="false"
+      >
+
+      <button
+        class="payCouponButton"
+        id="payCouponButton"
+        type="button"
+      >
+        Apply
+      </button>
+
+    </div>
+
+    <div class="payMessage" id="payMessage"></div>
+
+  </div>
+
+</div>
+
+
 <div class="installOverlay" id="installOverlay">
 
   <div class="installCard">
@@ -2683,6 +3039,23 @@ button {
         </button>
       </div>
 
+
+      <div class="creditsRow" id="creditsRow">
+
+        <div class="creditsBody">
+          <div class="creditsCount" id="creditsCount"></div>
+          <div class="creditsSub" id="creditsSub"></div>
+        </div>
+
+        <button
+          class="topUpButton"
+          id="topUpButton"
+          type="button"
+        >
+          Top up
+        </button>
+
+      </div>
 
       <div class="accountRow">
 
@@ -4286,6 +4659,10 @@ async function initialiseApp() {
   }
 
   initialised = true;
+
+  refreshAccount();
+
+  checkPaymentReturn();
 
 }
 
@@ -6907,6 +7284,19 @@ async function generateImage(
       await response.json();
 
 
+    if (response.status === 402 || data?.needsCredit) {
+
+      await refreshAccount();
+
+      openPaywall('empty');
+
+      throw new Error(
+        data?.error ||
+        'You are out of images. Top up to carry on.'
+      );
+
+    }
+
     if (!response.ok) {
 
       throw new Error(
@@ -6915,6 +7305,11 @@ async function generateImage(
         'Image generation failed.'
       );
 
+    }
+
+    if (typeof data.creditsLeft === 'number') {
+      account.credits = data.creditsLeft;
+      drawCredits();
     }
 
 
@@ -7064,6 +7459,24 @@ async function editImage(
     const data =
       await response.json();
 
+
+    if (response.status === 402 || data?.needsCredit) {
+
+      await refreshAccount();
+
+      openPaywall('empty');
+
+      throw new Error(
+        data?.error ||
+        'You are out of images. Top up to carry on.'
+      );
+
+    }
+
+    if (typeof data.creditsLeft === 'number') {
+      account.credits = data.creditsLeft;
+      drawCredits();
+    }
 
     if (!response.ok) {
 
@@ -7539,6 +7952,386 @@ function iconLabel(name, label, short) {
     `<span class="actionLabel full">${label}</span>` +
     `<span class="actionLabel short">${short || label}</span>`
   );
+
+}
+
+
+/* =====================================================
+   THE PAYWALL
+
+   Images cost money to make, so each one spends a credit.
+   Credits come from a five pound pack, or from a coupon
+   that opens the gate for good.
+===================================================== */
+
+const creditsRow =
+  document.getElementById('creditsRow');
+
+const creditsCount =
+  document.getElementById('creditsCount');
+
+const creditsSub =
+  document.getElementById('creditsSub');
+
+const payOverlay =
+  document.getElementById('payOverlay');
+
+const payTitle =
+  document.getElementById('payTitle');
+
+const payLead =
+  document.getElementById('payLead');
+
+const payPrice =
+  document.getElementById('payPrice');
+
+const payPackText =
+  document.getElementById('payPackText');
+
+const payBuy =
+  document.getElementById('payBuy');
+
+const payCoupon =
+  document.getElementById('payCoupon');
+
+const payMessage =
+  document.getElementById('payMessage');
+
+
+let account = {
+  signedIn: false,
+  credits: 0,
+  unlimited: false,
+  packImages: 100,
+  packPricePence: 500,
+  canBuy: false
+};
+
+
+function money(pence) {
+
+  return pence % 100 === 0
+    ? `\u00a3${pence / 100}`
+    : `\u00a3${(pence / 100).toFixed(2)}`;
+
+}
+
+
+/*
+  Asks the server what this account can do, then redraws
+  anything that depends on it.
+*/
+async function refreshAccount() {
+
+  if (guestMode || !currentUser) {
+    account.signedIn = false;
+    drawCredits();
+    return;
+  }
+
+  try {
+
+    const response =
+      await fetch(`${API_BASE}/api/account`, {
+        headers: await apiHeaders()
+      });
+
+    if (!response.ok) return;
+
+    account =
+      await response.json();
+
+  } catch (error) {
+
+    console.error('ACCOUNT ERROR:', error);
+
+  }
+
+  drawCredits();
+
+}
+
+
+function drawCredits() {
+
+  if (!creditsRow) return;
+
+  if (!account.signedIn) {
+    creditsRow.classList.remove('show');
+    return;
+  }
+
+  creditsRow.classList.add('show');
+
+  creditsRow.classList.remove('low', 'empty');
+
+  if (account.unlimited) {
+
+    creditsCount.textContent =
+      'Unlimited images';
+
+    creditsSub.textContent =
+      'Your coupon is doing the work.';
+
+    document
+      .getElementById('topUpButton')
+      ?.style.setProperty('display', 'none');
+
+    return;
+
+  }
+
+  document
+    .getElementById('topUpButton')
+    ?.style.removeProperty('display');
+
+  const left = account.credits || 0;
+
+  creditsCount.textContent =
+    left === 1
+      ? '1 image left'
+      : `${left} images left`;
+
+  creditsSub.textContent =
+    `${money(account.packPricePence)} for ` +
+    `${account.packImages} more.`;
+
+  if (left === 0) {
+    creditsRow.classList.add('empty');
+  } else if (left <= 10) {
+    creditsRow.classList.add('low');
+  }
+
+}
+
+
+function sayOnPaywall(text, good) {
+
+  payMessage.textContent = text;
+
+  payMessage.className =
+    `payMessage show ${good ? 'good' : 'bad'}`;
+
+}
+
+
+function openPaywall(reason) {
+
+  if (guestMode || !currentUser) {
+    showGuestImageNotice();
+    return;
+  }
+
+  payMessage.className = 'payMessage';
+
+  payTitle.textContent =
+    reason === 'topup'
+      ? 'Top up'
+      : 'Out of images';
+
+  payLead.textContent =
+    reason === 'topup'
+      ? 'Add more images to your account whenever you like.'
+      : 'Your images have run out. Grab a pack to carry on, ' +
+        'or enter a coupon if you have one.';
+
+  payPrice.textContent =
+    money(account.packPricePence || 500);
+
+  payPackText.textContent =
+    `${account.packImages || 100} images`;
+
+  payBuy.disabled =
+    account.canBuy === false;
+
+  payBuy.textContent =
+    account.canBuy === false
+      ? 'Card payments coming shortly'
+      : 'Buy with card';
+
+  payOverlay.classList.add('show');
+
+}
+
+
+function closePaywall() {
+  payOverlay.classList.remove('show');
+}
+
+
+document
+  .getElementById('topUpButton')
+  ?.addEventListener('click', () => openPaywall('topup'));
+
+document
+  .getElementById('payClose')
+  ?.addEventListener('click', closePaywall);
+
+payOverlay?.addEventListener('click', event => {
+  if (event.target === payOverlay) {
+    closePaywall();
+  }
+});
+
+
+payBuy?.addEventListener('click', async () => {
+
+  payBuy.disabled = true;
+
+  payBuy.textContent = 'Opening Stripe...';
+
+  try {
+
+    const response =
+      await fetch(`${API_BASE}/api/checkout`, {
+        method: 'POST',
+        headers: await apiHeaders(),
+        body: '{}'
+      });
+
+    const data =
+      await response.json();
+
+    if (!response.ok || !data?.url) {
+
+      throw new Error(
+        data?.error || 'Could not start checkout.'
+      );
+
+    }
+
+    location.href = data.url;
+
+  } catch (error) {
+
+    sayOnPaywall(error.message, false);
+
+    payBuy.disabled = false;
+
+    payBuy.textContent = 'Buy with card';
+
+  }
+
+});
+
+
+async function applyCoupon() {
+
+  const code =
+    (payCoupon.value || '').trim();
+
+  if (!code) {
+    sayOnPaywall('Enter a code first.', false);
+    return;
+  }
+
+  try {
+
+    const response =
+      await fetch(`${API_BASE}/api/coupon`, {
+        method: 'POST',
+        headers: await apiHeaders(),
+        body: JSON.stringify({ code })
+      });
+
+    const data =
+      await response.json();
+
+    if (!response.ok) {
+
+      throw new Error(
+        data?.error || 'That code did not work.'
+      );
+
+    }
+
+    sayOnPaywall(
+      data.message || 'Code accepted.',
+      true
+    );
+
+    payCoupon.value = '';
+
+    await refreshAccount();
+
+    setTimeout(closePaywall, 1600);
+
+  } catch (error) {
+
+    sayOnPaywall(error.message, false);
+
+  }
+
+}
+
+
+document
+  .getElementById('payCouponButton')
+  ?.addEventListener('click', applyCoupon);
+
+payCoupon?.addEventListener('keydown', event => {
+  if (event.key === 'Enter') {
+    applyCoupon();
+  }
+});
+
+
+/*
+  Back from Stripe. The webhook does the real work, so
+  give it a beat and then read the balance again.
+*/
+
+function checkPaymentReturn() {
+
+  const params =
+    new URLSearchParams(location.search);
+
+  if (!params.has('paid')) return;
+
+  const paid =
+    params.get('paid') === '1';
+
+  history.replaceState(
+    null,
+    '',
+    location.pathname
+  );
+
+  if (!paid) return;
+
+  let tries = 0;
+
+  const poll = async () => {
+
+    tries += 1;
+
+    const before =
+      account.credits;
+
+    await refreshAccount();
+
+    if (account.credits > before || tries >= 6) {
+
+      openPaywall('topup');
+
+      sayOnPaywall(
+        account.credits > before
+          ? `Payment received. You have ${account.credits} ` +
+            'images to play with.'
+          : 'Payment received. Your images will appear here ' +
+            'in a moment.',
+        true
+      );
+
+      return;
+
+    }
+
+    setTimeout(poll, 1500);
+
+  };
+
+  setTimeout(poll, 1200);
 
 }
 
@@ -9370,6 +10163,8 @@ logoutButton.addEventListener(
 
     await supabaseClient.auth.signOut();
 
+    creditsRow?.classList.remove('show');
+
     currentUser =
       null;
 
@@ -9589,7 +10384,7 @@ window.addEventListener('online', () => {
    clearing anything by hand.
 ===================================================== */
 
-const APP_VERSION = '2026-09-20-43';
+const APP_VERSION = '2026-09-20-44';
 
 const RELOAD_FLAG = 'nastivee_reloaded_for';
 

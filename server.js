@@ -4,6 +4,7 @@ import OpenAI from 'openai';
 import sharp from 'sharp';
 import { toFile } from 'openai/uploads';
 import { createClient } from '@supabase/supabase-js';
+import Stripe from 'stripe';
 
 const app = express();
 
@@ -34,6 +35,165 @@ const SUPABASE_ANON_KEY =
 
 const supabase =
   createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+
+// =====================================================
+// THE PAYWALL
+//
+// Images cost real money to make, so each one spends a
+// credit. Credits come from Stripe, or from a coupon.
+//
+// Balances live in Supabase and are only ever written by
+// this server, using the service role key. The browser
+// can read its own balance and nothing more.
+// =====================================================
+
+const SUPABASE_SERVICE_KEY =
+  process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+
+const supabaseAdmin =
+  SUPABASE_SERVICE_KEY
+    ? createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
+        auth: {
+          persistSession: false,
+          autoRefreshToken: false
+        }
+      })
+    : null;
+
+/* What a pack costs, and what it buys */
+const PACK_PRICE_PENCE =
+  Number(process.env.PACK_PRICE_PENCE || 500);
+
+const PACK_IMAGES =
+  Number(process.env.PACK_IMAGES || 100);
+
+/* The code that opens the gate for good */
+const COUPON_CODE =
+  (process.env.COUPON_CODE || 'Nasti100').trim();
+
+/* Where Stripe sends people back to */
+const LIVE_SITE_URL =
+  process.env.LIVE_SITE_URL ||
+  'https://nastivee.github.io/Ai/';
+
+const STRIPE_SECRET_KEY =
+  process.env.STRIPE_SECRET_KEY || '';
+
+const STRIPE_WEBHOOK_SECRET =
+  process.env.STRIPE_WEBHOOK_SECRET || '';
+
+const stripe =
+  STRIPE_SECRET_KEY
+    ? new Stripe(STRIPE_SECRET_KEY)
+    : null;
+
+
+function paywallReady() {
+  return Boolean(stripe && supabaseAdmin);
+}
+
+
+/*
+  What this account is allowed to do right now.
+*/
+async function readAccount(userId) {
+
+  if (!supabaseAdmin) {
+
+    /*
+      No service key configured, so there is no balance to
+      read. Let the work through rather than locking
+      everybody out of a half finished setup.
+    */
+    return {
+      credits: 0,
+      unlimited: true,
+      unmetered: true
+    };
+
+  }
+
+  const { data, error } =
+    await supabaseAdmin
+      .from('profiles')
+      .select('image_credits, unlimited')
+      .eq('id', userId)
+      .maybeSingle();
+
+  if (error) {
+
+    console.error('ACCOUNT READ ERROR:', error.message);
+
+    return {
+      credits: 0,
+      unlimited: false,
+      unmetered: false,
+      broken: true
+    };
+
+  }
+
+  return {
+    credits: data?.image_credits || 0,
+    unlimited: data?.unlimited === true,
+    unmetered: false
+  };
+
+}
+
+
+/*
+  Takes one credit. Returns the balance left, or -1 when
+  there was none to take.
+*/
+async function spendCredit(userId) {
+
+  if (!supabaseAdmin) {
+    return 999999;
+  }
+
+  const { data, error } =
+    await supabaseAdmin.rpc('spend_credit', {
+      p_user: userId
+    });
+
+  if (error) {
+    console.error('SPEND ERROR:', error.message);
+    return -1;
+  }
+
+  return Number(data);
+
+}
+
+
+/*
+  Puts credit on. The reference makes it idempotent, so a
+  webhook Stripe sends twice only pays once.
+*/
+async function addCredits(userId, amount, reason, reference) {
+
+  if (!supabaseAdmin) {
+    return 0;
+  }
+
+  const { data, error } =
+    await supabaseAdmin.rpc('add_credits', {
+      p_user: userId,
+      p_amount: amount,
+      p_reason: reason,
+      p_reference: reference || null
+    });
+
+  if (error) {
+    console.error('CREDIT ERROR:', error.message);
+    throw new Error(error.message);
+  }
+
+  return Number(data);
+
+}
 
 
 async function getUser(req) {
@@ -136,8 +296,12 @@ function sizeFor(shape) {
 
 
 /*
-  Guards an image route: signed in, and inside the
-  hourly allowance.
+  Guards an image route: signed in, inside the hourly
+  allowance, and with a credit to spend.
+
+  The credit is taken before the picture is made. If the
+  work then fails, it is handed straight back, so nobody
+  pays for an error.
 */
 async function requireUser(req, res) {
 
@@ -164,9 +328,160 @@ async function requireUser(req, res) {
 
   }
 
+  const account =
+    await readAccount(user.id);
+
+  if (account.broken) {
+
+    res.status(503).json({
+      error: 'Could not check your balance. Try again in a moment.'
+    });
+
+    return null;
+
+  }
+
+  if (account.unlimited || account.unmetered) {
+
+    user.unlimited = true;
+
+    return user;
+
+  }
+
+  const left =
+    await spendCredit(user.id);
+
+  if (left < 0) {
+
+    res.status(402).json({
+
+      error:
+        'You are out of images. Top up to carry on.',
+
+      needsCredit: true,
+
+      packImages: PACK_IMAGES,
+      packPricePence: PACK_PRICE_PENCE
+
+    });
+
+    return null;
+
+  }
+
+  user.creditsLeft = left;
+
   return user;
 
 }
+
+
+/*
+  Hands a spent credit back when the picture never arrived.
+*/
+async function refundCredit(user, why) {
+
+  if (!user || user.unlimited) return;
+
+  try {
+
+    await addCredits(user.id, 1, `refund: ${why}`, null);
+
+    console.log(`REFUNDED ONE CREDIT TO ${user.id} (${why})`);
+
+  } catch (error) {
+
+    console.error('REFUND FAILED:', error.message);
+
+  }
+
+}
+
+// =====================================================
+// STRIPE WEBHOOK
+//
+// This one route needs the body exactly as Stripe sent
+// it, byte for byte, or the signature will not check out.
+// So it is mounted before the JSON parser.
+// =====================================================
+
+app.post(
+  '/api/stripe/webhook',
+  express.raw({ type: 'application/json' }),
+  async (req, res) => {
+
+    if (!stripe || !STRIPE_WEBHOOK_SECRET) {
+      return res.status(503).send('Stripe is not configured.');
+    }
+
+    let event;
+
+    try {
+
+      event =
+        stripe.webhooks.constructEvent(
+          req.body,
+          req.headers['stripe-signature'],
+          STRIPE_WEBHOOK_SECRET
+        );
+
+    } catch (error) {
+
+      console.error(
+        'STRIPE SIGNATURE FAILED:',
+        error.message
+      );
+
+      return res.status(400).send('Bad signature.');
+
+    }
+
+    try {
+
+      if (event.type === 'checkout.session.completed') {
+
+        const session = event.data.object;
+
+        const userId =
+          session.client_reference_id ||
+          session.metadata?.user_id;
+
+        const images =
+          Number(session.metadata?.images || PACK_IMAGES);
+
+        if (session.payment_status === 'paid' && userId) {
+
+          const balance =
+            await addCredits(
+              userId,
+              images,
+              'stripe',
+              `stripe:${session.id}`
+            );
+
+          console.log(
+            `PAID: ${userId} +${images}, balance ${balance}`
+          );
+
+        }
+
+      }
+
+    } catch (error) {
+
+      console.error('WEBHOOK HANDLING ERROR:', error);
+
+      /* Tell Stripe to try again */
+      return res.status(500).send('Not handled.');
+
+    }
+
+    res.json({ received: true });
+
+  }
+);
+
 
 app.use(
   express.json({
@@ -185,6 +500,200 @@ app.get('/api/health', (req, res) => {
     service: 'Nastivee AI',
     status: 'online'
   });
+});
+
+
+// =====================================================
+// ACCOUNT, COUPON AND CHECKOUT
+// =====================================================
+
+/*
+  What the browser needs to draw the paywall.
+*/
+app.get('/api/account', async (req, res) => {
+
+  const user = await getUser(req);
+
+  if (!user) {
+
+    return res.json({
+      signedIn: false,
+      credits: 0,
+      unlimited: false,
+      packImages: PACK_IMAGES,
+      packPricePence: PACK_PRICE_PENCE,
+      canBuy: paywallReady()
+    });
+
+  }
+
+  const account =
+    await readAccount(user.id);
+
+  res.json({
+    signedIn: true,
+    credits: account.credits,
+    unlimited: account.unlimited || account.unmetered,
+    packImages: PACK_IMAGES,
+    packPricePence: PACK_PRICE_PENCE,
+    canBuy: paywallReady()
+  });
+
+});
+
+
+/*
+  A coupon opens the gate for that account from then on.
+*/
+app.post('/api/coupon', async (req, res) => {
+
+  const user = await getUser(req);
+
+  if (!user) {
+
+    return res.status(401).json({
+      error: 'Please sign in first.'
+    });
+
+  }
+
+  const code =
+    String(req.body?.code || '').trim();
+
+  if (!code) {
+
+    return res.status(400).json({
+      error: 'Enter a code.'
+    });
+
+  }
+
+  if (!withinLimit(`coupon:${user.id}`, 12)) {
+
+    return res.status(429).json({
+      error: 'Too many tries. Give it an hour.'
+    });
+
+  }
+
+  if (code.toLowerCase() !== COUPON_CODE.toLowerCase()) {
+
+    return res.status(400).json({
+      error: 'That code is not recognised.'
+    });
+
+  }
+
+  if (!supabaseAdmin) {
+
+    return res.status(503).json({
+      error: 'Accounts are not set up yet. Try again shortly.'
+    });
+
+  }
+
+  const { error } =
+    await supabaseAdmin
+      .from('profiles')
+      .upsert({
+        id: user.id,
+        unlimited: true,
+        credits_updated_at: new Date().toISOString()
+      });
+
+  if (error) {
+
+    console.error('COUPON ERROR:', error.message);
+
+    return res.status(500).json({
+      error: 'Could not apply that code. Try again.'
+    });
+
+  }
+
+  console.log(`COUPON REDEEMED BY ${user.id}`);
+
+  res.json({
+    ok: true,
+    unlimited: true,
+    message: 'Code accepted. Images are on the house from here.'
+  });
+
+});
+
+
+/*
+  Sends the user to Stripe to buy a pack.
+*/
+app.post('/api/checkout', async (req, res) => {
+
+  const user = await getUser(req);
+
+  if (!user) {
+
+    return res.status(401).json({
+      error: 'Please sign in first.'
+    });
+
+  }
+
+  if (!stripe) {
+
+    return res.status(503).json({
+      error: 'Payments are not switched on yet.'
+    });
+
+  }
+
+  try {
+
+    const session =
+      await stripe.checkout.sessions.create({
+
+        mode: 'payment',
+
+        client_reference_id: user.id,
+
+        customer_email: user.email || undefined,
+
+        metadata: {
+          user_id: user.id,
+          images: String(PACK_IMAGES)
+        },
+
+        line_items: [
+          {
+            quantity: 1,
+            price_data: {
+              currency: 'gbp',
+              unit_amount: PACK_PRICE_PENCE,
+              product_data: {
+                name: `${PACK_IMAGES} Nastivee images`,
+                description:
+                  `${PACK_IMAGES} image generations on your ` +
+                  'Nastivee AI account. They do not expire.'
+              }
+            }
+          }
+        ],
+
+        success_url: `${LIVE_SITE_URL}?paid=1`,
+        cancel_url: `${LIVE_SITE_URL}?paid=0`
+
+      });
+
+    res.json({ url: session.url });
+
+  } catch (error) {
+
+    console.error('CHECKOUT ERROR:', error);
+
+    res.status(500).json({
+      error: 'Could not start checkout. Try again.'
+    });
+
+  }
+
 });
 
 
@@ -429,9 +938,11 @@ ${JSON.stringify(memory, null, 2)}
 
 app.post('/api/image', async (req, res) => {
 
+  let user = null;
+
   try {
 
-    const user = await requireUser(req, res);
+    user = await requireUser(req, res);
 
     if (!user) {
       return;
@@ -509,8 +1020,13 @@ app.post('/api/image', async (req, res) => {
 
 
     res.json({
+
       image:
-        `data:image/png;base64,${imageData}`
+        `data:image/png;base64,${imageData}`,
+
+      creditsLeft:
+        user?.unlimited ? null : user?.creditsLeft
+
     });
 
 
@@ -520,6 +1036,8 @@ app.post('/api/image', async (req, res) => {
       'IMAGE GENERATION ERROR:',
       error
     );
+
+    await refundCredit(user, 'generate failed');
 
     res.status(500).json({
 
@@ -543,9 +1061,11 @@ app.post('/api/image', async (req, res) => {
 
 app.post('/api/image/edit', async (req, res) => {
 
+  let user = null;
+
   try {
 
-    const user = await requireUser(req, res);
+    user = await requireUser(req, res);
 
     if (!user) {
       return;
@@ -918,7 +1438,10 @@ style was requested.
     res.json({
 
       image:
-        `data:image/png;base64,${imageData}`
+        `data:image/png;base64,${imageData}`,
+
+      creditsLeft:
+        user?.unlimited ? null : user?.creditsLeft
 
     });
 
@@ -930,6 +1453,7 @@ style was requested.
       error
     );
 
+    await refundCredit(user, 'edit failed');
 
     res.status(500).json({
 

@@ -1,0 +1,164 @@
+-- =========================================================
+-- NASTIVEE AI, IMAGE CREDITS
+--
+-- Run this once in the Supabase SQL editor.
+--
+-- It adds the two columns the paywall needs and, just as
+-- importantly, stops the browser from writing to them. The
+-- only thing that may change a balance is the server, using
+-- the service role key.
+-- =========================================================
+
+alter table public.profiles
+  add column if not exists image_credits integer not null default 0;
+
+alter table public.profiles
+  add column if not exists unlimited boolean not null default false;
+
+alter table public.profiles
+  add column if not exists credits_updated_at timestamptz;
+
+
+-- ---------------------------------------------------------
+-- The browser may read its own row, and may write nothing
+-- but its memory box.
+--
+-- Row level security says WHICH rows. Column grants say
+-- WHICH columns. Both are needed, or a signed in user could
+-- simply set their own balance to a million.
+-- ---------------------------------------------------------
+
+revoke update on public.profiles from anon, authenticated;
+revoke insert on public.profiles from anon, authenticated;
+
+grant insert (id, memory) on public.profiles to authenticated;
+grant update (memory)     on public.profiles to authenticated;
+
+grant select on public.profiles to authenticated;
+
+
+-- ---------------------------------------------------------
+-- A ledger, so every grant of credit can be accounted for
+-- and a Stripe webhook that arrives twice only pays once.
+-- ---------------------------------------------------------
+
+create table if not exists public.credit_events (
+  id            bigserial primary key,
+  user_id       uuid not null references auth.users(id) on delete cascade,
+  amount        integer not null,
+  reason        text not null,
+  reference     text unique,
+  created_at    timestamptz not null default now()
+);
+
+alter table public.credit_events enable row level security;
+
+drop policy if exists "credit events read own" on public.credit_events;
+create policy "credit events read own"
+  on public.credit_events for select
+  using (auth.uid() = user_id);
+
+create index if not exists credit_events_user_idx
+  on public.credit_events (user_id, created_at desc);
+
+
+-- ---------------------------------------------------------
+-- Adding credit, all in one go, so two webhooks landing at
+-- the same moment cannot lose one another's work.
+-- ---------------------------------------------------------
+
+create or replace function public.add_credits(
+  p_user      uuid,
+  p_amount    integer,
+  p_reason    text,
+  p_reference text
+)
+returns integer
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_balance integer;
+begin
+
+  if p_reference is not null then
+
+    insert into public.credit_events (user_id, amount, reason, reference)
+    values (p_user, p_amount, p_reason, p_reference)
+    on conflict (reference) do nothing;
+
+    if not found then
+      select image_credits into v_balance
+      from public.profiles where id = p_user;
+      return coalesce(v_balance, 0);
+    end if;
+
+  else
+
+    insert into public.credit_events (user_id, amount, reason, reference)
+    values (p_user, p_amount, p_reason, null);
+
+  end if;
+
+  insert into public.profiles (id, image_credits, credits_updated_at)
+  values (p_user, greatest(p_amount, 0), now())
+  on conflict (id) do update
+    set image_credits = greatest(public.profiles.image_credits + p_amount, 0),
+        credits_updated_at = now()
+  returning image_credits into v_balance;
+
+  return v_balance;
+
+end;
+$$;
+
+revoke all on function public.add_credits(uuid, integer, text, text) from public, anon, authenticated;
+
+
+-- ---------------------------------------------------------
+-- Spending a credit. Returns the balance left, or -1 when
+-- there was nothing to spend, so the server never has to
+-- read and then write in two separate steps.
+-- ---------------------------------------------------------
+
+create or replace function public.spend_credit(p_user uuid)
+returns integer
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_unlimited boolean;
+  v_balance   integer;
+begin
+
+  select unlimited, image_credits
+    into v_unlimited, v_balance
+  from public.profiles
+  where id = p_user
+  for update;
+
+  if v_unlimited then
+    return 999999;
+  end if;
+
+  if coalesce(v_balance, 0) < 1 then
+    return -1;
+  end if;
+
+  update public.profiles
+     set image_credits = image_credits - 1,
+         credits_updated_at = now()
+   where id = p_user
+  returning image_credits into v_balance;
+
+  insert into public.credit_events (user_id, amount, reason)
+  values (p_user, -1, 'image');
+
+  return v_balance;
+
+end;
+$$;
+
+revoke all on function public.spend_credit(uuid) from public, anon, authenticated;
