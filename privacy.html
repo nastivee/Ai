@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#09051a">
+<title>Privacy Policy | Nastivee AI</title>
+<meta name="description" content="How Nastivee AI handles your data, in plain English.">
+<link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
+<link rel="stylesheet" href="./legal-style.css">
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <img src="./NAI-Logo.webp" alt="">
+  <div class="brand">Nastivee<span>AI</span></div>
+  <a class="back" href="./">Back to the app</a>
+</header>
+
+<h1>Privacy Policy</h1>
+<div class="updated">Last updated 21 September 2026</div>
+
+<p class="lede">
+  The short version. Your chats are encrypted in your browser with a key
+  only your password can open, so we cannot read them. Your messages are
+  still sent to OpenAI in readable form, because that is the only way a
+  reply can be written. We do not sell anything to anybody.
+</p>
+
+<h2>1. Who we are</h2>
+
+<p>
+  Nastivee AI is a trading name of <span class="fill">[COMPANY NAME]</span> Ltd,
+  registered in England and Wales, company number
+  <span class="fill">[COMPANY NUMBER]</span>, registered office
+  <span class="fill">[REGISTERED ADDRESS]</span>, Newcastle upon Tyne.
+</p>
+
+<p>
+  We are the data controller for the personal data described here. For
+  anything in this policy, write to
+  <a href="mailto:privacy@nastiv.ee">privacy@nastiv.ee</a>.
+</p>
+
+<h2>2. What we hold, and why</h2>
+
+<table>
+  <thead>
+    <tr><th>What</th><th>Why</th><th>Lawful basis</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Your email address</td>
+      <td>To create your account, sign you in and reset your password</td>
+      <td>Performance of a contract</td>
+    </tr>
+    <tr>
+      <td>Your chats and any profile notes, <strong>encrypted</strong></td>
+      <td>So your conversations are still there when you come back</td>
+      <td>Performance of a contract</td>
+    </tr>
+    <tr>
+      <td>Images you generate</td>
+      <td>To show them to you and let you return to them later</td>
+      <td>Performance of a contract</td>
+    </tr>
+    <tr>
+      <td>Your image credit balance and payment records</td>
+      <td>To sell you image packs and keep our accounts straight</td>
+      <td>Contract, and legal obligation for tax records</td>
+    </tr>
+    <tr>
+      <td>Basic technical logs, including IP address and error traces</td>
+      <td>To keep the service running and stop abuse</td>
+      <td>Legitimate interests</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>
+  We do not run advertising, we do not profile you for marketing, and we
+  do not sell or share your data with anyone for their own purposes.
+</p>
+
+<h2>3. Encryption, and exactly what it protects</h2>
+
+<p>
+  This part matters, so it is written carefully rather than comfortably.
+</p>
+
+<h3>What is encrypted</h3>
+
+<p>
+  When you sign up, your browser creates a random encryption key. That
+  key is itself locked with a second key derived from your password using
+  PBKDF2 with 310,000 rounds, and only the locked version is ever sent to
+  us. Your password never leaves your device.
+</p>
+
+<p>
+  From then on, your <strong>message text, chat titles and profile
+  notes</strong> are encrypted in your browser with AES-GCM before they
+  are stored. What sits in our database is ciphertext. Neither we, nor
+  our hosting providers, nor anyone who obtained a copy of the database,
+  can read it without your password.
+</p>
+
+<h3>What is not encrypted, and you should know it</h3>
+
+<ul>
+  <li>
+    <strong>Your messages in flight to the AI.</strong> To answer you, your
+    message and the recent conversation are sent over an encrypted
+    connection to our server and on to OpenAI, where they are processed in
+    readable form. Encryption at rest cannot change that. Do not type
+    anything into any AI assistant that you would not be comfortable
+    having processed by a third party.
+  </li>
+  <li>
+    <strong>Images you generate.</strong> These are stored as files and are
+    not currently end-to-end encrypted.
+  </li>
+  <li>
+    <strong>Your email address, credit balance and payment records.</strong>
+    These have to stay readable to run your account and meet our tax
+    obligations.
+  </li>
+</ul>
+
+<div class="note warn">
+  <strong>If you forget your password, your chat history is gone.</strong>
+  Not withheld, not recoverable by asking us nicely, gone. We do not hold
+  a spare key, which is the entire point. Resetting your password gets you
+  back into your account but not back into chats written before the reset.
+</div>
+
+<h2>4. Who processes data for us</h2>
+
+<ul>
+  <li>
+    <strong>Supabase</strong>, for the database, accounts and file storage.
+    Holds your encrypted chats and your email address.
+  </li>
+  <li>
+    <strong>Render</strong>, for running our server.
+  </li>
+  <li>
+    <strong>OpenAI</strong>, for generating replies and images. Receives
+    your message text and any image you upload. OpenAI states that data
+    sent through its API is not used to train its models.
+  </li>
+  <li>
+    <strong>Stripe</strong>, for payments. Stripe handles your card
+    details directly. We never see or store your card number.
+  </li>
+  <li>
+    <strong>GitHub Pages</strong>, for serving the app itself.
+  </li>
+</ul>
+
+<p>
+  Some of these process data outside the UK, including in the United
+  States. Where that happens, transfers are covered by the UK
+  International Data Transfer Agreement or the equivalent standard
+  contractual clauses.
+</p>
+
+<h2>5. How long we keep things</h2>
+
+<ul>
+  <li>Chats and images: until you delete them, or until you delete your account.</li>
+  <li>Account records: until you delete your account, then removed within 30 days.</li>
+  <li>Payment and tax records: six years, as UK law requires.</li>
+  <li>Technical logs: normally 30 days.</li>
+</ul>
+
+<h2>6. Your rights</h2>
+
+<p>
+  Under the UK GDPR you can ask us for a copy of your data, ask us to
+  correct it, ask us to delete it, object to processing, or ask for it in
+  a portable form. Chats you export from within the app are already in
+  a portable form, and are the readable copy.
+</p>
+
+<p>
+  Ask at <a href="mailto:privacy@nastiv.ee">privacy@nastiv.ee</a> and we
+  will answer within one month. If we get it wrong, you can complain to
+  the Information Commissioner's Office at
+  <a href="https://ico.org.uk" rel="noopener">ico.org.uk</a>.
+</p>
+
+<div class="note">
+  One honest caveat on deletion requests. Because your chats are
+  encrypted, we can delete them, but we cannot read them first to check
+  what they contained. If you need a copy, export it before you delete.
+</div>
+
+<h2>7. Cookies and local storage</h2>
+
+<p>
+  We use no advertising or analytics cookies. The app keeps a small
+  amount of data in your browser: your sign-in session, your encryption
+  key for this device, your Fast or Smart preference, and, in guest mode,
+  your chats. Clearing your browser data removes all of it, and on your
+  next visit you will be asked for your password to unlock your chats
+  again.
+</p>
+
+<h2>8. Children</h2>
+
+<p>
+  Nastivee AI is not for under 18s. We do not knowingly hold data about
+  children. If you believe a child has created an account, tell us and we
+  will remove it.
+</p>
+
+<h2>9. Security</h2>
+
+<p>
+  Connections use TLS. Data is encrypted at rest by our hosting
+  providers, and your chat content is separately encrypted by you, as
+  described above. Access to production systems is limited to our
+  administrators. No system is perfect, and we will tell you and the ICO
+  within 72 hours if a breach puts your data at risk.
+</p>
+
+<h2>10. Changes</h2>
+
+<p>
+  If we change this policy in a way that affects you, we will say so in
+  the app rather than quietly updating the date at the top.
+</p>
+
+<footer>
+  <a href="./">Nastivee AI</a>
+  <a href="./terms.html">Terms of Use</a>
+  <a href="mailto:privacy@nastiv.ee">privacy@nastiv.ee</a>
+</footer>
+
+</div>
+</body>
+</html>

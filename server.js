@@ -49,7 +49,7 @@ const supabase =
 // =====================================================
 
 const SUPABASE_SERVICE_KEY =
-  process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+  (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
 
 const supabaseAdmin =
   SUPABASE_SERVICE_KEY
@@ -78,10 +78,10 @@ const LIVE_SITE_URL =
   'https://nastivee.github.io/Ai/';
 
 const STRIPE_SECRET_KEY =
-  process.env.STRIPE_SECRET_KEY || '';
+  (process.env.STRIPE_SECRET_KEY || '').trim();
 
 const STRIPE_WEBHOOK_SECRET =
-  process.env.STRIPE_WEBHOOK_SECRET || '';
+  (process.env.STRIPE_WEBHOOK_SECRET || '').trim();
 
 const stripe =
   STRIPE_SECRET_KEY
@@ -109,6 +109,24 @@ const ADMIN_EMAILS =
     .map(one => one.trim().toLowerCase())
     .filter(Boolean);
 
+/*
+  While the site is being prepared, everything that costs
+  money or touches the model is for admins only.
+*/
+async function holdingBlocks(user) {
+
+  const settings =
+    await getSettings();
+
+  if (settings.holding_mode === false) {
+    return false;
+  }
+
+  return !isAdmin(user);
+
+}
+
+
 function isAdmin(user) {
 
   return Boolean(
@@ -120,6 +138,7 @@ function isAdmin(user) {
 
 
 const SETTINGS_FALLBACK = {
+  holding_mode: process.env.HOLDING_MODE !== 'false',
   paywall_enabled: true,
   pack_price_pence: PACK_PRICE_PENCE,
   pack_images: PACK_IMAGES,
@@ -130,16 +149,26 @@ const SETTINGS_FALLBACK = {
 let settingsCache = null;
 let settingsReadAt = 0;
 
+/*
+  Anything set here beats the database.
+
+  It exists so that a switch always works. If the database
+  will not take the write, the change still takes effect on
+  this running server, and the panel says plainly that it
+  will not survive a restart.
+*/
+let settingsOverride = {};
+
 async function getSettings(fresh) {
 
   const now = Date.now();
 
   if (!fresh && settingsCache && now - settingsReadAt < 30000) {
-    return settingsCache;
+    return { ...settingsCache, ...settingsOverride };
   }
 
   if (!supabaseAdmin) {
-    return SETTINGS_FALLBACK;
+    return { ...SETTINGS_FALLBACK, ...settingsOverride };
   }
 
   const { data, error } =
@@ -155,22 +184,40 @@ async function getSettings(fresh) {
       console.error('SETTINGS READ ERROR:', error.message);
     }
 
-    return SETTINGS_FALLBACK;
+    return { ...SETTINGS_FALLBACK, ...settingsOverride };
 
   }
 
   settingsCache = data;
   settingsReadAt = now;
 
-  return data;
+  return { ...data, ...settingsOverride };
 
 }
 
 
 async function saveSettings(patch) {
 
+  const fallback = () => {
+
+    settingsOverride = {
+      ...settingsOverride,
+      ...patch
+    };
+
+    return {
+      settings: {
+        ...SETTINGS_FALLBACK,
+        ...settingsCache,
+        ...settingsOverride
+      },
+      volatile: true
+    };
+
+  };
+
   if (!supabaseAdmin) {
-    throw new Error('Settings storage is not configured.');
+    return fallback();
   }
 
   const { data, error } =
@@ -184,14 +231,29 @@ async function saveSettings(patch) {
       .select()
       .maybeSingle();
 
-  if (error) {
-    throw new Error(error.message);
+  if (error || !data) {
+
+    console.error(
+      'SETTINGS SAVE FELL BACK TO MEMORY:',
+      error?.message || 'no row came back'
+    );
+
+    return fallback();
+
   }
 
   settingsCache = data;
   settingsReadAt = Date.now();
 
-  return data;
+  /* a saved setting is no longer an override */
+  Object.keys(patch).forEach(key => {
+    delete settingsOverride[key];
+  });
+
+  return {
+    settings: { ...data },
+    volatile: false
+  };
 
 }
 
@@ -494,10 +556,36 @@ async function requireUser(req, res) {
 
   }
 
+  if (await holdingBlocks(user)) {
+
+    res.status(503).json({
+      error:
+        'Nastivee is being prepared and is not open yet.'
+    });
+
+    return null;
+
+  }
+
   /*
     Admins never meet their own paywall.
   */
   if (isAdmin(user)) {
+
+    user.unlimited = true;
+
+    return user;
+
+  }
+
+  /*
+    Paywall switched off means off, checked before anything
+    that could fail and lock people out by accident.
+  */
+  const settingsNow =
+    await getSettings();
+
+  if (settingsNow.paywall_enabled === false) {
 
     user.unlimited = true;
 
@@ -712,7 +800,8 @@ app.get('/api/account', async (req, res) => {
       packImages: settings.pack_images,
       packPricePence: settings.pack_price_pence,
       canBuy: paywallReady(),
-      admin: false
+      admin: false,
+      holding: settings.holding_mode !== false
     });
 
   }
@@ -732,7 +821,8 @@ app.get('/api/account', async (req, res) => {
     packImages: settings.pack_images,
     packPricePence: settings.pack_price_pence,
     canBuy: paywallReady(),
-    admin
+    admin,
+    holding: settings.holding_mode !== false
   });
 
 });
@@ -935,6 +1025,55 @@ app.get('/api/admin/overview', async (req, res) => {
 
   }
 
+
+  /*
+    Whether a key is SET tells you nothing about whether it
+    WORKS, so actually use it and report what came back.
+  */
+  let serviceKeyWorks = false;
+  let serviceKeyError = null;
+
+  try {
+
+    const { error } =
+      await supabaseAdmin
+        .from('app_settings')
+        .select('id')
+        .limit(1);
+
+    if (error) {
+      serviceKeyError = error.message;
+    } else {
+      serviceKeyWorks = true;
+    }
+
+  } catch (error) {
+
+    serviceKeyError = error.message;
+
+  }
+
+
+  let stripeKeyWorks = false;
+  let stripeKeyError = null;
+
+  if (stripe) {
+
+    try {
+
+      await stripe.balance.retrieve();
+
+      stripeKeyWorks = true;
+
+    } catch (error) {
+
+      stripeKeyError =
+        error?.raw?.message || error.message;
+
+    }
+
+  }
+
   res.json({
 
     settings,
@@ -946,11 +1085,27 @@ app.get('/api/admin/overview', async (req, res) => {
       STRIPE_SECRET_KEY.startsWith('rk_test_'),
 
     configured: {
-      serviceKey: Boolean(SUPABASE_SERVICE_KEY),
-      stripeKey: Boolean(STRIPE_SECRET_KEY),
+      serviceKey: serviceKeyWorks,
+      stripeKey: stripeKeyWorks,
       webhook: Boolean(STRIPE_WEBHOOK_SECRET),
       openai: Boolean(process.env.OPENAI_API_KEY)
     },
+
+    present: {
+      serviceKey: Boolean(SUPABASE_SERVICE_KEY),
+      stripeKey: Boolean(STRIPE_SECRET_KEY)
+    },
+
+    problems: {
+      serviceKey: serviceKeyError,
+      stripeKey: stripeKeyError
+    },
+
+    serviceKeyShape:
+      SUPABASE_SERVICE_KEY
+        ? `${SUPABASE_SERVICE_KEY.slice(0, 11)}... ` +
+          `${SUPABASE_SERVICE_KEY.length} characters`
+        : null,
 
     webhookUrl:
       `${req.protocol}://${req.get('host')}/api/stripe/webhook`,
@@ -976,6 +1131,10 @@ app.post('/api/admin/settings', async (req, res) => {
 
   if (typeof body.paywall_enabled === 'boolean') {
     patch.paywall_enabled = body.paywall_enabled;
+  }
+
+  if (typeof body.holding_mode === 'boolean') {
+    patch.holding_mode = body.holding_mode;
   }
 
   if (body.pack_price_pence !== undefined) {
@@ -1056,15 +1215,16 @@ app.post('/api/admin/settings', async (req, res) => {
 
   try {
 
-    const settings =
+    const { settings, volatile } =
       await saveSettings(patch);
 
     console.log(
       `ADMIN SETTINGS BY ${user.email}:`,
-      JSON.stringify(patch)
+      JSON.stringify(patch),
+      volatile ? '(in memory only)' : ''
     );
 
-    res.json({ settings });
+    res.json({ settings, volatile });
 
   } catch (error) {
 
@@ -1293,6 +1453,15 @@ app.post('/api/chat', async (req, res) => {
   try {
 
     const user = await getUser(req);
+
+    if (await holdingBlocks(user)) {
+
+      return res.status(503).json({
+        error:
+          'Nastivee is being prepared and is not open yet.'
+      });
+
+    }
 
     const who =
       user

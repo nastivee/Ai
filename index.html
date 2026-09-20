@@ -236,6 +236,24 @@ button {
   margin-bottom: 18px;
 }
 
+.authLegal {
+  margin-top: 16px;
+  color: #6f6580;
+  font-size: 11.5px;
+  line-height: 1.6;
+  text-align: center;
+}
+
+.authLegal a {
+  color: #a78bfa;
+  text-decoration: none;
+  font-weight: 700;
+}
+
+.authLegal a:hover {
+  text-decoration: underline;
+}
+
 .authForgot {
   text-align: right;
   margin: -4px 0 4px;
@@ -663,8 +681,24 @@ button {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 9px;
+  flex-wrap: wrap;
+  gap: 4px 9px;
   margin-top: 10px;
+}
+
+.footLink {
+  padding: 3px 10px;
+  border-radius: 8px;
+  color: #6f6580;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: .3px;
+  text-decoration: none;
+}
+
+.footLink:hover {
+  color: #c4a6ff;
+  background: rgba(124, 58, 237, .12);
 }
 
 .versionTag {
@@ -1023,6 +1057,158 @@ button {
 
 /* ---- the paywall sheet ---- */
 
+.lockScreen {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 990;
+  padding: 24px;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+}
+
+.lockScreen.show {
+  display: flex;
+}
+
+.lockCard {
+  width: 100%;
+  max-width: 380px;
+  padding: 30px 26px;
+  border: 1px solid #33264a;
+  border-radius: 22px;
+  background: #17112a;
+  text-align: center;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, .5);
+}
+
+.lockMark {
+  width: 70px;
+  height: 70px;
+  object-fit: contain;
+  /* room around it so the glow is never clipped */
+  margin: 0 auto 16px;
+  display: block;
+  filter: drop-shadow(0 10px 26px rgba(139, 92, 246, .35));
+}
+
+.lockTitle {
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -.3px;
+  color: #f2ecff;
+}
+
+.lockText {
+  margin: 10px 0 0;
+  color: #9b90ab;
+  font-size: 13.5px;
+  line-height: 1.6;
+}
+
+.lockFieldWrap {
+  position: relative;
+  margin-top: 18px;
+}
+
+.lockInput {
+  width: 100%;
+  min-height: 46px;
+  padding: 0 46px 0 14px;
+  border: 1px solid #2e2344;
+  border-radius: 12px;
+  background: #170f26;
+  color: #e6ddf0;
+  font-size: 15px;
+  outline: none;
+}
+
+.lockInput:focus {
+  border-color: #6d4fb8;
+}
+
+.lockEye {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0 9px;
+  border: 0;
+  border-radius: 9px;
+  background: none;
+  color: #8a7e99;
+}
+
+.lockEye:hover {
+  color: #d7c4ff;
+}
+
+.lockError {
+  margin-top: 10px;
+  color: #ff8585;
+  font-size: 12.5px;
+  line-height: 1.5;
+  min-height: 1px;
+}
+
+.lockButton {
+  width: 100%;
+  min-height: 48px;
+  margin-top: 14px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 13px;
+  background: linear-gradient(135deg, #7c3aed, #9333ea);
+  color: white;
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.lockButton:hover {
+  filter: brightness(1.08);
+}
+
+.lockButton:disabled {
+  opacity: .5;
+}
+
+.lockLink {
+  display: inline-block;
+  margin-top: 14px;
+  padding: 4px 10px;
+  color: #a78bfa;
+  font-size: 12.5px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.lockLink:hover {
+  text-decoration: underline;
+}
+
+.lockQuiet {
+  display: block;
+  width: 100%;
+  min-height: 40px;
+  margin-top: 8px;
+  padding: 0 16px;
+  border: 0;
+  background: none;
+  color: #6f6580;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+.lockQuiet:hover {
+  color: #b9adc8;
+}
+
 .adminButton {
   display: none;
   align-items: center;
@@ -1350,6 +1536,16 @@ button {
   text-overflow: ellipsis;
   color: #ded3ec;
   font-size: 12px;
+}
+
+.adminWhy {
+  display: block;
+  margin-top: 2px;
+  color: #6f6580;
+  font-size: 11px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .adminTick {
@@ -3031,6 +3227,15 @@ button {
 
     </div>
 
+    <div class="authLegal">
+      By continuing you accept our
+      <a href="./terms.html" target="_blank" rel="noopener">Terms</a>
+      and
+      <a href="./privacy.html" target="_blank" rel="noopener">Privacy Policy</a>.
+      Your chats are encrypted with your password, so if you lose it they
+      cannot be recovered.
+    </div>
+
     <div class="authForgot">
       <button id="authForgotButton" type="button">
         Forgotten your password?
@@ -3171,6 +3376,88 @@ button {
      MY PROFILE
 ===================================================== -->
 
+<div class="lockScreen" id="unlockScreen">
+
+  <div class="lockCard">
+
+    <img class="lockMark" src="./NAI-Logo.webp" alt="">
+
+    <div class="lockTitle">Unlock your chats</div>
+
+    <p class="lockText">
+      Your chats are encrypted with a key only your password
+      can open, so we need it once on this device. It is
+      never sent anywhere.
+    </p>
+
+    <div class="lockFieldWrap">
+
+      <input
+        id="unlockPassword"
+        class="lockInput"
+        type="password"
+        placeholder="Your password"
+        autocomplete="current-password"
+      >
+
+      <button
+        class="lockEye"
+        id="unlockEye"
+        type="button"
+        aria-label="Show password"
+        title="Show password"
+      >
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round">
+          <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"></path>
+          <circle cx="12" cy="12" r="3"></circle>
+        </svg>
+      </button>
+
+    </div>
+
+    <div class="lockError" id="unlockError"></div>
+
+    <button class="lockButton" id="unlockButton" type="button">
+      Unlock
+    </button>
+
+    <a class="lockLink" id="unlockForgot" href="#">
+      Forgotten your password?
+    </a>
+
+    <button class="lockQuiet" id="unlockSignOut" type="button">
+      Sign in as somebody else
+    </button>
+
+  </div>
+
+</div>
+
+
+<div class="lockScreen" id="holdingScreen">
+
+  <div class="lockCard">
+
+    <img class="lockMark" src="./NAI-Logo.webp" alt="">
+
+    <div class="lockTitle">Nastivee AI</div>
+
+    <p class="lockText">
+      We are putting the finishing touches to this. It will
+      be open shortly.
+    </p>
+
+    <button class="lockQuiet" id="holdingSignOut" type="button">
+      Sign in with another account
+    </button>
+
+  </div>
+
+</div>
+
+
 <div class="adminOverlay" id="adminOverlay">
 
   <div class="adminCard" id="adminCard">
@@ -3243,6 +3530,13 @@ button {
       </button>
 
       <div class="adminBody">
+
+        <div class="adminToggle">
+          <span>Holding page for everyone but admins</span>
+          <button class="adminSwitch" id="adminHoldingSwitch" type="button">
+            On
+          </button>
+        </div>
 
         <div class="adminToggle">
           <span>Paywall enforced</span>
@@ -3697,6 +3991,12 @@ button {
           id="versionTag"
           title="App version"
         ></span>
+
+        <a class="footLink" href="./privacy.html" target="_blank"
+           rel="noopener">Privacy</a>
+
+        <a class="footLink" href="./terms.html" target="_blank"
+           rel="noopener">Terms</a>
 
         <button
           class="installButton"
@@ -4976,6 +5276,8 @@ async function handleAuth() {
       }
 
 
+      pendingPassword = password;
+
       if (data?.user && !data.session) {
 
         authError.style.color =
@@ -5010,6 +5312,12 @@ async function handleAuth() {
       if (error) {
         throw error;
       }
+
+      /*
+        We have the password for exactly this moment, so
+        the vault opens here and nowhere else.
+      */
+      pendingPassword = password;
 
     }
 
@@ -5220,6 +5528,33 @@ async function initialiseApp() {
     return;
   }
 
+  /*
+    While the site is being prepared, only admins get past
+    here. The server is the one that decides, the screen
+    is just what the rest of the world sees.
+  */
+  if (guestMode) {
+
+    if (await siteIsHolding()) {
+      showHolding();
+      return;
+    }
+
+  } else {
+
+    await refreshAccount();
+
+    if (account.holding === true && account.admin !== true) {
+      showHolding();
+      return;
+    }
+
+  }
+
+  if (!guestMode && !(await unlockVault())) {
+    return;
+  }
+
   showApp();
 
   /*
@@ -5407,7 +5742,7 @@ async function loadMemory() {
     }
 
 
-    return data?.memory || '';
+    return await decField(data?.memory || '');
 
   } catch (error) {
 
@@ -5451,7 +5786,8 @@ async function saveMemory() {
 
           id: currentUser.id,
 
-          memory
+          memory:
+            await encField(memory)
 
         });
 
@@ -5526,7 +5862,7 @@ async function loadChats() {
 
 
     chats =
-      data || [];
+      await decRows(data, ['title']);
 
     renderChatHistory();
 
@@ -6317,7 +6653,7 @@ async function ensureChat(
           currentUser.id,
 
         title:
-          title || 'New chat'
+          await encField(title || 'New chat')
 
       })
       .select()
@@ -6486,10 +6822,14 @@ async function loadChat(
     }
 
 
+    const rows =
+      await decRows(data, ['content']);
+
+
     emptyState?.remove();
 
 
-    data.forEach(
+    rows.forEach(
       message => {
 
         if (
@@ -6645,7 +6985,7 @@ async function saveMessage(
             role,
 
           content:
-            content || '',
+            await encField(content || ''),
 
           image_url:
             imageUrl || null
@@ -6785,7 +7125,7 @@ async function updateChatTitle(
         .from('chats')
         .update({
           title:
-            title.slice(0, 55)
+            await encField(title.slice(0, 55))
         })
         .eq(
           'id',
@@ -8548,6 +8888,675 @@ function iconLabel(name, label, short) {
 
 
 /* =====================================================
+   END TO END ENCRYPTION
+
+   Everything you type is encrypted in this browser before
+   it is sent anywhere. The database only ever holds
+   ciphertext, and the key is derived from your password,
+   which we never see.
+
+   The shape of it:
+
+     password + salt  ->  KEK   (PBKDF2, 310k rounds)
+     KEK              wraps     DEK   (random, AES-GCM 256)
+     DEK              encrypts  your chats
+
+   The wrapped DEK is kept on your profile row. Without
+   your password it is a lump of noise, so nobody holding
+   the database, us included, can read a word of it.
+
+   The honest limit: to answer you, your message still has
+   to reach the model in the clear. This protects what is
+   STORED, not the conversation in flight.
+===================================================== */
+
+const ENC_PREFIX = 'enc1:';
+
+const DEK_KEY = 'nastivee_dek';
+
+const PBKDF2_ROUNDS = 310000;
+
+let dataKey = null;
+
+let vaultLocked = false;
+
+
+function cryptoReady() {
+  return Boolean(window.crypto?.subtle);
+}
+
+
+function toBase64(bytes) {
+
+  let binary = '';
+
+  bytes.forEach(byte => {
+    binary += String.fromCharCode(byte);
+  });
+
+  return btoa(binary);
+
+}
+
+
+function fromBase64(text) {
+
+  const binary = atob(text);
+
+  const bytes = new Uint8Array(binary.length);
+
+  for (let i = 0; i < binary.length; i += 1) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+
+  return bytes;
+
+}
+
+
+async function deriveKek(password, salt) {
+
+  const material =
+    await crypto.subtle.importKey(
+      'raw',
+      new TextEncoder().encode(password),
+      'PBKDF2',
+      false,
+      ['deriveKey']
+    );
+
+  return crypto.subtle.deriveKey(
+    {
+      name: 'PBKDF2',
+      salt,
+      iterations: PBKDF2_ROUNDS,
+      hash: 'SHA-256'
+    },
+    material,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['encrypt', 'decrypt']
+  );
+
+}
+
+
+async function importDataKey(bytes) {
+
+  return crypto.subtle.importKey(
+    'raw',
+    bytes,
+    'AES-GCM',
+    true,
+    ['encrypt', 'decrypt']
+  );
+
+}
+
+
+/*
+  Encrypting a single field. Empty stays empty, so a blank
+  message does not turn into a blob.
+*/
+async function encField(text) {
+
+  if (!dataKey || !text) {
+    return text || '';
+  }
+
+  try {
+
+    const iv =
+      crypto.getRandomValues(new Uint8Array(12));
+
+    const cipher =
+      new Uint8Array(
+        await crypto.subtle.encrypt(
+          { name: 'AES-GCM', iv },
+          dataKey,
+          new TextEncoder().encode(text)
+        )
+      );
+
+    return (
+      ENC_PREFIX +
+      toBase64(iv) + ':' +
+      toBase64(cipher)
+    );
+
+  } catch (error) {
+
+    console.error('ENCRYPT ERROR:', error);
+
+    return text;
+
+  }
+
+}
+
+
+/*
+  Reading a field back. Anything written before this
+  existed is plain text and comes through untouched.
+*/
+async function decField(value) {
+
+  if (typeof value !== 'string') {
+    return value;
+  }
+
+  if (!value.startsWith(ENC_PREFIX)) {
+    return value;
+  }
+
+  if (!dataKey) {
+    return '[locked]';
+  }
+
+  try {
+
+    const [, ivPart, cipherPart] =
+      value.split(':');
+
+    const plain =
+      await crypto.subtle.decrypt(
+        {
+          name: 'AES-GCM',
+          iv: fromBase64(ivPart)
+        },
+        dataKey,
+        fromBase64(cipherPart)
+      );
+
+    return new TextDecoder().decode(plain);
+
+  } catch (error) {
+
+    return '[could not be decrypted]';
+
+  }
+
+}
+
+
+async function decRows(rows, fields) {
+
+  return Promise.all(
+    (rows || []).map(async row => {
+
+      const copy = { ...row };
+
+      for (const field of fields) {
+        copy[field] = await decField(row[field]);
+      }
+
+      return copy;
+
+    })
+  );
+
+}
+
+
+/*
+  Remembering the key on THIS device only, so a reload
+  does not ask for the password again. It never leaves
+  the browser.
+*/
+async function rememberDataKey() {
+
+  try {
+
+    const raw =
+      new Uint8Array(
+        await crypto.subtle.exportKey('raw', dataKey)
+      );
+
+    localStorage.setItem(
+      `${DEK_KEY}_${currentUser.id}`,
+      toBase64(raw)
+    );
+
+  } catch {}
+
+}
+
+
+async function recallDataKey() {
+
+  try {
+
+    const stored =
+      localStorage.getItem(
+        `${DEK_KEY}_${currentUser.id}`
+      );
+
+    if (!stored) return false;
+
+    dataKey =
+      await importDataKey(fromBase64(stored));
+
+    return true;
+
+  } catch {
+
+    return false;
+
+  }
+
+}
+
+
+function forgetDataKey() {
+
+  try {
+
+    if (currentUser) {
+      localStorage.removeItem(
+        `${DEK_KEY}_${currentUser.id}`
+      );
+    }
+
+  } catch {}
+
+  dataKey = null;
+
+}
+
+
+/*
+  Opens the vault with a password. Makes one on the first
+  visit, opens it on every visit after.
+
+  Returns 'opened', 'created' or 'wrong'.
+*/
+async function openVault(password) {
+
+  if (!cryptoReady() || !currentUser) {
+    return 'wrong';
+  }
+
+  const { data } =
+    await supabaseClient
+      .from('profiles')
+      .select('key_salt, key_iv, key_wrapped')
+      .eq('id', currentUser.id)
+      .maybeSingle();
+
+  /* First time here: make a key and lock it away */
+  if (!data?.key_wrapped) {
+
+    await createVault(password);
+
+    return 'created';
+
+  }
+
+  try {
+
+    const kek =
+      await deriveKek(
+        password,
+        fromBase64(data.key_salt)
+      );
+
+    const raw =
+      new Uint8Array(
+        await crypto.subtle.decrypt(
+          {
+            name: 'AES-GCM',
+            iv: fromBase64(data.key_iv)
+          },
+          kek,
+          fromBase64(data.key_wrapped)
+        )
+      );
+
+    dataKey = await importDataKey(raw);
+
+    vaultLocked = false;
+
+    await rememberDataKey();
+
+    return 'opened';
+
+  } catch {
+
+    return 'wrong';
+
+  }
+
+}
+
+
+async function createVault(password) {
+
+  const salt =
+    crypto.getRandomValues(new Uint8Array(16));
+
+  const iv =
+    crypto.getRandomValues(new Uint8Array(12));
+
+  const kek =
+    await deriveKek(password, salt);
+
+  dataKey =
+    await crypto.subtle.generateKey(
+      { name: 'AES-GCM', length: 256 },
+      true,
+      ['encrypt', 'decrypt']
+    );
+
+  const raw =
+    new Uint8Array(
+      await crypto.subtle.exportKey('raw', dataKey)
+    );
+
+  const wrapped =
+    new Uint8Array(
+      await crypto.subtle.encrypt(
+        { name: 'AES-GCM', iv },
+        kek,
+        raw
+      )
+    );
+
+  await supabaseClient
+    .from('profiles')
+    .upsert({
+      id: currentUser.id,
+      key_salt: toBase64(salt),
+      key_iv: toBase64(iv),
+      key_wrapped: toBase64(wrapped)
+    });
+
+  vaultLocked = false;
+
+  await rememberDataKey();
+
+}
+
+
+/*
+  Throws the old key away and starts again. Everything
+  written under the old one is lost, which is the price of
+  us not being able to recover it for you.
+*/
+async function resetVault(password) {
+
+  forgetDataKey();
+
+  await createVault(password);
+
+}
+
+
+/* =====================================================
+   UNLOCKING, AND THE HOLDING SCREEN
+===================================================== */
+
+let pendingPassword = null;
+
+const unlockScreen =
+  document.getElementById('unlockScreen');
+
+const unlockPassword =
+  document.getElementById('unlockPassword');
+
+const unlockError =
+  document.getElementById('unlockError');
+
+const unlockButton =
+  document.getElementById('unlockButton');
+
+const holdingScreen =
+  document.getElementById('holdingScreen');
+
+
+/* view and hide, on every password field */
+document
+  .getElementById('unlockEye')
+  ?.addEventListener('click', () => {
+
+    const showing =
+      unlockPassword.type === 'text';
+
+    unlockPassword.type =
+      showing ? 'password' : 'text';
+
+    document
+      .getElementById('unlockEye')
+      .setAttribute(
+        'aria-label',
+        showing ? 'Show password' : 'Hide password'
+      );
+
+  });
+
+
+/*
+  Called before the app is shown. True means the key is in
+  hand, false means we put up the unlock screen instead
+  and initialiseApp should stand down.
+*/
+async function unlockVault() {
+
+  if (!cryptoReady()) {
+
+    /*
+      No Web Crypto, which means an ancient browser or a
+      page served over plain http. Carry on unencrypted
+      rather than locking the user out entirely.
+    */
+    console.warn('NO WEB CRYPTO, ENCRYPTION OFF');
+
+    return true;
+
+  }
+
+  if (dataKey) {
+    return true;
+  }
+
+  /* Just signed in, so the password is still in hand */
+  if (pendingPassword) {
+
+    const password = pendingPassword;
+
+    pendingPassword = null;
+
+    const how =
+      await openVault(password);
+
+    if (how !== 'wrong') {
+      return true;
+    }
+
+    /*
+      Password works for signing in but not for the vault,
+      which means it was reset. The old chats cannot come
+      back, so start a fresh one.
+    */
+    await resetVault(password);
+
+    return true;
+
+  }
+
+  /* Same device as last time */
+  if (await recallDataKey()) {
+    return true;
+  }
+
+  /* A new device, or storage was cleared */
+  showUnlock();
+
+  return false;
+
+}
+
+
+function showUnlock() {
+
+  vaultLocked = true;
+
+  unlockError.textContent = '';
+
+  unlockPassword.value = '';
+
+  unlockScreen.classList.add('show');
+
+  setTimeout(() => unlockPassword.focus(), 120);
+
+}
+
+
+function hideUnlock() {
+
+  vaultLocked = false;
+
+  unlockScreen.classList.remove('show');
+
+}
+
+
+async function tryUnlock() {
+
+  const password =
+    unlockPassword.value;
+
+  if (!password) {
+    unlockError.textContent = 'Enter your password.';
+    return;
+  }
+
+  unlockButton.disabled = true;
+
+  unlockError.textContent = 'Working...';
+
+  const how =
+    await openVault(password);
+
+  unlockButton.disabled = false;
+
+  if (how === 'wrong') {
+
+    unlockError.textContent =
+      'That password does not open your chats. If you have ' +
+      'reset it since, they cannot be recovered.';
+
+    return;
+
+  }
+
+  unlockError.textContent = '';
+
+  hideUnlock();
+
+  await initialiseApp();
+
+}
+
+
+unlockButton?.addEventListener('click', tryUnlock);
+
+unlockPassword?.addEventListener('keydown', event => {
+  if (event.key === 'Enter') tryUnlock();
+});
+
+document
+  .getElementById('unlockForgot')
+  ?.addEventListener('click', event => {
+
+    event.preventDefault();
+
+    hideUnlock();
+
+    forgetDataKey();
+
+    supabaseClient.auth.signOut().then(() => {
+
+      showAuth();
+
+      document
+        .getElementById('authForgotButton')
+        ?.click();
+
+    });
+
+  });
+
+document
+  .getElementById('unlockSignOut')
+  ?.addEventListener('click', async () => {
+
+    forgetDataKey();
+
+    hideUnlock();
+
+    await supabaseClient.auth.signOut();
+
+    location.reload();
+
+  });
+
+
+/* =====================================================
+   THE HOLDING SCREEN
+
+   While the site is being prepared, only the people on
+   the admin list get in. Everybody else, signed in or
+   not, sees the holding page.
+===================================================== */
+
+function showHolding() {
+
+  holdingScreen.classList.add('show');
+
+}
+
+document
+  .getElementById('holdingSignOut')
+  ?.addEventListener('click', async () => {
+
+    forgetDataKey();
+
+    if (guestMode) {
+      stopGuestMode();
+    }
+
+    await supabaseClient.auth.signOut();
+
+    location.reload();
+
+  });
+
+
+/*
+  A guest has no token, so ask the open question.
+*/
+async function siteIsHolding() {
+
+  try {
+
+    const response =
+      await fetch(`${API_BASE}/api/account`);
+
+    const data =
+      await response.json();
+
+    return data?.holding === true;
+
+  } catch {
+
+    return false;
+
+  }
+
+}
+
+
+/* =====================================================
    THE PAYWALL
 
    Images cost money to make, so each one spends a credit.
@@ -9064,23 +10073,63 @@ function paintAdmin() {
 
   /* --- payments --- */
 
+  const present =
+    adminData.present || {};
+
+  const problems =
+    adminData.problems || {};
+
+  /*
+    A key being present is not the same as a key working,
+    so say which it is.
+  */
   const checks = [
-    ['Supabase service key', c.serviceKey],
-    ['Stripe secret key', c.stripeKey],
-    ['Stripe webhook secret', c.webhook],
-    ['OpenAI key', c.openai]
+    [
+      'Supabase service key',
+      c.serviceKey,
+      c.serviceKey
+        ? 'Working'
+        : (present.serviceKey
+            ? (problems.serviceKey || 'Rejected')
+            : 'Not set on Render')
+    ],
+    [
+      'Stripe secret key',
+      c.stripeKey,
+      c.stripeKey
+        ? 'Working'
+        : (present.stripeKey
+            ? (problems.stripeKey || 'Rejected')
+            : 'Not set on Render')
+    ],
+    [
+      'Stripe webhook secret',
+      c.webhook,
+      c.webhook ? 'Set' : 'Not set on Render'
+    ],
+    [
+      'OpenAI key',
+      c.openai,
+      c.openai ? 'Set' : 'Not set on Render'
+    ]
   ];
 
   document.getElementById('adminChecks').innerHTML =
     checks
-      .map(([name, ok]) =>
+      .map(([name, ok, why]) =>
         '<li class="adminListItem">' +
-        `<code>${name}</code>` +
+        `<code>${name}` +
+        `<span class="adminWhy">${why}</span></code>` +
         `<span class="adminTick ${ok ? 'yes' : 'no'}">` +
-        `${ok ? 'SET' : 'MISSING'}</span>` +
+        `${ok ? 'OK' : 'NO'}</span>` +
         '</li>'
       )
-      .join('');
+      .join('') +
+    (adminData.serviceKeyShape && !c.serviceKey
+      ? '<li class="adminListItem"><code>The key it is using' +
+        `<span class="adminWhy">${adminData.serviceKeyShape}</span>` +
+        '</code></li>'
+      : '');
 
   document.getElementById('adminWebhookUrl').textContent =
     adminData.webhookUrl || '';
@@ -9128,13 +10177,28 @@ function paintAdmin() {
   paywallSwitch.textContent =
     set.paywall_enabled === false ? 'Off' : 'On';
 
+  const holdingSwitch =
+    document.getElementById('adminHoldingSwitch');
+
+  holdingSwitch.classList.toggle(
+    'on',
+    set.holding_mode !== false
+  );
+
+  holdingSwitch.textContent =
+    set.holding_mode === false ? 'Off' : 'On';
+
   setSectionState(
     'adminPack',
-    set.paywall_enabled === false ? 'warn' : 'good',
-    set.paywall_enabled === false
-      ? 'Paywall is off, images are free for everyone'
-      : `${money(set.pack_price_pence || 0)} for ` +
-        `${set.pack_images} images`
+    (set.holding_mode !== false || set.paywall_enabled === false)
+      ? 'warn'
+      : 'good',
+    set.holding_mode !== false
+      ? 'Holding page is up, only admins can get in'
+      : (set.paywall_enabled === false
+          ? 'Paywall is off, images are free for everyone'
+          : `${money(set.pack_price_pence || 0)} for ` +
+            `${set.pack_images} images`)
   );
 
 }
@@ -9221,6 +10285,21 @@ document
 
 
 document
+  .getElementById('adminHoldingSwitch')
+  ?.addEventListener('click', event => {
+
+    const button = event.currentTarget;
+
+    const on =
+      !button.classList.contains('on');
+
+    button.classList.toggle('on', on);
+
+    button.textContent = on ? 'On' : 'Off';
+
+  });
+
+document
   .getElementById('adminPaywallSwitch')
   ?.addEventListener('click', event => {
 
@@ -9256,6 +10335,11 @@ document
 
           body: JSON.stringify({
 
+            holding_mode:
+              document
+                .getElementById('adminHoldingSwitch')
+                .classList.contains('on'),
+
             paywall_enabled:
               document
                 .getElementById('adminPaywallSwitch')
@@ -9288,7 +10372,16 @@ document
 
       paintAdmin();
 
-      adminSay('adminSettingsResult', 'Saved.', true);
+      adminSay(
+        'adminSettingsResult',
+        data.volatile
+          ? 'Applied, and working right now. It could not be ' +
+            'written to the database though, so it will go back ' +
+            'to the old setting if the server restarts. Fix the ' +
+            'Supabase service key to make it stick.'
+          : 'Saved.',
+        !data.volatile
+      );
 
       /* the card the user was working in comes back to the top */
       toggleAdminSection('adminPack');
@@ -9996,7 +11089,8 @@ async function exportCurrentChat() {
         .eq('chat_id', currentChatId)
         .order('created_at', { ascending: true });
 
-    rows = data || [];
+    rows =
+      await decRows(data, ['content']);
 
   }
 
@@ -10370,8 +11464,11 @@ async function sendNormalMessage(
     }
 
 
+    const clearRows =
+      await decRows(messageRows, ['content']);
+
     messages =
-      (messageRows || [])
+      clearRows
         .map(
           item => ({
             role:
@@ -10557,8 +11654,11 @@ async function nameChatFromContent(chatId) {
           .eq('user_id', currentUser.id)
           .order('created_at', { ascending: true });
 
+      const clear =
+        await decRows(data, ['content']);
+
       history =
-        (data || []).map(item => ({
+        clear.map(item => ({
           role: item.role,
           content: item.content || ''
         }));
@@ -11501,7 +12601,7 @@ window.addEventListener('online', () => {
    clearing anything by hand.
 ===================================================== */
 
-const APP_VERSION = '2026-09-20-46';
+const APP_VERSION = '2026-09-21-01';
 
 const RELOAD_FLAG = 'nastivee_reloaded_for';
 

@@ -196,3 +196,30 @@ on conflict (id) do nothing;
 alter table public.app_settings enable row level security;
 
 revoke all on public.app_settings from anon, authenticated;
+
+
+-- =========================================================
+-- END TO END ENCRYPTION, AND THE HOLDING PAGE
+--
+-- The wrapped data key lives on the user's own profile row.
+-- Without their password it is noise, so it is safe to let
+-- the browser write it.
+-- =========================================================
+
+alter table public.profiles
+  add column if not exists key_salt text;
+
+alter table public.profiles
+  add column if not exists key_iv text;
+
+alter table public.profiles
+  add column if not exists key_wrapped text;
+
+grant insert (id, memory, key_salt, key_iv, key_wrapped)
+  on public.profiles to authenticated;
+
+grant update (memory, key_salt, key_iv, key_wrapped)
+  on public.profiles to authenticated;
+
+alter table public.app_settings
+  add column if not exists holding_mode boolean not null default true;
