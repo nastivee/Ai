@@ -590,6 +590,7 @@ button {
 ===================================================== */
 
 .main {
+  position: relative;
   flex: 1;
   min-width: 0;
   height: 100%;
@@ -831,11 +832,13 @@ button {
 
 /*
   The watermark is its own layer so it can be faded
-  without fading the conversation on top of it.
+  without fading the conversation on top of it. It is
+  positioned inside the chat column, not the window, so
+  the sidebar does not push it off centre.
 */
-.chat::before {
+.main::before {
   content: '';
-  position: fixed;
+  position: absolute;
   left: 50%;
   top: 50%;
   width: min(46vmin, 360px);
@@ -853,7 +856,7 @@ button {
   z-index: 0;
 }
 
-.chat > * {
+.main > * {
   position: relative;
   z-index: 1;
 }
@@ -6830,7 +6833,7 @@ window.addEventListener('online', () => {
    clearing anything by hand.
 ===================================================== */
 
-const APP_VERSION = '2026-09-20-26';
+const APP_VERSION = '2026-09-20-27';
 
 const RELOAD_FLAG = 'nastivee_reloaded_for';
 
