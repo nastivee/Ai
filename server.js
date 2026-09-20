@@ -27,10 +27,13 @@ const PORT = process.env.PORT || 3000;
 
 app.post('/api/chat', async (req, res) => {
   try {
+
     const {
       message,
-      history = []
+      history = [],
+      memory = {}
     } = req.body;
+
 
     if (
       !message ||
@@ -43,110 +46,131 @@ app.post('/api/chat', async (req, res) => {
     }
 
 
-    /*
-      Clean and validate the conversation history
-    */
+    /* -----------------------------------------------------
+       CLEAN HISTORY
+    ----------------------------------------------------- */
 
     const safeHistory =
       Array.isArray(history)
         ? history
-            .filter(item => {
-              return (
-                item &&
-                (
-                  item.role === 'user' ||
-                  item.role === 'assistant'
-                ) &&
-                typeof item.content === 'string' &&
-                item.content.trim()
-              );
-            })
+            .filter(item =>
+              item &&
+              (
+                item.role === 'user' ||
+                item.role === 'assistant'
+              ) &&
+              typeof item.content === 'string' &&
+              item.content.trim()
+            )
             .slice(-100)
         : [];
 
 
-    /*
-      Nastivee's personality.
+    /* -----------------------------------------------------
+       CLEAN MEMORY
+    ----------------------------------------------------- */
 
-      IMPORTANT:
-      - Normal by default
-      - Does not randomly become sexual/flirty
-      - Uses previous conversation
-      - Remembers facts mentioned earlier in the supplied history
-    */
+    const safeMemory =
+      memory &&
+      typeof memory === 'object' &&
+      !Array.isArray(memory)
+        ? memory
+        : {};
+
+
+    const memoryText =
+      Object.entries(safeMemory)
+        .filter(([key, value]) =>
+          key &&
+          value !== undefined &&
+          value !== null &&
+          String(value).trim()
+        )
+        .map(([key, value]) =>
+          `${key}: ${value}`
+        )
+        .join('\n');
+
+
+    /* -----------------------------------------------------
+       SYSTEM PERSONALITY
+    ----------------------------------------------------- */
 
     const systemPrompt = `
-You are Nastivee AI, a friendly, confident and natural AI companion.
 
-Your default personality:
+You are Nastivee AI.
+
+You are a friendly, confident, natural AI companion.
+
+DEFAULT PERSONALITY:
 - Friendly
 - Helpful
-- Conversational
+- Natural
 - Funny when appropriate
 - Relaxed
 - Warm
 - Playful when the user is playful
 
-IMPORTANT PERSONALITY RULE:
+IMPORTANT:
 
-Do NOT constantly talk sexually or flirt.
+Do NOT constantly flirt.
 
-Do NOT randomly make normal conversations sexual, horny,
-seductive or romantic.
+Do NOT randomly become sexual.
 
-Only become flirty, cheeky or suggestive when the user
-clearly starts that type of conversation or explicitly asks
-you to.
+Do NOT randomly use horny, seductive or sexual language.
 
-If the user changes back to a normal subject, immediately
-return to a normal conversational tone.
+Do NOT turn normal conversations into sexual conversations.
 
-Never turn an ordinary question into a sexual or romantic
-conversation.
+Only become flirty, cheeky or suggestive when the user clearly
+starts that type of conversation or specifically asks for it.
+
+If the user changes back to a normal subject, immediately return
+to a normal conversational tone.
 
 MEMORY:
 
-You have access to the user's previous conversation in the
-messages below.
+You have a separate long-term memory supplied below.
 
-You MUST use that previous conversation when answering.
+These are facts the user has previously told Nastivee.
 
-If the user previously told you a personal fact, preference,
-name, pet name, family detail, project detail, or something
-similar, use it when it is relevant.
+You MUST use these facts when relevant.
 
-For example, if the user previously told you their dog's name,
-you should remember the dog's name and should NOT say:
+If the memory says:
 
-"You haven't told me your dog's name."
+Dog's name: Rune
 
-Instead, look through the previous conversation and use the
-information that was already provided.
+and the user asks:
 
-Do not pretend you remember something if it genuinely is not
-present in the conversation history.
+"What is my dog's name?"
 
-The conversation history may contain older messages followed
-by the user's newest message. Treat the older messages as
-real previous conversation context.
+answer Rune.
+
+DO NOT say the user has never told you if the information is
+present in the memory.
+
+Do not claim to remember something that isn't present.
+
+You also have recent conversation history below. Use both the
+long-term memory and recent conversation naturally.
+
+LONG-TERM MEMORY:
+${memoryText || 'No saved long-term facts yet.'}
+
+Do not mention the technical memory system to the user unless
+they ask about it.
 
 Do not constantly remind the user that you are an AI.
 
-Speak naturally and avoid sounding overly formal or corporate.
-
 Match the user's tone.
 
-Keep answers reasonably concise unless the user asks for
-more detail.
+Keep normal answers reasonably concise.
+
 `;
 
 
-    /*
-      Build the OpenAI conversation.
-
-      The previous history is placed BEFORE the new message,
-      so the model can actually remember what was said.
-    */
+    /* -----------------------------------------------------
+       OPENAI REQUEST
+    ----------------------------------------------------- */
 
     const messages = [
 
@@ -171,8 +195,15 @@ more detail.
     );
 
     console.log(
-      'MEMORY MESSAGES:',
-      safeHistory.length
+      'HISTORY:',
+      safeHistory.length,
+      'messages'
+    );
+
+    console.log(
+      'MEMORY:',
+      Object.keys(safeMemory).length,
+      'facts'
     );
 
 
@@ -189,26 +220,16 @@ more detail.
 
 
     const reply =
-      response
-        ?.choices?.[0]
-        ?.message
-        ?.content
-        ?.trim();
+      response?.choices?.[0]?.message?.content?.trim();
 
 
     if (!reply) {
 
-      return res.status(500).json({
-        error: 'No response was generated.'
-      });
+      throw new Error(
+        'No response was generated.'
+      );
 
     }
-
-
-    console.log(
-      'REPLY:',
-      reply
-    );
 
 
     res.json({
@@ -224,12 +245,15 @@ more detail.
     );
 
     res.status(500).json({
+
       error:
         error?.message ||
         'Chat request failed.'
+
     });
 
   }
+
 });
 
 
@@ -264,37 +288,29 @@ app.post('/api/image', async (req, res) => {
       prompt.trim();
 
 
-    /*
-      Small variation when regenerating so the result
-      isn't unnecessarily identical.
-    */
-
     if (regenerate) {
 
       const variations = [
 
-        'Create a fresh variation of the requested image while keeping the same overall concept.',
+        'Create a fresh variation while keeping the same overall concept.',
 
-        'Generate another distinct interpretation of the requested image with subtle visual differences.',
+        'Create another distinct interpretation with subtle visual differences.',
 
-        'Create a new version of the requested image with natural variation in composition, lighting and details.',
+        'Create a new version with natural variation in composition, lighting and details.',
 
-        'Regenerate the requested image as a slightly different creative interpretation.'
+        'Regenerate this as a slightly different creative interpretation.'
 
       ];
 
 
-      const variation =
+      finalPrompt +=
+        '\n\n' +
         variations[
           Math.floor(
             Math.random() *
             variations.length
           )
         ];
-
-
-      finalPrompt +=
-        `\n\n${variation}`;
 
     }
 
@@ -308,15 +324,20 @@ app.post('/api/image', async (req, res) => {
     const response =
       await openai.images.generate({
 
-        model: 'gpt-image-2',
+        model:
+          'gpt-image-2',
 
-        prompt: finalPrompt,
+        prompt:
+          finalPrompt,
 
-        size: '1024x1024',
+        size:
+          '1024x1024',
 
-        quality: 'medium',
+        quality:
+          'medium',
 
-        n: 1
+        n:
+          1
 
       });
 
@@ -328,7 +349,7 @@ app.post('/api/image', async (req, res) => {
     if (!image) {
 
       throw new Error(
-        'No image was returned by OpenAI.'
+        'No image was returned.'
       );
 
     }
@@ -402,7 +423,7 @@ app.post('/api/image/edit', async (req, res) => {
     ) {
 
       return res.status(400).json({
-        error: 'An image is required for editing.'
+        error: 'An image is required.'
       });
 
     }
@@ -413,10 +434,6 @@ app.post('/api/image/edit', async (req, res) => {
       prompt
     );
 
-
-    /*
-      Convert the browser data URL into a Buffer.
-    */
 
     let base64Data =
       image;
@@ -446,13 +463,6 @@ app.post('/api/image/edit', async (req, res) => {
     );
 
 
-    /*
-      Normalize the uploaded image.
-
-      This avoids the image-format problems that were
-      happening with image editing.
-    */
-
     const normalizedBuffer =
       await sharp(originalBuffer)
 
@@ -472,7 +482,8 @@ app.post('/api/image/edit', async (req, res) => {
 
         .flatten({
 
-          background: '#ffffff'
+          background:
+            '#ffffff'
 
         })
 
@@ -509,13 +520,6 @@ app.post('/api/image/edit', async (req, res) => {
       );
 
 
-    /*
-      Tell the image model that the uploaded image is the
-      authoritative source.
-
-      This is particularly important when regenerating.
-    */
-
     let finalPrompt;
 
 
@@ -523,44 +527,47 @@ app.post('/api/image/edit', async (req, res) => {
 
       finalPrompt = `
 
-The uploaded image is the authoritative original image.
+The uploaded image is the authoritative original photograph.
 
 Create a fresh variation of the requested edit.
 
 IMPORTANT:
-- Preserve the person's identity and facial likeness.
-- Preserve the person's overall appearance.
+- Preserve the person's identity.
+- Preserve facial likeness.
+- Preserve natural facial features.
 - Preserve important physical characteristics.
-- Do not replace the person with a different person.
-- Do not use a previous AI-generated result as the source.
+- Do not replace the person with another person.
+- Do not use a previous AI-generated image as the source.
 - Work directly from the uploaded original photograph.
-- Keep the requested edit while making a natural visual variation.
+- Keep the requested edit realistic.
 
 Requested edit:
+
 ${prompt.trim()}
 
-Generate a new variation with subtle differences in
-composition, lighting, positioning or details while
+Create a fresh variation with subtle differences while
 preserving the original person's identity.
+
 `;
 
     } else {
 
       finalPrompt = `
 
-Edit the uploaded photograph according to the request below.
+Edit the uploaded photograph according to this request.
 
 IMPORTANT:
-- Preserve the person's identity and facial likeness.
-- Preserve their natural facial features.
-- Preserve their overall appearance unless the requested
-  edit specifically changes it.
-- Do not replace the person with a different person.
-- Keep the photograph realistic.
-- Make the requested change clearly visible.
+- Preserve the person's identity.
+- Preserve facial likeness.
+- Preserve natural facial features.
+- Do not replace the person with another person.
+- Keep the result realistic.
+- Clearly perform the requested edit.
 
 Requested edit:
+
 ${prompt.trim()}
+
 `;
 
     }
@@ -570,13 +577,6 @@ ${prompt.trim()}
       'SENDING IMAGE TO OPENAI...'
     );
 
-
-    /*
-      IMPORTANT:
-      gpt-image-2 does NOT support input_fidelity.
-
-      Therefore we deliberately do NOT send input_fidelity.
-    */
 
     const response =
       await openai.images.edit({
@@ -609,7 +609,7 @@ ${prompt.trim()}
     if (!imageResult) {
 
       throw new Error(
-        'No edited image was returned by OpenAI.'
+        'No edited image was returned.'
       );
 
     }
@@ -657,28 +657,15 @@ app.get('/', (req, res) => {
 
   res.send(`
     <!DOCTYPE html>
-
     <html>
-
       <head>
-
         <title>Nastivee AI</title>
-
-        <meta
-          name="viewport"
-          content="width=device-width, initial-scale=1"
-        >
-
       </head>
 
       <body>
-
         <h1>Nastivee AI</h1>
-
         <p>Server is running.</p>
-
       </body>
-
     </html>
   `);
 
@@ -686,7 +673,7 @@ app.get('/', (req, res) => {
 
 
 /* =========================================================
-   START SERVER
+   START
 ========================================================= */
 
 app.listen(
