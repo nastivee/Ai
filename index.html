@@ -13,7 +13,7 @@
 
 :root {
   --header-h: 65px;
-  --dock-h: 90px; /* updated live by JS to the real dock height */
+  --dock-h: 90px;
 }
 
 body {
@@ -54,8 +54,18 @@ header {
 }
 
 .logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   font-size: 20px;
   font-weight: bold;
+}
+
+.logo img {
+  width: 42px;
+  height: 42px;
+  object-fit: contain;
+  border-radius: 10px;
 }
 
 .headerButtons {
@@ -101,14 +111,12 @@ header {
 #chat {
   flex: 1;
   padding: 20px 14px;
-  /* Always leave room for the whole dock, whatever is stacked in it */
   padding-bottom: calc(var(--dock-h) + 24px);
 }
 
 .message {
   display: flex;
   margin-bottom: 15px;
-  /* When a message is scrolled to, it lands just under the header */
   scroll-margin-top: calc(var(--header-h) + 10px);
 }
 
@@ -168,12 +176,7 @@ header {
   opacity: .55;
 }
 
-/* =====================================================
-   DOCK
-   Everything pinned to the bottom lives in here and
-   stacks vertically: preview, progress, composer.
-   Nothing overlaps.
-===================================================== */
+/* DOCK */
 
 .dock {
   position: fixed;
@@ -259,7 +262,6 @@ header {
   transition: width .7s ease;
 }
 
-/* Before the panel closes itself, the bar drains so it never just vanishes */
 .imageProgress.closing .progressFill {
   transition: width var(--drain-ms, 1000ms) linear;
   width: 0 !important;
@@ -294,7 +296,6 @@ header {
   border: 1px solid rgba(255,255,255,.2);
 }
 
-/* Close mark: large, no background, no border */
 .removePhoto {
   border: 0;
   background: none;
@@ -380,17 +381,17 @@ header {
 <div class="app">
 
 <header>
- <header
+
   <div class="logo">
     <img src="IMG_0471.jpeg" alt="Nastivee AI">
     <span>Nastivee AI</span>
   </div>
-</header>
 
   <div class="headerButtons">
     <button id="memoryButton">🧠 Memory</button>
     <button id="newChatButton">＋ New</button>
   </div>
+
 </header>
 
 <div id="memoryPanel" class="memoryPanel">
@@ -402,12 +403,8 @@ header {
 
 <main id="chat"></main>
 
-<!-- DOCK: everything at the bottom, stacked -->
-
 <div id="dock" class="dock">
 <div class="dockInner">
-
-  <!-- UPLOAD PREVIEW -->
 
   <div id="uploadPreview" class="uploadPreview">
     <img id="uploadPreviewImage" src="" alt="Uploaded image">
@@ -416,8 +413,6 @@ header {
       ×
     </button>
   </div>
-
-  <!-- IMAGE PROGRESS -->
 
   <div id="imageProgress" class="imageProgress">
 
@@ -438,8 +433,6 @@ header {
     </div>
 
   </div>
-
-  <!-- COMPOSER -->
 
   <div id="composer" class="composer">
 
@@ -519,17 +512,6 @@ let progressCloseTimer = null;
 
 let messageCount = 0;
 
-
-/*
-  IMPORTANT:
-
-  This stores the ORIGINAL uploaded photo and the
-  original prompt.
-
-  Re-render will always use this original photo,
-  never the previous AI result.
-*/
-
 let lastImage = {
   sourceImage: null,
   prompt: '',
@@ -601,8 +583,6 @@ const removePhoto =
 
 /* =====================================================
    DOCK HEIGHT
-   Keeps the chat's bottom padding equal to the real
-   height of the dock, so nothing hides behind it.
 ===================================================== */
 
 function updateDockHeight() {
@@ -655,10 +635,6 @@ function saveConversation() {
       )
     );
   } catch {
-    /*
-      Images are large. If storage is full,
-      save the text messages only.
-    */
     try {
       localStorage.setItem(
         CONVERSATION_KEY,
@@ -807,7 +783,6 @@ async function apiFetch(path, options = {}) {
 
 /* =====================================================
    MESSAGE WRAPPER
-   Every message gets its own anchor id.
 ===================================================== */
 
 function createMessageWrapper(role) {
@@ -915,12 +890,6 @@ function addImageMessage(
     }
   );
 
-  /*
-    If the original upload is unavailable
-    after a page reload, don't pretend the
-    image can be re-rendered from the result.
-  */
-
   if (wasEdit && !sourceImage) {
     button.disabled = true;
     button.title =
@@ -937,11 +906,8 @@ function addImageMessage(
   chat.appendChild(wrapper);
 
   if (!options.silent) {
-    /*
-      Scroll once now, and again when the image has
-      loaded and the card has its full height.
-    */
     showMessage(wrapper);
+
     img.addEventListener(
       'load',
       () => showMessage(wrapper),
@@ -955,8 +921,6 @@ function addImageMessage(
 
 /* =====================================================
    SCROLL
-   New content lands at the TOP of the screen,
-   just under the header.
 ===================================================== */
 
 function showMessage(element) {
@@ -1045,12 +1009,6 @@ function startImageProgress(isRerender) {
     }, 1600);
 }
 
-
-/*
-  Closes the panel after a delay. The bar drains
-  across that delay so the user can see it going.
-*/
-
 function closeProgressAfter(ms) {
 
   clearTimeout(progressCloseTimer);
@@ -1060,7 +1018,6 @@ function closeProgressAfter(ms) {
     `${ms}ms`
   );
 
-  // let the full bar paint first, then drain it
   requestAnimationFrame(() => {
     requestAnimationFrame(() => {
       imageProgress.classList.add('closing');
@@ -1083,7 +1040,6 @@ function closeProgressAfter(ms) {
     }, ms);
 }
 
-
 function finishImageProgress() {
 
   clearInterval(progressTimer);
@@ -1098,7 +1054,6 @@ function finishImageProgress() {
 
   closeProgressAfter(1200);
 }
-
 
 function failImageProgress() {
 
@@ -1122,13 +1077,6 @@ function failImageProgress() {
 /* =====================================================
    NORMAL CHAT
 ===================================================== */
-
-/*
-  Only text turns go to the chat API, as plain
-  { role, content }. Generated images are stored in
-  the conversation as huge data URLs and must not
-  be sent back as chat text.
-*/
 
 function chatHistoryForApi() {
   return conversation
@@ -1254,10 +1202,6 @@ async function createImage(prompt) {
   const wasEdit =
     !!selectedPhoto;
 
-  /*
-    SAVE THE ORIGINAL UPLOAD BEFORE ANYTHING ELSE.
-  */
-
   const sourceImage =
     selectedPhoto;
 
@@ -1309,13 +1253,6 @@ async function createImage(prompt) {
     }
 
     finishImageProgress();
-
-    /*
-      VERY IMPORTANT:
-
-      Store the ORIGINAL upload,
-      not data.image.
-    */
 
     lastImage = {
       sourceImage,
@@ -1369,11 +1306,6 @@ async function rerenderImage(
 
   if (imageBusy) return;
 
-  /*
-    Uploaded-image re-render MUST have
-    the original photo.
-  */
-
   if (wasEdit && !sourceImage) {
 
     addMessage(
@@ -1398,12 +1330,6 @@ async function rerenderImage(
     let data;
 
     if (wasEdit) {
-
-      /*
-        ORIGINAL PHOTO GOES HERE.
-
-        NOT the previous generated image.
-      */
 
       data =
         await apiFetch(
@@ -1437,10 +1363,6 @@ async function rerenderImage(
     }
 
     finishImageProgress();
-
-    /*
-      Keep the original upload alive.
-    */
 
     lastImage = {
       sourceImage,
@@ -1544,10 +1466,6 @@ fileInput.addEventListener(
 
     reader.onload =
       () => {
-
-        /*
-          This is the ORIGINAL PHOTO.
-        */
 
         selectedPhoto =
           reader.result;
@@ -1760,9 +1678,13 @@ function restoreConversation() {
     }
   );
 
-  // On load, open at the latest message
   scrollToBottom();
-  window.addEventListener('load', scrollToBottom, { once: true });
+
+  window.addEventListener(
+    'load',
+    scrollToBottom,
+    { once: true }
+  );
 }
 
 
