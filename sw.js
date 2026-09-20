@@ -60,10 +60,19 @@ self.addEventListener('fetch', event => {
 
   const request = event.request;
 
-  // Never touch API calls or anything that is not a plain GET
+  /*
+    Only ever serve this app's own files from the cache.
+
+    Anything on another origin goes straight to the network:
+    Supabase reads, the API, the lot. Caching those handed
+    the app a stale chat list that survived deletes.
+  */
+
+  const url = new URL(request.url);
+
   if (
     request.method !== 'GET' ||
-    request.url.startsWith('https://ai-8vlt.onrender.com/')
+    url.origin !== self.location.origin
   ) {
     return;
   }
