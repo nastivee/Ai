@@ -8,15 +8,23 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
-});
+// Helper function to safely load OpenAI only when called
+function getOpenAIClient() {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) return null;
+  return new OpenAI({ apiKey });
+}
 
 // Chat Route
 app.post('/api/chat', async (req, res) => {
   try {
     const { message } = req.body;
     if (!message) return res.status(400).json({ error: 'Message is required' });
+
+    const openai = getOpenAIClient();
+    if (!openai) {
+      return res.status(500).json({ error: 'OPENAI_API_KEY environment variable is missing on Render.' });
+    }
 
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
@@ -36,25 +44,31 @@ app.post('/api/image', async (req, res) => {
   const { prompt } = req.body;
   if (!prompt) return res.status(400).json({ error: 'Prompt is required' });
 
-  // 1. Try DALL-E 3
-  try {
-    console.log('Attempting DALL-E 3 generation...');
-    const response = await openai.images.generate({
-      model: "dall-e-3",
-      prompt: prompt + ", realistic photograph, highly detailed, 8k resolution",
-      n: 1,
-      size: "1024x1024",
-      quality: "standard"
-    });
+  const openai = getOpenAIClient();
 
-    if (response.data && response.data[0]?.url) {
-      return res.json({ imageUrl: response.data[0].url });
+  // 1. Try DALL-E 3 if API Key exists
+  if (openai) {
+    try {
+      console.log('Attempting DALL-E 3 generation...');
+      const response = await openai.images.generate({
+        model: "dall-e-3",
+        prompt: prompt + ", realistic photograph, highly detailed, 8k resolution",
+        n: 1,
+        size: "1024x1024",
+        quality: "standard"
+      });
+
+      if (response.data && response.data[0]?.url) {
+        return res.json({ imageUrl: response.data[0].url });
+      }
+    } catch (dalleError) {
+      console.warn('DALL-E 3 request failed, using backup engine:', dalleError.message);
     }
-  } catch (dalleError) {
-    console.warn('DALL-E 3 unavailable, using fallback:', dalleError.message);
+  } else {
+    console.warn('OPENAI_API_KEY missing, using backup engine directly...');
   }
 
-  // 2. High-reliability Fallback (Triggers if API key lacks DALL-E access)
+  // 2. High-speed Backup Engine (Always returns an image even without key)
   try {
     const safePrompt = encodeURIComponent(prompt.replace(/[^a-zA-Z0-9 ]/g, "").trim() + ', realistic photo');
     const seed = Date.now();
