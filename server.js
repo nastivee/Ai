@@ -6,13 +6,13 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(cors());
-app.use(express.json({ limit: '10mb' }));
+app.use(express.json());
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 });
 
-// Chat Route
+// Chat Route (OpenAI Text)
 app.post('/api/chat', async (req, res) => {
   try {
     const { message } = req.body;
@@ -31,33 +31,21 @@ app.post('/api/chat', async (req, res) => {
   }
 });
 
-// Image Route
+// Free Image Generation Route (No OpenAI Key / Payment Needed!)
 app.post('/api/image', async (req, res) => {
-  const { prompt } = req.body;
-  if (!prompt) return res.status(400).json({ error: 'Prompt is required' });
-
-  // 1. Try DALL-E 3 direct URL standard
   try {
-    const response = await openai.images.generate({
-      model: "dall-e-3",
-      prompt: prompt + ", photorealistic, high quality 8k",
-      n: 1,
-      size: "1024x1024",
-      quality: "standard"
-    });
+    const { prompt } = req.body;
+    if (!prompt) return res.status(400).json({ error: 'Prompt is required' });
 
-    if (response.data && response.data[0]?.url) {
-      return res.json({ imageUrl: response.data[0].url });
-    }
+    // Creates a direct, realistic 8K photo URL using Pollinations AI
+    const encodedPrompt = encodeURIComponent(prompt + ', realistic photo, highly detailed, 8k resolution');
+    const imageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1024&height=1024&nologo=true&seed=${Math.floor(Math.random() * 100000)}`;
+
+    return res.json({ imageUrl });
   } catch (error) {
-    console.error('OpenAI Error:', error.message);
+    console.error('Image route error:', error);
+    return res.status(500).json({ error: 'Failed to generate image' });
   }
-
-  // 2. Reliable Direct Fallback URL
-  const encodedPrompt = encodeURIComponent(prompt + ', realistic photo, high resolution');
-  const backupUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1024&height=1024&nologo=true`;
-  
-  return res.json({ imageUrl: backupUrl });
 });
 
 app.listen(PORT, () => {
