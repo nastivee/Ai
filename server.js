@@ -26,11 +26,7 @@ const PORT = process.env.PORT || 3000;
 ================================================== */
 
 app.get('/', (req, res) => {
-
-  res.send(
-    'Nastivee AI Bot backend is running.'
-  );
-
+  res.send('Nastivee AI Bot backend is running.');
 });
 
 
@@ -44,21 +40,13 @@ app.post('/api/chat', async (req, res) => {
 
     const { message } = req.body;
 
-
     if (!message || !message.trim()) {
-
       return res.status(400).json({
         error: 'Message is required.'
       });
-
     }
 
-
-    console.log(
-      'CHAT:',
-      message
-    );
-
+    console.log('CHAT:', message);
 
     const response =
       await openai.chat.completions.create({
@@ -69,16 +57,13 @@ app.post('/api/chat', async (req, res) => {
 
           {
             role: 'system',
-
             content:
               'You are Nastivee AI Bot, a helpful, friendly and intelligent personal AI assistant.'
           },
 
           {
             role: 'user',
-
-            content:
-              message
+            content: message
           }
 
         ]
@@ -103,7 +88,6 @@ app.post('/api/chat', async (req, res) => {
       error
     );
 
-
     res.status(500).json({
 
       error:
@@ -115,110 +99,6 @@ app.post('/api/chat', async (req, res) => {
   }
 
 });
-
-
-/* ==================================================
-   IMAGE VARIATION INSTRUCTIONS
-================================================== */
-
-const variationInstructions = [
-
-  `
-Create a completely different composition from the
-previous version.
-
-Change the camera angle, subject positioning,
-framing and visual arrangement.
-
-Keep the original subject and all important
-requested details accurate.
-
-Do NOT simply reproduce the previous image.
-`,
-
-  `
-Create a fresh visual interpretation of the request.
-
-Use a noticeably different camera angle, framing,
-lighting setup and composition.
-
-Keep the main subject and requested details the same,
-but make the overall image clearly different.
-`,
-
-  `
-Make this version substantially different.
-
-Change the perspective, lighting, subject placement,
-background arrangement and overall composition.
-
-Preserve the original request and important details.
-Avoid repeating the previous image.
-`,
-
-  `
-Reimagine the scene from a completely different
-viewpoint.
-
-Use different framing, camera position, lighting,
-depth and subject placement.
-
-The original request remains the priority, but the
-result must look like a new image.
-`,
-
-  `
-Create an alternative interpretation.
-
-Use a new composition, different perspective,
-different lighting and different arrangement of
-the visual elements.
-
-Do not copy the previous composition.
-`,
-
-  `
-Create a distinctly different version.
-
-Change the camera position, lens perspective,
-lighting, subject positioning and background
-arrangement.
-
-Keep the requested subject accurate.
-`,
-
-  `
-Create a fresh cinematic interpretation.
-
-Use a substantially different composition,
-perspective, lighting design and scene arrangement.
-
-Keep the original concept intact.
-`,
-
-  `
-Create another unique version of the image.
-
-Do not repeat the previous composition.
-
-Experiment with a different viewpoint, framing,
-lighting, depth and arrangement while keeping
-the original prompt accurate.
-`
-
-];
-
-
-function getRandomVariation() {
-
-  return variationInstructions[
-    Math.floor(
-      Math.random() *
-      variationInstructions.length
-    )
-  ];
-
-}
 
 
 /* ==================================================
@@ -235,10 +115,7 @@ app.post('/api/image', async (req, res) => {
     } = req.body;
 
 
-    if (
-      !prompt ||
-      !prompt.trim()
-    ) {
+    if (!prompt || !prompt.trim()) {
 
       return res.status(400).json({
 
@@ -250,12 +127,11 @@ app.post('/api/image', async (req, res) => {
     }
 
 
-    let finalPrompt =
-      prompt.trim();
+    let finalPrompt = prompt.trim();
 
 
     /*
-     * NORMAL IMAGE
+     * NORMAL GENERATION
      */
 
     if (!regenerate) {
@@ -269,38 +145,66 @@ app.post('/api/image', async (req, res) => {
 
 
     /*
-     * REGENERATED IMAGE
+     * REGENERATION
      *
-     * Add a completely different
-     * variation instruction.
+     * For images that were generated from text only,
+     * create a different visual interpretation.
      */
 
     if (regenerate === true) {
 
+      const variations = [
+
+        `
+Create a fresh interpretation of the request.
+Use a different composition, camera angle,
+framing and lighting while keeping the original
+subject and requested details accurate.
+Do not simply reproduce the previous image.
+`,
+
+        `
+Create another distinct version of the request.
+Change the perspective, framing, lighting and
+arrangement of the scene while preserving the
+original subject and important details.
+`,
+
+        `
+Create a noticeably different composition.
+Change the camera position, subject placement,
+background arrangement and lighting, while keeping
+the original request accurate.
+`,
+
+        `
+Reimagine the requested scene from a different
+viewpoint with different framing, lighting and
+visual arrangement. Keep the original concept
+and requested details intact.
+`
+
+      ];
+
+
       const variation =
-        getRandomVariation();
+        variations[
+          Math.floor(
+            Math.random() *
+            variations.length
+          )
+        ];
 
 
       finalPrompt = `
 
 ${prompt.trim()}
 
-
-IMPORTANT IMAGE REGENERATION INSTRUCTION:
+IMPORTANT REGENERATION INSTRUCTION:
 
 ${variation}
 
-This is a regeneration.
-
-The result must be visibly different from the
-previous image.
-
-Do not merely recreate the previous composition.
-
-Keep the user's original request, subject,
-important objects and requested details accurate.
-
-Create a genuinely new visual interpretation.
+The original user request remains the priority.
 
 `;
 
@@ -314,7 +218,7 @@ Create a genuinely new visual interpretation.
 
 
     /*
-     * GENERATE
+     * GENERATE IMAGE
      */
 
     const response =
@@ -359,7 +263,7 @@ Create a genuinely new visual interpretation.
 
 
     /*
-     * BASE64 IMAGE
+     * BASE64
      */
 
     if (imageData.b64_json) {
@@ -375,7 +279,7 @@ Create a genuinely new visual interpretation.
 
 
     /*
-     * IMAGE URL
+     * URL
      */
 
     if (imageData.url) {
@@ -432,10 +336,7 @@ app.post('/api/image/edit', async (req, res) => {
     } = req.body;
 
 
-    if (
-      !prompt ||
-      !prompt.trim()
-    ) {
+    if (!prompt || !prompt.trim()) {
 
       return res.status(400).json({
 
@@ -460,15 +361,28 @@ app.post('/api/image/edit', async (req, res) => {
 
 
     console.log(
+      '========================================'
+    );
+
+    console.log(
       regenerate
-        ? 'IMAGE EDIT REGENERATION:'
-        : 'IMAGE EDIT:',
+        ? 'IMAGE EDIT REGENERATION'
+        : 'IMAGE EDIT'
+    );
+
+    console.log(
+      'PROMPT:',
       prompt
     );
 
 
     /* ==================================================
-       CONVERT BASE64 IMAGE
+       ORIGINAL UPLOADED PHOTO
+       
+       THIS MUST ALWAYS BE THE ORIGINAL PHOTO.
+       
+       We never use the previous AI-generated result
+       as the reference for regeneration.
     ================================================== */
 
     let originalBuffer;
@@ -479,17 +393,21 @@ app.post('/api/image/edit', async (req, res) => {
       image.startsWith('data:')
     ) {
 
-      const base64Data =
-        image.split(',')[1];
+      const parts =
+        image.split(',');
 
 
-      if (!base64Data) {
+      if (parts.length < 2) {
 
         throw new Error(
           'Invalid image data.'
         );
 
       }
+
+
+      const base64Data =
+        parts[1];
 
 
       originalBuffer =
@@ -508,20 +426,18 @@ app.post('/api/image/edit', async (req, res) => {
 
 
     console.log(
-      'ORIGINAL IMAGE:',
+      'ORIGINAL UPLOADED PHOTO:',
       originalBuffer.length,
       'bytes'
     );
 
 
     /* ==================================================
-       NORMALISE IMAGE
+       NORMALISE ORIGINAL PHOTO
     ================================================== */
 
     const normalizedBuffer =
-      await sharp(
-        originalBuffer
-      )
+      await sharp(originalBuffer)
 
         .rotate()
 
@@ -551,7 +467,7 @@ app.post('/api/image/edit', async (req, res) => {
         .jpeg({
 
           quality:
-            90,
+            95,
 
           mozjpeg:
             true
@@ -562,14 +478,14 @@ app.post('/api/image/edit', async (req, res) => {
 
 
     console.log(
-      'IMAGE CONVERTED:',
+      'NORMALISED ORIGINAL:',
       normalizedBuffer.length,
       'bytes'
     );
 
 
     /* ==================================================
-       CREATE OPENAI FILE
+       CREATE OPENAI IMAGE FILE
     ================================================== */
 
     const imageFile =
@@ -577,7 +493,7 @@ app.post('/api/image/edit', async (req, res) => {
 
         normalizedBuffer,
 
-        'uploaded-image.jpg',
+        'original-upload.jpg',
 
         {
           type:
@@ -588,66 +504,233 @@ app.post('/api/image/edit', async (req, res) => {
 
 
     /* ==================================================
-       CREATE EDIT PROMPT
+       BUILD EDIT PROMPT
     ================================================== */
 
-    let finalPrompt =
-      prompt.trim();
+    let finalPrompt;
 
 
     /*
-     * NORMAL EDIT
+     * FIRST EDIT
      */
 
     if (!regenerate) {
 
-      console.log(
-        'SENDING IMAGE TO OPENAI...'
-      );
+      finalPrompt = `
+
+Use the uploaded photograph as the primary reference.
+
+Edit the photograph according to the user's request.
+
+PRESERVE THE PERSON'S IDENTITY AND LIKENESS.
+
+Keep the person's:
+
+- facial structure
+- face shape
+- eyes
+- nose
+- mouth
+- jaw
+- hairstyle
+- hair colour
+- skin tone
+- body proportions
+- distinctive facial characteristics
+- overall appearance
+
+Do not replace the person with another person.
+
+Do not unnecessarily alter the person's face.
+
+USER'S EDIT REQUEST:
+
+${prompt.trim()}
+
+Make the requested edit while keeping the original
+person clearly recognisable and faithful to the
+uploaded photograph.
+
+`;
+
 
     }
 
 
     /*
-     * REGENERATED EDIT
+     * REGENERATION OF AN EDIT
      */
 
     if (regenerate === true) {
 
+      /*
+       * IMPORTANT:
+       *
+       * The uploaded photo is still the source image.
+       *
+       * We are NOT sending the previous generated
+       * image back into the model.
+       */
+
+      const regenerationVariations = [
+
+        `
+Make a subtle alternative interpretation of the
+requested edit.
+
+Keep the exact same person and preserve their
+identity and likeness.
+
+Only slightly vary the requested scene, positioning,
+lighting, environment or styling.
+
+Do not substantially change the person's face.
+`,
+
+        `
+Create another version of the requested edit.
+
+Keep the uploaded person extremely consistent
+with the original photograph.
+
+Make only modest changes to the requested edit,
+such as slightly different lighting, positioning,
+background details or atmosphere.
+
+Do not change the person's identity.
+`,
+
+        `
+Create a fresh but subtle variation of the edit.
+
+The uploaded photograph remains the authoritative
+reference for the person's appearance.
+
+Keep their face, facial structure, hairstyle,
+skin tone and body proportions consistent.
+
+Only vary the requested edit slightly.
+`,
+
+        `
+Produce another version of the same edit.
+
+Preserve the original person's likeness as closely
+as possible.
+
+Do not turn the person into someone else.
+
+Make a small creative variation in the requested
+scene, lighting, composition or environment.
+`,
+
+        `
+Keep the person exactly recognisable from the
+uploaded photograph.
+
+Create a slightly different interpretation of
+the user's requested edit.
+
+Make changes only where appropriate to the edit.
+
+Avoid unnecessary changes to the person's face,
+body or identity.
+`
+
+      ];
+
+
       const variation =
-        getRandomVariation();
+        regenerationVariations[
+          Math.floor(
+            Math.random() *
+            regenerationVariations.length
+          )
+        ];
 
 
       finalPrompt = `
 
+THE UPLOADED PHOTOGRAPH IS THE ORIGINAL SOURCE IMAGE.
+
+Use the uploaded photograph as the PRIMARY and
+AUTHORITATIVE reference for the person.
+
+USER'S ORIGINAL EDIT REQUEST:
+
 ${prompt.trim()}
 
 
-IMPORTANT IMAGE EDIT REGENERATION INSTRUCTION:
+IDENTITY PRESERVATION:
+
+Preserve the person's identity and likeness as
+faithfully as possible.
+
+Keep consistent:
+
+- facial structure
+- face shape
+- eyes
+- nose
+- mouth
+- jaw
+- hairstyle
+- hair colour
+- skin tone
+- body proportions
+- distinctive facial features
+- overall appearance
+
+Do NOT replace the person with a different person.
+
+Do NOT substantially alter their face.
+
+Do NOT create a new person.
+
+Do NOT use a different person as the reference.
+
+REGENERATION:
 
 ${variation}
 
-This is a regeneration of a previous edited image.
+IMPORTANT:
 
-Create a noticeably different result from the
-previous edit.
+This is a regeneration of the SAME EDIT using the
+ORIGINAL UPLOADED PHOTOGRAPH.
 
-Keep the original uploaded subject recognisable
-and preserve the user's requested changes.
+Do not treat the previous AI-generated image as
+the source.
 
-Do not simply reproduce the previous result.
+The original uploaded photograph must remain the
+reference for the person's likeness.
+
+The requested edit should remain essentially the
+same, with only a modest visual variation.
 
 `;
 
-      console.log(
-        'REGENERATING IMAGE EDIT...'
-      );
 
     }
 
 
+    console.log(
+      'SENDING ORIGINAL PHOTO TO OPENAI...'
+    );
+
+
+    console.log(
+      'REGENERATION:',
+      regenerate === true
+    );
+
+
+    console.log(
+      'SENDING EDIT REQUEST...'
+    );
+
+
     /* ==================================================
-       SEND TO OPENAI
+       OPENAI IMAGE EDIT
     ================================================== */
 
     const response =
@@ -682,7 +765,7 @@ Do not simply reproduce the previous result.
 
 
     /* ==================================================
-       RESULT
+       GET RESULT
     ================================================== */
 
     const imageData =
@@ -699,7 +782,7 @@ Do not simply reproduce the previous result.
 
 
     /*
-     * BASE64
+     * BASE64 RESULT
      */
 
     if (imageData.b64_json) {
@@ -715,7 +798,7 @@ Do not simply reproduce the previous result.
 
 
     /*
-     * URL
+     * URL RESULT
      */
 
     if (imageData.url) {
