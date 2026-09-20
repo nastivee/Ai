@@ -539,6 +539,12 @@ button {
   50% { opacity: 1; }
 }
 
+.authStatus {
+  display: flex;
+  justify-content: center;
+  margin-top: 18px;
+}
+
 .guestButton {
   width: 100%;
   margin-top: 10px;
@@ -616,6 +622,7 @@ button {
 
 .headerStatus {
   margin-left: auto;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -1225,6 +1232,13 @@ button {
       id="authError"
       class="authError"
     ></div>
+
+    <div class="authStatus">
+      <div class="headerStatus" title="People using Nastivee AI right now">
+        <span class="statusDot" id="authStatusDot"></span>
+        <span id="authOnlineCount">Connecting</span>
+      </div>
+    </div>
 
     <div class="authSwitch">
       <span id="authSwitchText">
@@ -2606,6 +2620,9 @@ guestSignUpButton.addEventListener(
 
 async function checkSession() {
 
+  // the count is live on the login screen as well
+  startPresence();
+
   const {
     data
   } =
@@ -3167,7 +3184,7 @@ async function finishDelete(deletedChatId) {
 
   if (wasOpen) {
 
-    newChat();
+    newChat({ keepSidebar: true });
 
   } else {
 
@@ -3380,11 +3397,11 @@ async function deleteChat(
 
 newChatButton.addEventListener(
   'click',
-  newChat
+  () => newChat()
 );
 
 
-function newChat() {
+function newChat(options = {}) {
 
   currentChatId = null;
 
@@ -3403,7 +3420,16 @@ function newChat() {
 
   renderChatHistory();
 
-  closeMobileSidebar();
+  /*
+    After a delete the user is still reading the sidebar,
+    and sliding it shut looks like every chat vanishing.
+  */
+
+  if (!options.keepSidebar) {
+
+    closeMobileSidebar();
+
+  }
 
 }
 
@@ -5803,19 +5829,46 @@ function onlineLabel(count) {
 
 }
 
+/*
+  The count shows in the app header and on the login
+  screen, so it is visible whether or not you are in.
+*/
+
+const statusLabels = () =>
+  [
+    onlineCountLabel,
+    document.getElementById('authOnlineCount')
+  ].filter(Boolean);
+
+const statusDots = () =>
+  [
+    statusDot,
+    document.getElementById('authStatusDot')
+  ].filter(Boolean);
+
 function setOnlineCount(count) {
 
-  onlineCountLabel.textContent = onlineLabel(count);
+  const text = onlineLabel(count);
 
-  statusDot.classList.remove('offline');
+  statusLabels().forEach(el => {
+    el.textContent = text;
+  });
+
+  statusDots().forEach(dot => {
+    dot.classList.remove('offline');
+  });
 
 }
 
 function setOffline() {
 
-  onlineCountLabel.textContent = 'Offline';
+  statusLabels().forEach(el => {
+    el.textContent = 'Offline';
+  });
 
-  statusDot.classList.add('offline');
+  statusDots().forEach(dot => {
+    dot.classList.add('offline');
+  });
 
 }
 
@@ -5920,7 +5973,7 @@ window.addEventListener('online', () => {
    clearing anything by hand.
 ===================================================== */
 
-const APP_VERSION = '2026-09-20-17';
+const APP_VERSION = '2026-09-20-18';
 
 const RELOAD_FLAG = 'nastivee_reloaded_for';
 
