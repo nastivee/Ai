@@ -276,10 +276,33 @@ button {
   margin-bottom: 3px;
 }
 
-.chatHistoryItem:hover,
+/*
+  Hover styles only where there is a real pointer. On a
+  touchscreen the first tap was being spent on the hover
+  state, so opening a chat took two taps.
+*/
+@media (hover: hover) {
+
+  .chatHistoryItem:hover {
+    background: #241933;
+    color: white;
+  }
+
+  .chatHistoryItem:hover .deleteChatButton {
+    opacity: 1;
+  }
+
+}
+
 .chatHistoryItem.active {
   background: #241933;
   color: white;
+}
+
+.chatHistoryItem,
+.chatHistoryItem button {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .chatHistoryTitle {
@@ -290,16 +313,44 @@ button {
   font-size: 14px;
 }
 
+/*
+  End of row delete. Just the mark, no background and no
+  border, large enough to read and to hit with a thumb.
+*/
 .deleteChatButton {
-  opacity: 0;
-  background: none;
+  flex-shrink: 0;
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 42px;
+  padding: 0 12px;
+  margin-left: 4px;
   border: 0;
-  color: #8e829a;
-  padding: 3px;
+  background: none;
+  color: #9b8fa8;
+  font-size: 24px;
+  line-height: 1;
+  opacity: .75;
+  transition: color .15s ease, opacity .15s ease;
 }
 
-.chatHistoryItem:hover .deleteChatButton {
+.deleteChatButton:active {
+  color: #ff7676;
   opacity: 1;
+}
+
+@media (hover: hover) {
+
+  .deleteChatButton {
+    opacity: 0;
+  }
+
+  .deleteChatButton:hover {
+    color: #ff7676;
+    opacity: 1;
+  }
+
 }
 
 .sidebarBottom {
@@ -2617,7 +2668,7 @@ function renderChatHistory() {
         );
 
       button.style.cssText =
-        'flex:1;display:flex;align-items:center;gap:8px;background:none;border:0;color:inherit;text-align:left;padding:0;min-width:0;';
+        'flex:1;display:flex;align-items:center;gap:8px;background:none;border:0;color:inherit;text-align:left;padding:10px 0;min-width:0;';
 
 
       const title =
@@ -2673,10 +2724,15 @@ function renderChatHistory() {
         'deleteChatButton';
 
       deleteButton.textContent =
-        '✕';
+        '\u00d7';
 
       deleteButton.title =
         'Delete chat';
+
+      deleteButton.setAttribute(
+        'aria-label',
+        `Delete ${chatItem.title || 'chat'}`
+      );
 
 
       deleteButton.addEventListener(
@@ -5095,7 +5151,7 @@ logoutButton.addEventListener(
    clearing anything by hand.
 ===================================================== */
 
-const APP_VERSION = '2026-09-20-1';
+const APP_VERSION = '2026-09-20-2';
 
 const RELOAD_FLAG = 'nastivee_reloaded_for';
 
