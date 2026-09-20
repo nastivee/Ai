@@ -1,813 +1,452 @@
 <!DOCTYPE html>
-
 <html lang="en">
-
 <head>
-
-  <meta charset="UTF-8">
-
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0, viewport-fit=cover"
-  >
-
-  <meta
-    name="theme-color"
-    content="#160022"
-  >
-
-  <title>Nastivee AI</title>
-
-  <style>
-
-    * {
-      box-sizing: border-box;
-    }
-
-    html,
-    body {
-      margin: 0;
-      padding: 0;
-      width: 100%;
-      height: 100%;
-      background: #100018;
-      color: white;
-      font-family:
-        Arial,
-        Helvetica,
-        sans-serif;
-      overflow: hidden;
-    }
-
-    body {
-      display: flex;
-      justify-content: center;
-    }
-
-    button,
-    textarea {
-      font-family: inherit;
-    }
-
-    .app {
-      width: 100%;
-      max-width: 900px;
-      height: 100dvh;
-      display: flex;
-      flex-direction: column;
-
-      background:
-        radial-gradient(
-          circle at top,
-          #3b075b 0%,
-          #180026 45%,
-          #100018 100%
-        );
-    }
-
-    /* HEADER */
-
-    header {
-      min-height: 68px;
-      padding: 10px 14px;
-
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-
-      gap: 8px;
-
-      border-bottom:
-        1px solid rgba(
-          255,
-          255,
-          255,
-          .1
-        );
-
-      background:
-        rgba(
-          15,
-          0,
-          25,
-          .75
-        );
-
-      backdrop-filter:
-        blur(15px);
-    }
-
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 9px;
-      min-width: 0;
-    }
-
-    .brain {
-      font-size: 28px;
-    }
-
-    .brandText {
-      font-size: 19px;
-      font-weight: 800;
-      white-space: nowrap;
-    }
-
-    .headerButtons {
-      display: flex;
-      gap: 6px;
-    }
-
-    .headerButton {
-      border:
-        1px solid rgba(
-          255,
-          255,
-          255,
-          .13
-        );
-
-      background:
-        rgba(
-          255,
-          255,
-          255,
-          .07
-        );
-
-      color: white;
-
-      border-radius: 11px;
-
-      padding:
-        9px 11px;
-
-      cursor: pointer;
-
-      font-size: 13px;
-    }
-
-    .headerButton:active {
-      transform: scale(.97);
-    }
-
-    /* CHAT */
-
-    #chat {
-      flex: 1;
-
-      overflow-y: auto;
-
-      padding:
-        18px 13px 20px;
-
-      scroll-behavior: smooth;
-    }
-
-    .message {
-      display: flex;
-      margin-bottom: 13px;
-    }
-
-    .message.user {
-      justify-content: flex-end;
-    }
-
-    .bubble {
-      max-width: 86%;
-
-      padding:
-        12px 14px;
-
-      border-radius: 17px;
-
-      line-height: 1.45;
-
-      font-size: 15px;
-
-      white-space: pre-wrap;
-
-      word-break: break-word;
-    }
-
-    .assistant .bubble {
-      background:
-        rgba(
-          255,
-          255,
-          255,
-          .08
-        );
-
-      border:
-        1px solid rgba(
-          255,
-          255,
-          255,
-          .08
-        );
-
-      border-bottom-left-radius: 5px;
-    }
-
-    .user .bubble {
-      background:
-        linear-gradient(
-          135deg,
-          #8c35ff,
-          #6420c8
-        );
-
-      border-bottom-right-radius: 5px;
-    }
-
-    .imageMessage {
-      max-width: 90%;
-    }
-
-    .imageMessage img {
-      width: 100%;
-      max-width: 520px;
-      display: block;
-
-      border-radius: 15px;
-
-      margin-top: 5px;
-
-      border:
-        1px solid rgba(
-          255,
-          255,
-          255,
-          .1
-        );
-    }
-
-    .typing {
-      opacity: .65;
-      font-style: italic;
-    }
-
-    /* MEMORY */
-
-    #memoryPanel {
-      display: none;
-
-      position: absolute;
-
-      z-index: 20;
-
-      top: 68px;
-
-      left: 10px;
-      right: 10px;
-
-      max-width: 500px;
-
-      margin: auto;
-
-      background: #1d0730;
-
-      border:
-        1px solid rgba(
-          255,
-          255,
-          255,
-          .14
-        );
-
-      border-radius: 16px;
-
-      padding: 15px;
-
-      box-shadow:
-        0 20px 60px
-        rgba(
-          0,
-          0,
-          0,
-          .55
-        );
-    }
-
-    #memoryPanel.open {
-      display: block;
-    }
-
-    .memoryTitle {
-      font-weight: 800;
-      margin-bottom: 10px;
-    }
-
-    .memoryEmpty {
-      opacity: .6;
-      font-size: 14px;
-    }
-
-    .memoryItem {
-      display: flex;
-
-      align-items: center;
-
-      justify-content:
-        space-between;
-
-      gap: 10px;
-
-      padding: 9px 0;
-
-      border-bottom:
-        1px solid rgba(
-          255,
-          255,
-          255,
-          .07
-        );
-
-      font-size: 14px;
-    }
-
-    .deleteMemory {
-      border: 0;
-
-      background:
-        rgba(
-          255,
-          70,
-          100,
-          .15
-        );
-
-      color: #ff9cac;
-
-      border-radius: 8px;
-
-      padding:
-        5px 8px;
-
-      cursor: pointer;
-    }
-
-    /* IMAGE PREVIEW */
-
-    #imagePreview {
-      display: none;
-
-      padding:
-        8px 12px 0;
-    }
-
-    #imagePreview.open {
-      display: block;
-    }
-
-    #imagePreviewInner {
-      position: relative;
-      display: inline-block;
-    }
-
-    #imagePreview img {
-      width: 100px;
-      height: 100px;
-
-      object-fit: cover;
-
-      border-radius: 12px;
-
-      border:
-        1px solid rgba(
-          255,
-          255,
-          255,
-          .15
-        );
-    }
-
-    #removeImage {
-      position: absolute;
-
-      top: -7px;
-      right: -7px;
-
-      width: 25px;
-      height: 25px;
-
-      border: 0;
-
-      border-radius: 50%;
-
-      background: #ff4968;
-
-      color: white;
-
-      cursor: pointer;
-    }
-
-    /* INPUT */
-
-    .inputArea {
-      padding:
-        9px 10px
-        max(
-          10px,
-          env(safe-area-inset-bottom)
-        );
-
-      border-top:
-        1px solid rgba(
-          255,
-          255,
-          255,
-          .1
-        );
-
-      background:
-        rgba(
-          15,
-          0,
-          25,
-          .8
-        );
-
-      backdrop-filter:
-        blur(15px);
-    }
-
-    .tools {
-      display: flex;
-      gap: 7px;
-      margin-bottom: 7px;
-    }
-
-    .toolButton {
-      border:
-        1px solid rgba(
-          255,
-          255,
-          255,
-          .13
-        );
-
-      background:
-        rgba(
-          255,
-          255,
-          255,
-          .06
-        );
-
-      color: white;
-
-      border-radius: 10px;
-
-      padding:
-        7px 10px;
-
-      cursor: pointer;
-
-      font-size: 13px;
-    }
-
-    .toolButton.active {
-      background: #7131c9;
-    }
-
-    .composer {
-      display: flex;
-
-      align-items: flex-end;
-
-      gap: 7px;
-    }
-
-    #messageInput {
-      flex: 1;
-
-      min-height: 45px;
-      max-height: 150px;
-
-      resize: none;
-
-      border:
-        1px solid rgba(
-          255,
-          255,
-          255,
-          .12
-        );
-
-      outline: none;
-
-      background:
-        rgba(
-          255,
-          255,
-          255,
-          .07
-        );
-
-      color: white;
-
-      border-radius: 15px;
-
-      padding: 12px;
-
-      font-size: 15px;
-    }
-
-    #messageInput::placeholder {
-      color:
-        rgba(
-          255,
-          255,
-          255,
-          .45
-        );
-    }
-
-    #sendButton {
-      width: 45px;
-      height: 45px;
-
-      flex: 0 0 45px;
-
-      border: 0;
-
-      border-radius: 14px;
-
-      background:
-        linear-gradient(
-          135deg,
-          #963fff,
-          #5d20bd
-        );
-
-      color: white;
-
-      font-size: 20px;
-
-      cursor: pointer;
-    }
-
-    #sendButton:disabled {
-      opacity: .45;
-      cursor: not-allowed;
-    }
-
-    @media (min-width: 700px) {
-
-      .app {
-        margin: 12px 0;
-
-        height:
-          calc(
-            100dvh - 24px
-          );
-
-        border-radius: 22px;
-
-        overflow: hidden;
-
-        border:
-          1px solid rgba(
-            255,
-            255,
-            255,
-            .1
-          );
-
-        box-shadow:
-          0 25px 80px
-          rgba(
-            0,
-            0,
-            0,
-            .5
-          );
-      }
-
-      #memoryPanel {
-        top: 78px;
-      }
-
-    }
-
-  </style>
-
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Nastivee AI</title>
+
+<style>
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: linear-gradient(160deg, #241044, #0b0615);
+  color: white;
+  min-height: 100vh;
+}
+
+button,
+textarea {
+  font: inherit;
+}
+
+.app {
+  max-width: 1000px;
+  min-height: 100vh;
+  margin: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+/* HEADER */
+
+header {
+  height: 65px;
+  padding: 0 15px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(10,5,20,.8);
+  border-bottom: 1px solid rgba(255,255,255,.08);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.logo {
+  font-size: 20px;
+  font-weight: bold;
+}
+
+.headerButtons {
+  display: flex;
+  gap: 7px;
+}
+
+.headerButtons button {
+  border: 1px solid rgba(255,255,255,.1);
+  background: rgba(255,255,255,.07);
+  color: white;
+  padding: 8px 11px;
+  border-radius: 10px;
+}
+
+/* MEMORY */
+
+.memoryPanel {
+  display: none;
+  margin: 10px 15px;
+  padding: 13px;
+  border-radius: 13px;
+  background: rgba(255,255,255,.06);
+}
+
+.memoryPanel.open {
+  display: block;
+}
+
+.memoryTitle {
+  font-weight: bold;
+  margin-bottom: 7px;
+}
+
+.memoryContent {
+  white-space: pre-line;
+  color: #ddd;
+  font-size: 14px;
+}
+
+/* CHAT */
+
+#chat {
+  flex: 1;
+  padding: 20px 14px 150px;
+  overflow-y: auto;
+}
+
+.message {
+  display: flex;
+  margin-bottom: 15px;
+}
+
+.message.user {
+  justify-content: flex-end;
+}
+
+.bubble {
+  max-width: 85%;
+  padding: 11px 14px;
+  border-radius: 16px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.message.user .bubble {
+  background: linear-gradient(135deg, #743cff, #5020a7);
+  border-bottom-right-radius: 5px;
+}
+
+.message.assistant .bubble {
+  background: rgba(255,255,255,.07);
+  border-bottom-left-radius: 5px;
+}
+
+/* IMAGE */
+
+.imageCard {
+  width: min(100%, 650px);
+  padding: 8px;
+  border-radius: 17px;
+  background: rgba(255,255,255,.06);
+}
+
+.imageCard img {
+  width: 100%;
+  display: block;
+  border-radius: 12px;
+}
+
+.imageActions {
+  margin-top: 9px;
+}
+
+.rerenderButton {
+  border: 0;
+  padding: 10px 15px;
+  border-radius: 11px;
+  background: linear-gradient(135deg, #7d43ff, #5521b7);
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.rerenderButton:disabled {
+  opacity: .55;
+}
+
+/* PROGRESS */
+
+.imageProgress {
+  display: none;
+  margin: 10px 14px;
+  padding: 14px;
+  border-radius: 14px;
+  background: rgba(124,60,255,.13);
+  border: 1px solid rgba(124,60,255,.3);
+}
+
+.imageProgress.open {
+  display: block;
+}
+
+.progressTop {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 8px;
+}
+
+.progressSpinner {
+  width: 18px;
+  height: 18px;
+  border: 3px solid rgba(255,255,255,.2);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin .8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.progressTitle {
+  font-weight: bold;
+}
+
+.progressStage {
+  font-size: 13px;
+  color: #d8ccec;
+  margin-bottom: 9px;
+}
+
+.progressBar {
+  height: 7px;
+  background: rgba(255,255,255,.1);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  width: 5%;
+  background: linear-gradient(90deg,#8b5cff,#c18cff);
+  transition: width .7s ease;
+}
+
+/* UPLOAD PREVIEW */
+
+.uploadPreview {
+  display: none;
+  position: fixed;
+  bottom: 82px;
+  left: 14px;
+  z-index: 8;
+}
+
+.uploadPreview.open {
+  display: block;
+}
+
+.uploadPreview img {
+  width: 75px;
+  height: 75px;
+  object-fit: cover;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,.2);
+}
+
+.removePhoto {
+  position: absolute;
+  right: -7px;
+  top: -7px;
+  width: 23px;
+  height: 23px;
+  border: 0;
+  border-radius: 50%;
+  background: #ef4444;
+  color: white;
+}
+
+/* COMPOSER */
+
+.composerWrap {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  justify-content: center;
+  padding: 10px;
+  background: linear-gradient(transparent,rgba(8,5,16,.97) 30%);
+  z-index: 7;
+}
+
+.composer {
+  width: min(100%,970px);
+  display: flex;
+  align-items: flex-end;
+  gap: 7px;
+  padding: 8px;
+  border-radius: 16px;
+  background: rgba(26,15,47,.97);
+  border: 1px solid rgba(255,255,255,.1);
+}
+
+.composer.imageMode {
+  border-color: rgba(139,92,246,.65);
+}
+
+.composer textarea {
+  flex: 1;
+  min-height: 43px;
+  max-height: 140px;
+  resize: none;
+  padding: 11px;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: white;
+}
+
+.composer textarea::placeholder {
+  color: #9b91a9;
+}
+
+.actionButton {
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
+  border: 0;
+  border-radius: 11px;
+  background: rgba(255,255,255,.08);
+  color: white;
+  cursor: pointer;
+}
+
+.sendButton {
+  background: linear-gradient(135deg,#743cff,#5420b5);
+}
+
+.actionButton:disabled {
+  opacity: .5;
+}
+
+/* MOBILE */
+
+@media(max-width:600px) {
+  .bubble {
+    max-width: 92%;
+  }
+
+  #chat {
+    padding-left: 9px;
+    padding-right: 9px;
+  }
+
+  .headerButtons button {
+    padding: 7px 9px;
+  }
+}
+</style>
 </head>
 
 <body>
 
 <div class="app">
 
-  <header>
+<header>
+  <div class="logo">🧠 Nastivee AI</div>
 
-    <div class="brand">
+  <div class="headerButtons">
+    <button id="memoryButton">🧠 Memory</button>
+    <button id="newChatButton">＋ New</button>
+  </div>
+</header>
 
-      <div class="brain">
-        🧠
-      </div>
+<div id="memoryPanel" class="memoryPanel">
+  <div class="memoryTitle">Long-term memory</div>
+  <div id="memoryContent" class="memoryContent">
+    No saved memories yet.
+  </div>
+</div>
 
-      <div class="brandText">
-        Nastivee AI
-      </div>
+<main id="chat"></main>
 
+<!-- IMAGE PROGRESS -->
+
+<div id="imageProgress" class="imageProgress">
+
+  <div class="progressTop">
+    <div class="progressSpinner"></div>
+
+    <div id="progressTitle" class="progressTitle">
+      Creating your image…
     </div>
-
-    <div class="headerButtons">
-
-      <button
-        class="headerButton"
-        id="memoryButton"
-      >
-        🧠 Memory
-      </button>
-
-      <button
-        class="headerButton"
-        id="newChatButton"
-      >
-        ＋ New
-      </button>
-
-    </div>
-
-  </header>
-
-  <div id="memoryPanel">
-
-    <div class="memoryTitle">
-      🧠 Nastivee's memory
-    </div>
-
-    <div id="memoryList"></div>
-
   </div>
 
-  <main id="chat"></main>
-
-  <div id="imagePreview">
-
-    <div id="imagePreviewInner">
-
-      <img
-        id="previewImage"
-        alt="Selected image"
-      >
-
-      <button
-        id="removeImage"
-        type="button"
-      >
-        ×
-      </button>
-
-    </div>
-
+  <div id="progressStage" class="progressStage">
+    Preparing…
   </div>
 
-  <div class="inputArea">
+  <div class="progressBar">
+    <div id="progressFill" class="progressFill"></div>
+  </div>
 
-    <div class="tools">
+</div>
 
-      <button
-        id="imageModeButton"
-        class="toolButton"
-        type="button"
-      >
-        🎨 Image
-      </button>
+<!-- UPLOAD PREVIEW -->
 
-      <button
-        id="uploadButton"
-        class="toolButton"
-        type="button"
-      >
-        📷 Upload
-      </button>
+<div id="uploadPreview" class="uploadPreview">
+  <img id="uploadPreviewImage" src="" alt="Uploaded image">
 
-      <input
-        id="imageInput"
-        type="file"
-        accept="image/*"
-        hidden
-      >
+  <button id="removePhoto" class="removePhoto">
+    ×
+  </button>
+</div>
 
-    </div>
+<!-- COMPOSER -->
 
-    <div class="composer">
+<div class="composerWrap">
 
-      <textarea
-        id="messageInput"
-        placeholder="Message Nastivee..."
-        rows="1"
-      ></textarea>
+  <div id="composer" class="composer">
 
-      <button
-        id="sendButton"
-        type="button"
-      >
-        ➤
-      </button>
+    <button
+      id="uploadButton"
+      class="actionButton"
+      title="Upload image"
+    >
+      📷
+    </button>
 
-    </div>
+    <button
+      id="imageButton"
+      class="actionButton"
+      title="Image mode"
+    >
+      🎨
+    </button>
+
+    <textarea
+      id="messageInput"
+      placeholder="Message Nastivee…"
+      rows="1"
+    ></textarea>
+
+    <button
+      id="sendButton"
+      class="actionButton sendButton"
+      title="Send"
+    >
+      ➤
+    </button>
+
+    <input
+      id="fileInput"
+      type="file"
+      accept="image/*"
+      hidden
+    >
 
   </div>
+</div>
 
 </div>
 
 <script>
 
-/* ==================================================
-   API
-================================================== */
+/* =====================================================
+   CONFIG
+===================================================== */
 
 const API_BASE =
   'https://ai-8vlt.onrender.com';
-
-
-async function apiFetch(
-  path,
-  options = {}
-) {
-
-  const url =
-    `${API_BASE}${path}`;
-
-  console.log(
-    'API REQUEST:',
-    url
-  );
-
-  let response;
-
-  try {
-
-    response =
-      await fetch(
-        url,
-        {
-          ...options,
-
-          headers: {
-            'Content-Type':
-              'application/json',
-
-            ...(options.headers || {})
-          }
-        }
-      );
-
-  } catch (error) {
-
-    console.error(
-      'NETWORK ERROR:',
-      error
-    );
-
-    throw new Error(
-      'Could not connect to the Nastivee server.'
-    );
-
-  }
-
-  const text =
-    await response.text();
-
-  let data = {};
-
-  try {
-
-    data =
-      text
-        ? JSON.parse(text)
-        : {};
-
-  } catch {
-
-    throw new Error(
-      `Server returned an invalid response (${response.status}).`
-    );
-
-  }
-
-  if (!response.ok) {
-
-    throw new Error(
-      data.error ||
-      `Server returned ${response.status}.`
-    );
-
-  }
-
-  return data;
-}
-
-
-/* ==================================================
-   STORAGE
-================================================== */
 
 const CONVERSATION_KEY =
   'nastivee_conversation_v3';
@@ -816,476 +455,277 @@ const MEMORY_KEY =
   'nastivee_long_term_memory_v1';
 
 
+/* =====================================================
+   STATE
+===================================================== */
+
 let conversation = [];
-
 let memory = {};
-
 let imageMode = false;
-
 let selectedPhoto = null;
-
 let chatBusy = false;
-
 let imageBusy = false;
 
+let progressTimer = null;
 
-/* ==================================================
+
+/*
+  IMPORTANT:
+
+  This stores the ORIGINAL uploaded photo and the
+  original prompt.
+
+  Re-render will always use this original photo,
+  never the previous AI result.
+*/
+
+let lastImage = {
+  sourceImage: null,
+  prompt: '',
+  wasEdit: false
+};
+
+
+/* =====================================================
    ELEMENTS
-================================================== */
+===================================================== */
 
 const chat =
-  document.getElementById(
-    'chat'
-  );
+  document.getElementById('chat');
 
 const messageInput =
-  document.getElementById(
-    'messageInput'
-  );
+  document.getElementById('messageInput');
 
 const sendButton =
-  document.getElementById(
-    'sendButton'
-  );
+  document.getElementById('sendButton');
 
-const imageModeButton =
-  document.getElementById(
-    'imageModeButton'
-  );
+const imageButton =
+  document.getElementById('imageButton');
 
 const uploadButton =
-  document.getElementById(
-    'uploadButton'
-  );
+  document.getElementById('uploadButton');
 
-const imageInput =
-  document.getElementById(
-    'imageInput'
-  );
+const fileInput =
+  document.getElementById('fileInput');
 
-const imagePreview =
-  document.getElementById(
-    'imagePreview'
-  );
-
-const previewImage =
-  document.getElementById(
-    'previewImage'
-  );
-
-const removeImage =
-  document.getElementById(
-    'removeImage'
-  );
+const composer =
+  document.getElementById('composer');
 
 const memoryButton =
-  document.getElementById(
-    'memoryButton'
-  );
+  document.getElementById('memoryButton');
 
 const memoryPanel =
-  document.getElementById(
-    'memoryPanel'
-  );
+  document.getElementById('memoryPanel');
 
-const memoryList =
-  document.getElementById(
-    'memoryList'
-  );
+const memoryContent =
+  document.getElementById('memoryContent');
 
 const newChatButton =
-  document.getElementById(
-    'newChatButton'
-  );
+  document.getElementById('newChatButton');
+
+const imageProgress =
+  document.getElementById('imageProgress');
+
+const progressTitle =
+  document.getElementById('progressTitle');
+
+const progressStage =
+  document.getElementById('progressStage');
+
+const progressFill =
+  document.getElementById('progressFill');
+
+const uploadPreview =
+  document.getElementById('uploadPreview');
+
+const uploadPreviewImage =
+  document.getElementById('uploadPreviewImage');
+
+const removePhoto =
+  document.getElementById('removePhoto');
 
 
-/* ==================================================
-   LOAD CONVERSATION
-================================================== */
+/* =====================================================
+   LOAD STORAGE
+===================================================== */
 
-function loadConversation() {
-
-  try {
-
-    const saved =
-      localStorage.getItem(
-        CONVERSATION_KEY
-      );
-
-    if (!saved) {
-
-      conversation = [];
-
-      return;
-    }
-
-    const parsed =
-      JSON.parse(
-        saved
-      );
-
-    conversation =
-      Array.isArray(parsed)
-        ? parsed
-        : [];
-
-  } catch (error) {
-
-    console.error(
-      'Conversation load error:',
-      error
-    );
-
-    conversation = [];
-
-  }
-
+try {
+  conversation =
+    JSON.parse(
+      localStorage.getItem(CONVERSATION_KEY)
+    ) || [];
+} catch {
+  conversation = [];
 }
 
+try {
+  memory =
+    JSON.parse(
+      localStorage.getItem(MEMORY_KEY)
+    ) || {};
+} catch {
+  memory = {};
+}
+
+
+/* =====================================================
+   STORAGE
+===================================================== */
 
 function saveConversation() {
-
-  try {
-
-    localStorage.setItem(
-      CONVERSATION_KEY,
-      JSON.stringify(
-        conversation.slice(-100)
-      )
-    );
-
-  } catch (error) {
-
-    console.error(
-      'Conversation save error:',
-      error
-    );
-
-  }
-
+  localStorage.setItem(
+    CONVERSATION_KEY,
+    JSON.stringify(
+      conversation.slice(-100)
+    )
+  );
 }
-
-
-/* ==================================================
-   MEMORY
-================================================== */
-
-function loadMemory() {
-
-  try {
-
-    const saved =
-      localStorage.getItem(
-        MEMORY_KEY
-      );
-
-    if (!saved) {
-
-      memory = {};
-
-      return;
-    }
-
-    const parsed =
-      JSON.parse(
-        saved
-      );
-
-    memory =
-      parsed &&
-      typeof parsed === 'object' &&
-      !Array.isArray(parsed)
-        ? parsed
-        : {};
-
-  } catch (error) {
-
-    console.error(
-      'Memory load error:',
-      error
-    );
-
-    memory = {};
-
-  }
-
-}
-
 
 function saveMemory() {
-
-  try {
-
-    localStorage.setItem(
-      MEMORY_KEY,
-      JSON.stringify(
-        memory
-      )
-    );
-
-  } catch (error) {
-
-    console.error(
-      'Memory save error:',
-      error
-    );
-
-  }
-
+  localStorage.setItem(
+    MEMORY_KEY,
+    JSON.stringify(memory)
+  );
 }
 
 
-function remember(
-  key,
-  value
-) {
+/* =====================================================
+   MEMORY
+===================================================== */
 
-  if (
-    !key ||
-    !value
-  ) {
-    return;
-  }
+function extractMemory(text) {
 
-  memory[key] =
-    value;
+  if (!text) return;
 
-  saveMemory();
+  let match;
 
-  renderMemory();
-
-  console.log(
-    'MEMORY SAVED:',
-    key,
-    value
+  match = text.match(
+    /my\s+(?:dog|dogs|puppy)(?:'s)?\s+(?:name\s+is|is\s+called|is\s+named)\s+([A-Za-z][A-Za-z0-9_-]{1,30})/i
   );
 
-}
-
-
-function rememberFromMessage(
-  message
-) {
-
-  const text =
-    String(
-      message || ''
-    ).trim();
-
-
-  /* DOG NAME */
-
-  let match =
-    text.match(
-      /my\s+(?:dog|dogs|puppy)(?:'s)?\s+(?:name\s+is|is\s+called|is\s+named)\s+([A-Za-z][A-Za-z0-9_-]{1,30})/i
-    );
-
-
-  if (!match) {
-
-    match =
-      text.match(
-        /my\s+(?:dog|dogs|puppy)\s+(?:is\s+called|is\s+named)\s+([A-Za-z][A-Za-z0-9_-]{1,30})/i
-      );
-
+  if (match) {
+    memory.dogName = match[1];
   }
 
-
-  if (!match) {
-
-    match =
-      text.match(
-        /(?:dog|puppy)\s+(?:is\s+called|is\s+named)\s+([A-Za-z][A-Za-z0-9_-]{1,30})/i
-      );
-
-  }
-
+  match = text.match(
+    /my\s+name\s+is\s+([A-Za-z][A-Za-z0-9_-]{1,30})/i
+  );
 
   if (match) {
-
-    remember(
-      "Dog's name",
-      match[1]
-    );
-
+    memory.userName = match[1];
   }
 
-
-  /* DOG BREED */
-
-  match =
-    text.match(
-      /my\s+(?:dog|puppy)(?:'s)?\s+breed\s+is\s+(.+)/i
-    );
-
+  match = text.match(
+    /(?:my\s+dog|my\s+puppy)\s+is\s+a\s+([A-Za-z][A-Za-z -]{2,30})/i
+  );
 
   if (match) {
-
-    remember(
-      "Dog's breed",
-      match[1].trim()
-    );
-
+    memory.dogBreed =
+      match[1].trim();
   }
 
-
-  /* USER NAME */
-
-  match =
-    text.match(
-      /my\s+name\s+is\s+([A-Za-z][A-Za-z0-9_-]{1,30})/i
-    );
-
-
-  if (match) {
-
-    remember(
-      "User's name",
-      match[1]
-    );
-
-  }
-
-
-  /* FAVOURITE */
-
-  match =
-    text.match(
-      /(?:my\s+favourite|my\s+favorite)\s+(.+?)\s+is\s+(.+)/i
-    );
-
-
-  if (match) {
-
-    remember(
-      `Favourite ${match[1].trim()}`,
-      match[2].trim()
-    );
-
-  }
-
+  saveMemory();
+  renderMemory();
 }
 
 
 function renderMemory() {
 
-  memoryList.innerHTML =
-    '';
+  const entries = [];
 
-  const entries =
-    Object.entries(
-      memory
+  if (memory.userName) {
+    entries.push(
+      `Your name: ${memory.userName}`
     );
-
-
-  if (!entries.length) {
-
-    const empty =
-      document.createElement(
-        'div'
-      );
-
-    empty.className =
-      'memoryEmpty';
-
-    empty.textContent =
-      'Nothing remembered yet. Tell Nastivee something about you.';
-
-    memoryList.appendChild(
-      empty
-    );
-
-    return;
   }
 
+  if (memory.dogName) {
+    entries.push(
+      `Dog's name: ${memory.dogName}`
+    );
+  }
 
-  entries.forEach(
-    ([key, value]) => {
+  if (memory.dogBreed) {
+    entries.push(
+      `Dog breed: ${memory.dogBreed}`
+    );
+  }
 
-      const row =
-        document.createElement(
-          'div'
-        );
+  if (memory.favourites) {
+    entries.push(
+      `Favourites: ${memory.favourites}`
+    );
+  }
 
-      row.className =
-        'memoryItem';
-
-
-      const text =
-        document.createElement(
-          'div'
-        );
-
-      text.textContent =
-        `${key}: ${value}`;
-
-
-      const button =
-        document.createElement(
-          'button'
-        );
-
-      button.className =
-        'deleteMemory';
-
-      button.textContent =
-        'Delete';
-
-
-      button.addEventListener(
-        'click',
-        () => {
-
-          delete memory[key];
-
-          saveMemory();
-
-          renderMemory();
-
-        }
-      );
-
-
-      row.appendChild(
-        text
-      );
-
-      row.appendChild(
-        button
-      );
-
-      memoryList.appendChild(
-        row
-      );
-
-    }
-  );
-
+  memoryContent.textContent =
+    entries.length
+      ? entries.join('\n')
+      : 'No saved memories yet.';
 }
 
 
-/* ==================================================
-   CHAT DISPLAY
-================================================== */
+/* =====================================================
+   API
+===================================================== */
 
-function addMessage(
-  role,
-  content
-) {
+async function apiFetch(path, options = {}) {
+
+  const response =
+    await fetch(
+      `${API_BASE}${path}`,
+      {
+        ...options,
+
+        headers: {
+          'Content-Type': 'application/json',
+          ...(options.headers || {})
+        }
+      }
+    );
+
+  const text =
+    await response.text();
+
+  let data;
+
+  try {
+    data =
+      text
+        ? JSON.parse(text)
+        : {};
+  } catch {
+    throw new Error(
+      text ||
+      `Server returned HTTP ${response.status}`
+    );
+  }
+
+  if (!response.ok) {
+    throw new Error(
+      data.error ||
+      data.details ||
+      `HTTP ${response.status}`
+    );
+  }
+
+  return data;
+}
+
+
+/* =====================================================
+   CHAT MESSAGE
+===================================================== */
+
+function addMessage(role, content) {
 
   const wrapper =
-    document.createElement(
-      'div'
-    );
+    document.createElement('div');
 
   wrapper.className =
     `message ${role}`;
 
-
   const bubble =
-    document.createElement(
-      'div'
-    );
+    document.createElement('div');
 
   bubble.className =
     'bubble';
@@ -1293,239 +733,257 @@ function addMessage(
   bubble.textContent =
     content;
 
+  wrapper.appendChild(bubble);
+  chat.appendChild(wrapper);
 
-  wrapper.appendChild(
-    bubble
-  );
-
-  chat.appendChild(
-    wrapper
-  );
-
-  chat.scrollTop =
-    chat.scrollHeight;
-
+  scrollChat();
 }
 
 
+/* =====================================================
+   IMAGE MESSAGE
+===================================================== */
+
 function addImageMessage(
-  imageUrl
+  imageUrl,
+  sourceImage,
+  prompt,
+  wasEdit
 ) {
 
   const wrapper =
-    document.createElement(
-      'div'
-    );
+    document.createElement('div');
 
   wrapper.className =
     'message assistant';
 
+  const card =
+    document.createElement('div');
 
-  const bubble =
-    document.createElement(
-      'div'
-    );
-
-  bubble.className =
-    'bubble imageMessage';
-
+  card.className =
+    'imageCard';
 
   const img =
-    document.createElement(
-      'img'
-    );
+    document.createElement('img');
 
   img.src =
     imageUrl;
 
   img.alt =
-    'Nastivee generated image';
+    'Nastivee AI image';
 
+  const actions =
+    document.createElement('div');
 
-  bubble.appendChild(
-    img
-  );
+  actions.className =
+    'imageActions';
 
-  wrapper.appendChild(
-    bubble
-  );
+  const button =
+    document.createElement('button');
 
-  chat.appendChild(
-    wrapper
-  );
+  button.className =
+    'rerenderButton';
 
-  chat.scrollTop =
-    chat.scrollHeight;
+  button.textContent =
+    '🔄 Re-render';
 
-}
+  button.addEventListener(
+    'click',
+    () => {
 
-
-function showTyping() {
-
-  const wrapper =
-    document.createElement(
-      'div'
-    );
-
-  wrapper.className =
-    'message assistant';
-
-  wrapper.id =
-    'typingMessage';
-
-
-  const bubble =
-    document.createElement(
-      'div'
-    );
-
-  bubble.className =
-    'bubble typing';
-
-  bubble.textContent =
-    'Nastivee is thinking…';
-
-
-  wrapper.appendChild(
-    bubble
-  );
-
-  chat.appendChild(
-    wrapper
-  );
-
-  chat.scrollTop =
-    chat.scrollHeight;
-
-}
-
-
-function removeTyping() {
-
-  const typing =
-    document.getElementById(
-      'typingMessage'
-    );
-
-  if (typing) {
-
-    typing.remove();
-
-  }
-
-}
-
-
-function renderConversation() {
-
-  chat.innerHTML =
-    '';
-
-  conversation.forEach(
-    item => {
-
-      if (
-        !item ||
-        !item.role
-      ) {
-        return;
-      }
-
-
-      if (
-        item.type === 'image'
-      ) {
-
-        addImageMessage(
-          item.content
-        );
-
-        return;
-      }
-
-
-      addMessage(
-        item.role,
-        item.content
+      rerenderImage(
+        button,
+        sourceImage,
+        prompt,
+        wasEdit
       );
 
     }
   );
 
+  /*
+    If the original upload is unavailable
+    after a page reload, don't pretend the
+    image can be re-rendered from the result.
+  */
 
-  chat.scrollTop =
-    chat.scrollHeight;
+  if (wasEdit && !sourceImage) {
+    button.disabled = true;
+    button.title =
+      'Upload the original image again to re-render';
+  }
 
+  actions.appendChild(button);
+
+  card.appendChild(img);
+  card.appendChild(actions);
+
+  wrapper.appendChild(card);
+
+  chat.appendChild(wrapper);
+
+  scrollChat();
 }
 
 
-/* ==================================================
-   CHAT
-================================================== */
+/* =====================================================
+   SCROLL
+===================================================== */
+
+function scrollChat() {
+  chat.scrollTop =
+    chat.scrollHeight;
+}
+
+
+/* =====================================================
+   PROGRESS
+===================================================== */
+
+function startImageProgress(isRerender) {
+
+  clearInterval(progressTimer);
+
+  imageProgress.classList.add('open');
+
+  progressTitle.textContent =
+    isRerender
+      ? 'Re-rendering your image…'
+      : 'Creating your image…';
+
+  const stages =
+    isRerender
+
+      ? [
+          ['Preparing your original photo…', 8],
+          ['Using your original photo for likeness…', 25],
+          ['Reworking your original request…', 45],
+          ['Creating a fresh variation…', 68],
+          ['Finishing the new image…', 88]
+        ]
+
+      : [
+          ['Preparing your request…', 10],
+          ['Understanding your image instructions…', 28],
+          ['Creating your image…', 58],
+          ['Finishing the image…', 85]
+        ];
+
+  let index = 0;
+
+  progressStage.textContent =
+    stages[0][0];
+
+  progressFill.style.width =
+    `${stages[0][1]}%`;
+
+  progressTimer =
+    setInterval(() => {
+
+      index++;
+
+      if (index >= stages.length) {
+        clearInterval(progressTimer);
+        return;
+      }
+
+      progressStage.textContent =
+        stages[index][0];
+
+      progressFill.style.width =
+        `${stages[index][1]}%`;
+
+    }, 1600);
+}
+
+
+function finishImageProgress() {
+
+  clearInterval(progressTimer);
+
+  progressStage.textContent =
+    'Done ✓';
+
+  progressFill.style.width =
+    '100%';
+
+  setTimeout(() => {
+
+    imageProgress.classList.remove('open');
+
+    progressFill.style.width =
+      '5%';
+
+  }, 700);
+}
+
+
+function failImageProgress() {
+
+  clearInterval(progressTimer);
+
+  progressStage.textContent =
+    'Something went wrong.';
+
+  setTimeout(() => {
+    imageProgress.classList.remove('open');
+  }, 1000);
+}
+
+
+/* =====================================================
+   NORMAL CHAT
+===================================================== */
 
 async function sendMessage() {
 
-  if (
-    chatBusy ||
-    imageBusy
-  ) {
-    return;
-  }
-
-
-  const message =
+  const text =
     messageInput.value.trim();
 
+  if (!text) return;
 
-  if (!message) {
-    return;
-  }
-
+  if (chatBusy || imageBusy) return;
 
   if (imageMode) {
-
-    await createImage(
-      message
-    );
-
+    await createImage(text);
     return;
   }
 
+  chatBusy = true;
+  sendButton.disabled = true;
 
-  chatBusy =
-    true;
-
-  sendButton.disabled =
-    true;
-
-
-  rememberFromMessage(
-    message
-  );
-
-
-  addMessage(
-    'user',
-    message
-  );
-
+  addMessage('user', text);
 
   conversation.push({
     role: 'user',
-    content: message
+    content: text
   });
 
+  extractMemory(text);
+
+  messageInput.value = '';
 
   saveConversation();
 
+  const thinking =
+    document.createElement('div');
 
-  messageInput.value =
-    '';
+  thinking.className =
+    'message assistant';
 
-  autoResize();
+  const thinkingBubble =
+    document.createElement('div');
 
-  showTyping();
+  thinkingBubble.className =
+    'bubble';
 
+  thinkingBubble.textContent =
+    'Nastivee is thinking…';
+
+  thinking.appendChild(thinkingBubble);
+  chat.appendChild(thinking);
+
+  scrollChat();
 
   try {
 
@@ -1535,115 +993,83 @@ async function sendMessage() {
         {
           method: 'POST',
 
-          body:
-            JSON.stringify({
-              message,
-              history:
-                conversation.slice(-100),
-              memory
-            })
+          body: JSON.stringify({
+            messages:
+              conversation.slice(-30),
+
+            memory
+          })
         }
       );
 
-
-    removeTyping();
-
-
-    const reply =
-      data.reply ||
-      'Sorry, I did not get a response.';
-
+    thinking.remove();
 
     addMessage(
       'assistant',
-      reply
+      data.reply
     );
-
 
     conversation.push({
       role: 'assistant',
-      content: reply
+      content: data.reply
     });
-
 
     saveConversation();
 
-
   } catch (error) {
 
-    removeTyping();
-
-
-    console.error(
-      'CHAT ERROR:',
-      error
-    );
-
+    thinking.remove();
 
     addMessage(
       'assistant',
       `Sorry, something went wrong: ${error.message}`
     );
 
-
   } finally {
 
-    chatBusy =
-      false;
-
-    sendButton.disabled =
-      false;
-
-    messageInput.focus();
+    chatBusy = false;
+    sendButton.disabled = false;
 
   }
-
 }
 
 
-/* ==================================================
-   IMAGE
-================================================== */
+/* =====================================================
+   CREATE IMAGE
+===================================================== */
 
-async function createImage(
-  prompt
-) {
+async function createImage(prompt) {
 
-  if (
-    imageBusy ||
-    !prompt
-  ) {
-    return;
-  }
+  if (imageBusy) return;
 
+  imageBusy = true;
+  sendButton.disabled = true;
 
-  imageBusy =
-    true;
+  const wasEdit =
+    !!selectedPhoto;
 
-  sendButton.disabled =
-    true;
+  /*
+    SAVE THE ORIGINAL UPLOAD BEFORE ANYTHING ELSE.
+  */
 
+  const sourceImage =
+    selectedPhoto;
+
+  const originalPrompt =
+    prompt;
 
   addMessage(
     'user',
     prompt
   );
 
-
-  messageInput.value =
-    '';
-
-  autoResize();
-
-  showTyping();
-
+  startImageProgress(false);
 
   try {
 
     let data;
 
-
-    if (selectedPhoto) {
+    if (wasEdit) {
 
       data =
         await apiFetch(
@@ -1651,12 +1077,11 @@ async function createImage(
           {
             method: 'POST',
 
-            body:
-              JSON.stringify({
-                prompt,
-                image:
-                  selectedPhoto
-              })
+            body: JSON.stringify({
+              prompt: originalPrompt,
+              image: sourceImage,
+              regenerate: false
+            })
           }
         );
 
@@ -1668,222 +1093,308 @@ async function createImage(
           {
             method: 'POST',
 
-            body:
-              JSON.stringify({
-                prompt
-              })
+            body: JSON.stringify({
+              prompt: originalPrompt,
+              regenerate: false
+            })
           }
         );
 
     }
 
+    finishImageProgress();
 
-    removeTyping();
+    /*
+      VERY IMPORTANT:
 
+      Store the ORIGINAL upload,
+      not data.image.
+    */
 
-    if (!data.image) {
-
-      throw new Error(
-        'No image was returned.'
-      );
-
-    }
-
+    lastImage = {
+      sourceImage,
+      prompt: originalPrompt,
+      wasEdit
+    };
 
     addImageMessage(
-      data.image
+      data.image,
+      sourceImage,
+      originalPrompt,
+      wasEdit
     );
-
 
     conversation.push({
       role: 'assistant',
       type: 'image',
-      content:
-        data.image
+      content: data.image
     });
-
 
     saveConversation();
 
-
   } catch (error) {
 
-    removeTyping();
-
-
-    console.error(
-      'IMAGE ERROR:',
-      error
-    );
-
+    failImageProgress();
 
     addMessage(
       'assistant',
-      `Sorry, something went wrong: ${error.message}`
+      `Image generation failed: ${error.message}`
     );
-
 
   } finally {
 
-    imageBusy =
-      false;
-
-    sendButton.disabled =
-      false;
-
-    messageInput.focus();
+    imageBusy = false;
+    sendButton.disabled = false;
 
   }
-
 }
 
 
-/* ==================================================
-   IMAGE MODE
-================================================== */
+/* =====================================================
+   RE-RENDER
+===================================================== */
 
-imageModeButton.addEventListener(
-  'click',
-  () => {
+async function rerenderImage(
+  button,
+  sourceImage,
+  originalPrompt,
+  wasEdit
+) {
 
-    imageMode =
-      !imageMode;
+  if (imageBusy) return;
 
+  /*
+    Uploaded-image re-render MUST have
+    the original photo.
+  */
 
-    imageModeButton.classList.toggle(
-      'active',
-      imageMode
+  if (wasEdit && !sourceImage) {
+
+    addMessage(
+      'assistant',
+      'Please upload the original photo again before re-rendering.'
     );
 
+    return;
+  }
+
+  imageBusy = true;
+
+  button.disabled = true;
+
+  button.textContent =
+    '⏳ Re-rendering…';
+
+  startImageProgress(true);
+
+  try {
+
+    let data;
+
+    if (wasEdit) {
+
+      /*
+        ORIGINAL PHOTO GOES HERE.
+
+        NOT the previous generated image.
+      */
+
+      data =
+        await apiFetch(
+          '/api/image/edit',
+          {
+            method: 'POST',
+
+            body: JSON.stringify({
+              prompt: originalPrompt,
+              image: sourceImage,
+              regenerate: true
+            })
+          }
+        );
+
+    } else {
+
+      data =
+        await apiFetch(
+          '/api/image',
+          {
+            method: 'POST',
+
+            body: JSON.stringify({
+              prompt: originalPrompt,
+              regenerate: true
+            })
+          }
+        );
+
+    }
+
+    finishImageProgress();
+
+    /*
+      Keep the original upload alive.
+    */
+
+    lastImage = {
+      sourceImage,
+      prompt: originalPrompt,
+      wasEdit
+    };
+
+    addImageMessage(
+      data.image,
+      sourceImage,
+      originalPrompt,
+      wasEdit
+    );
+
+  } catch (error) {
+
+    failImageProgress();
+
+    addMessage(
+      'assistant',
+      `Re-render failed: ${error.message}`
+    );
+
+  } finally {
+
+    imageBusy = false;
+
+    button.disabled = false;
+
+    button.textContent =
+      '🔄 Re-render';
+
+  }
+}
+
+
+/* =====================================================
+   IMAGE MODE
+===================================================== */
+
+function setImageMode(enabled) {
+
+  imageMode =
+    enabled;
+
+  if (imageMode) {
+
+    composer.classList.add('imageMode');
+
+    imageButton.textContent =
+      '🖼️';
 
     messageInput.placeholder =
-      imageMode
-        ? (
-            selectedPhoto
-              ? 'Tell me what to change in the photo...'
-              : 'Describe the image you want...'
-          )
-        : 'Message Nastivee...';
+      selectedPhoto
+        ? 'Describe what you want changed…'
+        : 'Describe the image you want…';
 
+  } else {
+
+    composer.classList.remove('imageMode');
+
+    imageButton.textContent =
+      '🎨';
+
+    messageInput.placeholder =
+      'Message Nastivee…';
+
+  }
+}
+
+imageButton.addEventListener(
+  'click',
+  () => {
+    setImageMode(!imageMode);
   }
 );
 
 
-/* ==================================================
+/* =====================================================
    UPLOAD
-================================================== */
+===================================================== */
 
 uploadButton.addEventListener(
   'click',
   () => {
-
-    imageInput.click();
-
+    fileInput.click();
   }
 );
 
-
-imageInput.addEventListener(
+fileInput.addEventListener(
   'change',
-  event => {
+  () => {
 
     const file =
-      event.target.files?.[0];
+      fileInput.files?.[0];
 
-
-    if (!file) {
-      return;
-    }
-
-
-    if (
-      !file.type.startsWith(
-        'image/'
-      )
-    ) {
-
-      alert(
-        'Please choose an image.'
-      );
-
-      return;
-    }
-
+    if (!file) return;
 
     const reader =
       new FileReader();
 
-
     reader.onload =
       () => {
+
+        /*
+          This is the ORIGINAL PHOTO.
+        */
 
         selectedPhoto =
           reader.result;
 
+        setImageMode(true);
 
-        previewImage.src =
+        uploadPreviewImage.src =
           selectedPhoto;
 
-
-        imagePreview.classList.add(
+        uploadPreview.classList.add(
           'open'
         );
 
-
-        imageMode =
-          true;
-
-
-        imageModeButton.classList.add(
-          'active'
-        );
-
-
         messageInput.placeholder =
-          'Tell me what to change in the photo...';
-
+          'Describe what you want changed…';
       };
 
-
-    reader.readAsDataURL(
-      file
-    );
+    reader.readAsDataURL(file);
 
   }
 );
 
 
-/* ==================================================
-   REMOVE IMAGE
-================================================== */
+/* =====================================================
+   REMOVE PHOTO
+===================================================== */
 
-removeImage.addEventListener(
+removePhoto.addEventListener(
   'click',
   () => {
 
     selectedPhoto =
       null;
 
-    imageInput.value =
+    fileInput.value =
       '';
 
-    imagePreview.classList.remove(
+    uploadPreview.classList.remove(
       'open'
     );
 
-
     messageInput.placeholder =
       imageMode
-        ? 'Describe the image you want...'
-        : 'Message Nastivee...';
+        ? 'Describe the image you want…'
+        : 'Message Nastivee…';
 
   }
 );
 
 
-/* ==================================================
+/* =====================================================
    MEMORY BUTTON
-================================================== */
+===================================================== */
 
 memoryButton.addEventListener(
   'click',
@@ -1893,58 +1404,63 @@ memoryButton.addEventListener(
       'open'
     );
 
+    renderMemory();
+
   }
 );
 
 
-/* ==================================================
+/* =====================================================
    NEW CHAT
-================================================== */
+===================================================== */
 
 newChatButton.addEventListener(
   'click',
   () => {
 
-    conversation =
-      [];
+    conversation = [];
 
-    saveConversation();
+    localStorage.removeItem(
+      CONVERSATION_KEY
+    );
 
-    renderConversation();
+    chat.innerHTML = '';
 
-    messageInput.value =
+    selectedPhoto =
+      null;
+
+    fileInput.value =
       '';
 
-    messageInput.focus();
+    uploadPreview.classList.remove(
+      'open'
+    );
+
+    lastImage = {
+      sourceImage: null,
+      prompt: '',
+      wasEdit: false
+    };
+
+    setImageMode(false);
+
+    addMessage(
+      'assistant',
+      'New chat started. How can I help?'
+    );
 
   }
 );
 
 
-/* ==================================================
-   TEXTAREA
-================================================== */
+/* =====================================================
+   SEND
+===================================================== */
 
-function autoResize() {
-
-  messageInput.style.height =
-    'auto';
-
-
-  messageInput.style.height =
-    `${Math.min(
-      messageInput.scrollHeight,
-      150
-    )}px`;
-
-}
-
-
-messageInput.addEventListener(
-  'input',
-  autoResize
+sendButton.addEventListener(
+  'click',
+  sendMessage
 );
-
 
 messageInput.addEventListener(
   'keydown',
@@ -1965,36 +1481,82 @@ messageInput.addEventListener(
 );
 
 
-sendButton.addEventListener(
-  'click',
-  sendMessage
+/* =====================================================
+   TEXTAREA RESIZE
+===================================================== */
+
+messageInput.addEventListener(
+  'input',
+  () => {
+
+    messageInput.style.height =
+      'auto';
+
+    messageInput.style.height =
+      `${Math.min(
+        messageInput.scrollHeight,
+        140
+      )}px`;
+
+  }
 );
 
 
-/* ==================================================
+/* =====================================================
+   RESTORE CHAT
+===================================================== */
+
+function restoreConversation() {
+
+  if (!conversation.length) {
+
+    addMessage(
+      'assistant',
+      'Hi 👋 I’m Nastivee. What would you like to do?'
+    );
+
+    return;
+  }
+
+  conversation.forEach(
+    message => {
+
+      if (
+        message.type === 'image'
+      ) {
+
+        addImageMessage(
+          message.content,
+          null,
+          '',
+          false
+        );
+
+      } else {
+
+        addMessage(
+          message.role === 'user'
+            ? 'user'
+            : 'assistant',
+          message.content
+        );
+
+      }
+
+    }
+  );
+}
+
+
+/* =====================================================
    START
-================================================== */
-
-loadMemory();
-
-loadConversation();
+===================================================== */
 
 renderMemory();
 
-renderConversation();
-
-autoResize();
-
-
-setTimeout(
-  () => {
-    messageInput.focus();
-  },
-  100
-);
+restoreConversation();
 
 </script>
 
 </body>
-
 </html>
