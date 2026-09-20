@@ -791,6 +791,42 @@ button {
 
 /* Account row: profile takes three quarters, log out the rest */
 
+.offlineBar {
+  display: none;
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 0;
+  z-index: 1200;
+  padding: 11px 16px;
+  text-align: center;
+  background: #f97316;
+  color: #1b1002;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.offlineBar.show {
+  display: block;
+}
+
+.installButton {
+  display: none;
+  width: 100%;
+  margin-bottom: 8px;
+  padding: 11px 16px;
+  border: 1px solid #3b5a44;
+  border-radius: 12px;
+  background: #16281c;
+  color: #a9e5bd;
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.installButton.show {
+  display: block;
+}
+
 .accountRow {
   display: flex;
   gap: 8px;
@@ -1925,6 +1961,11 @@ button {
 </div>
 
 
+<div class="offlineBar" id="offlineBar">
+  You are offline. Nastivee will pick up where you left off.
+</div>
+
+
 <!-- =====================================================
      MY PROFILE
 ===================================================== -->
@@ -2045,6 +2086,14 @@ button {
         class="userEmail"
         id="userEmail"
       ></div>
+
+      <button
+        class="installButton"
+        id="installButton"
+        type="button"
+      >
+        ⬇️ Install the app
+      </button>
 
       <div class="accountRow">
 
@@ -5685,9 +5734,119 @@ function addImageMessage(
     '⬇️ Save image';
 
 
+  /*
+    Carry on from this picture: it becomes the attached
+    photo, so the next message edits it.
+  */
+
+  const continueButton =
+    document.createElement('button');
+
+  continueButton.className = 'imageActionButton';
+
+  continueButton.textContent = '✏️ Change this';
+
+  continueButton.title =
+    'Describe a change and Nastivee edits this picture';
+
+  continueButton.addEventListener('click', () => {
+
+    const state = imageState.get(stateId);
+
+    selectedImageData =
+      state?.currentImage || imageData;
+
+    photoAction = 'edit';
+
+    uploadThumb.src = selectedImageData;
+
+    uploadName.textContent = 'This picture';
+
+    uploadPreview.classList.add('show');
+
+    [...photoChoice.children].forEach((item, index) => {
+      item.classList.toggle('active', index === 0);
+    });
+
+    setImageMode(false);
+
+    messageInput.placeholder =
+      'Describe what you want changed...';
+
+    messageInput.focus();
+
+  });
+
+
+  /*
+    Share, where the browser offers it. Phones do, most
+    desktops do not, so the button only appears when it
+    will actually work.
+  */
+
+  const shareButton =
+    document.createElement('button');
+
+  shareButton.className = 'imageActionButton';
+
+  shareButton.textContent = '📤 Share';
+
+  shareButton.addEventListener('click', async () => {
+
+    try {
+
+      const source =
+        imageState.get(stateId)?.currentImage || imageData;
+
+      const blob =
+        source.startsWith('data:')
+          ? dataUrlToBlob(source)
+          : await (await fetch(source)).blob();
+
+      const file =
+        new File([blob], 'nastivee.png', {
+          type: blob.type || 'image/png'
+        });
+
+      if (navigator.canShare?.({ files: [file] })) {
+
+        await navigator.share({
+          files: [file],
+          text: prompt || 'Made with Nastivee AI'
+        });
+
+        return;
+
+      }
+
+      await navigator.share({
+        title: 'Nastivee AI',
+        text: prompt || 'Made with Nastivee AI',
+        url: source.startsWith('http') ? source : location.href
+      });
+
+    } catch (error) {
+
+      if (error?.name !== 'AbortError') {
+        console.error('SHARE ERROR:', error);
+      }
+
+    }
+
+  });
+
+
   actions.appendChild(
     rerenderButton
   );
+
+  actions.appendChild(
+    continueButton
+  );
+
+  if (navigator.share) {
+    actions.appendChild(shareButton);
+  }
 
   actions.appendChild(
     downloadButton
@@ -6435,6 +6594,48 @@ stopButton.addEventListener('click', () => {
   replyController?.abort();
 
   stopButton.classList.remove('show');
+
+});
+
+
+/* =====================================================
+   INSTALL TO THE HOME SCREEN
+===================================================== */
+
+const installButton =
+  document.getElementById('installButton');
+
+let installPrompt = null;
+
+window.addEventListener('beforeinstallprompt', event => {
+
+  event.preventDefault();
+
+  installPrompt = event;
+
+  installButton.classList.add('show');
+
+});
+
+installButton.addEventListener('click', async () => {
+
+  if (!installPrompt) return;
+
+  installButton.classList.remove('show');
+
+  installPrompt.prompt();
+
+  await installPrompt.userChoice;
+
+  installPrompt = null;
+
+});
+
+window.addEventListener('appinstalled', () => {
+
+  installButton.classList.remove('show');
+
+  installPrompt = null;
 
 });
 
@@ -8139,6 +8340,24 @@ function stopPresence() {
 
 }
 
+const offlineBar =
+  document.getElementById('offlineBar');
+
+function paintConnection() {
+
+  offlineBar.classList.toggle(
+    'show',
+    navigator.onLine === false
+  );
+
+}
+
+window.addEventListener('online', paintConnection);
+window.addEventListener('offline', paintConnection);
+
+paintConnection();
+
+
 window.addEventListener('offline', setOffline);
 
 window.addEventListener('online', () => {
@@ -8157,7 +8376,7 @@ window.addEventListener('online', () => {
    clearing anything by hand.
 ===================================================== */
 
-const APP_VERSION = '2026-09-20-33';
+const APP_VERSION = '2026-09-20-34';
 
 const RELOAD_FLAG = 'nastivee_reloaded_for';
 
