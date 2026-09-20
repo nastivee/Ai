@@ -3555,7 +3555,8 @@ async function saveMessage(
   role,
   content,
   imageUrl = null,
-  chatIdOverride = null
+  chatIdOverride = null,
+  isRetry = false
 ) {
 
   const targetChatId =
@@ -3636,6 +3637,44 @@ async function saveMessage(
         'SUPABASE MESSAGE SAVE ERROR:',
         error
       );
+
+
+      /*
+        23503 is a foreign key violation: the chat this
+        message belongs to is not there any more, usually
+        because it was deleted while still open. Make a
+        fresh chat and save into that instead of showing
+        the user a database error.
+      */
+
+      if (error.code === '23503' && !isRetry) {
+
+        if (isCurrentChat(targetChatId)) {
+
+          currentChatId = null;
+
+          const newId =
+            await ensureChat(
+              typeof content === 'string'
+                ? content
+                : ''
+            );
+
+          await loadChats();
+
+          return saveMessage(
+            role,
+            content,
+            imageUrl,
+            newId,
+            true
+          );
+
+        }
+
+        return false;
+
+      }
 
 
       if (
@@ -5651,7 +5690,7 @@ window.addEventListener('online', () => {
    clearing anything by hand.
 ===================================================== */
 
-const APP_VERSION = '2026-09-20-5';
+const APP_VERSION = '2026-09-20-6';
 
 const RELOAD_FLAG = 'nastivee_reloaded_for';
 
