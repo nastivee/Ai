@@ -208,7 +208,10 @@ app.post('/api/chat', async (req, res) => {
       image = null,
 
       /* the browser asks for a streamed reply */
-      stream = false
+      stream = false,
+
+      /* 'fast' or 'smart', chosen in the app */
+      mode = 'fast'
     } = req.body;
 
     const systemPrompt = `
@@ -277,9 +280,20 @@ ${JSON.stringify(memory, null, 2)}
     }
 
 
+    /*
+      Fast is the everyday model. Smart costs more and is
+      for harder questions, so it is chosen per chat.
+    */
+
+    const model =
+      mode === 'smart'
+        ? (process.env.SMART_MODEL || 'gpt-4o')
+        : (process.env.FAST_MODEL || 'gpt-4o-mini');
+
+
     const payload = {
 
-      model: 'gpt-4o-mini',
+      model,
 
       messages: [
         {

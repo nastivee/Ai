@@ -312,6 +312,35 @@ button {
   filter: brightness(1.08);
 }
 
+.chatSearchWrap {
+  padding: 0 14px 6px;
+}
+
+.chatSearch {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid #2e2344;
+  border-radius: 11px;
+  background: #170f26;
+  color: #e6ddf0;
+  font-size: 13px;
+  outline: none;
+}
+
+.chatSearch::placeholder {
+  color: #6f6580;
+}
+
+.chatSearch:focus {
+  border-color: #503a73;
+}
+
+.noMatches {
+  padding: 14px 10px;
+  color: #6f6580;
+  font-size: 13px;
+}
+
 .chatHistory {
   flex: 1;
   overflow-y: auto;
@@ -632,8 +661,33 @@ button {
   white-space: nowrap;
 }
 
-.headerStatus {
+.modeSwitch {
   margin-left: auto;
+  display: flex;
+  flex-shrink: 0;
+  padding: 3px;
+  gap: 3px;
+  border: 1px solid #2c2340;
+  border-radius: 999px;
+  background: #16101f;
+}
+
+.modeButton {
+  padding: 6px 14px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #9b90ab;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.modeButton.active {
+  background: linear-gradient(135deg, #7c3aed, #9333ea);
+  color: white;
+}
+
+.headerStatus {
   flex-shrink: 0;
   display: flex;
   align-items: center;
@@ -899,6 +953,8 @@ button {
 
 .messageRow.assistant {
   justify-content: flex-start;
+  flex-direction: column;
+  align-items: flex-start;
 }
 
 .messageBubble {
@@ -1027,6 +1083,32 @@ button {
   color: white;
   border-bottom-right-radius: 6px;
   box-shadow: 0 8px 24px rgba(124,58,237,.18);
+}
+
+.replyTools {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.replyTool {
+  padding: 6px 13px;
+  border: 1px solid #332645;
+  border-radius: 9px;
+  background: transparent;
+  color: #9b90ab;
+  font-size: 11.5px;
+  font-weight: 700;
+}
+
+.replyTool:hover {
+  color: #e2d7f0;
+  border-color: #4a3568;
+  background: #1c1430;
+}
+
+.messageRow.assistant .messageRow {
+  flex-direction: column;
 }
 
 .messageRow.assistant .messageBubble {
@@ -1419,7 +1501,17 @@ button {
   }
 
   .header {
-    padding: 0 14px;
+    padding: 0 12px;
+    gap: 8px;
+  }
+
+  .modeButton {
+    padding: 6px 11px;
+    font-size: 11.5px;
+  }
+
+  .headerStatus {
+    padding: 7px 10px;
   }
 
   .profileCard {
@@ -1722,6 +1814,18 @@ button {
 
     </div>
 
+    <div class="chatSearchWrap">
+
+      <input
+        id="chatSearch"
+        class="chatSearch"
+        type="search"
+        placeholder="Search chats"
+        autocomplete="off"
+      >
+
+    </div>
+
     <div class="chatHistory">
 
       <div class="historyLabel">
@@ -1813,6 +1917,26 @@ button {
         id="headerTitle"
       >
         New chat
+      </div>
+
+      <div class="modeSwitch" id="modeSwitch" title="How much thinking to use">
+
+        <button
+          type="button"
+          class="modeButton active"
+          data-mode="fast"
+        >
+          Fast
+        </button>
+
+        <button
+          type="button"
+          class="modeButton"
+          data-mode="smart"
+        >
+          Smart
+        </button>
+
       </div>
 
       <div class="headerStatus" id="headerStatus" title="People using Nastivee AI right now">
@@ -2056,6 +2180,16 @@ let imageMode = false;
 
 /* what to do with an attached photo: 'edit' or 'ask' */
 let photoAction = 'edit';
+
+/* 'fast' for everyday, 'smart' for harder questions */
+let chatMode =
+  (() => {
+    try {
+      return localStorage.getItem('nastivee_mode') || 'fast';
+    } catch {
+      return 'fast';
+    }
+  })();
 
 let initialised = false;
 let imageBusy = false;
@@ -2321,6 +2455,12 @@ const clearUploadButton =
 
 const newChatButton =
   document.getElementById('newChatButton');
+
+const modeSwitch =
+  document.getElementById('modeSwitch');
+
+const chatSearch =
+  document.getElementById('chatSearch');
 
 const chatHistoryList =
   document.getElementById('chatHistoryList');
@@ -3438,7 +3578,35 @@ function renderChatHistory() {
   nudgeRepaint(chatHistoryList);
 
 
-  chats.forEach(
+  const needle =
+    (chatSearch?.value || '')
+      .trim()
+      .toLowerCase();
+
+  const visible =
+    needle
+      ? chats.filter(item =>
+          String(item.title || '')
+            .toLowerCase()
+            .includes(needle)
+        )
+      : chats;
+
+  if (needle && !visible.length) {
+
+    const empty =
+      document.createElement('div');
+
+    empty.className = 'noMatches';
+
+    empty.textContent =
+      'No chats match that.';
+
+    chatHistoryList.appendChild(empty);
+
+  }
+
+  visible.forEach(
     chatItem => {
 
       const row =
@@ -3719,6 +3887,47 @@ function showDeleteFailure(chatId, message) {
   row.appendChild(note);
 
 }
+
+
+chatSearch.addEventListener(
+  'input',
+  renderChatHistory
+);
+
+
+/* =====================================================
+   FAST OR SMART
+===================================================== */
+
+function paintMode() {
+
+  [...modeSwitch.children].forEach(button => {
+    button.classList.toggle(
+      'active',
+      button.dataset.mode === chatMode
+    );
+  });
+
+}
+
+modeSwitch.addEventListener('click', event => {
+
+  const button =
+    event.target.closest('.modeButton');
+
+  if (!button) return;
+
+  chatMode = button.dataset.mode;
+
+  try {
+    localStorage.setItem('nastivee_mode', chatMode);
+  } catch {}
+
+  paintMode();
+
+});
+
+paintMode();
 
 
 /* =====================================================
@@ -4913,6 +5122,58 @@ function addTextMessage(
   );
 
 
+  /*
+    Copy and retry, under every reply.
+  */
+
+  if (role === 'assistant') {
+
+    const tools =
+      document.createElement('div');
+
+    tools.className = 'replyTools';
+
+    const copy =
+      document.createElement('button');
+
+    copy.type = 'button';
+    copy.className = 'replyTool';
+    copy.textContent = 'Copy';
+
+    copy.addEventListener('click', () => {
+
+      navigator.clipboard
+        ?.writeText(bubble.textContent || '')
+        .then(() => {
+          copy.textContent = 'Copied';
+          setTimeout(() => {
+            copy.textContent = 'Copy';
+          }, 1200);
+        })
+        .catch(() => {});
+
+    });
+
+    const retry =
+      document.createElement('button');
+
+    retry.type = 'button';
+    retry.className = 'replyTool';
+    retry.textContent = 'Try again';
+
+    retry.addEventListener(
+      'click',
+      () => retryReply(row)
+    );
+
+    tools.appendChild(copy);
+    tools.appendChild(retry);
+
+    bubble.insertAdjacentElement('afterend', tools);
+
+  }
+
+
   chat.appendChild(
     row
   );
@@ -5823,6 +6084,110 @@ Do not drop anything the original request asked for.
 
 
 /* =====================================================
+   TRY AGAIN
+
+   Removes this reply and asks the same question once more.
+===================================================== */
+
+async function retryReply(row) {
+
+  /*
+    Walk back up the chat for the message that prompted it.
+  */
+
+  let previous = row.previousElementSibling;
+
+  while (
+    previous &&
+    !previous.classList.contains('user')
+  ) {
+    previous = previous.previousElementSibling;
+  }
+
+  const question =
+    previous
+      ? (previous.textContent || '').trim()
+      : '';
+
+  if (!question) {
+
+    addTextMessage(
+      'assistant',
+      'I cannot find the message that this reply answered.'
+    );
+
+    return;
+
+  }
+
+  const chatId = currentChatId;
+
+  row.remove();
+
+  await deleteLastAssistantMessage(chatId);
+
+  sendNormalMessage(question, chatId);
+
+}
+
+
+/*
+  Drops the most recent reply from storage, so a retry
+  does not leave two answers behind.
+*/
+async function deleteLastAssistantMessage(chatId) {
+
+  if (!chatId) return;
+
+  if (guestMode) {
+
+    const stored = guestMessages(chatId);
+
+    for (let i = stored.length - 1; i >= 0; i--) {
+      if (stored[i].role === 'assistant') {
+        stored.splice(i, 1);
+        break;
+      }
+    }
+
+    saveGuestMessages(chatId, stored);
+
+    return;
+
+  }
+
+  try {
+
+    const { data } =
+      await supabaseClient
+        .from('messages')
+        .select('id')
+        .eq('chat_id', chatId)
+        .eq('role', 'assistant')
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+    const last = data?.[0];
+
+    if (last) {
+
+      await supabaseClient
+        .from('messages')
+        .delete()
+        .eq('id', last.id);
+
+    }
+
+  } catch (error) {
+
+    console.error('RETRY CLEANUP ERROR:', error);
+
+  }
+
+}
+
+
+/* =====================================================
    STREAMED REPLY
 ===================================================== */
 
@@ -6059,6 +6424,8 @@ async function sendNormalMessage(
               memory,
 
               image,
+
+              mode: chatMode,
 
               stream: true
 
@@ -7054,7 +7421,7 @@ window.addEventListener('online', () => {
    clearing anything by hand.
 ===================================================== */
 
-const APP_VERSION = '2026-09-20-28';
+const APP_VERSION = '2026-09-20-29';
 
 const RELOAD_FLAG = 'nastivee_reloaded_for';
 
