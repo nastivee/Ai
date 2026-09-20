@@ -8,7 +8,6 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 
-// Helper function to load OpenAI dynamically per request
 function getOpenAIClient() {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) return null;
@@ -23,7 +22,7 @@ app.post('/api/chat', async (req, res) => {
 
     const openai = getOpenAIClient();
     if (!openai) {
-      return res.status(500).json({ error: 'OPENAI_API_KEY environment variable is missing in Render.' });
+      return res.status(500).json({ error: 'OPENAI_API_KEY is missing on Render.' });
     }
 
     const completion = await openai.chat.completions.create({
@@ -46,29 +45,27 @@ app.post('/api/image', async (req, res) => {
 
   const openai = getOpenAIClient();
 
-  // 1. Primary Attempt: OpenAI gpt-image-1
   if (openai) {
     try {
-      console.log('Attempting OpenAI gpt-image-1 generation...');
+      console.log('Attempting OpenAI image generation...');
       const response = await openai.images.generate({
-        model: "gpt-image-1",
+        model: "gpt-image-2",
         prompt: prompt + ", realistic photograph, highly detailed, 8k resolution",
         n: 1,
         size: "1024x1024",
-        quality: "high"
+        response_format: "url"
       });
 
       if (response.data && response.data[0]?.url) {
+        console.log('Image generated successfully via OpenAI!');
         return res.json({ imageUrl: response.data[0].url });
       }
     } catch (openAiError) {
-      console.warn('OpenAI image generation failed, switching to backup:', openAiError.message);
+      console.warn('OpenAI error, using fallback:', openAiError.message);
     }
-  } else {
-    console.warn('OPENAI_API_KEY missing, using backup engine directly...');
   }
 
-  // 2. High-speed Backup Fallback
+  // Fallback Engine
   try {
     const safePrompt = encodeURIComponent(prompt.replace(/[^a-zA-Z0-9 ]/g, "").trim() + ', realistic photo');
     const seed = Date.now();
@@ -76,7 +73,7 @@ app.post('/api/image', async (req, res) => {
 
     return res.json({ imageUrl: backupUrl });
   } catch (fallbackError) {
-    console.error('All image generation paths failed:', fallbackError);
+    console.error('All image paths failed:', fallbackError);
     return res.status(500).json({ error: 'Failed to generate image' });
   }
 });
