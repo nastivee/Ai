@@ -1023,6 +1023,418 @@ button {
 
 /* ---- the paywall sheet ---- */
 
+.adminButton {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  width: 100%;
+  min-height: 42px;
+  margin-bottom: 10px;
+  padding: 0 16px;
+  border: 1px solid #3a2f52;
+  border-radius: 12px;
+  background: #171027;
+  color: #b9adc8;
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.adminButton.show {
+  display: flex;
+}
+
+.adminButton:hover {
+  border-color: #6d4fb8;
+  color: #e2d7f0;
+}
+
+.adminOverlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 970;
+  padding: 20px;
+  align-items: center;
+  justify-content: center;
+  background: rgba(6, 4, 12, .76);
+  backdrop-filter: blur(4px);
+}
+
+.adminOverlay.show {
+  display: flex;
+}
+
+.adminCard {
+  width: 100%;
+  max-width: 520px;
+  max-height: 88vh;
+  overflow-y: auto;
+  scroll-behavior: smooth;
+  padding: 24px;
+  border: 1px solid #33264a;
+  border-radius: 22px;
+  background: #17112a;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, .5);
+}
+
+.adminHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+
+.adminTitle {
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -.3px;
+}
+
+.adminSub {
+  margin-top: 2px;
+  color: #6f6580;
+  font-size: 12px;
+}
+
+/* Close mark: large, no background, no border */
+.adminClose {
+  border: 0;
+  background: none;
+  color: #cfc3dd;
+  font-size: 34px;
+  line-height: 1;
+  padding: 0 8px;
+}
+
+.adminClose:hover {
+  color: #fff;
+}
+
+
+/* ---- every section is a card, shut until you open it ---- */
+
+.adminSection {
+  margin-top: 12px;
+  border: 1px solid #2c2244;
+  border-radius: 14px;
+  background: #140f24;
+  overflow: hidden;
+  scroll-margin-top: 12px;
+}
+
+.adminSection.good {
+  border-color: #3b5a44;
+}
+
+.adminSection.warn {
+  border-color: #6b4a22;
+}
+
+.adminSection.bad {
+  border-color: #6b3341;
+}
+
+.adminSummary {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 14px 16px;
+  border: 0;
+  background: transparent;
+  color: #ded3ec;
+  text-align: left;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.adminSummary:hover {
+  background: rgba(124, 58, 237, .07);
+}
+
+.adminSection.good .adminSummary {
+  color: #a8cdb6;
+  opacity: .85;
+}
+
+.adminSection.warn .adminSummary {
+  color: #f6c98a;
+}
+
+.adminSection.bad .adminSummary {
+  color: #ff9d9d;
+}
+
+.adminDot {
+  flex-shrink: 0;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #4ade80;
+  /* room for the halo so it is never clipped */
+  box-shadow: 0 0 0 4px rgba(74, 222, 128, .13);
+  margin-left: 2px;
+}
+
+.adminSection.warn .adminDot {
+  background: #f59e0b;
+  box-shadow: 0 0 0 4px rgba(245, 158, 11, .14);
+}
+
+.adminSection.bad .adminDot {
+  background: #ef4444;
+  box-shadow: 0 0 0 4px rgba(239, 68, 68, .14);
+}
+
+.adminSummaryText {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.adminSummaryNote {
+  margin-top: 2px;
+  color: #6f6580;
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.adminChevron {
+  flex-shrink: 0;
+  color: #6f6580;
+  transition: transform .18s var(--ease);
+}
+
+.adminSection.open .adminChevron {
+  transform: rotate(180deg);
+}
+
+.adminBody {
+  display: none;
+  padding: 2px 16px 16px;
+  border-top: 1px solid #241b38;
+}
+
+.adminSection.open .adminBody {
+  display: block;
+}
+
+.adminField {
+  margin-top: 14px;
+}
+
+.adminLabel {
+  display: block;
+  margin-bottom: 6px;
+  color: #9b90ab;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .7px;
+}
+
+.adminInput {
+  width: 100%;
+  min-height: 42px;
+  padding: 0 13px;
+  border: 1px solid #2e2344;
+  border-radius: 11px;
+  background: #170f26;
+  color: #e6ddf0;
+  font-size: 14px;
+  outline: none;
+}
+
+.adminInput:focus {
+  border-color: #6d4fb8;
+}
+
+.adminHint {
+  margin-top: 6px;
+  color: #6f6580;
+  font-size: 11.5px;
+  line-height: 1.5;
+}
+
+.adminToggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 14px;
+  padding: 11px 13px;
+  border: 1px solid #2e2344;
+  border-radius: 11px;
+  background: #170f26;
+  color: #ded3ec;
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+.adminSwitch {
+  flex-shrink: 0;
+  min-height: 32px;
+  padding: 0 14px;
+  border: 1px solid #4a3568;
+  border-radius: 999px;
+  background: #241839;
+  color: #cbbde0;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.adminSwitch.on {
+  border-color: transparent;
+  background: linear-gradient(135deg, #7c3aed, #9333ea);
+  color: white;
+}
+
+.adminAction {
+  width: 100%;
+  min-height: 44px;
+  margin-top: 16px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #7c3aed, #9333ea);
+  color: white;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.adminAction:hover {
+  filter: brightness(1.08);
+}
+
+.adminAction:disabled {
+  opacity: .5;
+}
+
+.adminQuiet {
+  background: none;
+  border: 1px solid #3a2f52;
+  color: #b9adc8;
+}
+
+.adminQuiet:hover {
+  border-color: #6d4fb8;
+  color: #e2d7f0;
+  filter: none;
+}
+
+.adminList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.adminListItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  border-top: 1px solid #241b38;
+  color: #b9adc8;
+  font-size: 13px;
+}
+
+.adminListItem:first-child {
+  border-top: 0;
+}
+
+.adminListItem code {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #ded3ec;
+  font-size: 12px;
+}
+
+.adminTick {
+  flex-shrink: 0;
+  font-weight: 800;
+  font-size: 12px;
+}
+
+.adminTick.yes { color: #6ee7a0; }
+.adminTick.no  { color: #ff8a8a; }
+
+.adminCopy {
+  flex-shrink: 0;
+  padding: 4px 10px;
+  border: 1px solid #3a2f52;
+  border-radius: 8px;
+  background: none;
+  color: #b9adc8;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.adminResult {
+  display: none;
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: 11px;
+  font-size: 12.5px;
+  line-height: 1.55;
+}
+
+.adminResult.show {
+  display: block;
+}
+
+.adminResult.good {
+  border: 1px solid #3b5a44;
+  background: rgba(22, 40, 28, .7);
+  color: #9fd8b3;
+}
+
+.adminResult.bad {
+  border: 1px solid #6b3341;
+  background: rgba(60, 20, 28, .55);
+  color: #ff9d9d;
+}
+
+.adminPerson {
+  margin-top: 14px;
+  padding: 13px;
+  border: 1px solid #2e2344;
+  border-radius: 12px;
+  background: #170f26;
+}
+
+.adminPersonName {
+  color: #ded3ec;
+  font-size: 13.5px;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.adminPersonStat {
+  margin-top: 4px;
+  color: #9b90ab;
+  font-size: 12px;
+}
+
+.adminRow {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.adminRow .adminInput {
+  flex: 1 1 auto;
+}
+
+.adminRow .adminAction {
+  flex-shrink: 0;
+  width: auto;
+  margin-top: 0;
+}
+
 .payOverlay {
   display: none;
   position: fixed;
@@ -2759,6 +3171,182 @@ button {
      MY PROFILE
 ===================================================== -->
 
+<div class="adminOverlay" id="adminOverlay">
+
+  <div class="adminCard" id="adminCard">
+
+    <div class="adminHead">
+
+      <div>
+        <div class="adminTitle">Admin</div>
+        <div class="adminSub" id="adminSub"></div>
+      </div>
+
+      <button
+        class="adminClose"
+        id="adminClose"
+        type="button"
+        aria-label="Close"
+      >
+        &times;
+      </button>
+
+    </div>
+
+    <div class="adminSection" id="adminStatus">
+
+      <button class="adminSummary" type="button" data-section="adminStatus">
+        <span class="adminDot" aria-hidden="true"></span>
+        <span class="adminSummaryText">
+          Payments
+          <span class="adminSummaryNote" id="adminStatusNote"></span>
+        </span>
+        <svg class="adminChevron" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
+      </button>
+
+      <div class="adminBody">
+
+        <ul class="adminList" id="adminChecks"></ul>
+
+        <div class="adminField">
+          <span class="adminLabel">Stripe webhook URL</span>
+          <div class="adminListItem">
+            <code id="adminWebhookUrl"></code>
+            <button class="adminCopy" id="adminCopyWebhook" type="button">
+              Copy
+            </button>
+          </div>
+          <div class="adminHint">
+            Paste this into Stripe, Developers, Webhooks, and
+            listen for checkout.session.completed.
+          </div>
+        </div>
+
+        <button class="adminAction adminQuiet" id="adminRefresh" type="button">
+          Check again
+        </button>
+
+      </div>
+
+    </div>
+
+
+    <div class="adminSection" id="adminPack">
+
+      <button class="adminSummary" type="button" data-section="adminPack">
+        <span class="adminDot" aria-hidden="true"></span>
+        <span class="adminSummaryText">
+          Pack and coupon
+          <span class="adminSummaryNote" id="adminPackNote"></span>
+        </span>
+        <svg class="adminChevron" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
+      </button>
+
+      <div class="adminBody">
+
+        <div class="adminToggle">
+          <span>Paywall enforced</span>
+          <button class="adminSwitch" id="adminPaywallSwitch" type="button">
+            On
+          </button>
+        </div>
+
+        <div class="adminField">
+          <label class="adminLabel" for="adminPrice">Pack price in pence</label>
+          <input class="adminInput" id="adminPrice" type="number"
+                 min="100" max="50000" step="1" inputmode="numeric">
+          <div class="adminHint" id="adminPriceHint"></div>
+        </div>
+
+        <div class="adminField">
+          <label class="adminLabel" for="adminImages">Images per pack</label>
+          <input class="adminInput" id="adminImages" type="number"
+                 min="1" max="10000" step="1" inputmode="numeric">
+        </div>
+
+        <div class="adminField">
+          <label class="adminLabel" for="adminStarter">
+            Free images on a new account
+          </label>
+          <input class="adminInput" id="adminStarter" type="number"
+                 min="0" max="1000" step="1" inputmode="numeric">
+          <div class="adminHint">
+            Zero means every new account meets the paywall on
+            their first picture.
+          </div>
+        </div>
+
+        <div class="adminField">
+          <label class="adminLabel" for="adminCoupon">Coupon code</label>
+          <input class="adminInput" id="adminCoupon" type="text"
+                 autocomplete="off" autocapitalize="none" spellcheck="false">
+          <div class="adminHint">
+            Anyone entering this gets unlimited images from then on.
+          </div>
+        </div>
+
+        <button class="adminAction" id="adminSaveSettings" type="button">
+          Save settings
+        </button>
+
+        <div class="adminResult" id="adminSettingsResult"></div>
+
+      </div>
+
+    </div>
+
+
+    <div class="adminSection" id="adminPeople">
+
+      <button class="adminSummary" type="button" data-section="adminPeople">
+        <span class="adminDot" aria-hidden="true"></span>
+        <span class="adminSummaryText">
+          Accounts
+          <span class="adminSummaryNote" id="adminPeopleNote">Look somebody up, hand out images</span>
+        </span>
+        <svg class="adminChevron" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
+      </button>
+
+      <div class="adminBody">
+
+        <div class="adminRow">
+          <input class="adminInput" id="adminLookup" type="email"
+                 placeholder="someone@example.com"
+                 autocomplete="off" autocapitalize="none" spellcheck="false">
+          <button class="adminAction" id="adminLookupButton" type="button">
+            Find
+          </button>
+        </div>
+
+        <div class="adminPerson" id="adminPerson" style="display:none">
+          <div class="adminPersonName" id="adminPersonName"></div>
+          <div class="adminPersonStat" id="adminPersonStat"></div>
+
+          <div class="adminRow">
+            <input class="adminInput" id="adminGrantAmount" type="number"
+                   step="1" placeholder="Images to add" inputmode="numeric">
+            <button class="adminAction" id="adminGrantButton" type="button">
+              Add
+            </button>
+          </div>
+
+          <button class="adminAction adminQuiet" id="adminUnlimitedButton"
+                  type="button">
+            Give unlimited
+          </button>
+        </div>
+
+        <div class="adminResult" id="adminPeopleResult"></div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
+
 <div class="payOverlay" id="payOverlay">
 
   <div class="payCard">
@@ -3033,6 +3621,21 @@ button {
         </button>
       </div>
 
+
+      <button
+        class="adminButton"
+        id="adminButton"
+        type="button"
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round"
+             aria-hidden="true">
+          <path d="M12 2 4 6v6c0 5 3.4 8.6 8 10 4.6-1.4 8-5 8-10V6Z"></path>
+          <polyline points="9 12 11 14 15 10"></polyline>
+        </svg>
+        Admin
+      </button>
 
       <div class="creditsRow" id="creditsRow">
 
@@ -8037,6 +8640,11 @@ async function refreshAccount() {
 
   drawCredits();
 
+  adminButton?.classList.toggle(
+    'show',
+    account.admin === true
+  );
+
 }
 
 
@@ -8322,6 +8930,527 @@ function checkPaymentReturn() {
   setTimeout(poll, 1200);
 
 }
+
+
+/* =====================================================
+   ADMIN
+
+   Only for the emails the server calls admins. It asks
+   the server every time, so hiding the button is a
+   courtesy, not the lock.
+===================================================== */
+
+const adminButton =
+  document.getElementById('adminButton');
+
+const adminOverlay =
+  document.getElementById('adminOverlay');
+
+const adminCard =
+  document.getElementById('adminCard');
+
+let adminData = null;
+
+
+function adminSay(where, text, good) {
+
+  const box =
+    document.getElementById(where);
+
+  if (!box) return;
+
+  box.textContent = text;
+
+  box.className =
+    `adminResult show ${good ? 'good' : 'bad'}`;
+
+}
+
+
+/*
+  Cards open one at a time, and the one you opened comes
+  to the top of the panel so you are never left reading
+  halfway down.
+*/
+function toggleAdminSection(id) {
+
+  const section =
+    document.getElementById(id);
+
+  if (!section) return;
+
+  const opening =
+    !section.classList.contains('open');
+
+  [...adminCard.querySelectorAll('.adminSection')]
+    .forEach(one => one.classList.remove('open'));
+
+  section.classList.toggle('open', opening);
+
+  if (opening) {
+
+    requestAnimationFrame(() => {
+
+      const top =
+        section.offsetTop - adminCard.offsetTop - 8;
+
+      if (typeof adminCard.scrollTo === 'function') {
+
+        adminCard.scrollTo({
+          top,
+          behavior: 'smooth'
+        });
+
+      } else {
+
+        adminCard.scrollTop = top;
+
+      }
+
+    });
+
+  }
+
+}
+
+
+adminCard?.addEventListener('click', event => {
+
+  const summary =
+    event.target.closest?.('.adminSummary');
+
+  if (summary) {
+    toggleAdminSection(summary.dataset.section);
+  }
+
+});
+
+
+function setSectionState(id, state, note) {
+
+  const section =
+    document.getElementById(id);
+
+  if (!section) return;
+
+  section.classList.remove('good', 'warn', 'bad');
+
+  section.classList.add(state);
+
+  const noteEl =
+    document.getElementById(`${id}Note`);
+
+  if (noteEl) {
+    noteEl.textContent = note;
+  }
+
+}
+
+
+function paintAdmin() {
+
+  if (!adminData) return;
+
+  const c =
+    adminData.configured || {};
+
+  document.getElementById('adminSub').textContent =
+    (adminData.testMode
+      ? 'Stripe in test mode'
+      : (c.stripeKey ? 'Stripe live' : 'Stripe not connected')) +
+    (adminData.accounts !== null
+      ? `, ${adminData.accounts} accounts`
+      : '');
+
+  /* --- payments --- */
+
+  const checks = [
+    ['Supabase service key', c.serviceKey],
+    ['Stripe secret key', c.stripeKey],
+    ['Stripe webhook secret', c.webhook],
+    ['OpenAI key', c.openai]
+  ];
+
+  document.getElementById('adminChecks').innerHTML =
+    checks
+      .map(([name, ok]) =>
+        '<li class="adminListItem">' +
+        `<code>${name}</code>` +
+        `<span class="adminTick ${ok ? 'yes' : 'no'}">` +
+        `${ok ? 'SET' : 'MISSING'}</span>` +
+        '</li>'
+      )
+      .join('');
+
+  document.getElementById('adminWebhookUrl').textContent =
+    adminData.webhookUrl || '';
+
+  const missing =
+    checks.filter(one => !one[1]).length;
+
+  setSectionState(
+    'adminStatus',
+    missing === 0 ? 'good' : (missing > 2 ? 'bad' : 'warn'),
+    missing === 0
+      ? 'Everything is connected'
+      : `${missing} still to set on Render`
+  );
+
+  /* --- pack --- */
+
+  const set = adminData.settings || {};
+
+  const price =
+    document.getElementById('adminPrice');
+
+  price.value = set.pack_price_pence;
+
+  document.getElementById('adminPriceHint').textContent =
+    `That is ${money(set.pack_price_pence || 0)}.`;
+
+  document.getElementById('adminImages').value =
+    set.pack_images;
+
+  document.getElementById('adminStarter').value =
+    set.starter_credits;
+
+  document.getElementById('adminCoupon').value =
+    set.coupon_code || '';
+
+  const paywallSwitch =
+    document.getElementById('adminPaywallSwitch');
+
+  paywallSwitch.classList.toggle(
+    'on',
+    set.paywall_enabled !== false
+  );
+
+  paywallSwitch.textContent =
+    set.paywall_enabled === false ? 'Off' : 'On';
+
+  setSectionState(
+    'adminPack',
+    set.paywall_enabled === false ? 'warn' : 'good',
+    set.paywall_enabled === false
+      ? 'Paywall is off, images are free for everyone'
+      : `${money(set.pack_price_pence || 0)} for ` +
+        `${set.pack_images} images`
+  );
+
+}
+
+
+async function loadAdmin() {
+
+  try {
+
+    const response =
+      await fetch(`${API_BASE}/api/admin/overview`, {
+        headers: await apiHeaders()
+      });
+
+    const data =
+      await response.json();
+
+    if (!response.ok) {
+      throw new Error(data?.error || 'Could not load.');
+    }
+
+    adminData = data;
+
+    paintAdmin();
+
+  } catch (error) {
+
+    adminSay('adminSettingsResult', error.message, false);
+
+  }
+
+}
+
+
+adminButton?.addEventListener('click', async () => {
+
+  adminOverlay.classList.add('show');
+
+  await loadAdmin();
+
+  if (!adminCard.querySelector('.adminSection.open')) {
+    toggleAdminSection('adminStatus');
+  }
+
+});
+
+document
+  .getElementById('adminClose')
+  ?.addEventListener('click', () => {
+    adminOverlay.classList.remove('show');
+  });
+
+adminOverlay?.addEventListener('click', event => {
+  if (event.target === adminOverlay) {
+    adminOverlay.classList.remove('show');
+  }
+});
+
+document
+  .getElementById('adminRefresh')
+  ?.addEventListener('click', loadAdmin);
+
+document
+  .getElementById('adminCopyWebhook')
+  ?.addEventListener('click', () => {
+
+    navigator.clipboard
+      ?.writeText(adminData?.webhookUrl || '')
+      .then(() => {
+
+        const button =
+          document.getElementById('adminCopyWebhook');
+
+        button.textContent = 'Copied';
+
+        setTimeout(() => {
+          button.textContent = 'Copy';
+        }, 1200);
+
+      })
+      .catch(() => {});
+
+  });
+
+
+document
+  .getElementById('adminPaywallSwitch')
+  ?.addEventListener('click', event => {
+
+    const button = event.currentTarget;
+
+    const on =
+      !button.classList.contains('on');
+
+    button.classList.toggle('on', on);
+
+    button.textContent = on ? 'On' : 'Off';
+
+  });
+
+
+document
+  .getElementById('adminSaveSettings')
+  ?.addEventListener('click', async () => {
+
+    const button =
+      document.getElementById('adminSaveSettings');
+
+    button.disabled = true;
+
+    try {
+
+      const response =
+        await fetch(`${API_BASE}/api/admin/settings`, {
+
+          method: 'POST',
+
+          headers: await apiHeaders(),
+
+          body: JSON.stringify({
+
+            paywall_enabled:
+              document
+                .getElementById('adminPaywallSwitch')
+                .classList.contains('on'),
+
+            pack_price_pence:
+              Number(document.getElementById('adminPrice').value),
+
+            pack_images:
+              Number(document.getElementById('adminImages').value),
+
+            starter_credits:
+              Number(document.getElementById('adminStarter').value),
+
+            coupon_code:
+              document.getElementById('adminCoupon').value
+
+          })
+
+        });
+
+      const data =
+        await response.json();
+
+      if (!response.ok) {
+        throw new Error(data?.error || 'Could not save.');
+      }
+
+      adminData.settings = data.settings;
+
+      paintAdmin();
+
+      adminSay('adminSettingsResult', 'Saved.', true);
+
+      /* the card the user was working in comes back to the top */
+      toggleAdminSection('adminPack');
+
+      refreshAccount();
+
+    } catch (error) {
+
+      adminSay('adminSettingsResult', error.message, false);
+
+    }
+
+    button.disabled = false;
+
+  });
+
+
+let adminPerson = null;
+
+async function adminLookup() {
+
+  const email =
+    document.getElementById('adminLookup').value.trim();
+
+  if (!email) {
+    adminSay('adminPeopleResult', 'Enter an email.', false);
+    return;
+  }
+
+  try {
+
+    const response =
+      await fetch(
+        `${API_BASE}/api/admin/user?email=` +
+        encodeURIComponent(email),
+        { headers: await apiHeaders() }
+      );
+
+    const data =
+      await response.json();
+
+    if (!response.ok) {
+      throw new Error(data?.error || 'Not found.');
+    }
+
+    adminPerson = data;
+
+    document.getElementById('adminPerson')
+      .style.display = 'block';
+
+    document.getElementById('adminPersonName')
+      .textContent = data.email;
+
+    document.getElementById('adminPersonStat').textContent =
+      (data.unlimited
+        ? 'Unlimited images'
+        : `${data.credits} images left`) +
+      `, joined ${new Date(data.createdAt)
+        .toLocaleDateString('en-GB')}`;
+
+    document.getElementById('adminUnlimitedButton').textContent =
+      data.unlimited ? 'Take unlimited away' : 'Give unlimited';
+
+    document.getElementById('adminPeopleResult')
+      .className = 'adminResult';
+
+  } catch (error) {
+
+    document.getElementById('adminPerson')
+      .style.display = 'none';
+
+    adminSay('adminPeopleResult', error.message, false);
+
+  }
+
+}
+
+document
+  .getElementById('adminLookupButton')
+  ?.addEventListener('click', adminLookup);
+
+document
+  .getElementById('adminLookup')
+  ?.addEventListener('keydown', event => {
+    if (event.key === 'Enter') adminLookup();
+  });
+
+
+async function adminGrant(body, saying) {
+
+  try {
+
+    const response =
+      await fetch(`${API_BASE}/api/admin/grant`, {
+        method: 'POST',
+        headers: await apiHeaders(),
+        body: JSON.stringify({
+          email: adminPerson?.email,
+          ...body
+        })
+      });
+
+    const data =
+      await response.json();
+
+    if (!response.ok) {
+      throw new Error(data?.error || 'Could not apply that.');
+    }
+
+    adminSay('adminPeopleResult', saying, true);
+
+    await adminLookup();
+
+    adminSay('adminPeopleResult', saying, true);
+
+  } catch (error) {
+
+    adminSay('adminPeopleResult', error.message, false);
+
+  }
+
+}
+
+document
+  .getElementById('adminGrantButton')
+  ?.addEventListener('click', () => {
+
+    const amount =
+      Number(
+        document.getElementById('adminGrantAmount').value
+      );
+
+    if (!amount) {
+      adminSay('adminPeopleResult', 'How many?', false);
+      return;
+    }
+
+    adminGrant(
+      { amount },
+      `${amount > 0 ? 'Added' : 'Removed'} ` +
+      `${Math.abs(amount)} images.`
+    );
+
+    document.getElementById('adminGrantAmount').value = '';
+
+  });
+
+document
+  .getElementById('adminUnlimitedButton')
+  ?.addEventListener('click', () => {
+
+    const giving =
+      !adminPerson?.unlimited;
+
+    adminGrant(
+      { unlimited: giving },
+      giving
+        ? 'They now have unlimited images.'
+        : 'Unlimited taken away.'
+    );
+
+  });
 
 
 /* =====================================================
@@ -10372,7 +11501,7 @@ window.addEventListener('online', () => {
    clearing anything by hand.
 ===================================================== */
 
-const APP_VERSION = '2026-09-20-45';
+const APP_VERSION = '2026-09-20-46';
 
 const RELOAD_FLAG = 'nastivee_reloaded_for';
 

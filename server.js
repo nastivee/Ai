@@ -94,6 +94,142 @@ function paywallReady() {
 }
 
 
+// =====================================================
+// SETTINGS
+//
+// The env vars are the starting point. Once the settings
+// row exists, the admin panel owns these numbers and the
+// env vars are only the fallback.
+// =====================================================
+
+const ADMIN_EMAILS =
+  (process.env.ADMIN_EMAILS ||
+   'aaron@mediamafia.co.uk,jamiebutcher1998@hotmail.com')
+    .split(',')
+    .map(one => one.trim().toLowerCase())
+    .filter(Boolean);
+
+function isAdmin(user) {
+
+  return Boolean(
+    user?.email &&
+    ADMIN_EMAILS.includes(user.email.toLowerCase())
+  );
+
+}
+
+
+const SETTINGS_FALLBACK = {
+  paywall_enabled: true,
+  pack_price_pence: PACK_PRICE_PENCE,
+  pack_images: PACK_IMAGES,
+  coupon_code: COUPON_CODE,
+  starter_credits: Number(process.env.STARTER_CREDITS || 0)
+};
+
+let settingsCache = null;
+let settingsReadAt = 0;
+
+async function getSettings(fresh) {
+
+  const now = Date.now();
+
+  if (!fresh && settingsCache && now - settingsReadAt < 30000) {
+    return settingsCache;
+  }
+
+  if (!supabaseAdmin) {
+    return SETTINGS_FALLBACK;
+  }
+
+  const { data, error } =
+    await supabaseAdmin
+      .from('app_settings')
+      .select('*')
+      .eq('id', 1)
+      .maybeSingle();
+
+  if (error || !data) {
+
+    if (error) {
+      console.error('SETTINGS READ ERROR:', error.message);
+    }
+
+    return SETTINGS_FALLBACK;
+
+  }
+
+  settingsCache = data;
+  settingsReadAt = now;
+
+  return data;
+
+}
+
+
+async function saveSettings(patch) {
+
+  if (!supabaseAdmin) {
+    throw new Error('Settings storage is not configured.');
+  }
+
+  const { data, error } =
+    await supabaseAdmin
+      .from('app_settings')
+      .update({
+        ...patch,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', 1)
+      .select()
+      .maybeSingle();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  settingsCache = data;
+  settingsReadAt = Date.now();
+
+  return data;
+
+}
+
+
+/*
+  Only the admin gets past here.
+*/
+async function requireAdmin(req, res) {
+
+  const user = await getUser(req);
+
+  if (!isAdmin(user)) {
+
+    res.status(403).json({
+      error: 'Not your door.'
+    });
+
+    return null;
+
+  }
+
+  if (!supabaseAdmin) {
+
+    res.status(503).json({
+      error:
+        'SUPABASE_SERVICE_ROLE_KEY is not set on the server, ' +
+        'so there is nothing to administer yet.'
+    });
+
+    return null;
+
+  }
+
+  return user;
+
+}
+
+
 /*
   What this account is allowed to do right now.
 */
@@ -113,6 +249,9 @@ async function readAccount(userId) {
     };
 
   }
+
+  const settings =
+    await getSettings();
 
   const { data, error } =
     await supabaseAdmin
@@ -134,10 +273,37 @@ async function readAccount(userId) {
 
   }
 
+  let credits =
+    data?.image_credits || 0;
+
+  /*
+    A brand new account gets whatever the starter grant is
+    set to, once, and never again.
+  */
+  if (!data && settings.starter_credits > 0) {
+
+    try {
+
+      credits =
+        await addCredits(
+          userId,
+          settings.starter_credits,
+          'starter',
+          `starter:${userId}`
+        );
+
+    } catch {
+
+      credits = 0;
+
+    }
+
+  }
+
   return {
-    credits: data?.image_credits || 0,
+    credits,
     unlimited: data?.unlimited === true,
-    unmetered: false
+    unmetered: settings.paywall_enabled === false
   };
 
 }
@@ -328,6 +494,17 @@ async function requireUser(req, res) {
 
   }
 
+  /*
+    Admins never meet their own paywall.
+  */
+  if (isAdmin(user)) {
+
+    user.unlimited = true;
+
+    return user;
+
+  }
+
   const account =
     await readAccount(user.id);
 
@@ -354,6 +531,9 @@ async function requireUser(req, res) {
 
   if (left < 0) {
 
+    const settings =
+      await getSettings();
+
     res.status(402).json({
 
       error:
@@ -361,8 +541,8 @@ async function requireUser(req, res) {
 
       needsCredit: true,
 
-      packImages: PACK_IMAGES,
-      packPricePence: PACK_PRICE_PENCE
+      packImages: settings.pack_images,
+      packPricePence: settings.pack_price_pence
 
     });
 
@@ -447,8 +627,14 @@ app.post(
           session.client_reference_id ||
           session.metadata?.user_id;
 
+        const settings =
+          await getSettings();
+
         const images =
-          Number(session.metadata?.images || PACK_IMAGES);
+          Number(
+            session.metadata?.images ||
+            settings.pack_images
+          );
 
         if (session.payment_status === 'paid' && userId) {
 
@@ -512,6 +698,9 @@ app.get('/api/health', (req, res) => {
 */
 app.get('/api/account', async (req, res) => {
 
+  const settings =
+    await getSettings();
+
   const user = await getUser(req);
 
   if (!user) {
@@ -520,9 +709,10 @@ app.get('/api/account', async (req, res) => {
       signedIn: false,
       credits: 0,
       unlimited: false,
-      packImages: PACK_IMAGES,
-      packPricePence: PACK_PRICE_PENCE,
-      canBuy: paywallReady()
+      packImages: settings.pack_images,
+      packPricePence: settings.pack_price_pence,
+      canBuy: paywallReady(),
+      admin: false
     });
 
   }
@@ -530,13 +720,19 @@ app.get('/api/account', async (req, res) => {
   const account =
     await readAccount(user.id);
 
+  const admin = isAdmin(user);
+
   res.json({
     signedIn: true,
     credits: account.credits,
-    unlimited: account.unlimited || account.unmetered,
-    packImages: PACK_IMAGES,
-    packPricePence: PACK_PRICE_PENCE,
-    canBuy: paywallReady()
+    unlimited:
+      admin ||
+      account.unlimited ||
+      account.unmetered,
+    packImages: settings.pack_images,
+    packPricePence: settings.pack_price_pence,
+    canBuy: paywallReady(),
+    admin
   });
 
 });
@@ -576,7 +772,11 @@ app.post('/api/coupon', async (req, res) => {
 
   }
 
-  if (code.toLowerCase() !== COUPON_CODE.toLowerCase()) {
+  const settings =
+    await getSettings();
+
+  if (code.toLowerCase() !==
+      String(settings.coupon_code || '').toLowerCase()) {
 
     return res.status(400).json({
       error: 'That code is not recognised.'
@@ -647,6 +847,9 @@ app.post('/api/checkout', async (req, res) => {
 
   try {
 
+    const settings =
+      await getSettings();
+
     const session =
       await stripe.checkout.sessions.create({
 
@@ -658,7 +861,7 @@ app.post('/api/checkout', async (req, res) => {
 
         metadata: {
           user_id: user.id,
-          images: String(PACK_IMAGES)
+          images: String(settings.pack_images)
         },
 
         line_items: [
@@ -666,12 +869,12 @@ app.post('/api/checkout', async (req, res) => {
             quantity: 1,
             price_data: {
               currency: 'gbp',
-              unit_amount: PACK_PRICE_PENCE,
+              unit_amount: settings.pack_price_pence,
               product_data: {
-                name: `${PACK_IMAGES} Nastivee images`,
+                name: `${settings.pack_images} Nastivee images`,
                 description:
-                  `${PACK_IMAGES} image generations on your ` +
-                  'Nastivee AI account. They do not expire.'
+                  `${settings.pack_images} image generations on ` +
+                  'your Nastivee AI account. They do not expire.'
               }
             }
           }
@@ -695,6 +898,390 @@ app.post('/api/checkout', async (req, res) => {
   }
 
 });
+
+
+// =====================================================
+// ADMIN
+//
+// Everything here is behind requireAdmin, which checks
+// the signed in email against ADMIN_EMAILS. Keys are
+// never sent back, only whether they are present.
+// =====================================================
+
+app.get('/api/admin/overview', async (req, res) => {
+
+  const user = await requireAdmin(req, res);
+
+  if (!user) return;
+
+  const settings =
+    await getSettings(true);
+
+  let accounts = null;
+
+  try {
+
+    const { data } =
+      await supabaseAdmin.auth.admin.listUsers({
+        page: 1,
+        perPage: 1
+      });
+
+    accounts = data?.total ?? null;
+
+  } catch {
+
+    accounts = null;
+
+  }
+
+  res.json({
+
+    settings,
+
+    accounts,
+
+    testMode:
+      STRIPE_SECRET_KEY.startsWith('sk_test_') ||
+      STRIPE_SECRET_KEY.startsWith('rk_test_'),
+
+    configured: {
+      serviceKey: Boolean(SUPABASE_SERVICE_KEY),
+      stripeKey: Boolean(STRIPE_SECRET_KEY),
+      webhook: Boolean(STRIPE_WEBHOOK_SECRET),
+      openai: Boolean(process.env.OPENAI_API_KEY)
+    },
+
+    webhookUrl:
+      `${req.protocol}://${req.get('host')}/api/stripe/webhook`,
+
+    siteUrl: LIVE_SITE_URL,
+
+    adminEmails: ADMIN_EMAILS
+
+  });
+
+});
+
+
+app.post('/api/admin/settings', async (req, res) => {
+
+  const user = await requireAdmin(req, res);
+
+  if (!user) return;
+
+  const body = req.body || {};
+
+  const patch = {};
+
+  if (typeof body.paywall_enabled === 'boolean') {
+    patch.paywall_enabled = body.paywall_enabled;
+  }
+
+  if (body.pack_price_pence !== undefined) {
+
+    const pence =
+      Math.round(Number(body.pack_price_pence));
+
+    if (!Number.isFinite(pence) || pence < 100 || pence > 50000) {
+
+      return res.status(400).json({
+        error: 'Price must be between 1 and 500 pounds.'
+      });
+
+    }
+
+    patch.pack_price_pence = pence;
+
+  }
+
+  if (body.pack_images !== undefined) {
+
+    const images =
+      Math.round(Number(body.pack_images));
+
+    if (!Number.isFinite(images) || images < 1 || images > 10000) {
+
+      return res.status(400).json({
+        error: 'A pack must be between 1 and 10000 images.'
+      });
+
+    }
+
+    patch.pack_images = images;
+
+  }
+
+  if (body.starter_credits !== undefined) {
+
+    const starter =
+      Math.round(Number(body.starter_credits));
+
+    if (!Number.isFinite(starter) || starter < 0 || starter > 1000) {
+
+      return res.status(400).json({
+        error: 'The starter grant must be between 0 and 1000.'
+      });
+
+    }
+
+    patch.starter_credits = starter;
+
+  }
+
+  if (body.coupon_code !== undefined) {
+
+    const code =
+      String(body.coupon_code).trim();
+
+    if (code.length < 3 || code.length > 40) {
+
+      return res.status(400).json({
+        error: 'A coupon code needs 3 to 40 characters.'
+      });
+
+    }
+
+    patch.coupon_code = code;
+
+  }
+
+  if (!Object.keys(patch).length) {
+
+    return res.status(400).json({
+      error: 'Nothing to change.'
+    });
+
+  }
+
+  try {
+
+    const settings =
+      await saveSettings(patch);
+
+    console.log(
+      `ADMIN SETTINGS BY ${user.email}:`,
+      JSON.stringify(patch)
+    );
+
+    res.json({ settings });
+
+  } catch (error) {
+
+    res.status(500).json({
+      error: error.message
+    });
+
+  }
+
+});
+
+
+/*
+  Look somebody up by email, with their balance.
+*/
+app.get('/api/admin/user', async (req, res) => {
+
+  const user = await requireAdmin(req, res);
+
+  if (!user) return;
+
+  const email =
+    String(req.query.email || '').trim().toLowerCase();
+
+  if (!email) {
+
+    return res.status(400).json({
+      error: 'Which email?'
+    });
+
+  }
+
+  try {
+
+    const found =
+      await findUserByEmail(email);
+
+    if (!found) {
+
+      return res.status(404).json({
+        error: 'No account with that email.'
+      });
+
+    }
+
+    const { data } =
+      await supabaseAdmin
+        .from('profiles')
+        .select('image_credits, unlimited, credits_updated_at')
+        .eq('id', found.id)
+        .maybeSingle();
+
+    const { data: events } =
+      await supabaseAdmin
+        .from('credit_events')
+        .select('amount, reason, created_at')
+        .eq('user_id', found.id)
+        .order('created_at', { ascending: false })
+        .limit(8);
+
+    res.json({
+
+      id: found.id,
+      email: found.email,
+      createdAt: found.created_at,
+
+      credits: data?.image_credits || 0,
+      unlimited: data?.unlimited === true,
+
+      recent: events || []
+
+    });
+
+  } catch (error) {
+
+    console.error('ADMIN LOOKUP ERROR:', error);
+
+    res.status(500).json({
+      error: 'Lookup failed.'
+    });
+
+  }
+
+});
+
+
+/*
+  Hand out credits, or open the gate for somebody.
+*/
+app.post('/api/admin/grant', async (req, res) => {
+
+  const user = await requireAdmin(req, res);
+
+  if (!user) return;
+
+  const email =
+    String(req.body?.email || '').trim().toLowerCase();
+
+  const amount =
+    req.body?.amount === undefined
+      ? 0
+      : Math.round(Number(req.body.amount));
+
+  const unlimited = req.body?.unlimited;
+
+  try {
+
+    const found =
+      await findUserByEmail(email);
+
+    if (!found) {
+
+      return res.status(404).json({
+        error: 'No account with that email.'
+      });
+
+    }
+
+    if (typeof unlimited === 'boolean') {
+
+      const { error } =
+        await supabaseAdmin
+          .from('profiles')
+          .upsert({
+            id: found.id,
+            unlimited,
+            credits_updated_at: new Date().toISOString()
+          });
+
+      if (error) throw new Error(error.message);
+
+    }
+
+    let balance = null;
+
+    if (amount) {
+
+      if (!Number.isFinite(amount) ||
+          amount < -10000 ||
+          amount > 10000) {
+
+        return res.status(400).json({
+          error: 'That is too big a swing.'
+        });
+
+      }
+
+      balance =
+        await addCredits(
+          found.id,
+          amount,
+          `admin:${user.email}`,
+          null
+        );
+
+    }
+
+    console.log(
+      `ADMIN GRANT BY ${user.email} TO ${email}: ` +
+      `${amount} credits, unlimited ${unlimited}`
+    );
+
+    res.json({
+      ok: true,
+      email: found.email,
+      credits: balance,
+      unlimited
+    });
+
+  } catch (error) {
+
+    console.error('ADMIN GRANT ERROR:', error);
+
+    res.status(500).json({
+      error: error.message || 'Could not apply that.'
+    });
+
+  }
+
+});
+
+
+/*
+  Supabase has no lookup by email, so page through until
+  it turns up. Fine at this size.
+*/
+async function findUserByEmail(email) {
+
+  const wanted =
+    String(email || '').trim().toLowerCase();
+
+  if (!wanted) return null;
+
+  for (let page = 1; page <= 20; page += 1) {
+
+    const { data, error } =
+      await supabaseAdmin.auth.admin.listUsers({
+        page,
+        perPage: 200
+      });
+
+    if (error) throw new Error(error.message);
+
+    const hit =
+      (data?.users || []).find(one =>
+        (one.email || '').toLowerCase() === wanted
+      );
+
+    if (hit) return hit;
+
+    if ((data?.users || []).length < 200) break;
+
+  }
+
+  return null;
+
+}
 
 
 // =====================================================

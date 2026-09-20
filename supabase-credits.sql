@@ -162,3 +162,31 @@ end;
 $$;
 
 revoke all on function public.spend_credit(uuid) from public, anon, authenticated;
+
+
+-- =========================================================
+-- SETTINGS THE ADMIN PANEL CAN CHANGE
+--
+-- One row, read and written only by the server with the
+-- service role key. No policies are added, so row level
+-- security refuses everyone else by default.
+-- =========================================================
+
+create table if not exists public.app_settings (
+  id                smallint primary key default 1,
+  paywall_enabled   boolean  not null default true,
+  pack_price_pence  integer  not null default 500,
+  pack_images       integer  not null default 100,
+  coupon_code       text     not null default 'Nasti100',
+  starter_credits   integer  not null default 0,
+  updated_at        timestamptz not null default now(),
+  constraint app_settings_single check (id = 1)
+);
+
+insert into public.app_settings (id)
+values (1)
+on conflict (id) do nothing;
+
+alter table public.app_settings enable row level security;
+
+revoke all on public.app_settings from anon, authenticated;
