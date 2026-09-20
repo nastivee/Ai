@@ -12,7 +12,7 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 });
 
-// Chat Route (OpenAI Text)
+// Chat Route
 app.post('/api/chat', async (req, res) => {
   try {
     const { message } = req.body;
@@ -31,28 +31,38 @@ app.post('/api/chat', async (req, res) => {
   }
 });
 
-// Image Route - Downloads on server & sends pure Base64 (Safari cannot block this)
+// Fast, Reliable Image Route
 app.post('/api/image', async (req, res) => {
   try {
     const { prompt } = req.body;
     if (!prompt) return res.status(400).json({ error: 'Prompt is required' });
 
     const seed = Math.floor(Math.random() * 100000);
-    const encodedPrompt = encodeURIComponent(prompt + ', realistic photo, highly detailed, 8k resolution');
-    const imageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1024&height=1024&nologo=true&seed=${seed}`;
+    // Optimized prompt & 512x512 size for 3x faster generation speeds
+    const encodedPrompt = encodeURIComponent(prompt + ', realistic photo, detailed');
+    const imageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=512&height=512&nologo=true&seed=${seed}`;
 
-    // Download image buffer directly on Render backend
-    const imageResponse = await fetch(imageUrl);
+    // Download image with a safety controller to prevent browser timeouts
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 12000);
+
+    const imageResponse = await fetch(imageUrl, { signal: controller.signal });
+    clearTimeout(timeout);
+
     const arrayBuffer = await imageResponse.arrayBuffer();
     const base64Data = Buffer.from(arrayBuffer).toString('base64');
-    
-    // Send back as a raw data URI string
     const dataUri = `data:image/jpeg;base64,${base64Data}`;
 
     return res.json({ imageUrl: dataUri });
   } catch (error) {
     console.error('Image generation error:', error);
-    return res.status(500).json({ error: 'Failed to process image' });
+    
+    // Fast Direct URL Fallback if server fetch exceeds 12s
+    const seed = Math.floor(Math.random() * 100000);
+    const fallbackPrompt = encodeURIComponent(req.body.prompt || 'photo');
+    const directUrl = `https://image.pollinations.ai/prompt/${fallbackPrompt}?width=512&height=512&nologo=true&seed=${seed}`;
+    
+    return res.json({ imageUrl: directUrl });
   }
 });
 
