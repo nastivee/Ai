@@ -1539,16 +1539,98 @@ button {
   animation: spin 1s linear infinite;
 }
 
+.actionLabel.short {
+  display: none;
+}
+
+.imageActionButton.armed {
+  border-color: #8b5cf6;
+  background: #2a1c48;
+  color: #f2ecff;
+}
+
+.actionHint {
+  position: relative;
+  margin-top: 10px;
+  padding: 10px 13px 13px;
+  border: 1px solid #3c2d55;
+  border-radius: 11px;
+  background: #16102a;
+  color: #b9adc8;
+  font-size: 12.5px;
+  line-height: 1.5;
+  overflow: hidden;
+}
+
+.actionHint strong {
+  color: #efe7f9;
+}
+
+.actionHintGo {
+  display: block;
+  margin-top: 3px;
+  color: #a78bfa;
+  font-weight: 700;
+}
+
+.actionHintBar {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 3px;
+  width: 100%;
+  background:
+    linear-gradient(90deg, #7c3aed, #a78bfa);
+  transform-origin: left center;
+  animation: hintDrain 4.2s linear forwards;
+}
+
+@keyframes hintDrain {
+  from { transform: scaleX(1); }
+  to { transform: scaleX(0); }
+}
+
 @media (max-width: 760px) {
 
+  /* one row, labels kept for as long as they fit */
+
   .imageActions {
-    gap: 7px;
+    gap: 6px;
+    flex-wrap: nowrap;
   }
 
   .imageActionButton {
-    flex: 1 1 calc(50% - 4px);
-    padding: 0 12px;
-    font-size: 12.5px;
+    flex: 1 1 0;
+    min-width: 0;
+    gap: 6px;
+    padding: 0 11px;
+    font-size: 12px;
+  }
+
+  .imageActionButton .actionLabel.full {
+    display: none;
+  }
+
+  .imageActionButton .actionLabel.short {
+    display: block;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+}
+
+/* Narrow enough that the words no longer fit: icons only,
+   and the first tap explains each one. */
+@media (max-width: 390px) {
+
+  .imageActionButton {
+    padding: 0 10px;
+  }
+
+  .imageActionButton .actionLabel.short {
+    display: none;
   }
 
 }
@@ -6134,6 +6216,10 @@ function addImageMessage(
   rerenderButton.title =
     'Improve this image while keeping the same subject and identity';
 
+  rerenderButton.dataset.hint =
+    'Makes a fresh version of this picture, keeping the ' +
+    'same subject but changing the light and the angle.';
+
 
   const downloadButton =
     document.createElement(
@@ -6145,6 +6231,9 @@ function addImageMessage(
 
   downloadButton.innerHTML =
     iconLabel('download', 'Save');
+
+  downloadButton.dataset.hint =
+    'Downloads the picture to your device.';
 
 
   /*
@@ -6158,10 +6247,13 @@ function addImageMessage(
   continueButton.className = 'imageActionButton';
 
   continueButton.innerHTML =
-    iconLabel('pencil', 'Change this');
+    iconLabel('pencil', 'Change this', 'Change');
 
   continueButton.title =
     'Describe a change and Nastivee edits this picture';
+
+  continueButton.dataset.hint =
+    'Attaches this picture so your next message edits it.';
 
   continueButton.addEventListener('click', () => {
 
@@ -6205,6 +6297,9 @@ function addImageMessage(
 
   shareButton.innerHTML =
     iconLabel('share', 'Share');
+
+  shareButton.dataset.hint =
+    'Sends the picture to another app on your device.';
 
   shareButton.addEventListener('click', async () => {
 
@@ -6268,6 +6363,10 @@ function addImageMessage(
   );
 
   wrap.appendChild(
+    actions
+  );
+
+  guardImageActions(
     actions
   );
 
@@ -6929,7 +7028,7 @@ request specifically asked for a plain background.
   button.classList.add('busy');
 
   button.innerHTML =
-    iconLabel('refresh', 'Improving...');
+    iconLabel('refresh', 'Improving...', 'Working');
 
 
   try {
@@ -7049,8 +7148,140 @@ function icon(name, size = 15) {
 
 }
 
-function iconLabel(name, label) {
-  return `${icon(name)}<span>${label}</span>`;
+/*
+  On a phone these buttons sit shoulder to shoulder, so the
+  first tap says what the button does and the second one
+  runs it. The hint clears itself, with a draining bar so
+  nothing vanishes silently.
+*/
+
+const CONFIRM_TAP_WIDTH = 760;
+
+function wantsConfirmTap() {
+
+  return (
+    window.matchMedia?.(
+      `(max-width: ${CONFIRM_TAP_WIDTH}px)`
+    )?.matches === true
+  );
+
+}
+
+
+function guardImageActions(actions) {
+
+  let armed = null;
+  let hint = null;
+  let timer = null;
+
+  function disarm() {
+
+    clearTimeout(timer);
+    timer = null;
+
+    armed?.classList.remove('armed');
+    armed = null;
+
+    hint?.remove();
+    hint = null;
+
+  }
+
+  function arm(button) {
+
+    disarm();
+
+    armed = button;
+
+    button.classList.add('armed');
+
+    hint =
+      document.createElement('div');
+
+    hint.className = 'actionHint';
+
+    const name =
+      document.createElement('strong');
+
+    name.textContent =
+      (button.querySelector('.actionLabel.full')
+        ?.textContent || 'This button').trim();
+
+    const what =
+      document.createElement('span');
+
+    what.textContent =
+      ` ${button.dataset.hint || ''}`;
+
+    const go =
+      document.createElement('span');
+
+    go.className = 'actionHintGo';
+
+    go.textContent =
+      'Tap again to continue.';
+
+    const bar =
+      document.createElement('span');
+
+    bar.className = 'actionHintBar';
+
+    hint.appendChild(name);
+    hint.appendChild(what);
+    hint.appendChild(go);
+    hint.appendChild(bar);
+
+    actions.insertAdjacentElement(
+      'afterend',
+      hint
+    );
+
+    timer =
+      setTimeout(disarm, 4200);
+
+  }
+
+
+  /*
+    Capture runs before the button's own handler, so an
+    unarmed tap never reaches it.
+  */
+
+  actions.addEventListener('click', event => {
+
+    const button =
+      event.target.closest?.('.imageActionButton');
+
+    if (!button || button.disabled) return;
+
+    if (!wantsConfirmTap()) {
+      disarm();
+      return;
+    }
+
+    if (button === armed) {
+      disarm();
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    arm(button);
+
+  }, true);
+
+}
+
+
+function iconLabel(name, label, short) {
+
+  return (
+    `${icon(name)}` +
+    `<span class="actionLabel full">${label}</span>` +
+    `<span class="actionLabel short">${short || label}</span>`
+  );
+
 }
 
 
@@ -8923,7 +9154,7 @@ window.addEventListener('online', () => {
    clearing anything by hand.
 ===================================================== */
 
-const APP_VERSION = '2026-09-20-40';
+const APP_VERSION = '2026-09-20-41';
 
 const RELOAD_FLAG = 'nastivee_reloaded_for';
 
