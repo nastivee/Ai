@@ -1,1046 +1,956 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Nastivee AI</title>
-
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-  <style>
-    * {
-      box-sizing: border-box;
-    }
-
-    html,
-    body {
-      margin: 0;
-      width: 100%;
-      height: 100%;
-      font-family: Arial, sans-serif;
-      background: #090614;
-      color: white;
-      overflow: hidden;
-    }
-
-    button,
-    input,
-    textarea {
-      font-family: inherit;
-    }
-
-    button {
-      cursor: pointer;
-    }
-
-    /* =========================
-       AUTH
-    ========================= */
-
-    #authScreen {
-      position: fixed;
-      inset: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background:
-        radial-gradient(circle at top, #32105c 0%, #120820 45%, #090614 100%);
-      z-index: 1000;
-      padding: 20px;
-    }
-
-    .authBox {
-      width: 100%;
-      max-width: 420px;
-      background: rgba(24, 15, 38, 0.95);
-      border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 24px;
-      padding: 30px;
-      box-shadow: 0 25px 80px rgba(0,0,0,0.5);
-    }
-
-    .authLogo {
-      text-align: center;
-      margin-bottom: 25px;
-    }
-
-    .authLogo img {
-      width: 80px;
-      height: 80px;
-      object-fit: contain;
-      border-radius: 18px;
-      margin-bottom: 10px;
-    }
-
-    .authLogo h1 {
-      margin: 0;
-      font-size: 28px;
-    }
-
-    .authLogo p {
-      color: #aaa;
-      margin-top: 8px;
-    }
-
-    .authBox input {
-      width: 100%;
-      padding: 15px;
-      margin-bottom: 12px;
-      border: 1px solid #3b2850;
-      background: #100a19;
-      color: white;
-      border-radius: 12px;
-      outline: none;
-    }
-
-    .authBox input:focus {
-      border-color: #9b5cff;
-    }
-
-    .authButton {
-      width: 100%;
-      padding: 15px;
-      border: 0;
-      border-radius: 12px;
-      background: linear-gradient(135deg, #8e42ff, #c45cff);
-      color: white;
-      font-size: 16px;
-      font-weight: bold;
-      margin-top: 5px;
-    }
-
-    .authButton:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-    }
-
-    .authSwitch {
-      margin-top: 18px;
-      text-align: center;
-      color: #aaa;
-      font-size: 14px;
-    }
-
-    .authSwitch button {
-      background: none;
-      border: 0;
-      color: #c06cff;
-      font-weight: bold;
-    }
-
-    #authMessage {
-      min-height: 20px;
-      margin-top: 15px;
-      text-align: center;
-      color: #ff9e9e;
-      font-size: 14px;
-    }
-
-    /* =========================
-       APP
-    ========================= */
-
-    #app {
-      display: none;
-      width: 100%;
-      height: 100%;
-    }
-
-    .layout {
-      display: flex;
-      width: 100%;
-      height: 100%;
-    }
-
-    /* =========================
-       SIDEBAR
-    ========================= */
-
-    .sidebar {
-      width: 270px;
-      background: #0d0816;
-      border-right: 1px solid #251735;
-      display: flex;
-      flex-direction: column;
-      padding: 15px;
-      flex-shrink: 0;
-      position: relative;
-      z-index: 500;
-    }
-
-    .newChatButton {
-      width: 100%;
-      padding: 14px;
-      border: 1px solid #4a2a66;
-      border-radius: 12px;
-      background: #171022;
-      color: white;
-      font-weight: bold;
-      margin-bottom: 15px;
-    }
-
-    .newChatButton:hover {
-      background: #241536;
-    }
-
-    .historyTitle {
-      color: #888;
-      font-size: 12px;
-      text-transform: uppercase;
-      margin: 8px 5px;
-    }
-
-    #chatHistory {
-      overflow-y: auto;
-      flex: 1;
-      min-height: 0;
-    }
-
-    .historyItem {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      padding: 8px 7px 8px 11px;
-      border-radius: 10px;
-      margin-bottom: 5px;
-      color: #ccc;
-      cursor: pointer;
-      font-size: 14px;
-      min-width: 0;
-    }
-
-    .historyItem:hover,
-    .historyItem.active {
-      background: #21132f;
-      color: white;
-    }
-
-    .historyTitleText {
-      flex: 1;
-      min-width: 0;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    .deleteChatButton {
-      flex-shrink: 0;
-      width: 30px;
-      height: 30px;
-      border: 0;
-      border-radius: 8px;
-      background: transparent;
-      color: #777;
-      font-size: 14px;
-      cursor: pointer;
-      opacity: 0;
-      transition: all 0.15s ease;
-    }
-
-    .historyItem:hover .deleteChatButton,
-    .historyItem.active .deleteChatButton {
-      opacity: 1;
-    }
-
-    .deleteChatButton:hover {
-      background: rgba(255, 70, 100, 0.15);
-      color: #ff647c;
-    }
-
-    .emptyHistory {
-      color: #666;
-      font-size: 13px;
-      padding: 10px 5px;
-    }
-
-    .sidebarBottom {
-      border-top: 1px solid #251735;
-      padding-top: 12px;
-      margin-top: 10px;
-    }
-
-    .sidebarButton {
-      width: 100%;
-      padding: 11px;
-      border: 0;
-      background: transparent;
-      color: #bbb;
-      text-align: left;
-      border-radius: 10px;
-      margin-bottom: 4px;
-    }
-
-    .sidebarButton:hover {
-      background: #1b1028;
-      color: white;
-    }
-
-    /* =========================
-       MOBILE SIDEBAR
-    ========================= */
-
-    .sidebarOverlay {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.58);
-      z-index: 450;
-    }
-
-    .sidebarOverlay.show {
-      display: block;
-    }
-
-    .mobileMenuButton {
-      display: none;
-      width: 40px;
-      height: 40px;
-      border-radius: 10px;
-      border: 1px solid #342044;
-      background: #171021;
-      color: white;
-      font-size: 20px;
-      margin-right: 8px;
-      flex-shrink: 0;
-    }
-
-    .mobileMenuButton:hover {
-      background: #241536;
-    }
-
-    /* =========================
-       MAIN
-    ========================= */
-
-    .main {
-      flex: 1;
-      min-width: 0;
-      height: 100%;
-      display: flex;
-      flex-direction: column;
-      background:
-        radial-gradient(circle at 50% -20%, #241039 0%, #0b0711 55%);
-      position: relative;
-    }
-
-    header {
-      height: 70px;
-      flex-shrink: 0;
-      border-bottom: 1px solid #251735;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 20px;
-      position: relative;
-      z-index: 40;
-    }
-
-    .logo {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-size: 20px;
-      font-weight: bold;
-    }
-
-    .logo img {
-      width: 42px;
-      height: 42px;
-      object-fit: contain;
-      border-radius: 10px;
-    }
-
-    .headerButtons {
-      display: flex;
-      gap: 8px;
-    }
-
-    .headerButtons button {
-      background: #171021;
-      color: #ddd;
-      border: 1px solid #342044;
-      border-radius: 10px;
-      padding: 9px 12px;
-    }
-
-    .headerButtons button:hover {
-      background: #241536;
-    }
-
-    /* =========================
-       MEMORY
-    ========================= */
-
-    #memoryPanel {
-      display: none;
-      position: absolute;
-      top: 78px;
-      right: 20px;
-      width: 330px;
-      max-width: calc(100vw - 40px);
-      background: #160d21;
-      border: 1px solid #43275a;
-      border-radius: 16px;
-      padding: 16px;
-      z-index: 100;
-      box-shadow: 0 20px 50px rgba(0,0,0,0.5);
-    }
-
-    #memoryPanel h3 {
-      margin-top: 0;
-    }
-
-    #memoryText {
-      width: 100%;
-      min-height: 150px;
-      resize: vertical;
-      background: #0e0815;
-      color: white;
-      border: 1px solid #382146;
-      border-radius: 10px;
-      padding: 12px;
-      outline: none;
-    }
-
-    #saveMemoryButton {
-      margin-top: 10px;
-      width: 100%;
-      padding: 11px;
-      border: 0;
-      border-radius: 10px;
-      background: #8c4bff;
-      color: white;
-      font-weight: bold;
-    }
-
-    /* =========================
-       CHAT
-    ========================= */
-
-    #chat {
-      flex: 1;
-      overflow-y: auto;
-      padding: 25px;
-      padding-bottom: 180px;
-      scroll-behavior: smooth;
-    }
-
-    .welcome {
-      max-width: 700px;
-      margin: 60px auto;
-      text-align: center;
-      color: #bbb;
-    }
-
-    .welcome h2 {
-      color: white;
-      font-size: 32px;
-      margin-bottom: 10px;
-    }
-
-    .message {
-      max-width: 850px;
-      margin: 0 auto 18px;
-      display: flex;
-    }
-
-    .message.user {
-      justify-content: flex-end;
-    }
-
-    .bubble {
-      max-width: 80%;
-      padding: 13px 16px;
-      border-radius: 18px;
-      line-height: 1.5;
-      white-space: pre-wrap;
-      word-wrap: break-word;
-    }
-
-    .message.user .bubble {
-      background: linear-gradient(135deg, #7036d6, #913fba);
-      border-bottom-right-radius: 5px;
-    }
-
-    .message.assistant .bubble {
-      background: #17101f;
-      border: 1px solid #2d1b3d;
-      border-bottom-left-radius: 5px;
-    }
-
-    /* =========================
-       IMAGES
-    ========================= */
-
-    .imageMessage {
-      max-width: 850px;
-      margin: 0 auto 20px;
-    }
-
-    .generatedImage {
-      max-width: min(100%, 700px);
-      max-height: 75vh;
-      display: block;
-      border-radius: 16px;
-      border: 1px solid #39234b;
-      margin-top: 8px;
-      object-fit: contain;
-      background: #10091a;
-    }
-
-    .imageActions {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-      margin-top: 10px;
-    }
-
-    .imageActionButton {
-      padding: 9px 12px;
-      border-radius: 9px;
-      border: 1px solid #43275a;
-      background: #160d21;
-      color: #ddd;
-    }
-
-    .imageActionButton:hover {
-      background: #241433;
-    }
-
-    .imageActionButton:disabled {
-      opacity: 0.45;
-      cursor: not-allowed;
-    }
-
-    /* =========================
-       PROGRESS
-    ========================= */
-
-    #imageProgress {
-      display: none;
-      position: fixed;
-      bottom: 105px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: min(500px, calc(100% - 30px));
-      background: #170d21;
-      border: 1px solid #44265b;
-      border-radius: 14px;
-      padding: 13px 16px;
-      z-index: 600;
-      box-shadow: 0 15px 40px rgba(0,0,0,0.4);
-    }
-
-    .progressTitle {
-      font-size: 13px;
-      color: #ddd;
-      margin-bottom: 8px;
-    }
-
-    .progressBar {
-      width: 100%;
-      height: 6px;
-      background: #2a1937;
-      border-radius: 10px;
-      overflow: hidden;
-    }
-
-    #progressFill {
-      width: 15%;
-      height: 100%;
-      background: linear-gradient(90deg, #8b4cff, #d85cff);
-      border-radius: 10px;
-      transition: width 0.4s ease;
-    }
-
-    /* =========================
-       UPLOAD
-    ========================= */
-
-    #uploadPreview {
-      display: none;
-      position: absolute;
-      bottom: 86px;
-      left: 0;
-      background: #170d21;
-      border: 1px solid #42265a;
-      border-radius: 12px;
-      padding: 8px;
-      z-index: 50;
-    }
-
-    #uploadPreview img {
-      width: 80px;
-      height: 80px;
-      object-fit: cover;
-      border-radius: 8px;
-    }
-
-    #removeUpload {
-      position: absolute;
-      top: -7px;
-      right: -7px;
-      width: 22px;
-      height: 22px;
-      border: 0;
-      border-radius: 50%;
-      background: #e34b62;
-      color: white;
-      font-size: 12px;
-    }
-
-    /* =========================
-       COMPOSER
-    ========================= */
-
-    .dock {
-      position: fixed;
-      bottom: 0;
-      left: 270px;
-      right: 0;
-      padding: 15px 20px 20px;
-      background: linear-gradient(
-        to top,
-        #0b0711 70%,
-        rgba(11,7,17,0)
-      );
-      z-index: 20;
-    }
-
-    .composer {
-      max-width: 900px;
-      margin: auto;
-      position: relative;
-      display: flex;
-      align-items: flex-end;
-      gap: 8px;
-      background: #160d20;
-      border: 1px solid #39234a;
-      border-radius: 18px;
-      padding: 8px;
-    }
-
-    #messageInput {
-      flex: 1;
-      min-width: 0;
-      max-height: 150px;
-      resize: none;
-      background: transparent;
-      border: 0;
-      color: white;
-      outline: none;
-      padding: 10px;
-      font-size: 15px;
-    }
-
-    #messageInput::placeholder {
-      color: #777;
-    }
-
-    .dockButton {
-      width: 42px;
-      height: 42px;
-      border-radius: 11px;
-      border: 1px solid #3b244d;
-      background: #21132e;
-      color: white;
-      flex-shrink: 0;
-    }
-
-    .dockButton:hover {
-      background: #2c1940;
-    }
-
-    .dockButton:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-
-    #imageButton {
-      background: linear-gradient(135deg, #5d2cc9, #a341dc);
-      border: 0;
-      transition: all 0.2s ease;
-    }
-
-    #imageButton.imageModeActive {
-      background: linear-gradient(135deg, #9b42ff, #e15cff);
-      box-shadow: 0 0 18px rgba(180, 75, 255, 0.35);
-      transform: scale(1.03);
-    }
-
-    #sendButton {
-      background: linear-gradient(135deg, #7c3cff, #b34fff);
-      border: 0;
-    }
-
-    /* =========================
-       MOBILE
-    ========================= */
-
-    @media (max-width: 750px) {
-
-      .sidebar {
-        display: flex;
-        position: fixed;
-        top: 0;
-        left: 0;
-        bottom: 0;
-        width: 285px;
-        max-width: 85vw;
-        transform: translateX(-100%);
-        transition: transform 0.25s ease;
-        box-shadow: 20px 0 50px rgba(0,0,0,0.45);
-      }
-
-      .sidebar.mobileOpen {
-        transform: translateX(0);
-      }
-
-      .mobileMenuButton {
-        display: block;
-      }
-
-      header {
-        padding: 0 12px;
-        justify-content: flex-start;
-      }
-
-      header .logo {
-        flex: 1;
-      }
-
-      .dock {
-        left: 0;
-        padding: 10px;
-      }
-
-      .logo {
-        font-size: 17px;
-      }
-
-      .logo img {
-        width: 36px;
-        height: 36px;
-      }
-
-      .headerButtons {
-        gap: 5px;
-      }
-
-      .headerButtons button {
-        padding: 8px;
-        font-size: 12px;
-      }
-
-      #chat {
-        padding: 15px;
-        padding-bottom: 170px;
-      }
-
-      .bubble {
-        max-width: 90%;
-      }
-
-      .welcome {
-        margin: 40px auto;
-      }
-
-      .welcome h2 {
-        font-size: 26px;
-      }
-
-      .generatedImage {
-        max-width: 100%;
-      }
-
-      #memoryPanel {
-        right: 10px;
-        top: 72px;
-        width: calc(100vw - 20px);
-      }
-
-      .deleteChatButton {
-        opacity: 1;
-      }
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#171126">
+<title>Nastivee AI</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+  background: #0d0917;
+  color: #fff;
+  overflow: hidden;
+}
+
+button,
+textarea,
+input {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+/* =====================================================
+   AUTH
+===================================================== */
+
+.authScreen {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background:
+    radial-gradient(circle at 50% 20%, #38205f 0%, #171026 35%, #0d0917 75%);
+  padding: 20px;
+  z-index: 1000;
+}
+
+.authCard {
+  width: 100%;
+  max-width: 430px;
+  padding: 35px;
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 25px;
+  background: rgba(25,18,42,.9);
+  box-shadow: 0 25px 80px rgba(0,0,0,.45);
+  backdrop-filter: blur(20px);
+}
+
+.logoLarge {
+  text-align: center;
+  font-size: 38px;
+  font-weight: 800;
+  letter-spacing: -1.5px;
+  margin-bottom: 8px;
+}
+
+.logoLarge span {
+  color: #a875ff;
+}
+
+.authSubtitle {
+  text-align: center;
+  color: #aaa0bb;
+  margin-bottom: 30px;
+}
+
+.authInput {
+  width: 100%;
+  border: 1px solid #3b3150;
+  background: #130e20;
+  color: white;
+  padding: 15px 16px;
+  border-radius: 13px;
+  outline: none;
+  margin-bottom: 12px;
+}
+
+.authInput:focus {
+  border-color: #8b5cf6;
+}
+
+.authButton {
+  width: 100%;
+  border: 0;
+  padding: 15px;
+  border-radius: 13px;
+  background: linear-gradient(135deg, #8b5cf6, #a855f7);
+  color: white;
+  font-weight: 700;
+  margin-top: 8px;
+}
+
+.authSwitch {
+  text-align: center;
+  color: #aaa0bb;
+  margin-top: 20px;
+  font-size: 14px;
+}
+
+.authSwitch button {
+  background: none;
+  border: 0;
+  color: #b98aff;
+  font-weight: 700;
+}
+
+.authError {
+  color: #ff8585;
+  text-align: center;
+  font-size: 14px;
+  min-height: 20px;
+  margin-top: 12px;
+}
+
+/* =====================================================
+   APP
+===================================================== */
+
+.app {
+  display: none;
+  width: 100%;
+  height: 100%;
+}
+
+.app.visible {
+  display: flex;
+}
+
+/* =====================================================
+   SIDEBAR
+===================================================== */
+
+.sidebar {
+  width: 270px;
+  height: 100%;
+  flex-shrink: 0;
+  background: #120d1e;
+  border-right: 1px solid #2a2138;
+  display: flex;
+  flex-direction: column;
+  z-index: 50;
+}
+
+.sidebarHeader {
+  padding: 22px 18px 15px;
+}
+
+.logo {
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -.8px;
+}
+
+.logo span {
+  color: #a875ff;
+}
+
+.newChatButton {
+  width: 100%;
+  margin-top: 20px;
+  padding: 13px;
+  border-radius: 12px;
+  border: 1px solid #493560;
+  background: #211731;
+  color: white;
+  font-weight: 700;
+}
+
+.newChatButton:hover {
+  background: #2b1d40;
+}
+
+.chatHistory {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 10px;
+}
+
+.historyLabel {
+  color: #756a83;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding: 8px;
+}
+
+.chatHistoryItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  border: 0;
+  border-radius: 10px;
+  padding: 11px;
+  color: #d6cedf;
+  background: transparent;
+  text-align: left;
+  margin-bottom: 3px;
+}
+
+.chatHistoryItem:hover,
+.chatHistoryItem.active {
+  background: #241933;
+  color: white;
+}
+
+.chatHistoryTitle {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 14px;
+}
+
+.deleteChatButton {
+  opacity: 0;
+  background: none;
+  border: 0;
+  color: #8e829a;
+  padding: 3px;
+}
+
+.chatHistoryItem:hover .deleteChatButton {
+  opacity: 1;
+}
+
+.sidebarBottom {
+  padding: 15px;
+  border-top: 1px solid #2a2138;
+}
+
+.userEmail {
+  color: #92879d;
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-bottom: 10px;
+}
+
+.logoutButton {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #382d47;
+  background: transparent;
+  color: #c8bfce;
+  border-radius: 10px;
+}
+
+/* =====================================================
+   MAIN
+===================================================== */
+
+.main {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(106,62,160,.13), transparent 35%),
+    #0d0917;
+}
+
+.header {
+  height: 64px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  padding: 0 22px;
+  border-bottom: 1px solid #241c31;
+  background: rgba(13,9,23,.8);
+}
+
+.mobileMenuButton {
+  display: none;
+  border: 0;
+  background: none;
+  color: white;
+  font-size: 23px;
+  margin-right: 12px;
+}
+
+.headerTitle {
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.headerStatus {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #8e8498;
+  font-size: 12px;
+}
+
+.statusDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #6ee7a0;
+}
+
+/* =====================================================
+   MEMORY
+===================================================== */
+
+.memoryPanel {
+  padding: 12px 22px;
+  border-bottom: 1px solid #241c31;
+  background: rgba(17,12,27,.7);
+}
+
+.memoryToggle {
+  border: 0;
+  background: transparent;
+  color: #aaa0b4;
+  padding: 0;
+  font-size: 12px;
+}
+
+.memoryContent {
+  display: none;
+  margin-top: 9px;
+}
+
+.memoryContent.open {
+  display: block;
+}
+
+.memoryTextarea {
+  width: 100%;
+  min-height: 65px;
+  resize: vertical;
+  border: 1px solid #30243d;
+  border-radius: 10px;
+  background: #120d1d;
+  color: white;
+  padding: 10px;
+  outline: none;
+}
+
+/* =====================================================
+   CHAT
+===================================================== */
+
+.chat {
+  flex: 1;
+  overflow-y: auto;
+  padding: 25px max(20px, calc((100% - 900px) / 2));
+  scroll-behavior: smooth;
+}
+
+.emptyState {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.emptyInner {
+  max-width: 550px;
+}
+
+.emptyLogo {
+  font-size: 42px;
+  font-weight: 850;
+  margin-bottom: 10px;
+}
+
+.emptyLogo span {
+  color: #a875ff;
+}
+
+.emptyText {
+  color: #91859e;
+  line-height: 1.6;
+}
+
+.messageRow {
+  display: flex;
+  margin-bottom: 22px;
+}
+
+.messageRow.user {
+  justify-content: flex-end;
+}
+
+.messageRow.assistant {
+  justify-content: flex-start;
+}
+
+.messageBubble {
+  max-width: min(760px, 88%);
+  padding: 13px 16px;
+  border-radius: 17px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.messageRow.user .messageBubble {
+  background: linear-gradient(135deg, #6f42c1, #7c3aed);
+  border-bottom-right-radius: 5px;
+}
+
+.messageRow.assistant .messageBubble {
+  background: #191323;
+  border: 1px solid #2b2137;
+  border-bottom-left-radius: 5px;
+}
+
+.messageImageWrap {
+  max-width: 760px;
+  width: min(100%, 760px);
+}
+
+.generatedImage {
+  display: block;
+  width: 100%;
+  max-width: 760px;
+  border-radius: 17px;
+  border: 1px solid #352743;
+  background: #120d1c;
+}
+
+.imagePrompt {
+  color: #a9a0b2;
+  font-size: 12px;
+  margin-top: 8px;
+  white-space: pre-wrap;
+}
+
+.imageActions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.imageActionButton {
+  border: 1px solid #40304f;
+  background: #1a1226;
+  color: #d8cde3;
+  border-radius: 9px;
+  padding: 8px 11px;
+  font-size: 12px;
+}
+
+.imageActionButton:hover {
+  background: #281936;
+}
+
+.imageActionButton.primary {
+  border-color: #7951bd;
+  background: #372052;
+  color: white;
+}
+
+.imageActionButton:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+}
+
+/* =====================================================
+   IMAGE PROGRESS
+===================================================== */
+
+.imageProgress {
+  display: none;
+  margin: 0 auto 12px;
+  width: min(900px, calc(100% - 40px));
+  padding: 11px 14px;
+  border: 1px solid #332641;
+  background: #15101f;
+  border-radius: 12px;
+}
+
+.imageProgress.show {
+  display: block;
+}
+
+.progressText {
+  font-size: 12px;
+  color: #aaa0b2;
+  margin-bottom: 7px;
+}
+
+.progressTrack {
+  height: 5px;
+  background: #292033;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.progressBar {
+  width: 20%;
+  height: 100%;
+  background: linear-gradient(90deg, #8b5cf6, #c084fc);
+  border-radius: 10px;
+  animation: progressMove 1.4s infinite ease-in-out;
+}
+
+@keyframes progressMove {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(500%); }
+}
+
+/* =====================================================
+   COMPOSER
+===================================================== */
+
+.composerArea {
+  flex-shrink: 0;
+  padding: 12px 20px 18px;
+  background: linear-gradient(to top, #0d0917 75%, transparent);
+}
+
+.composer {
+  width: min(900px, 100%);
+  margin: 0 auto;
+  border: 1px solid #392b47;
+  background: #15101f;
+  border-radius: 18px;
+  padding: 8px;
+  box-shadow: 0 10px 40px rgba(0,0,0,.2);
+}
+
+.uploadPreview {
+  display: none;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 9px 10px;
+}
+
+.uploadPreview.show {
+  display: flex;
+}
+
+.uploadThumb {
+  width: 55px;
+  height: 55px;
+  object-fit: cover;
+  border-radius: 9px;
+  border: 1px solid #493758;
+}
+
+.uploadInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.uploadName {
+  color: #d8d0df;
+  font-size: 12px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.clearUpload {
+  border: 0;
+  background: #2a2033;
+  color: #c9bfd2;
+  border-radius: 8px;
+  padding: 7px 9px;
+}
+
+.composerBottom {
+  display: flex;
+  align-items: flex-end;
+  gap: 7px;
+}
+
+.messageInput {
+  flex: 1;
+  min-width: 0;
+  max-height: 180px;
+  min-height: 44px;
+  resize: none;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: white;
+  padding: 11px 10px;
+  line-height: 1.45;
+}
+
+.messageInput::placeholder {
+  color: #71687c;
+}
+
+.composerButton {
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
+  border: 0;
+  border-radius: 12px;
+  background: #241a31;
+  color: #c7bbd2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.composerButton:hover {
+  background: #30213f;
+}
+
+.composerButton.imageModeActive {
+  background: #6d42ae;
+  color: white;
+}
+
+.sendButton {
+  background: linear-gradient(135deg, #7c3aed, #9333ea);
+  color: white;
+}
+
+.sendButton:disabled {
+  opacity: .4;
+  cursor: not-allowed;
+}
+
+.fileInput {
+  display: none;
+}
+
+.composerHint {
+  width: min(900px, 100%);
+  margin: 7px auto 0;
+  text-align: center;
+  color: #62596c;
+  font-size: 10px;
+}
+
+/* =====================================================
+   MOBILE OVERLAY
+===================================================== */
+
+.sidebarOverlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.58);
+  z-index: 40;
+}
+
+/* =====================================================
+   RESPONSIVE
+===================================================== */
+
+@media (max-width: 760px) {
+
+  .sidebar {
+    position: fixed;
+    left: -285px;
+    top: 0;
+    bottom: 0;
+    transition: left .22s ease;
+    box-shadow: 20px 0 50px rgba(0,0,0,.35);
+  }
+
+  .sidebar.mobileOpen {
+    left: 0;
+  }
+
+  .sidebarOverlay.show {
+    display: block;
+  }
+
+  .mobileMenuButton {
+    display: block;
+  }
+
+  .header {
+    padding: 0 14px;
+  }
+
+  .memoryPanel {
+    padding: 10px 14px;
+  }
+
+  .chat {
+    padding: 18px 12px;
+  }
+
+  .messageBubble {
+    max-width: 92%;
+  }
+
+  .composerArea {
+    padding: 8px 9px 12px;
+  }
+
+  .composerHint {
+    display: none;
+  }
+
+  .authCard {
+    padding: 27px 22px;
+  }
+
+  .emptyLogo {
+    font-size: 34px;
+  }
+}
+</style>
 </head>
 
 <body>
 
-  <div id="sidebarOverlay" class="sidebarOverlay"></div>
+<!-- =====================================================
+     AUTH SCREEN
+===================================================== -->
 
-  <!-- =========================
-       AUTH
-  ========================= -->
+<div class="authScreen" id="authScreen">
 
-  <div id="authScreen">
+  <div class="authCard">
 
-    <div class="authBox">
+    <div class="logoLarge">
+      Nastivee<span>AI</span>
+    </div>
 
-      <div class="authLogo">
+    <div class="authSubtitle">
+      Your personal AI assistant
+    </div>
 
-        <img
-          src="IMG_0471.jpeg"
-          alt="Nastivee AI"
-        >
+    <input
+      id="authEmail"
+      class="authInput"
+      type="email"
+      placeholder="Email"
+      autocomplete="email"
+    >
 
-        <h1>Nastivee AI</h1>
+    <input
+      id="authPassword"
+      class="authInput"
+      type="password"
+      placeholder="Password"
+      autocomplete="current-password"
+    >
 
-        <p>Your personal AI assistant</p>
+    <button
+      id="authButton"
+      class="authButton"
+    >
+      Log in
+    </button>
 
-      </div>
+    <div
+      id="authError"
+      class="authError"
+    ></div>
 
-      <div id="loginForm">
+    <div class="authSwitch">
+      <span id="authSwitchText">
+        Don't have an account?
+      </span>
 
-        <input
-          id="loginEmail"
-          type="email"
-          placeholder="Email"
-          autocomplete="email"
-        >
-
-        <input
-          id="loginPassword"
-          type="password"
-          placeholder="Password"
-          autocomplete="current-password"
-        >
-
-        <button
-          type="button"
-          class="authButton"
-          id="loginButton"
-        >
-          Login
-        </button>
-
-        <div class="authSwitch">
-          Don't have an account?
-          <button
-            type="button"
-            id="showSignupButton"
-          >
-            Sign up
-          </button>
-        </div>
-
-      </div>
-
-      <div
-        id="signupForm"
-        style="display:none;"
-      >
-
-        <input
-          id="signupEmail"
-          type="email"
-          placeholder="Email"
-          autocomplete="email"
-        >
-
-        <input
-          id="signupPassword"
-          type="password"
-          placeholder="Password"
-          autocomplete="new-password"
-        >
-
-        <input
-          id="signupPasswordConfirm"
-          type="password"
-          placeholder="Confirm password"
-          autocomplete="new-password"
-        >
-
-        <button
-          type="button"
-          class="authButton"
-          id="signupButton"
-        >
-          Create account
-        </button>
-
-        <div class="authSwitch">
-          Already have an account?
-          <button
-            type="button"
-            id="showLoginButton"
-          >
-            Login
-          </button>
-        </div>
-
-      </div>
-
-      <div id="authMessage"></div>
-
+      <button id="authSwitchButton">
+        Sign up
+      </button>
     </div>
 
   </div>
 
-
-  <!-- =========================
-       APP
-  ========================= -->
-
-  <div id="app">
-
-    <div class="layout">
-
-      <!-- SIDEBAR -->
-
-      <aside class="sidebar">
-
-        <button
-          type="button"
-          class="newChatButton"
-          id="sidebarNewChatButton"
-        >
-          ＋ New chat
-        </button>
-
-        <div class="historyTitle">
-          Chat history
-        </div>
-
-        <div id="chatHistory"></div>
-
-        <div class="sidebarBottom">
-
-          <button
-            type="button"
-            class="sidebarButton"
-            id="sidebarMemoryButton"
-          >
-            🧠 Memory
-          </button>
-
-          <button
-            type="button"
-            class="sidebarButton"
-            id="logoutButton"
-          >
-            🚪 Log out
-          </button>
-
-        </div>
-
-      </aside>
+</div>
 
 
-      <!-- MAIN -->
+<!-- =====================================================
+     APP
+===================================================== -->
 
-      <main class="main">
+<div class="app" id="app">
 
-        <header>
+  <!-- SIDEBAR -->
 
-          <button
-            type="button"
-            id="mobileMenuButton"
-            class="mobileMenuButton"
-            aria-label="Open menu"
-          >
-            ☰
-          </button>
+  <aside class="sidebar" id="sidebar">
 
-          <div class="logo">
+    <div class="sidebarHeader">
 
-            <img
-              src="IMG_0471.jpeg"
-              alt="Nastivee AI"
-            >
+      <div class="logo">
+        Nastivee<span>AI</span>
+      </div>
 
-            <span>Nastivee AI</span>
+      <button
+        class="newChatButton"
+        id="newChatButton"
+      >
+        ＋ New chat
+      </button>
 
-          </div>
+    </div>
 
-          <div class="headerButtons">
+    <div class="chatHistory">
 
-            <button
-              type="button"
-              id="memoryButton"
-            >
-              🧠 Memory
-            </button>
+      <div class="historyLabel">
+        Chats
+      </div>
 
-            <button
-              type="button"
-              id="newChatButton"
-            >
-              ＋ New
-            </button>
+      <div id="chatHistoryList"></div>
 
-          </div>
+    </div>
 
-        </header>
+    <div class="sidebarBottom">
 
+      <div
+        class="userEmail"
+        id="userEmail"
+      ></div>
 
-        <!-- MEMORY -->
+      <button
+        class="logoutButton"
+        id="logoutButton"
+      >
+        Log out
+      </button>
 
-        <div id="memoryPanel">
+    </div>
 
-          <h3>🧠 Memory</h3>
-
-          <textarea
-            id="memoryText"
-            placeholder="Things Nastivee should remember about you..."
-          ></textarea>
-
-          <button
-            type="button"
-            id="saveMemoryButton"
-          >
-            Save memory
-          </button>
-
-        </div>
+  </aside>
 
 
-        <!-- CHAT -->
+  <div
+    class="sidebarOverlay"
+    id="sidebarOverlay"
+  ></div>
 
-        <div id="chat">
 
-          <div
-            class="welcome"
-            id="welcome"
-          >
+  <!-- MAIN -->
 
-            <h2>
-              What can I help you with?
-            </h2>
+  <main class="main">
 
-            <p>
-              Ask Nastivee anything,
-              create images,
-              edit photos,
-              or just have a conversation.
-            </p>
+    <header class="header">
 
-          </div>
+      <button
+        class="mobileMenuButton"
+        id="mobileMenuButton"
+        aria-label="Open menu"
+      >
+        ☰
+      </button>
 
-        </div>
+      <div
+        class="headerTitle"
+        id="headerTitle"
+      >
+        New chat
+      </div>
 
-      </main>
+      <div class="headerStatus">
+
+        <span class="statusDot"></span>
+
+        Online
+
+      </div>
+
+    </header>
+
+
+    <!-- MEMORY -->
+
+    <div class="memoryPanel">
+
+      <button
+        class="memoryToggle"
+        id="memoryToggle"
+      >
+        🧠 Memory
+      </button>
+
+      <div
+        class="memoryContent"
+        id="memoryContent"
+      >
+
+        <textarea
+          id="memoryTextarea"
+          class="memoryTextarea"
+          placeholder="Things Nastivee should remember about you..."
+        ></textarea>
+
+      </div>
 
     </div>
 
 
-    <!-- IMAGE PROGRESS -->
+    <!-- CHAT -->
 
-    <div id="imageProgress">
+    <section
+      class="chat"
+      id="chat"
+    >
 
       <div
-        class="progressTitle"
-        id="progressTitle"
+        class="emptyState"
+        id="emptyState"
       >
-        Preparing image...
+
+        <div class="emptyInner">
+
+          <div class="emptyLogo">
+            Nastivee<span>AI</span>
+          </div>
+
+          <div class="emptyText">
+            Ask me anything, upload an image,
+            or create something with AI.
+          </div>
+
+        </div>
+
       </div>
 
-      <div class="progressBar">
+    </section>
 
-        <div id="progressFill"></div>
 
+    <!-- IMAGE PROGRESS -->
+
+    <div
+      class="imageProgress"
+      id="imageProgress"
+    >
+
+      <div
+        class="progressText"
+        id="progressText"
+      >
+        Creating image...
+      </div>
+
+      <div class="progressTrack">
+        <div class="progressBar"></div>
       </div>
 
     </div>
@@ -1048,569 +958,417 @@
 
     <!-- COMPOSER -->
 
-    <div class="dock">
+    <div class="composerArea">
 
       <div class="composer">
 
-        <div id="uploadPreview">
-
-          <button
-            type="button"
-            id="removeUpload"
-          >
-            ×
-          </button>
+        <div
+          class="uploadPreview"
+          id="uploadPreview"
+        >
 
           <img
-            id="uploadPreviewImage"
-            src=""
+            id="uploadThumb"
+            class="uploadThumb"
             alt="Upload preview"
           >
+
+          <div class="uploadInfo">
+
+            <div
+              id="uploadName"
+              class="uploadName"
+            ></div>
+
+          </div>
+
+          <button
+            id="clearUploadButton"
+            class="clearUpload"
+            type="button"
+          >
+            ✕
+          </button>
 
         </div>
 
 
-        <button
-          type="button"
-          class="dockButton"
-          id="uploadButton"
-          title="Upload image"
-        >
-          📎
-        </button>
+        <div class="composerBottom">
 
+          <button
+            id="imageButton"
+            class="composerButton"
+            type="button"
+            title="Create image"
+            aria-pressed="false"
+          >
+            🖼️
+          </button>
 
-        <textarea
-          id="messageInput"
-          rows="1"
-          placeholder="Message Nastivee..."
-        ></textarea>
+          <button
+            id="uploadButton"
+            class="composerButton"
+            type="button"
+            title="Upload image"
+          >
+            📎
+          </button>
 
+          <textarea
+            id="messageInput"
+            class="messageInput"
+            rows="1"
+            placeholder="Message Nastivee..."
+          ></textarea>
 
-        <button
-          type="button"
-          class="dockButton"
-          id="imageButton"
-          title="Create image"
-          aria-label="Image mode"
-          aria-pressed="false"
-        >
-          🖼️
-        </button>
+          <button
+            id="sendButton"
+            class="composerButton sendButton"
+            type="button"
+            title="Send"
+          >
+            ➤
+          </button>
 
+        </div>
 
-        <button
-          type="button"
-          class="dockButton"
-          id="sendButton"
-          title="Send message"
-          aria-label="Send"
-        >
-          ➤
-        </button>
+      </div>
 
+      <div class="composerHint">
+        Nastivee can remember your chats and edit images.
       </div>
 
     </div>
 
 
-    <input
-      id="fileInput"
-      type="file"
-      accept="image/*"
-      style="display:none;"
-    >
+  </main>
 
-  </div>
+</div>
+
+
+<input
+  type="file"
+  id="fileInput"
+  class="fileInput"
+  accept="image/*"
+>
 
 
 <script>
 
-  /* =========================================================
-     CONFIG
-  ========================================================= */
+/* =====================================================
+   CONFIG
+===================================================== */
 
-  const SUPABASE_URL =
-    'https://fzwqunpnohgwgwikumkt.supabase.co';
+const SUPABASE_URL =
+  'https://fzwqunpnohgwgwikumkt.supabase.co';
 
-  const SUPABASE_KEY =
-    'sb_publishable_kNUxEr43Kp5qVC4Evxgz0A_iCTLw7GB';
+const SUPABASE_KEY =
+  'sb_publishable_kNUxEr43Kp5qVC4Evxgz0A_iCTLw7GB';
 
-  const API_BASE =
-    'https://ai-8vlt.onrender.com';
+const API_BASE =
+  'https://ai-8vlt.onrender.com';
 
-  const LIVE_SITE_URL =
-    'https://ai-8vlt.onrender.com';
-
-
-  /* =========================================================
-     SUPABASE
-  ========================================================= */
-
-  const supabaseClient =
-    window.supabase.createClient(
-      SUPABASE_URL,
-      SUPABASE_KEY
-    );
+const LIVE_SITE_URL =
+  'https://ai-8vlt.onrender.com';
 
 
-  /* =========================================================
-     STATE
-  ========================================================= */
+/* =====================================================
+   SUPABASE
+===================================================== */
 
-  let currentUser = null;
-  let currentChatId = null;
-  let chats = [];
-  let memory = '';
-
-  let selectedImageFile = null;
-  let selectedImageData = null;
-
-  let imageMode = false;
-
-  const chatConversations =
-    new Map();
-
-  let initialised = false;
-  let imageBusy = false;
-
-  let loadSequence = 0;
-  let activeRequestId = 0;
-  let imageRequestId = 0;
-
-
-  /*
-    Stores the original uploaded image for the current
-    browser session.
-
-    This gives us a permanent identity reference while
-    the current page is open.
-
-    The backend upgrade will later allow this original
-    reference to survive across refreshes and multiple
-    edits.
-  */
-
-  const originalImageReferences =
-    new Map();
-
-
-  /* =========================================================
-     ELEMENTS
-  ========================================================= */
-
-  const authScreen =
-    document.getElementById('authScreen');
-
-  const app =
-    document.getElementById('app');
-
-  const loginForm =
-    document.getElementById('loginForm');
-
-  const signupForm =
-    document.getElementById('signupForm');
-
-  const authMessage =
-    document.getElementById('authMessage');
-
-  const chat =
-    document.getElementById('chat');
-
-  const welcome =
-    document.getElementById('welcome');
-
-  const messageInput =
-    document.getElementById('messageInput');
-
-  const fileInput =
-    document.getElementById('fileInput');
-
-  const uploadPreview =
-    document.getElementById('uploadPreview');
-
-  const uploadPreviewImage =
-    document.getElementById('uploadPreviewImage');
-
-  const imageProgress =
-    document.getElementById('imageProgress');
-
-  const progressTitle =
-    document.getElementById('progressTitle');
-
-  const progressFill =
-    document.getElementById('progressFill');
-
-  const memoryPanel =
-    document.getElementById('memoryPanel');
-
-  const memoryText =
-    document.getElementById('memoryText');
-
-  const imageButton =
-    document.getElementById('imageButton');
-
-  const sendButton =
-    document.getElementById('sendButton');
-
-  const uploadButton =
-    document.getElementById('uploadButton');
-
-  const sidebar =
-    document.querySelector('.sidebar');
-
-  const sidebarOverlay =
-    document.getElementById('sidebarOverlay');
-
-  const mobileMenuButton =
-    document.getElementById('mobileMenuButton');
-
-
-  /* =========================================================
-     MOBILE SIDEBAR
-  ========================================================= */
-
-  function openMobileSidebar() {
-
-    sidebar.classList.add(
-      'mobileOpen'
-    );
-
-    sidebarOverlay.classList.add(
-      'show'
-    );
-
-  }
-
-
-  function closeMobileSidebar() {
-
-    sidebar.classList.remove(
-      'mobileOpen'
-    );
-
-    sidebarOverlay.classList.remove(
-      'show'
-    );
-
-  }
-
-
-  mobileMenuButton.addEventListener(
-    'click',
-    openMobileSidebar
+const supabaseClient =
+  window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_KEY
   );
 
 
-  sidebarOverlay.addEventListener(
-    'click',
-    closeMobileSidebar
-  );
+/* =====================================================
+   STATE
+===================================================== */
+
+let currentUser = null;
+let currentChatId = null;
+
+let chats = [];
+
+let memory = '';
+
+let selectedImageFile = null;
+let selectedImageData = null;
+
+let imageMode = false;
+
+let initialised = false;
+let imageBusy = false;
+
+let loadSequence = 0;
+let activeRequestId = 0;
+let imageRequestId = 0;
 
 
-  /* =========================================================
-     IMAGE MODE
-  ========================================================= */
+/*
+  Stores the image history currently displayed.
 
-  function setImageMode(
-    enabled
-  ) {
+  Each image message has:
 
-    imageMode =
-      Boolean(enabled);
+  {
+    currentImage,
+    originalImage,
+    prompt
+  }
+
+  For re-rendering, currentImage is always used.
+*/
+
+const imageState = new Map();
 
 
-    if (imageMode) {
+/* =====================================================
+   DOM
+===================================================== */
 
-      messageInput.placeholder =
-        'Describe the image you want me to create...';
+const authScreen =
+  document.getElementById('authScreen');
 
-      imageButton.classList.add(
-        'imageModeActive'
-      );
+const app =
+  document.getElementById('app');
 
-      imageButton.title =
-        'Image mode on — press again to turn off';
+const authEmail =
+  document.getElementById('authEmail');
 
-      imageButton.setAttribute(
-        'aria-pressed',
-        'true'
-      );
+const authPassword =
+  document.getElementById('authPassword');
 
-    } else {
+const authButton =
+  document.getElementById('authButton');
 
-      messageInput.placeholder =
-        selectedImageData
-          ? 'Describe what you want me to change...'
-          : 'Message Nastivee...';
+const authError =
+  document.getElementById('authError');
 
-      imageButton.classList.remove(
-        'imageModeActive'
-      );
+const authSwitchButton =
+  document.getElementById('authSwitchButton');
 
-      imageButton.title =
-        'Create image';
+const authSwitchText =
+  document.getElementById('authSwitchText');
 
-      imageButton.setAttribute(
-        'aria-pressed',
-        'false'
-      );
+const userEmail =
+  document.getElementById('userEmail');
 
+const chat =
+  document.getElementById('chat');
+
+const emptyState =
+  document.getElementById('emptyState');
+
+const messageInput =
+  document.getElementById('messageInput');
+
+const sendButton =
+  document.getElementById('sendButton');
+
+const imageButton =
+  document.getElementById('imageButton');
+
+const uploadButton =
+  document.getElementById('uploadButton');
+
+const fileInput =
+  document.getElementById('fileInput');
+
+const uploadPreview =
+  document.getElementById('uploadPreview');
+
+const uploadThumb =
+  document.getElementById('uploadThumb');
+
+const uploadName =
+  document.getElementById('uploadName');
+
+const clearUploadButton =
+  document.getElementById('clearUploadButton');
+
+const newChatButton =
+  document.getElementById('newChatButton');
+
+const chatHistoryList =
+  document.getElementById('chatHistoryList');
+
+const logoutButton =
+  document.getElementById('logoutButton');
+
+const headerTitle =
+  document.getElementById('headerTitle');
+
+const memoryToggle =
+  document.getElementById('memoryToggle');
+
+const memoryContent =
+  document.getElementById('memoryContent');
+
+const memoryTextarea =
+  document.getElementById('memoryTextarea');
+
+const imageProgress =
+  document.getElementById('imageProgress');
+
+const progressText =
+  document.getElementById('progressText');
+
+const sidebar =
+  document.getElementById('sidebar');
+
+const sidebarOverlay =
+  document.getElementById('sidebarOverlay');
+
+const mobileMenuButton =
+  document.getElementById('mobileMenuButton');
+
+
+/* =====================================================
+   MOBILE SIDEBAR
+===================================================== */
+
+function openMobileSidebar() {
+
+  sidebar.classList.add('mobileOpen');
+
+  sidebarOverlay.classList.add('show');
+
+}
+
+function closeMobileSidebar() {
+
+  sidebar.classList.remove('mobileOpen');
+
+  sidebarOverlay.classList.remove('show');
+
+}
+
+mobileMenuButton.addEventListener(
+  'click',
+  openMobileSidebar
+);
+
+sidebarOverlay.addEventListener(
+  'click',
+  closeMobileSidebar
+);
+
+
+/* =====================================================
+   AUTH MODE
+===================================================== */
+
+let signupMode = false;
+
+function updateAuthMode() {
+
+  if (signupMode) {
+
+    authButton.textContent =
+      'Create account';
+
+    authSwitchText.textContent =
+      'Already have an account?';
+
+    authSwitchButton.textContent =
+      'Log in';
+
+  } else {
+
+    authButton.textContent =
+      'Log in';
+
+    authSwitchText.textContent =
+      "Don't have an account?";
+
+    authSwitchButton.textContent =
+      'Sign up';
+
+  }
+
+  authError.textContent = '';
+
+}
+
+authSwitchButton.addEventListener(
+  'click',
+  () => {
+
+    signupMode = !signupMode;
+
+    updateAuthMode();
+
+  }
+);
+
+
+/* =====================================================
+   AUTH
+===================================================== */
+
+authButton.addEventListener(
+  'click',
+  handleAuth
+);
+
+authPassword.addEventListener(
+  'keydown',
+  event => {
+
+    if (event.key === 'Enter') {
+      handleAuth();
     }
 
   }
+);
 
+authEmail.addEventListener(
+  'keydown',
+  event => {
 
-  imageButton.addEventListener(
-    'click',
-    () => {
-
-      if (imageBusy) {
-        return;
-      }
-
-
-      if (selectedImageData) {
-
-        messageInput.focus();
-
-        return;
-
-      }
-
-
-      setImageMode(
-        !imageMode
-      );
-
-      messageInput.focus();
-
-    }
-  );
-
-
-  /* =========================================================
-     AUTH MESSAGE
-  ========================================================= */
-
-  function setAuthMessage(
-    message,
-    success = false
-  ) {
-
-    authMessage.textContent =
-      message || '';
-
-    authMessage.style.color =
-      success
-        ? '#8ff0ae'
-        : '#ff9e9e';
-
-  }
-
-
-  function showLogin() {
-
-    loginForm.style.display =
-      'block';
-
-    signupForm.style.display =
-      'none';
-
-    setAuthMessage('');
-
-  }
-
-
-  function showSignup() {
-
-    loginForm.style.display =
-      'none';
-
-    signupForm.style.display =
-      'block';
-
-    setAuthMessage('');
-
-  }
-
-
-  document
-    .getElementById('showSignupButton')
-    .addEventListener(
-      'click',
-      showSignup
-    );
-
-
-  document
-    .getElementById('showLoginButton')
-    .addEventListener(
-      'click',
-      showLogin
-    );
-
-
-  /* =========================================================
-     LOGIN
-  ========================================================= */
-
-  async function login() {
-
-    const email =
-      document
-        .getElementById('loginEmail')
-        .value
-        .trim();
-
-    const password =
-      document
-        .getElementById('loginPassword')
-        .value;
-
-
-    if (!email || !password) {
-
-      setAuthMessage(
-        'Please enter your email and password.'
-      );
-
-      return;
-
+    if (event.key === 'Enter') {
+      authPassword.focus();
     }
 
-
-    const button =
-      document.getElementById(
-        'loginButton'
-      );
+  }
+);
 
 
-    button.disabled = true;
-    button.textContent =
-      'Logging in...';
+async function handleAuth() {
+
+  const email =
+    authEmail.value.trim();
+
+  const password =
+    authPassword.value;
 
 
-    try {
+  if (!email || !password) {
 
-      const result =
-        await supabaseClient.auth.signInWithPassword({
+    authError.textContent =
+      'Enter your email and password.';
 
-          email,
-          password
+    return;
 
-        });
-
-
-      if (result.error) {
-
-        setAuthMessage(
-          result.error.message
-        );
-
-        return;
-
-      }
+  }
 
 
-      setAuthMessage('');
+  authButton.disabled = true;
+
+  authError.textContent = '';
 
 
-    } catch (error) {
+  try {
 
-      console.error(
-        'Login error:',
+    if (signupMode) {
+
+      const {
+        data,
         error
-      );
-
-      setAuthMessage(
-        error.message
-      );
-
-
-    } finally {
-
-      button.disabled = false;
-
-      button.textContent =
-        'Login';
-
-    }
-
-  }
-
-
-  document
-    .getElementById('loginButton')
-    .addEventListener(
-      'click',
-      login
-    );
-
-
-  /* =========================================================
-     SIGNUP
-  ========================================================= */
-
-  async function signup() {
-
-    const email =
-      document
-        .getElementById('signupEmail')
-        .value
-        .trim();
-
-    const password =
-      document
-        .getElementById('signupPassword')
-        .value;
-
-    const confirmPassword =
-      document
-        .getElementById('signupPasswordConfirm')
-        .value;
-
-
-    if (!email || !password) {
-
-      setAuthMessage(
-        'Please complete all fields.'
-      );
-
-      return;
-
-    }
-
-
-    if (
-      password !==
-      confirmPassword
-    ) {
-
-      setAuthMessage(
-        'Passwords do not match.'
-      );
-
-      return;
-
-    }
-
-
-    const button =
-      document.getElementById(
-        'signupButton'
-      );
-
-
-    button.disabled = true;
-
-    button.textContent =
-      'Creating account...';
-
-
-    try {
-
-      const result =
+      } =
         await supabaseClient.auth.signUp({
 
           email,
@@ -1624,765 +1382,486 @@
         });
 
 
-      if (result.error) {
-
-        setAuthMessage(
-          result.error.message
-        );
-
-        return;
-
+      if (error) {
+        throw error;
       }
 
 
-      if (
-        result.data &&
-        !result.data.session
-      ) {
+      if (data?.user && !data.session) {
 
-        setAuthMessage(
-          'Account created. Check your email to confirm your account.',
-          true
-        );
+        authError.style.color =
+          '#9ee6bd';
+
+        authError.textContent =
+          'Account created. Check your email to confirm your account.';
 
       } else {
 
-        setAuthMessage(
-          'Account created successfully.',
-          true
-        );
+        authError.style.color =
+          '#9ee6bd';
+
+        authError.textContent =
+          'Account created successfully.';
 
       }
-
-
-    } catch (error) {
-
-      console.error(
-        'Signup error:',
-        error
-      );
-
-      setAuthMessage(
-        error.message
-      );
-
-
-    } finally {
-
-      button.disabled = false;
-
-      button.textContent =
-        'Create account';
-
-    }
-
-  }
-
-
-  document
-    .getElementById('signupButton')
-    .addEventListener(
-      'click',
-      signup
-    );
-
-
-  /* =========================================================
-     AUTH STATE
-  ========================================================= */
-
-  supabaseClient.auth.onAuthStateChange(
-    async (
-      event,
-      session
-    ) => {
-
-      if (
-        session &&
-        session.user
-      ) {
-
-        currentUser =
-          session.user;
-
-
-        if (!initialised) {
-
-          await initialiseUser();
-
-        }
-
-      } else {
-
-        currentUser =
-          null;
-
-        showAuthScreen();
-
-      }
-
-    }
-  );
-
-
-  async function checkSession() {
-
-    try {
-
-      const result =
-        await supabaseClient.auth.getSession();
-
-
-      if (
-        result.data &&
-        result.data.session
-      ) {
-
-        currentUser =
-          result.data.session.user;
-
-        await initialiseUser();
-
-      } else {
-
-        showAuthScreen();
-
-      }
-
-
-    } catch (error) {
-
-      console.error(
-        'Session error:',
-        error
-      );
-
-      showAuthScreen();
-
-    }
-
-  }
-
-
-  async function initialiseUser() {
-
-    if (initialised) {
-      return;
-    }
-
-
-    initialised =
-      true;
-
-
-    showApp();
-
-
-    await loadCloudMemory();
-
-    await loadChats();
-
-
-    if (chats.length > 0) {
-
-      await loadChat(
-        chats[0].id
-      );
 
     } else {
 
-      currentChatId =
-        null;
-
-      clearUpload();
-
-      setImageMode(false);
-
-      clearChatUI();
-
-      renderChatHistory();
-
-    }
-
-  }
-
-
-  function showAuthScreen() {
-
-    authScreen.style.display =
-      'flex';
-
-    app.style.display =
-      'none';
-
-  }
-
-
-  function showApp() {
-
-    authScreen.style.display =
-      'none';
-
-    app.style.display =
-      'block';
-
-  }
-
-
-  /* =========================================================
-     CONVERSATION MEMORY
-  ========================================================= */
-
-  function getConversation(
-    chatId
-  ) {
-
-    if (!chatId) {
-      return [];
-    }
-
-
-    const key =
-      String(chatId);
-
-
-    if (
-      !chatConversations.has(key)
-    ) {
-
-      chatConversations.set(
-        key,
-        []
-      );
-
-    }
-
-
-    return chatConversations.get(
-      key
-    );
-
-  }
-
-
-  function setConversation(
-    chatId,
-    messages
-  ) {
-
-    if (!chatId) {
-      return;
-    }
-
-
-    chatConversations.set(
-      String(chatId),
-      Array.isArray(messages)
-        ? messages
-        : []
-    );
-
-  }
-
-
-  /* =========================================================
-     API
-  ========================================================= */
-
-  async function apiFetch(
-    path,
-    options = {}
-  ) {
-
-    const headers =
-      new Headers(
-        options.headers || {}
-      );
-
-
-    if (
-      options.body &&
-      !(options.body instanceof FormData)
-    ) {
-
-      headers.set(
-        'Content-Type',
-        'application/json'
-      );
-
-    }
-
-
-    try {
-
-      const sessionResult =
-        await supabaseClient.auth.getSession();
-
-
-      const token =
-        sessionResult
-          .data
-          ?.session
-          ?.access_token;
-
-
-      if (token) {
-
-        headers.set(
-          'Authorization',
-          `Bearer ${token}`
-        );
-
-      }
-
-    } catch (error) {
-
-      console.warn(
-        'Token error:',
+      const {
         error
-      );
+      } =
+        await supabaseClient.auth.signInWithPassword({
 
-    }
-
-
-    return fetch(
-      `${API_BASE}${path}`,
-      {
-        ...options,
-        headers
-      }
-    );
-
-  }
-
-
-  /* =========================================================
-     MEMORY
-  ========================================================= */
-
-  async function loadCloudMemory() {
-
-    if (!currentUser) {
-      return;
-    }
-
-
-    try {
-
-      const result =
-        await supabaseClient
-          .from('profiles')
-          .select('memory')
-          .eq(
-            'id',
-            currentUser.id
-          )
-          .maybeSingle();
-
-
-      if (result.error) {
-
-        console.error(
-          'Memory load error:',
-          result.error
-        );
-
-        return;
-
-      }
-
-
-      memory =
-        result.data?.memory ||
-        '';
-
-
-      memoryText.value =
-        memory;
-
-
-    } catch (error) {
-
-      console.error(
-        'Memory error:',
-        error
-      );
-
-    }
-
-  }
-
-
-  async function saveMemory() {
-
-    if (!currentUser) {
-      return;
-    }
-
-
-    memory =
-      memoryText.value.trim();
-
-
-    const result =
-      await supabaseClient
-        .from('profiles')
-        .upsert({
-
-          id:
-            currentUser.id,
-
-          memory:
-            memory
+          email,
+          password
 
         });
 
 
-    if (result.error) {
-
-      console.error(
-        'Memory save error:',
-        result.error
-      );
-
-      alert(
-        'Could not save memory: ' +
-        result.error.message
-      );
-
-      return;
+      if (error) {
+        throw error;
+      }
 
     }
 
+  } catch (error) {
 
-    memoryPanel.style.display =
-      'none';
+    authError.style.color =
+      '#ff8585';
+
+    authError.textContent =
+      error?.message ||
+      'Authentication failed.';
+
+  } finally {
+
+    authButton.disabled = false;
 
   }
 
-
-  document
-    .getElementById('saveMemoryButton')
-    .addEventListener(
-      'click',
-      saveMemory
-    );
+}
 
 
-  function toggleMemory() {
+/* =====================================================
+   AUTH STATE
+===================================================== */
 
-    if (
-      memoryPanel.style.display ===
-      'block'
-    ) {
+supabaseClient.auth.onAuthStateChange(
+  async (_event, session) => {
 
-      memoryPanel.style.display =
-        'none';
+    if (session?.user) {
+
+      currentUser =
+        session.user;
+
+      await initialiseApp();
 
     } else {
 
-      memoryPanel.style.display =
-        'block';
+      currentUser = null;
 
-      memoryText.value =
-        memory;
+      showAuth();
 
     }
 
   }
+);
 
 
-  document
-    .getElementById('memoryButton')
-    .addEventListener(
-      'click',
-      toggleMemory
+async function checkSession() {
+
+  const {
+    data
+  } =
+    await supabaseClient.auth.getSession();
+
+  if (data?.session?.user) {
+
+    currentUser =
+      data.session.user;
+
+    await initialiseApp();
+
+  } else {
+
+    showAuth();
+
+  }
+
+}
+
+
+function showAuth() {
+
+  authScreen.style.display =
+    'flex';
+
+  app.classList.remove(
+    'visible'
+  );
+
+}
+
+
+function showApp() {
+
+  authScreen.style.display =
+    'none';
+
+  app.classList.add(
+    'visible'
+  );
+
+}
+
+
+/* =====================================================
+   INITIALISE
+===================================================== */
+
+async function initialiseApp() {
+
+  if (!currentUser) {
+    return;
+  }
+
+  showApp();
+
+  userEmail.textContent =
+    currentUser.email || '';
+
+  memory =
+    await loadMemory();
+
+  memoryTextarea.value =
+    memory || '';
+
+  await loadChats();
+
+  if (!currentChatId) {
+
+    newChat();
+
+  }
+
+  initialised = true;
+
+}
+
+
+/* =====================================================
+   MEMORY
+===================================================== */
+
+memoryToggle.addEventListener(
+  'click',
+  () => {
+
+    memoryContent.classList.toggle(
+      'open'
     );
 
-
-  document
-    .getElementById('sidebarMemoryButton')
-    .addEventListener(
-      'click',
-      () => {
-
-        toggleMemory();
-
-        closeMobileSidebar();
-
-      }
-    );
+  }
+);
 
 
-  /* =========================================================
-     LOAD CHATS
-  ========================================================= */
+memoryTextarea.addEventListener(
+  'blur',
+  saveMemory
+);
 
-  async function loadChats() {
 
-    if (!currentUser) {
-      return;
+async function loadMemory() {
+
+  if (!currentUser) {
+    return '';
+  }
+
+
+  try {
+
+    const {
+      data,
+      error
+    } =
+      await supabaseClient
+        .from('profiles')
+        .select('memory')
+        .eq(
+          'id',
+          currentUser.id
+        )
+        .maybeSingle();
+
+
+    if (error) {
+
+      console.error(
+        'MEMORY LOAD ERROR:',
+        error
+      );
+
+      return '';
+
     }
 
 
-    try {
+    return data?.memory || '';
 
-      const result =
-        await supabaseClient
-          .from('chats')
-          .select('*')
-          .eq(
-            'user_id',
-            currentUser.id
-          )
-          .order(
-            'created_at',
-            {
-              ascending: false
-            }
-          );
+  } catch (error) {
+
+    console.error(
+      'MEMORY LOAD EXCEPTION:',
+      error
+    );
+
+    return '';
+
+  }
+
+}
 
 
-      if (result.error) {
+async function saveMemory() {
 
-        console.error(
-          'CHAT HISTORY ERROR:',
-          result.error
-        );
-
-        chats = [];
-
-        return;
-
-      }
+  if (!currentUser) {
+    return;
+  }
 
 
-      chats =
-        result.data || [];
+  memory =
+    memoryTextarea.value.trim();
 
 
-      renderChatHistory();
+  try {
+
+    const {
+      error
+    } =
+      await supabaseClient
+        .from('profiles')
+        .upsert({
+
+          id: currentUser.id,
+
+          memory
+
+        });
 
 
-    } catch (error) {
+    if (error) {
 
       console.error(
-        'loadChats error:',
+        'MEMORY SAVE ERROR:',
         error
       );
 
     }
 
-  }
+  } catch (error) {
 
-
-  /* =========================================================
-     CHAT HISTORY
-  ========================================================= */
-
-  function renderChatHistory() {
-
-    const container =
-      document.getElementById(
-        'chatHistory'
-      );
-
-
-    container.innerHTML =
-      '';
-
-
-    if (!chats.length) {
-
-      const empty =
-        document.createElement(
-          'div'
-        );
-
-      empty.className =
-        'emptyHistory';
-
-      empty.textContent =
-        'No conversations yet';
-
-      container.appendChild(
-        empty
-      );
-
-      return;
-
-    }
-
-
-    chats.forEach(
-      chatItem => {
-
-        const item =
-          document.createElement(
-            'div'
-          );
-
-
-        item.className =
-          'historyItem';
-
-
-        if (
-          String(chatItem.id) ===
-          String(currentChatId)
-        ) {
-
-          item.classList.add(
-            'active'
-          );
-
-        }
-
-
-        const title =
-          document.createElement(
-            'div'
-          );
-
-
-        title.className =
-          'historyTitleText';
-
-        title.textContent =
-          chatItem.title ||
-          'New chat';
-
-
-        item.appendChild(
-          title
-        );
-
-
-        const deleteButton =
-          document.createElement(
-            'button'
-          );
-
-
-        deleteButton.type =
-          'button';
-
-        deleteButton.className =
-          'deleteChatButton';
-
-        deleteButton.textContent =
-          '🗑️';
-
-        deleteButton.title =
-          'Delete conversation';
-
-
-        deleteButton.addEventListener(
-          'click',
-          async event => {
-
-            event.stopPropagation();
-
-            await deleteChat(
-              chatItem.id
-            );
-
-          }
-        );
-
-
-        item.appendChild(
-          deleteButton
-        );
-
-
-        item.addEventListener(
-          'click',
-          async () => {
-
-            if (
-              String(chatItem.id) ===
-              String(currentChatId)
-            ) {
-
-              closeMobileSidebar();
-
-              return;
-
-            }
-
-
-            await loadChat(
-              chatItem.id
-            );
-
-
-            closeMobileSidebar();
-
-          }
-        );
-
-
-        container.appendChild(
-          item
-        );
-
-      }
+    console.error(
+      'MEMORY SAVE EXCEPTION:',
+      error
     );
 
   }
 
+}
 
-  /* =========================================================
-     DELETE CHAT
-  ========================================================= */
 
-  async function deleteChat(
-    chatId
-  ) {
+/* =====================================================
+   CHAT LIST
+===================================================== */
 
-    if (
-      !currentUser ||
-      !chatId
-    ) {
+async function loadChats() {
 
-      return;
+  if (!currentUser) {
+    return;
+  }
 
+
+  try {
+
+    const {
+      data,
+      error
+    } =
+      await supabaseClient
+        .from('chats')
+        .select('*')
+        .eq(
+          'user_id',
+          currentUser.id
+        )
+        .order(
+          'created_at',
+          {
+            ascending: false
+          }
+        );
+
+
+    if (error) {
+      throw error;
     }
 
 
-    const chatItem =
-      chats.find(
-        item =>
-          String(item.id) ===
-          String(chatId)
+    chats =
+      data || [];
+
+    renderChatHistory();
+
+
+  } catch (error) {
+
+    console.error(
+      'CHAT LOAD ERROR:',
+      error
+    );
+
+  }
+
+}
+
+
+function renderChatHistory() {
+
+  chatHistoryList.innerHTML =
+    '';
+
+
+  chats.forEach(
+    chatItem => {
+
+      const row =
+        document.createElement(
+          'div'
+        );
+
+      row.className =
+        'chatHistoryItem' +
+        (
+          String(chatItem.id) ===
+          String(currentChatId)
+            ? ' active'
+            : ''
+        );
+
+
+      const button =
+        document.createElement(
+          'button'
+        );
+
+      button.style.cssText =
+        'flex:1;display:flex;align-items:center;gap:8px;background:none;border:0;color:inherit;text-align:left;padding:0;min-width:0;';
+
+
+      const title =
+        document.createElement(
+          'span'
+        );
+
+      title.className =
+        'chatHistoryTitle';
+
+      title.textContent =
+        chatItem.title ||
+        'New chat';
+
+
+      button.appendChild(title);
+
+
+      button.addEventListener(
+        'click',
+        async () => {
+
+          closeMobileSidebar();
+
+          await loadChat(
+            chatItem.id
+          );
+
+        }
       );
 
 
-    const title =
-      chatItem?.title ||
-      'this conversation';
+      const deleteButton =
+        document.createElement(
+          'button'
+        );
+
+      deleteButton.className =
+        'deleteChatButton';
+
+      deleteButton.textContent =
+        '✕';
+
+      deleteButton.title =
+        'Delete chat';
 
 
-    if (
-      !confirm(
-        `Delete "${title}"?\n\nThis will permanently delete this conversation and its messages.`
-      )
-    ) {
+      deleteButton.addEventListener(
+        'click',
+        async event => {
 
-      return;
+          event.stopPropagation();
+
+          await deleteChat(
+            chatItem.id
+          );
+
+        }
+      );
+
+
+      row.appendChild(button);
+
+      row.appendChild(
+        deleteButton
+      );
+
+      chatHistoryList.appendChild(
+        row
+      );
 
     }
+  );
+
+}
 
 
-    activeRequestId++;
-    loadSequence++;
-    imageRequestId++;
+/* =====================================================
+   DELETE CHAT
+===================================================== */
 
-    hideImageProgress();
+async function deleteChat(
+  chatId
+) {
+
+  if (!currentUser) {
+    return;
+  }
 
 
-    const messageDelete =
+  const confirmed =
+    confirm(
+      'Delete this chat?'
+    );
+
+
+  if (!confirmed) {
+    return;
+  }
+
+
+  try {
+
+    const {
+      error: messageError
+    } =
       await supabaseClient
         .from('messages')
         .delete()
@@ -2396,24 +1875,14 @@
         );
 
 
-    if (messageDelete.error) {
-
-      console.error(
-        'DELETE MESSAGES ERROR:',
-        messageDelete.error
-      );
-
-      alert(
-        'Could not delete the messages:\n\n' +
-        messageDelete.error.message
-      );
-
-      return;
-
+    if (messageError) {
+      throw messageError;
     }
 
 
-    const chatDelete =
+    const {
+      error: chatError
+    } =
       await supabaseClient
         .from('chats')
         .delete()
@@ -2427,690 +1896,396 @@
         );
 
 
-    if (chatDelete.error) {
-
-      console.error(
-        'DELETE CHAT ERROR:',
-        chatDelete.error
-      );
-
-      alert(
-        'Could not delete the conversation:\n\n' +
-        chatDelete.error.message
-      );
-
-      return;
-
+    if (chatError) {
+      throw chatError;
     }
 
 
-    chatConversations.delete(
-      String(chatId)
+    imageState.clear();
+
+    currentChatId = null;
+
+    await loadChats();
+
+    newChat();
+
+
+  } catch (error) {
+
+    console.error(
+      'DELETE CHAT ERROR:',
+      error
     );
 
-
-    originalImageReferences.delete(
-      String(chatId)
+    alert(
+      error?.message ||
+      'Could not delete chat.'
     );
-
-
-    chats =
-      chats.filter(
-        item =>
-          String(item.id) !==
-          String(chatId)
-      );
-
-
-    if (
-      String(currentChatId) ===
-      String(chatId)
-    ) {
-
-      currentChatId =
-        null;
-
-      clearUpload();
-
-      messageInput.value =
-        '';
-
-      messageInput.style.height =
-        'auto';
-
-      setImageMode(false);
-
-      clearChatUI();
-
-      renderChatHistory();
-
-
-      if (chats.length > 0) {
-
-        await loadChat(
-          chats[0].id
-        );
-
-      }
-
-    } else {
-
-      renderChatHistory();
-
-    }
 
   }
 
-
-  /* =========================================================
-     NEW CHAT
-  ========================================================= */
-
-  function createNewChat() {
-
-    activeRequestId++;
-    loadSequence++;
-    imageRequestId++;
-
-    hideImageProgress();
-
-    imageBusy =
-      false;
-
-    imageMode =
-      false;
+}
 
 
-    if (currentChatId) {
+/* =====================================================
+   NEW CHAT
+===================================================== */
 
-      const currentConversation =
-        getConversation(
-          currentChatId
-        );
-
-
-      chatConversations.set(
-        String(currentChatId),
-        currentConversation.map(
-          message => ({
-            ...message
-          })
-        )
-      );
-
-    }
+newChatButton.addEventListener(
+  'click',
+  newChat
+);
 
 
-    currentChatId =
-      null;
+function newChat() {
+
+  currentChatId = null;
+
+  imageState.clear();
+
+  headerTitle.textContent =
+    'New chat';
+
+  clearChatUI();
+
+  setImageMode(false);
+
+  clearUpload();
+
+  renderChatHistory();
+
+  closeMobileSidebar();
+
+}
 
 
-    clearUpload();
+/* =====================================================
+   CLEAR CHAT UI
+===================================================== */
+
+function clearChatUI() {
+
+  chat.innerHTML = '';
+
+  emptyState =
+    document.createElement(
+      'div'
+    );
+
+  emptyState.className =
+    'emptyState';
+
+  emptyState.innerHTML = `
+    <div class="emptyInner">
+      <div class="emptyLogo">
+        Nastivee<span>AI</span>
+      </div>
+
+      <div class="emptyText">
+        Ask me anything, upload an image,
+        or create something with AI.
+      </div>
+    </div>
+  `;
+
+  chat.appendChild(
+    emptyState
+  );
+
+}
 
 
-    messageInput.value =
-      '';
+/* =====================================================
+   ENSURE CHAT
+===================================================== */
 
-    messageInput.style.height =
-      'auto';
+async function ensureChat(
+  firstMessage = ''
+) {
 
-
-    setImageMode(false);
-
-
-    clearChatUI();
-
-
-    renderChatHistory();
-
-
-    closeMobileSidebar();
-
-
-    messageInput.focus();
-
+  if (currentChatId) {
+    return currentChatId;
   }
 
 
-  document
-    .getElementById('newChatButton')
-    .addEventListener(
-      'click',
-      createNewChat
+  if (!currentUser) {
+    throw new Error(
+      'You are not logged in.'
     );
+  }
 
 
-  document
-    .getElementById('sidebarNewChatButton')
-    .addEventListener(
-      'click',
-      createNewChat
-    );
-
-
-  /* =========================================================
-     ENSURE CHAT
-  ========================================================= */
-
-  async function ensureCurrentChat(
+  const title =
     firstMessage
-  ) {
-
-    if (currentChatId) {
-
-      const existing =
-        chats.find(
-          item =>
-            String(item.id) ===
-            String(currentChatId)
-        );
-
-
-      if (existing) {
-        return true;
-      }
-
-    }
-
-
-    if (!currentUser) {
-      return false;
-    }
-
-
-    const title =
-      firstMessage
-        .trim()
-        .slice(0, 50) ||
-      'New chat';
-
-
-    const result =
-      await supabaseClient
-        .from('chats')
-        .insert({
-
-          user_id:
-            currentUser.id,
-
-          title:
-            title
-
-        })
-        .select('*')
-        .single();
-
-
-    if (result.error) {
-
-      console.error(
-        'CREATE CHAT ERROR:',
-        result.error
-      );
-
-      alert(
-        'Could not create chat:\n\n' +
-        result.error.message
-      );
-
-      return false;
-
-    }
-
-
-    currentChatId =
-      result.data.id;
-
-
-    chats.unshift(
-      result.data
-    );
-
-
-    setConversation(
-      currentChatId,
-      []
-    );
-
-
-    renderChatHistory();
-
-
-    return true;
-
-  }
-
-
-  /* =========================================================
-     LOAD CHAT
-  ========================================================= */
-
-  async function loadChat(
-    chatId
-  ) {
-
-    if (
-      !chatId ||
-      !currentUser
-    ) {
-
-      return;
-
-    }
-
-
-    const thisLoad =
-      ++loadSequence;
-
-
-    const requestedChatId =
-      String(chatId);
-
-
-    activeRequestId++;
-    imageRequestId++;
-
-    hideImageProgress();
-
-
-    try {
-
-      const chatResult =
-        await supabaseClient
-          .from('chats')
-          .select('*')
-          .eq(
-            'id',
-            chatId
-          )
-          .eq(
-            'user_id',
-            currentUser.id
-          )
-          .maybeSingle();
-
-
-      if (
-        thisLoad !==
-        loadSequence
-      ) {
-
-        return;
-
-      }
-
-
-      if (chatResult.error) {
-
-        console.error(
-          'CHAT VERIFY ERROR:',
-          chatResult.error
-        );
-
-        return;
-
-      }
-
-
-      if (!chatResult.data) {
-
-        console.error(
-          'CHAT NOT FOUND:',
-          chatId
-        );
-
-        return;
-
-      }
-
-
-      const messageResult =
-        await supabaseClient
-          .from('messages')
-          .select('*')
-          .eq(
-            'chat_id',
-            chatId
-          )
-          .eq(
-            'user_id',
-            currentUser.id
-          )
-          .order(
-            'created_at',
-            {
-              ascending: true
-            }
-          );
-
-
-      if (
-        thisLoad !==
-        loadSequence
-      ) {
-
-        return;
-
-      }
-
-
-      if (messageResult.error) {
-
-        console.error(
-          'MESSAGE LOAD ERROR:',
-          messageResult.error
-        );
-
-        return;
-
-      }
-
-
-      const messages =
-        messageResult.data || [];
-
-
-      const conversation =
-        [];
-
-
-      messages.forEach(
-        message => {
-
-          if (
-            !message.image_url &&
-            (
-              message.role === 'user' ||
-              message.role === 'assistant'
-            )
-          ) {
-
-            conversation.push({
-
-              role:
-                message.role,
-
-              content:
-                message.content || ''
-
-            });
-
-          }
-
-        }
-      );
-
-
-      setConversation(
-        requestedChatId,
-        conversation
-      );
-
-
-      currentChatId =
-        chatId;
-
-
-      clearUpload();
-
-      setImageMode(false);
-
-      clearChatUI();
-
-
-      /*
-        When loading a saved image, image_url is itself
-        used as the source image.
-
-        This means the Re-render button can continue
-        working after a page refresh, provided the
-        stored image is a usable data URL.
-      */
-
-      let latestImageForRerender =
-        null;
-
-
-      messages.forEach(
-        message => {
-
-          if (message.image_url) {
-
-            latestImageForRerender =
-              message.image_url;
-
-
-            addImageMessage(
-              message.image_url,
-              message.content || '',
-              message.image_url,
-              message.content || ''
-            );
-
-          } else if (
-            message.role === 'user' ||
-            message.role === 'assistant'
-          ) {
-
-            addTextMessage(
-              message.role,
-              message.content || ''
-            );
-
-          }
-
-        }
-      );
-
-
-      /*
-        Store the latest image as the current source.
-      */
-
-      if (latestImageForRerender) {
-
-        originalImageReferences.set(
-          requestedChatId,
-          latestImageForRerender
-        );
-
-      }
-
-
-      renderChatHistory();
-
-
-      requestAnimationFrame(
-        () => {
-
-          chat.scrollTop =
-            chat.scrollHeight;
-
-        }
-      );
-
-
-    } catch (error) {
-
-      console.error(
-        'LOAD CHAT ERROR:',
-        error
-      );
-
-    }
-
-  }
-
-
-  /* =========================================================
-     CLEAR CHAT UI
-  ========================================================= */
-
-  function clearChatUI() {
-
-    chat.innerHTML =
-      '';
-
-    chat.appendChild(
-      welcome
-    );
-
-    welcome.style.display =
-      'block';
-
-  }
-
-
-  /* =========================================================
-     SAVE MESSAGE
-  ========================================================= */
-
-  async function saveMessage(
-    role,
-    content,
-    imageUrl = null,
-    chatIdOverride = null
-  ) {
-
-    const targetChatId =
-      chatIdOverride ||
-      currentChatId;
-
-
-    if (
-      !currentUser ||
-      !targetChatId
-    ) {
-
-      console.error(
-        'SAVE MESSAGE FAILED — missing user/chat:',
-        {
-          user:
-            currentUser?.id,
-
-          chatId:
-            targetChatId
-        }
-      );
-
-      return false;
-
-    }
-
-
-    console.log(
-      'ATTEMPTING MESSAGE SAVE:',
-      {
-        chat_id:
-          targetChatId,
+      ? firstMessage
+          .replace(/\s+/g, ' ')
+          .trim()
+          .slice(0, 55)
+      : 'New chat';
+
+
+  const {
+    data,
+    error
+  } =
+    await supabaseClient
+      .from('chats')
+      .insert({
 
         user_id:
           currentUser.id,
 
-        role:
-          role,
+        title:
+          title || 'New chat'
 
-        content:
-          content,
+      })
+      .select()
+      .single();
 
-        hasImage:
-          Boolean(imageUrl)
-      }
+
+  if (error) {
+    throw error;
+  }
+
+
+  currentChatId =
+    data.id;
+
+  headerTitle.textContent =
+    data.title || 'New chat';
+
+
+  chats.unshift(data);
+
+  renderChatHistory();
+
+
+  return currentChatId;
+
+}
+
+
+/* =====================================================
+   LOAD CHAT
+===================================================== */
+
+async function loadChat(
+  chatId
+) {
+
+  if (!currentUser) {
+    return;
+  }
+
+
+  const sequence =
+    ++loadSequence;
+
+
+  currentChatId =
+    chatId;
+
+  imageState.clear();
+
+  clearChatUI();
+
+
+  const selectedChat =
+    chats.find(
+      item =>
+        String(item.id) ===
+        String(chatId)
     );
 
 
-    try {
-
-      const result =
-        await supabaseClient
-          .from('messages')
-          .insert({
-
-            chat_id:
-              targetChatId,
-
-            user_id:
-              currentUser.id,
-
-            role:
-              role,
-
-            content:
-              content || '',
-
-            image_url:
-              imageUrl || null
-
-          });
+  headerTitle.textContent =
+    selectedChat?.title ||
+    'Chat';
 
 
-      if (result.error) {
+  renderChatHistory();
 
-        console.error(
-          '================================'
+
+  try {
+
+    const {
+      data,
+      error
+    } =
+      await supabaseClient
+        .from('messages')
+        .select('*')
+        .eq(
+          'chat_id',
+          chatId
+        )
+        .eq(
+          'user_id',
+          currentUser.id
+        )
+        .order(
+          'created_at',
+          {
+            ascending: true
+          }
         );
 
-        console.error(
-          'SUPABASE MESSAGE SAVE ERROR:',
-          result.error
-        );
 
-        console.error(
-          'ERROR CODE:',
-          result.error.code
-        );
+    if (error) {
+      throw error;
+    }
 
-        console.error(
-          'ERROR MESSAGE:',
-          result.error.message
-        );
 
-        console.error(
-          'ERROR DETAILS:',
-          result.error.details
-        );
+    if (sequence !== loadSequence) {
+      return;
+    }
 
-        console.error(
-          'ERROR HINT:',
-          result.error.hint
-        );
 
-        console.error(
-          '================================'
-        );
+    if (!data?.length) {
 
+      return;
+
+    }
+
+
+    emptyState?.remove();
+
+
+    data.forEach(
+      message => {
 
         if (
-          String(currentChatId) ===
-          String(targetChatId)
+          message.role ===
+          'user'
         ) {
 
           addTextMessage(
+            'user',
+            message.content || ''
+          );
+
+        } else if (
+          message.image_url
+        ) {
+
+          /*
+            IMPORTANT:
+
+            The saved image becomes BOTH
+            the current source and the source
+            available after refresh.
+
+            Re-render will therefore continue
+            from the latest generated image.
+          */
+
+          addImageMessage(
+            message.image_url,
+            message.content || '',
+            message.image_url,
+            message.content || ''
+          );
+
+        } else {
+
+          addTextMessage(
             'assistant',
-            `Supabase save error:\n${result.error.message}`
+            message.content || ''
           );
 
         }
 
-
-        return false;
-
       }
+    );
 
 
-      console.log(
-        'MESSAGE SAVED SUCCESSFULLY:',
-        targetChatId
-      );
+    scrollToBottom();
 
 
-      return true;
+  } catch (error) {
+
+    console.error(
+      'LOAD CHAT ERROR:',
+      error
+    );
+
+    addTextMessage(
+      'assistant',
+      `Could not load this chat:\n${error.message}`
+    );
+
+  }
+
+}
 
 
-    } catch (error) {
+/* =====================================================
+   SAVE MESSAGE
+===================================================== */
+
+async function saveMessage(
+  role,
+  content,
+  imageUrl = null,
+  chatIdOverride = null
+) {
+
+  const targetChatId =
+    chatIdOverride ||
+    currentChatId;
+
+
+  if (
+    !currentUser ||
+    !targetChatId
+  ) {
+
+    console.error(
+      'SAVE MESSAGE FAILED — missing user/chat:',
+      {
+        user:
+          currentUser?.id,
+        chatId:
+          targetChatId
+      }
+    );
+
+    return false;
+
+  }
+
+
+  try {
+
+    const {
+      error
+    } =
+      await supabaseClient
+        .from('messages')
+        .insert({
+
+          chat_id:
+            targetChatId,
+
+          user_id:
+            currentUser.id,
+
+          role:
+            role,
+
+          content:
+            content || '',
+
+          image_url:
+            imageUrl || null
+
+        });
+
+
+    if (error) {
 
       console.error(
-        'MESSAGE SAVE EXCEPTION:',
+        'SUPABASE MESSAGE SAVE ERROR:',
         error
       );
 
@@ -3122,73 +2297,62 @@
 
         addTextMessage(
           'assistant',
-          `Message save error:\n${error.message}`
+          `Supabase save error:\n${error.message}`
         );
 
       }
-
 
       return false;
 
     }
 
+
+    return true;
+
+
+  } catch (error) {
+
+    console.error(
+      'MESSAGE SAVE EXCEPTION:',
+      error
+    );
+
+
+    return false;
+
+  }
+
+}
+
+
+/* =====================================================
+   UPDATE CHAT TITLE
+===================================================== */
+
+async function updateChatTitle(
+  chatId,
+  title
+) {
+
+  if (!currentUser || !chatId) {
+    return;
   }
 
 
-  /* =========================================================
-     UPDATE CHAT TITLE
-  ========================================================= */
+  try {
 
-  async function updateChatTitle(
-    text,
-    chatIdOverride = null
-  ) {
-
-    const targetChatId =
-      chatIdOverride ||
-      currentChatId;
-
-
-    if (!targetChatId) {
-      return;
-    }
-
-
-    const existing =
-      chats.find(
-        item =>
-          String(item.id) ===
-          String(targetChatId)
-      );
-
-
-    if (
-      existing &&
-      existing.title &&
-      existing.title !== 'New chat'
-    ) {
-
-      return;
-
-    }
-
-
-    const title =
-      text
-        .trim()
-        .slice(0, 50) ||
-      'New chat';
-
-
-    const result =
+    const {
+      error
+    } =
       await supabaseClient
         .from('chats')
         .update({
-          title
+          title:
+            title.slice(0, 55)
         })
         .eq(
           'id',
-          targetChatId
+          chatId
         )
         .eq(
           'user_id',
@@ -3196,11 +2360,11 @@
         );
 
 
-    if (result.error) {
+    if (error) {
 
       console.error(
         'TITLE UPDATE ERROR:',
-        result.error
+        error
       );
 
       return;
@@ -3208,1125 +2372,1273 @@
     }
 
 
-    if (existing) {
+    const item =
+      chats.find(
+        chatItem =>
+          String(chatItem.id) ===
+          String(chatId)
+      );
 
-      existing.title =
-        title;
+
+    if (item) {
+
+      item.title =
+        title.slice(0, 55);
+
+    }
+
+
+    if (
+      String(currentChatId) ===
+      String(chatId)
+    ) {
+
+      headerTitle.textContent =
+        title.slice(0, 55);
 
     }
 
 
     renderChatHistory();
 
-  }
 
+  } catch (error) {
 
-  /* =========================================================
-     TEXT MESSAGE
-  ========================================================= */
-
-  function addTextMessage(
-    role,
-    text
-  ) {
-
-    welcome.style.display =
-      'none';
-
-
-    const wrapper =
-      document.createElement(
-        'div'
-      );
-
-
-    wrapper.className =
-      `message ${role}`;
-
-
-    const bubble =
-      document.createElement(
-        'div'
-      );
-
-
-    bubble.className =
-      'bubble';
-
-
-    bubble.textContent =
-      text || '';
-
-
-    wrapper.appendChild(
-      bubble
+    console.error(
+      'TITLE UPDATE EXCEPTION:',
+      error
     );
-
-
-    chat.appendChild(
-      wrapper
-    );
-
-
-    chat.scrollTop =
-      chat.scrollHeight;
-
-
-    return bubble;
 
   }
 
-
-  /* =========================================================
-     IMAGE MESSAGE
-  ========================================================= */
-
-  function addImageMessage(
-    imageUrl,
-    prompt,
-    sourceImageData = null,
-    originalPrompt = ''
-  ) {
-
-    welcome.style.display =
-      'none';
+}
 
 
-    const wrapper =
+/* =====================================================
+   ADD TEXT MESSAGE
+===================================================== */
+
+function addTextMessage(
+  role,
+  content
+) {
+
+  emptyState?.remove();
+
+
+  const row =
+    document.createElement(
+      'div'
+    );
+
+  row.className =
+    `messageRow ${role}`;
+
+
+  const bubble =
+    document.createElement(
+      'div'
+    );
+
+  bubble.className =
+    'messageBubble';
+
+  bubble.textContent =
+    content;
+
+
+  row.appendChild(
+    bubble
+  );
+
+
+  chat.appendChild(
+    row
+  );
+
+
+  scrollToBottom();
+
+
+  return row;
+
+}
+
+
+/* =====================================================
+   ADD IMAGE MESSAGE
+===================================================== */
+
+function addImageMessage(
+  imageData,
+  prompt = '',
+  originalImageData = null,
+  originalPrompt = ''
+) {
+
+  emptyState?.remove();
+
+
+  const row =
+    document.createElement(
+      'div'
+    );
+
+  row.className =
+    'messageRow assistant';
+
+
+  const wrap =
+    document.createElement(
+      'div'
+    );
+
+  wrap.className =
+    'messageImageWrap';
+
+
+  const image =
+    document.createElement(
+      'img'
+    );
+
+  image.className =
+    'generatedImage';
+
+  image.src =
+    imageData;
+
+  image.alt =
+    'Nastivee AI generated image';
+
+
+  wrap.appendChild(
+    image
+  );
+
+
+  if (prompt) {
+
+    const promptText =
       document.createElement(
         'div'
       );
 
+    promptText.className =
+      'imagePrompt';
 
-    wrapper.className =
-      'imageMessage';
+    promptText.textContent =
+      prompt;
 
-
-    const img =
-      document.createElement(
-        'img'
-      );
-
-
-    img.className =
-      'generatedImage';
-
-
-    img.src =
-      imageUrl;
-
-
-    img.alt =
-      prompt ||
-      'Generated image';
-
-
-    wrapper.appendChild(
-      img
+    wrap.appendChild(
+      promptText
     );
 
+  }
 
-    if (prompt) {
 
-      const caption =
-        document.createElement(
-          'div'
+  const actions =
+    document.createElement(
+      'div'
+    );
+
+  actions.className =
+    'imageActions';
+
+
+  const rerenderButton =
+    document.createElement(
+      'button'
+    );
+
+  rerenderButton.className =
+    'imageActionButton primary';
+
+  rerenderButton.textContent =
+    '🔄 Improve / Re-render';
+
+  rerenderButton.title =
+    'Improve this image while keeping the same subject and identity';
+
+
+  const downloadButton =
+    document.createElement(
+      'button'
+    );
+
+  downloadButton.className =
+    'imageActionButton';
+
+  downloadButton.textContent =
+    '⬇️ Save image';
+
+
+  actions.appendChild(
+    rerenderButton
+  );
+
+  actions.appendChild(
+    downloadButton
+  );
+
+  wrap.appendChild(
+    actions
+  );
+
+  row.appendChild(
+    wrap
+  );
+
+  chat.appendChild(
+    row
+  );
+
+
+  /*
+    Every displayed image gets its own state.
+
+    Most importantly:
+
+    CURRENT IMAGE =
+    imageData
+
+    ORIGINAL SOURCE =
+    originalImageData || imageData
+
+    Re-render always starts from CURRENT IMAGE.
+  */
+
+  const stateId =
+    `image-${Date.now()}-${Math.random()
+      .toString(36)
+      .slice(2)}`;
+
+
+  imageState.set(
+    stateId,
+    {
+
+      currentImage:
+        imageData,
+
+      originalImage:
+        originalImageData ||
+        imageData,
+
+      prompt:
+        prompt || originalPrompt || '',
+
+      originalPrompt:
+        originalPrompt ||
+        prompt ||
+        ''
+
+    }
+  );
+
+
+  rerenderButton.addEventListener(
+    'click',
+    async () => {
+
+      const state =
+        imageState.get(
+          stateId
         );
 
 
-      caption.style.marginTop =
-        '8px';
+      if (
+        !state ||
+        !state.currentImage
+      ) {
 
-      caption.style.color =
-        '#aaa';
+        addTextMessage(
+          'assistant',
+          'I could not find the current image to re-render.'
+        );
 
-      caption.style.fontSize =
-        '13px';
+        return;
 
-      caption.textContent =
-        prompt;
+      }
 
 
-      wrapper.appendChild(
-        caption
+      await rerenderImage(
+        stateId,
+        state,
+        rerenderButton
       );
 
     }
+  );
 
 
-    const actions =
-      document.createElement(
-        'div'
+  downloadButton.addEventListener(
+    'click',
+    () => {
+
+      downloadImage(
+        imageData
       );
 
-
-    actions.className =
-      'imageActions';
-
-
-    /* =========================
-       RE-RENDER
-    ========================= */
-
-    const rerenderButton =
-      document.createElement(
-        'button'
-      );
+    }
+  );
 
 
-    rerenderButton.type =
-      'button';
-
-    rerenderButton.className =
-      'imageActionButton';
-
-    rerenderButton.textContent =
-      '🔄 Improve / Re-render';
+  scrollToBottom();
 
 
-    /*
-      If no source was explicitly supplied,
-      use the image currently being displayed.
+  return {
+    row,
+    stateId
+  };
 
-      This is important because every new version
-      should become the source for the next version.
-    */
-
-    const usableSource =
-      sourceImageData ||
-      imageUrl ||
-      null;
+}
 
 
-    rerenderButton.disabled =
-      !usableSource;
+/* =====================================================
+   IMAGE PROGRESS
+===================================================== */
+
+function showImageProgress(
+  text = 'Creating image...'
+) {
+
+  progressText.textContent =
+    text;
+
+  imageProgress.classList.add(
+    'show'
+  );
+
+}
 
 
-    if (usableSource) {
+function hideImageProgress() {
 
-      rerenderButton.addEventListener(
-        'click',
-        async () => {
+  imageProgress.classList.remove(
+    'show'
+  );
 
-          if (imageBusy) {
-            return;
-          }
+}
 
 
-          await rerenderImage({
+/* =====================================================
+   GENERATE IMAGE
+===================================================== */
 
-            sourceImage:
-              usableSource,
+async function generateImage(
+  prompt,
+  requestChatId
+) {
 
-            prompt:
-              originalPrompt ||
-              prompt ||
-              '',
+  if (!prompt) {
+    return;
+  }
 
-            currentImage:
-              imageUrl
 
-          });
+  const requestId =
+    ++imageRequestId;
+
+
+  imageBusy = true;
+
+  sendButton.disabled =
+    true;
+
+  imageButton.disabled =
+    true;
+
+
+  showImageProgress(
+    'Creating your image...'
+  );
+
+
+  try {
+
+    const response =
+      await fetch(
+        `${API_BASE}/api/image`,
+        {
+
+          method:
+            'POST',
+
+          headers: {
+            'Content-Type':
+              'application/json'
+          },
+
+          body:
+            JSON.stringify({
+              prompt
+            })
 
         }
       );
 
-    } else {
 
-      rerenderButton.title =
-        'This image has no usable source image.';
+    const data =
+      await response.json();
+
+
+    if (!response.ok) {
+
+      throw new Error(
+        data?.details ||
+        data?.error ||
+        'Image generation failed.'
+      );
 
     }
 
 
-    actions.appendChild(
-      rerenderButton
-    );
+    if (
+      requestId !== imageRequestId
+    ) {
+
+      return;
+
+    }
 
 
-    /* =========================
-       DOWNLOAD
-    ========================= */
+    if (!data?.image) {
 
-    const downloadButton =
-      document.createElement(
-        'button'
+      throw new Error(
+        'No image was returned.'
       );
 
-
-    downloadButton.type =
-      'button';
-
-    downloadButton.className =
-      'imageActionButton';
-
-    downloadButton.textContent =
-      '⬇️ Save image';
+    }
 
 
-    downloadButton.addEventListener(
-      'click',
-      () => {
+    /*
+      IMPORTANT:
 
-        const link =
-          document.createElement(
-            'a'
-          );
+      The generated image becomes the
+      current source for the next
+      re-render.
+    */
 
-
-        link.href =
-          imageUrl;
-
-        link.download =
-          'nastivee-image.png';
-
-        link.target =
-          '_blank';
-
-
-        document.body.appendChild(
-          link
-        );
-
-        link.click();
-
-        link.remove();
-
-      }
+    addImageMessage(
+      data.image,
+      prompt,
+      data.image,
+      prompt
     );
 
 
-    actions.appendChild(
-      downloadButton
+    await saveMessage(
+      'assistant',
+      prompt,
+      data.image,
+      requestChatId
     );
 
 
-    wrapper.appendChild(
-      actions
+  } catch (error) {
+
+    console.error(
+      'GENERATE IMAGE ERROR:',
+      error
     );
 
 
-    chat.appendChild(
-      wrapper
+    addTextMessage(
+      'assistant',
+      `Image generation failed:\n${error.message}`
     );
 
+  } finally {
 
-    chat.scrollTop =
-      chat.scrollHeight;
-
-
-    return wrapper;
-
-  }
-
-
-  /* =========================================================
-     IMAGE PROGRESS
-  ========================================================= */
-
-  function showImageProgress(
-    title,
-    percent
-  ) {
-
-    imageProgress.style.display =
-      'block';
-
-    progressTitle.textContent =
-      title;
-
-    progressFill.style.width =
-      `${percent}%`;
-
-  }
-
-
-  function hideImageProgress() {
-
-    imageProgress.style.display =
-      'none';
-
-    progressFill.style.width =
-      '15%';
-
-  }
-
-
-  function setImageButtonsBusy(
-    busy
-  ) {
-
-    imageBusy =
-      busy;
-
-    imageButton.disabled =
-      busy;
+    imageBusy = false;
 
     sendButton.disabled =
-      busy;
+      false;
 
-    uploadButton.disabled =
-      busy;
+    imageButton.disabled =
+      false;
+
+    hideImageProgress();
+
+  }
+
+}
+
+
+/* =====================================================
+   EDIT IMAGE
+===================================================== */
+
+async function editImage(
+  image,
+  prompt,
+  requestChatId,
+  regenerate = false
+) {
+
+  if (!image) {
+
+    throw new Error(
+      'No image supplied.'
+    );
 
   }
 
 
-  /* =========================================================
-     GENERATE IMAGE
-  ========================================================= */
+  const requestId =
+    ++imageRequestId;
 
-  async function generateImage(
-    prompt,
-    chatIdOverride = null,
-    requestImageId = null,
-    requestId = null
-  ) {
 
-    if (imageBusy) {
-      return;
+  imageBusy = true;
+
+  sendButton.disabled =
+    true;
+
+  imageButton.disabled =
+    true;
+
+
+  showImageProgress(
+    regenerate
+      ? 'Improving your image...'
+      : 'Editing your image...'
+  );
+
+
+  try {
+
+    const response =
+      await fetch(
+        `${API_BASE}/api/image/edit`,
+        {
+
+          method:
+            'POST',
+
+          headers: {
+            'Content-Type':
+              'application/json'
+          },
+
+          body:
+            JSON.stringify({
+
+              prompt,
+
+              image,
+
+              regenerate
+
+            })
+
+        }
+      );
+
+
+    const data =
+      await response.json();
+
+
+    if (!response.ok) {
+
+      throw new Error(
+        data?.details ||
+        data?.error ||
+        'Image edit failed.'
+      );
+
     }
 
 
-    const targetChatId =
-      chatIdOverride ||
-      currentChatId;
+    if (
+      requestId !== imageRequestId
+    ) {
 
+      return null;
 
-    if (!targetChatId) {
-      return;
     }
 
 
-    const thisImageRequest =
-      requestImageId ||
-      ++imageRequestId;
+    if (!data?.image) {
+
+      throw new Error(
+        'No edited image was returned.'
+      );
+
+    }
 
 
-    const thisRequestId =
-      requestId ||
-      ++activeRequestId;
+    /*
+      CRITICAL:
 
+      The newly edited image becomes
+      the source for the NEXT render.
 
-    setImageButtonsBusy(true);
+      We do NOT send the original
+      prompt back to /api/image.
+    */
 
-
-    showImageProgress(
-      'Preparing image...',
-      15
+    addImageMessage(
+      data.image,
+      prompt,
+      data.image,
+      prompt
     );
 
 
-    let timer1;
-    let timer2;
-
-
-    try {
-
-      timer1 =
-        setTimeout(
-          () => {
-
-            if (
-              thisImageRequest !==
-                imageRequestId ||
-              String(currentChatId) !==
-                String(targetChatId)
-            ) {
-
-              return;
-
-            }
-
-
-            showImageProgress(
-              'Creating your image...',
-              45
-            );
-
-          },
-          700
-        );
-
-
-      timer2 =
-        setTimeout(
-          () => {
-
-            if (
-              thisImageRequest !==
-                imageRequestId ||
-              String(currentChatId) !==
-                String(targetChatId)
-            ) {
-
-              return;
-
-            }
-
-
-            showImageProgress(
-              'Rendering details...',
-              70
-            );
-
-          },
-          1800
-        );
-
-
-      const response =
-        await apiFetch(
-          '/api/image',
-          {
-
-            method:
-              'POST',
-
-            body:
-              JSON.stringify({
-
-                prompt:
-                  prompt.trim()
-
-              })
-
-          }
-        );
-
-
-      let data;
-
-
-      try {
-
-        data =
-          await response.json();
-
-      } catch {
-
-        throw new Error(
-          'Invalid response from image server.'
-        );
-
-      }
-
-
-      if (!response.ok) {
-
-        throw new Error(
-          data.error ||
-          data.message ||
-          `Image generation failed (${response.status})`
-        );
-
-      }
-
-
-      if (!data.image) {
-
-        throw new Error(
-          'No image was returned.'
-        );
-
-      }
-
-
-      /*
-        Save generated image.
-      */
-
-      const saved =
-        await saveMessage(
-          'assistant',
-          prompt,
-          data.image,
-          targetChatId
-        );
-
-
-      if (!saved) {
-
-        console.error(
-          'GENERATED IMAGE COULD NOT BE SAVED:',
-          targetChatId
-        );
-
-        return;
-
-      }
-
-
-      /*
-        IMPORTANT:
-        The generated image itself becomes the source
-        for the next re-render.
-      */
-
-      originalImageReferences.set(
-        String(targetChatId),
-        data.image
-      );
-
-
-      if (
-        thisImageRequest ===
-          imageRequestId &&
-        String(currentChatId) ===
-          String(targetChatId) &&
-        thisRequestId ===
-          activeRequestId
-      ) {
-
-        showImageProgress(
-          'Finishing image...',
-          95
-        );
-
-
-        addImageMessage(
-          data.image,
-          prompt,
-          data.image,
-          prompt
-        );
-
-
-        hideImageProgress();
-
-      } else {
-
-        console.log(
-          'IMAGE FINISHED IN BACKGROUND CHAT:',
-          targetChatId
-        );
-
-      }
-
-
-    } catch (error) {
-
-      console.error(
-        'IMAGE ERROR:',
-        error
-      );
-
-
-      if (
-        thisImageRequest ===
-          imageRequestId &&
-        String(currentChatId) ===
-          String(targetChatId)
-      ) {
-
-        hideImageProgress();
-
-
-        addTextMessage(
-          'assistant',
-          `Image error:\n${error.message}`
-        );
-
-      }
-
-
-    } finally {
-
-      clearTimeout(timer1);
-      clearTimeout(timer2);
-
-
-      if (
-        thisImageRequest ===
-        imageRequestId
-      ) {
-
-        hideImageProgress();
-
-        setImageButtonsBusy(
-          false
-        );
-
-      }
-
-    }
-
-  }
-
-
-  /* =========================================================
-     EDIT IMAGE
-  ========================================================= */
-
-  async function editImage(
-    imageData,
-    prompt,
-    chatIdOverride = null,
-    identityImageData = null
-  ) {
-
-    if (imageBusy) {
-      return;
-    }
-
-
-    const targetChatId =
-      chatIdOverride ||
-      currentChatId;
-
-
-    if (!targetChatId) {
-      return;
-    }
-
-
-    /*
-      imageData = the current image being edited.
-
-      identityImageData = the original uploaded image.
-
-      The backend currently accepts one image, so for now
-      we send imageData. The backend upgrade will allow
-      both to be supplied so identity can be preserved
-      across many generations.
-    */
-
-    const thisImageRequest =
-      ++imageRequestId;
-
-
-    setImageButtonsBusy(true);
-
-
-    showImageProgress(
-      'Preparing your image...',
-      15
+    await saveMessage(
+      'assistant',
+      prompt,
+      data.image,
+      requestChatId
     );
 
 
-    let timer1;
-    let timer2;
+    return data.image;
 
 
-    try {
+  } finally {
 
-      timer1 =
-        setTimeout(
-          () => {
+    imageBusy = false;
 
-            if (
-              thisImageRequest !==
-                imageRequestId ||
-              String(currentChatId) !==
-                String(targetChatId)
-            ) {
+    sendButton.disabled =
+      false;
 
-              return;
+    imageButton.disabled =
+      false;
 
-            }
+    hideImageProgress();
 
+  }
 
-            showImageProgress(
-              'Understanding your edit...',
-              40
-            );
+}
 
-          },
-          600
-        );
 
+/* =====================================================
+   RE-RENDER / IMPROVE
+===================================================== */
 
-      timer2 =
-        setTimeout(
-          () => {
+async function rerenderImage(
+  stateId,
+  state,
+  button
+) {
 
-            if (
-              thisImageRequest !==
-                imageRequestId ||
-              String(currentChatId) !==
-                String(targetChatId)
-            ) {
+  if (
+    imageBusy ||
+    !state?.currentImage
+  ) {
 
-              return;
-
-            }
-
-
-            showImageProgress(
-              'Rendering changes...',
-              70
-            );
-
-          },
-          1500
-        );
-
-
-      /*
-        For now the existing backend receives the current
-        image exactly as before.
-      */
-
-      const response =
-        await apiFetch(
-          '/api/image/edit',
-          {
-
-            method:
-              'POST',
-
-            body:
-              JSON.stringify({
-
-                image:
-                  imageData,
-
-                prompt:
-                  prompt
-
-              })
-
-          }
-        );
-
-
-      let data;
-
-
-      try {
-
-        data =
-          await response.json();
-
-      } catch {
-
-        throw new Error(
-          'Invalid response from image server.'
-        );
-
-      }
-
-
-      if (!response.ok) {
-
-        throw new Error(
-          data.error ||
-          data.message ||
-          `Image edit failed (${response.status})`
-        );
-
-      }
-
-
-      if (!data.image) {
-
-        throw new Error(
-          'No edited image was returned.'
-        );
-
-      }
-
-
-      /*
-        Save the NEWEST image.
-      */
-
-      const saved =
-        await saveMessage(
-          'assistant',
-          prompt,
-          data.image,
-          targetChatId
-        );
-
-
-      if (!saved) {
-
-        console.error(
-          'EDITED IMAGE COULD NOT BE SAVED:',
-          targetChatId
-        );
-
-        return;
-
-      }
-
-
-      /*
-        MOST IMPORTANT PART:
-
-        The newly edited image becomes the source
-        for the NEXT re-render.
-
-        Therefore:
-
-        Original
-          ↓
-        Edit 1
-          ↓
-        Edit 2
-          ↓
-        Edit 3
-          ↓
-        Edit 4
-
-        Each step works from the image immediately
-        before it.
-      */
-
-      originalImageReferences.set(
-        String(targetChatId),
-        data.image
-      );
-
-
-      if (
-        thisImageRequest ===
-          imageRequestId &&
-        String(currentChatId) ===
-          String(targetChatId)
-      ) {
-
-        showImageProgress(
-          'Finishing your image...',
-          95
-        );
-
-
-        addImageMessage(
-          data.image,
-          prompt,
-          data.image,
-          prompt
-        );
-
-
-        hideImageProgress();
-
-      }
-
-
-    } catch (error) {
-
-      console.error(
-        'IMAGE EDIT ERROR:',
-        error
-      );
-
-
-      if (
-        thisImageRequest ===
-          imageRequestId &&
-        String(currentChatId) ===
-          String(targetChatId)
-      ) {
-
-        hideImageProgress();
-
-
-        addTextMessage(
-          'assistant',
-          `Image edit error:\n${error.message}`
-        );
-
-      }
-
-
-    } finally {
-
-      clearTimeout(timer1);
-      clearTimeout(timer2);
-
-
-      if (
-        thisImageRequest ===
-        imageRequestId
-      ) {
-
-        hideImageProgress();
-
-        setImageButtonsBusy(
-          false
-        );
-
-      }
-
-    }
+    return;
 
   }
 
 
-  /* =========================================================
-     RERENDER / IMPROVE IMAGE
-  ========================================================= */
+  /*
+    The current image is the actual source.
 
-  async function rerenderImage({
-    sourceImage,
-    prompt,
-    currentImage = null
-  }) {
+    We deliberately do NOT call /api/image.
 
-    if (!sourceImage) {
+    We call /api/image/edit so the AI edits
+    the existing image.
+  */
 
-      addTextMessage(
-        'assistant',
-        'There is no source image available for this re-render.'
-      );
-
-      return;
-
-    }
+  const currentImage =
+    state.currentImage;
 
 
-    /*
-      If possible, always use the latest image associated
-      with this chat.
-
-      This prevents accidentally going back to an older
-      image when several versions exist.
-    */
-
-    const storedLatest =
-      currentChatId
-        ? originalImageReferences.get(
-            String(currentChatId)
-          )
-        : null;
+  const originalPrompt =
+    state.originalPrompt ||
+    state.prompt ||
+    'Improve this image.';
 
 
-    const latestSource =
-      storedLatest ||
-      sourceImage ||
-      currentImage;
+  const improvementPrompt = `
+IMPROVE AND REFINE THE CURRENT IMAGE.
+
+The supplied image is the current version
+of the image.
+
+Do NOT start over from the text prompt.
+
+Do NOT create a completely unrelated image.
+
+Keep the same subject, same person,
+same concept and same requested changes.
 
 
-    /*
-      This is deliberately an IMPROVEMENT prompt.
+ORIGINAL CREATIVE REQUEST:
 
-      It tells the image model not to throw away the
-      current design and start again.
-    */
+${originalPrompt}
 
-    const improvedPrompt =
-`IMPROVE AND REFINE THE EXISTING IMAGE.
 
-This is an EDIT of the supplied image.
+PRESERVE THE PERSON:
 
-DO NOT create a completely new image from scratch.
+If there is a person in the image, preserve
+their likeness as closely as possible.
 
-DO NOT restart the design from the original text prompt.
+Keep the SAME person.
 
-The supplied image is the CURRENT VERSION and must remain
-the primary visual reference.
+Preserve:
 
-Original creative request:
-${prompt || 'Improve the image.'}
-
-Your task is to improve the current image while keeping
-the same subject, same person if present, same overall
-creative intention and recognisable visual identity.
-
-KEEP EVERYTHING THAT IS ALREADY WORKING.
-
-Improve only where useful:
-- realism
-- image quality
-- lighting
-- shadows
-- depth
-- detail
-- sharpness
-- texture
-- composition
-- proportions
-- background quality
-- colour balance
-- professional finish
-
-Do not make unnecessary changes.
-
-PERSON / FACE PRESERVATION:
-
-If the image contains a person, preserve their likeness
-as closely as possible.
-
-Keep:
 - facial structure
 - face shape
+- facial proportions
 - eyes
-- eye spacing
+- eye shape
 - eyebrows
 - nose
 - mouth
 - lips
 - cheeks
 - jawline
-- chin
 - ears
 - skin tone
 - hair
 - hairline
-- facial hair
+- hairstyle
 - distinctive facial characteristics
-- body proportions
-- recognisable features
+- visible body proportions
 
-DO NOT replace the person's face.
+Do NOT replace the person.
 
-DO NOT substantially redesign the person's face.
+Do NOT create a generic person.
 
-DO NOT make the person look like a different person.
+Do NOT unnecessarily beautify the person.
 
-The final result should clearly look like the SAME person
-and the SAME image, professionally improved.
+Do NOT unnecessarily age or de-age them.
 
-If there is already a specific edit or creative direction
-in the image, preserve it.
+Do NOT unnecessarily change their face.
 
-If the original request asked for something to be changed,
-keep that change.
+Do NOT change their identity.
 
-The priority is:
 
-1. Preserve the person's identity and likeness.
-2. Preserve the current image.
-3. Preserve the original creative intention.
-4. Improve quality and realism.
+PRESERVE THE CURRENT IMAGE:
+
+Keep the existing:
+
+- subject
+- person
+- identity
+- requested modification
+- important composition
+- clothing
+- important objects
+- environment
+- overall concept
+
+
+IMPROVE QUALITY:
+
+Make useful improvements to:
+
+- realism
+- lighting
+- shadows
+- detail
+- texture
+- clarity
+- depth
+- natural skin detail
+- photographic quality
+- overall polish
+
+
+AVOID UNNECESSARY CHANGES:
+
+Do not redesign the image.
+
+Do not randomly change the face.
+
+Do not remove the user's requested change.
+
+Do not change the concept.
+
+Do not introduce unrelated objects.
+
+Do not turn it into a completely different scene.
+
+
+RESULT:
+
+Create a refined version of the CURRENT
+IMAGE.
+
+It should clearly look like the same image
+and the same person, but improved.
+
+PRIORITY:
+
+1. Preserve identity and likeness.
+2. Preserve the requested modification.
+3. Preserve the existing image.
+4. Improve visual quality.
 5. Avoid unnecessary changes.
+`;
 
-Create a refined improved version of the supplied image.`;
+
+  button.disabled =
+    true;
+
+  button.textContent =
+    '⏳ Improving...';
 
 
-    await editImage(
-      latestSource,
-      improvedPrompt,
-      currentChatId,
-      originalImageReferences.get(
-        String(currentChatId)
-      ) || latestSource
+  try {
+
+    const newImage =
+      await editImage(
+        currentImage,
+        improvementPrompt,
+        currentChatId,
+        true
+      );
+
+
+    if (!newImage) {
+      return;
+    }
+
+
+    /*
+      Update this image's state.
+
+      This is what makes:
+
+      Image 1
+        ↓
+      Image 2
+        ↓
+      Image 3
+        ↓
+      Image 4
+
+      work correctly.
+    */
+
+    state.currentImage =
+      newImage;
+
+    state.prompt =
+      improvementPrompt;
+
+
+    imageState.set(
+      stateId,
+      state
+    );
+
+
+  } catch (error) {
+
+    console.error(
+      'RENDER ERROR:',
+      error
+    );
+
+
+    addTextMessage(
+      'assistant',
+      `Could not improve the image:\n${error.message}`
+    );
+
+  } finally {
+
+    button.disabled =
+      false;
+
+    button.textContent =
+      '🔄 Improve / Re-render';
+
+  }
+
+}
+
+
+/* =====================================================
+   NORMAL CHAT
+===================================================== */
+
+async function sendNormalMessage(
+  text,
+  requestChatId
+) {
+
+  const requestId =
+    ++activeRequestId;
+
+
+  try {
+
+    const {
+      data: messageRows,
+      error
+    } =
+      await supabaseClient
+        .from('messages')
+        .select(
+          'role,content'
+        )
+        .eq(
+          'chat_id',
+          requestChatId
+        )
+        .eq(
+          'user_id',
+          currentUser.id
+        )
+        .order(
+          'created_at',
+          {
+            ascending: true
+          }
+        );
+
+
+    if (error) {
+      throw error;
+    }
+
+
+    const messages =
+      (messageRows || [])
+        .map(
+          item => ({
+            role:
+              item.role,
+
+            content:
+              item.content || ''
+          })
+        )
+        .slice(-30);
+
+
+    const response =
+      await fetch(
+        `${API_BASE}/api/chat`,
+        {
+
+          method:
+            'POST',
+
+          headers: {
+            'Content-Type':
+              'application/json'
+          },
+
+          body:
+            JSON.stringify({
+
+              messages,
+
+              memory
+
+            })
+
+        }
+      );
+
+
+    const data =
+      await response.json();
+
+
+    if (!response.ok) {
+
+      throw new Error(
+        data?.details ||
+        data?.error ||
+        'Chat request failed.'
+      );
+
+    }
+
+
+    if (
+      requestId !==
+      activeRequestId
+    ) {
+
+      return;
+
+    }
+
+
+    const reply =
+      data?.reply ||
+      'Sorry, I could not generate a response.';
+
+
+    addTextMessage(
+      'assistant',
+      reply
+    );
+
+
+    await saveMessage(
+      'assistant',
+      reply,
+      null,
+      requestChatId
+    );
+
+
+  } catch (error) {
+
+    console.error(
+      'CHAT ERROR:',
+      error
+    );
+
+
+    addTextMessage(
+      'assistant',
+      `Sorry, something went wrong:\n${error.message}`
     );
 
   }
 
+}
 
-  /* =========================================================
-     NORMAL SEND
-  ========================================================= */
 
-  async function sendMessage() {
+/* =====================================================
+   SEND MESSAGE
+===================================================== */
+
+async function sendMessage() {
+
+  const userText =
+    messageInput.value.trim();
+
+
+  if (
+    !userText ||
+    imageBusy ||
+    !currentUser
+  ) {
+
+    return;
+
+  }
+
+
+  /*
+    Capture the current chat before
+    anything asynchronous happens.
+  */
+
+  const requestChatId =
+    await ensureChat(
+      userText
+    );
+
+
+  addTextMessage(
+    'user',
+    userText
+  );
+
+
+  await saveMessage(
+    'user',
+    userText,
+    null,
+    requestChatId
+  );
+
+
+  /*
+    -----------------------------------------------------
+    UPLOADED IMAGE EDIT
+    -----------------------------------------------------
+  */
+
+  if (selectedImageData) {
+
+    const image =
+      selectedImageData;
+
+
+    clearUpload();
+
+
+    messageInput.value =
+      '';
+
+    resizeTextarea();
+
+
+    try {
+
+      await editImage(
+        image,
+        userText,
+        requestChatId,
+        false
+      );
+
+
+    } catch (error) {
+
+      console.error(
+        'UPLOAD EDIT ERROR:',
+        error
+      );
+
+
+      addTextMessage(
+        'assistant',
+        `Could not edit the image:\n${error.message}`
+      );
+
+    }
+
+
+    return;
+
+  }
+
+
+  /*
+    -----------------------------------------------------
+    IMAGE GENERATION MODE
+    -----------------------------------------------------
+  */
+
+  if (imageMode) {
+
+    messageInput.value =
+      '';
+
+    resizeTextarea();
+
+    setImageMode(false);
+
+
+    await generateImage(
+      userText,
+      requestChatId
+    );
+
+
+    return;
+
+  }
+
+
+  /*
+    -----------------------------------------------------
+    NORMAL CHAT
+    -----------------------------------------------------
+  */
+
+  messageInput.value =
+    '';
+
+  resizeTextarea();
+
+
+  await sendNormalMessage(
+    userText,
+    requestChatId
+  );
+
+}
+
+
+/* =====================================================
+   SEND BUTTON
+===================================================== */
+
+sendButton.addEventListener(
+  'click',
+  sendMessage
+);
+
+
+/* =====================================================
+   IMAGE MODE
+===================================================== */
+
+function setImageMode(
+  enabled
+) {
+
+  imageMode =
+    Boolean(enabled);
+
+
+  if (imageMode) {
+
+    messageInput.placeholder =
+      'Describe the image you want me to create...';
+
+
+    imageButton.classList.add(
+      'imageModeActive'
+    );
+
+
+    imageButton.title =
+      'Image mode on — press again to turn off';
+
+
+    imageButton.setAttribute(
+      'aria-pressed',
+      'true'
+    );
+
+
+  } else {
+
+    messageInput.placeholder =
+      selectedImageData
+        ? 'Describe what you want me to change...'
+        : 'Message Nastivee...';
+
+
+    imageButton.classList.remove(
+      'imageModeActive'
+    );
+
+
+    imageButton.title =
+      'Create image';
+
+
+    imageButton.setAttribute(
+      'aria-pressed',
+      'false'
+    );
+
+  }
+
+}
+
+
+/* =====================================================
+   IMAGE BUTTON
+===================================================== */
+
+imageButton.addEventListener(
+  'click',
+  () => {
 
     if (imageBusy) {
       return;
     }
 
 
-    const text =
-      messageInput.value.trim();
+    /*
+      If an image is uploaded, the button
+      should not accidentally switch to
+      generation mode.
 
+      The text box is already in edit mode.
+    */
 
-    if (
-      !text &&
-      !selectedImageData
-    ) {
+    if (selectedImageData) {
 
       messageInput.focus();
 
@@ -4335,673 +3647,309 @@ Create a refined improved version of the supplied image.`;
     }
 
 
-    /*
-      IMAGE CREATION MODE
-    */
-
-    if (
-      imageMode &&
-      !selectedImageData &&
-      text
-    ) {
-
-      await sendImageFromChatBox(
-        text
-      );
-
-      return;
-
-    }
-
-
-    const userText =
-      text ||
-      'Please edit this image.';
-
-
-    const chatReady =
-      await ensureCurrentChat(
-        userText
-      );
-
-
-    if (!chatReady) {
-
-      return;
-
-    }
-
-
-    const requestChatId =
-      currentChatId;
-
-
-    const requestId =
-      ++activeRequestId;
-
-
-    const conversation =
-      getConversation(
-        requestChatId
-      );
-
-
-    addTextMessage(
-      'user',
-      userText
+    setImageMode(
+      !imageMode
     );
 
 
-    conversation.push({
-
-      role:
-        'user',
-
-      content:
-        userText
-
-    });
-
-
-    const saved =
-      await saveMessage(
-        'user',
-        userText,
-        null,
-        requestChatId
-      );
-
-
-    if (!saved) {
-
-      return;
-
-    }
-
-
-    await updateChatTitle(
-      userText,
-      requestChatId
-    );
-
-
-    /*
-      IMAGE EDIT
-    */
-
-    if (selectedImageData) {
-
-      const image =
-        selectedImageData;
-
-
-      /*
-        Keep the original uploaded photo as the
-        identity reference for this browser session.
-      */
-
-      if (
-        !originalImageReferences.has(
-          String(requestChatId)
-        )
-      ) {
-
-        originalImageReferences.set(
-          String(requestChatId),
-          image
-        );
-
-      }
-
-
-      clearUpload();
-
-
-      messageInput.value =
-        '';
-
-      messageInput.style.height =
-        'auto';
-
-
-      await editImage(
-        image,
-        userText,
-        requestChatId,
-        image
-      );
-
-
-      return;
-
-    }
-
-
-    /*
-      NORMAL AI CHAT
-    */
-
-    messageInput.value =
-      '';
-
-    messageInput.style.height =
-      'auto';
-
-
-    try {
-
-      const response =
-        await apiFetch(
-          '/api/chat',
-          {
-
-            method:
-              'POST',
-
-            body:
-              JSON.stringify({
-
-                messages:
-                  conversation.slice(-30),
-
-                memory:
-                  memory
-
-              })
-
-          }
-        );
-
-
-      let data;
-
-
-      try {
-
-        data =
-          await response.json();
-
-      } catch {
-
-        throw new Error(
-          'Invalid response from chat server.'
-        );
-
-      }
-
-
-      if (!response.ok) {
-
-        throw new Error(
-          data.error ||
-          data.message ||
-          `Chat request failed (${response.status})`
-        );
-
-      }
-
-
-      const answer =
-        data.reply ||
-        data.message ||
-        'I could not generate a response.';
-
-
-      const assistantSaved =
-        await saveMessage(
-          'assistant',
-          answer,
-          null,
-          requestChatId
-        );
-
-
-      if (!assistantSaved) {
-
-        console.error(
-          'ASSISTANT MESSAGE WAS NOT SAVED:',
-          requestChatId
-        );
-
-      }
-
-
-      conversation.push({
-
-        role:
-          'assistant',
-
-        content:
-          answer
-
-      });
-
-
-      if (
-        String(currentChatId) ===
-          String(requestChatId) &&
-        requestId ===
-          activeRequestId
-      ) {
-
-        addTextMessage(
-          'assistant',
-          answer
-        );
-
-      }
-
-
-    } catch (error) {
-
-      console.error(
-        'CHAT ERROR:',
-        error
-      );
-
-
-      if (
-        String(currentChatId) ===
-          String(requestChatId) &&
-        requestId ===
-          activeRequestId
-      ) {
-
-        addTextMessage(
-          'assistant',
-          `Error:\n${error.message}`
-        );
-
-      }
-
-    }
+    messageInput.focus();
 
   }
+);
 
 
-  /* =========================================================
-     IMAGE CREATION FROM CHAT BOX
-  ========================================================= */
+/* =====================================================
+   UPLOAD BUTTON
+===================================================== */
 
-  async function sendImageFromChatBox(
-    prompt
-  ) {
+uploadButton.addEventListener(
+  'click',
+  () => {
+
+    if (imageBusy) {
+      return;
+    }
+
+    fileInput.click();
+
+  }
+);
+
+
+/* =====================================================
+   FILE UPLOAD
+===================================================== */
+
+fileInput.addEventListener(
+  'change',
+  event => {
+
+    const file =
+      event.target.files?.[0];
+
+
+    if (!file) {
+      return;
+    }
+
 
     if (
-      !prompt ||
-      imageBusy
+      !file.type.startsWith(
+        'image/'
+      )
     ) {
 
       return;
 
     }
 
-
-    /*
-      Create chat first.
-    */
-
-    const chatReady =
-      await ensureCurrentChat(
-        prompt
-      );
-
-
-    if (!chatReady) {
-
-      return;
-
-    }
-
-
-    /*
-      Lock everything to this chat.
-    */
-
-    const targetChatId =
-      currentChatId;
-
-
-    const requestId =
-      ++activeRequestId;
-
-
-    const thisImageRequest =
-      ++imageRequestId;
-
-
-    const conversation =
-      getConversation(
-        targetChatId
-      );
-
-
-    /*
-      SHOW PROMPT
-    */
-
-    addTextMessage(
-      'user',
-      prompt
-    );
-
-
-    /*
-      STORE PROMPT LOCALLY
-    */
-
-    conversation.push({
-
-      role:
-        'user',
-
-      content:
-        prompt
-
-    });
-
-
-    /*
-      SAVE IMAGE PROMPT
-    */
-
-    const saved =
-      await saveMessage(
-        'user',
-        prompt,
-        null,
-        targetChatId
-      );
-
-
-    if (!saved) {
-
-      console.error(
-        'IMAGE PROMPT WAS NOT SAVED:',
-        targetChatId
-      );
-
-      return;
-
-    }
-
-
-    await updateChatTitle(
-      prompt,
-      targetChatId
-    );
-
-
-    messageInput.value =
-      '';
-
-    messageInput.style.height =
-      'auto';
-
-
-    setImageMode(false);
-
-
-    /*
-      GENERATE
-    */
-
-    await generateImage(
-      prompt,
-      targetChatId,
-      thisImageRequest,
-      requestId
-    );
-
-  }
-
-
-  /* =========================================================
-     SEND BUTTON
-  ========================================================= */
-
-  sendButton.addEventListener(
-    'click',
-    sendMessage
-  );
-
-
-  /* =========================================================
-     UPLOAD
-  ========================================================= */
-
-  uploadButton.addEventListener(
-    'click',
-    () => {
-
-      if (!imageBusy) {
-
-        fileInput.click();
-
-      }
-
-    }
-  );
-
-
-  fileInput.addEventListener(
-    'change',
-    event => {
-
-      const file =
-        event.target.files?.[0];
-
-
-      if (!file) {
-        return;
-      }
-
-
-      if (
-        !file.type.startsWith(
-          'image/'
-        )
-      ) {
-
-        alert(
-          'Please select an image.'
-        );
-
-        return;
-
-      }
-
-
-      selectedImageFile =
-        file;
-
-
-      const reader =
-        new FileReader();
-
-
-      reader.onload =
-        () => {
-
-          selectedImageData =
-            reader.result;
-
-
-          uploadPreviewImage.src =
-            selectedImageData;
-
-
-          uploadPreview.style.display =
-            'block';
-
-
-          messageInput.placeholder =
-            'Describe what you want me to change...';
-
-
-          imageButton.classList.add(
-            'imageModeActive'
-          );
-
-
-          messageInput.focus();
-
-        };
-
-
-      reader.readAsDataURL(
-        file
-      );
-
-    }
-  );
-
-
-  /* =========================================================
-     CLEAR UPLOAD
-  ========================================================= */
-
-  function clearUpload() {
 
     selectedImageFile =
-      null;
-
-    selectedImageData =
-      null;
-
-    fileInput.value =
-      '';
-
-    uploadPreview.style.display =
-      'none';
-
-    uploadPreviewImage.src =
-      '';
+      file;
 
 
-    messageInput.placeholder =
-      imageMode
-        ? 'Describe the image you want me to create...'
-        : 'Message Nastivee...';
-
-  }
+    const reader =
+      new FileReader();
 
 
-  document
-    .getElementById('removeUpload')
-    .addEventListener(
-      'click',
-      clearUpload
-    );
+    reader.onload =
+      () => {
+
+        selectedImageData =
+          reader.result;
 
 
-  /* =========================================================
-     ENTER TO SEND
-  ========================================================= */
-
-  messageInput.addEventListener(
-    'keydown',
-    event => {
-
-      if (
-        event.key === 'Enter' &&
-        !event.shiftKey
-      ) {
-
-        event.preventDefault();
-
-        sendMessage();
-
-      }
-
-    }
-  );
+        uploadThumb.src =
+          selectedImageData;
 
 
-  /* =========================================================
-     TEXTAREA RESIZE
-  ========================================================= */
-
-  messageInput.addEventListener(
-    'input',
-    () => {
-
-      messageInput.style.height =
-        'auto';
+        uploadName.textContent =
+          file.name;
 
 
-      messageInput.style.height =
-        `${Math.min(
-          messageInput.scrollHeight,
-          150
-        )}px`;
+        uploadPreview.classList.add(
+          'show'
+        );
 
-    }
-  );
-
-
-  /* =========================================================
-     LOGOUT
-  ========================================================= */
-
-  document
-    .getElementById('logoutButton')
-    .addEventListener(
-      'click',
-      async () => {
-
-        activeRequestId++;
-        loadSequence++;
-        imageRequestId++;
-
-        hideImageProgress();
-
-        imageBusy =
-          false;
-
-
-        await supabaseClient.auth.signOut();
-
-
-        currentUser =
-          null;
-
-        currentChatId =
-          null;
-
-        chats =
-          [];
-
-        memory =
-          '';
-
-        chatConversations.clear();
-
-        originalImageReferences.clear();
-
-        initialised =
-          false;
 
         imageMode =
           false;
 
-        clearUpload();
 
-        setImageMode(false);
+        imageButton.classList.add(
+          'imageModeActive'
+        );
 
-        clearChatUI();
 
-        showAuthScreen();
+        imageButton.title =
+          'Image uploaded — describe the edit';
 
-      }
+
+        messageInput.placeholder =
+          'Describe what you want me to change...';
+
+
+        messageInput.focus();
+
+      };
+
+
+    reader.readAsDataURL(
+      file
     );
 
+  }
+);
 
-  /* =========================================================
-     START
-  ========================================================= */
 
-  checkSession();
+/* =====================================================
+   CLEAR UPLOAD
+===================================================== */
+
+clearUploadButton.addEventListener(
+  'click',
+  clearUpload
+);
+
+
+function clearUpload() {
+
+  selectedImageFile =
+    null;
+
+  selectedImageData =
+    null;
+
+
+  fileInput.value =
+    '';
+
+
+  uploadThumb.src =
+    '';
+
+  uploadName.textContent =
+    '';
+
+
+  uploadPreview.classList.remove(
+    'show'
+  );
+
+
+  imageButton.classList.remove(
+    'imageModeActive'
+  );
+
+
+  setImageMode(
+    false
+  );
+
+}
+
+
+/* =====================================================
+   TEXTAREA
+===================================================== */
+
+messageInput.addEventListener(
+  'input',
+  resizeTextarea
+);
+
+
+function resizeTextarea() {
+
+  messageInput.style.height =
+    'auto';
+
+
+  messageInput.style.height =
+    Math.min(
+      messageInput.scrollHeight,
+      180
+    ) + 'px';
+
+}
+
+
+/* =====================================================
+   ENTER TO SEND
+===================================================== */
+
+messageInput.addEventListener(
+  'keydown',
+  event => {
+
+    if (
+      event.key === 'Enter' &&
+      !event.shiftKey
+    ) {
+
+      event.preventDefault();
+
+      sendMessage();
+
+    }
+
+  }
+);
+
+
+/* =====================================================
+   SCROLL
+===================================================== */
+
+function scrollToBottom() {
+
+  requestAnimationFrame(
+    () => {
+
+      chat.scrollTop =
+        chat.scrollHeight;
+
+    }
+  );
+
+}
+
+
+/* =====================================================
+   DOWNLOAD IMAGE
+===================================================== */
+
+function downloadImage(
+  imageData
+) {
+
+  if (!imageData) {
+    return;
+  }
+
+
+  const link =
+    document.createElement(
+      'a'
+    );
+
+  link.href =
+    imageData;
+
+  link.download =
+    `nastivee-image-${Date.now()}.png`;
+
+
+  document.body.appendChild(
+    link
+  );
+
+  link.click();
+
+  link.remove();
+
+}
+
+
+/* =====================================================
+   LOGOUT
+===================================================== */
+
+logoutButton.addEventListener(
+  'click',
+  async () => {
+
+    await supabaseClient.auth.signOut();
+
+    currentUser =
+      null;
+
+    currentChatId =
+      null;
+
+    chats =
+      [];
+
+    imageState.clear();
+
+    initialised =
+      false;
+
+    showAuth();
+
+  }
+);
+
+
+/* =====================================================
+   START
+===================================================== */
+
+updateAuthMode();
+
+resizeTextarea();
+
+checkSession();
 
 </script>
 
