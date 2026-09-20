@@ -6,6 +6,8 @@
 
 <title>Nastivee AI</title>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <style>
 * {
   box-sizing: border-box;
@@ -27,13 +29,146 @@ body {
 }
 
 button,
-textarea {
+textarea,
+input {
   font: inherit;
+}
+
+button {
+  -webkit-tap-highlight-color: transparent;
 }
 
 .app {
   min-height: 100vh;
   display: flex;
+}
+
+/* =====================================================
+   AUTH SCREEN
+===================================================== */
+
+.authScreen {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background:
+    radial-gradient(circle at top, rgba(124,60,255,.25), transparent 45%),
+    linear-gradient(160deg, #241044, #0b0615);
+}
+
+.authScreen.hidden {
+  display: none;
+}
+
+.authCard {
+  width: min(100%, 420px);
+  padding: 28px;
+  border-radius: 22px;
+  background: rgba(20,10,38,.96);
+  border: 1px solid rgba(255,255,255,.1);
+  box-shadow: 0 25px 80px rgba(0,0,0,.45);
+}
+
+.authLogo {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.authLogo img {
+  width: 72px;
+  height: 72px;
+  object-fit: contain;
+  border-radius: 18px;
+}
+
+.authTitle {
+  text-align: center;
+  font-size: 27px;
+  font-weight: bold;
+  margin-top: 10px;
+}
+
+.authSubtitle {
+  text-align: center;
+  color: #bdb2cb;
+  font-size: 14px;
+  margin-top: 7px;
+  margin-bottom: 23px;
+}
+
+.authField {
+  margin-bottom: 13px;
+}
+
+.authField label {
+  display: block;
+  font-size: 13px;
+  color: #cfc5da;
+  margin-bottom: 6px;
+}
+
+.authField input {
+  width: 100%;
+  padding: 13px;
+  border-radius: 11px;
+  border: 1px solid rgba(255,255,255,.12);
+  outline: none;
+  background: rgba(255,255,255,.06);
+  color: white;
+}
+
+.authField input:focus {
+  border-color: rgba(139,92,246,.8);
+}
+
+.authButton {
+  width: 100%;
+  padding: 13px;
+  margin-top: 5px;
+  border: 0;
+  border-radius: 12px;
+  background: linear-gradient(135deg,#743cff,#5420b5);
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.authButton:disabled {
+  opacity: .55;
+}
+
+.authSwitch {
+  margin-top: 16px;
+  text-align: center;
+  color: #aaa0b5;
+  font-size: 14px;
+}
+
+.authSwitch button {
+  border: 0;
+  background: none;
+  color: #a978ff;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.authError {
+  display: none;
+  margin-bottom: 12px;
+  padding: 10px;
+  border-radius: 10px;
+  background: rgba(249,115,22,.12);
+  border: 1px solid rgba(249,115,22,.35);
+  color: #ffc5a0;
+  font-size: 13px;
+}
+
+.authError.open {
+  display: block;
 }
 
 /* =====================================================
@@ -158,14 +293,24 @@ textarea {
   border-top: 1px solid rgba(255,255,255,.08);
 }
 
-.sidebarMemoryButton {
+.sidebarMemoryButton,
+.logoutButton {
   width: 100%;
   border: 0;
-  background: rgba(255,255,255,.06);
   color: white;
   padding: 10px;
   border-radius: 10px;
   cursor: pointer;
+}
+
+.sidebarMemoryButton {
+  background: rgba(255,255,255,.06);
+  margin-bottom: 8px;
+}
+
+.logoutButton {
+  background: rgba(255,80,80,.12);
+  color: #ffb8b8;
 }
 
 /* =====================================================
@@ -594,6 +739,94 @@ header {
 
 <body>
 
+<!-- =====================================================
+     LOGIN / SIGN UP
+===================================================== -->
+
+<div id="authScreen" class="authScreen">
+
+  <div class="authCard">
+
+    <div class="authLogo">
+      <img src="IMG_0471.jpeg" alt="Nastivee AI">
+    </div>
+
+    <div
+      id="authTitle"
+      class="authTitle"
+    >
+      Welcome to Nastivee
+    </div>
+
+    <div
+      id="authSubtitle"
+      class="authSubtitle"
+    >
+      Sign in to save your chats and memory.
+    </div>
+
+    <div
+      id="authError"
+      class="authError"
+    ></div>
+
+    <div class="authField">
+
+      <label for="authEmail">
+        Email
+      </label>
+
+      <input
+        id="authEmail"
+        type="email"
+        autocomplete="email"
+        placeholder="you@example.com"
+      >
+
+    </div>
+
+    <div class="authField">
+
+      <label for="authPassword">
+        Password
+      </label>
+
+      <input
+        id="authPassword"
+        type="password"
+        autocomplete="current-password"
+        placeholder="Your password"
+      >
+
+    </div>
+
+    <button
+      id="authSubmit"
+      class="authButton"
+    >
+      Log in
+    </button>
+
+    <div class="authSwitch">
+
+      <span id="authSwitchText">
+        Don't have an account?
+      </span>
+
+      <button
+        id="authSwitchButton"
+        type="button"
+      >
+        Sign up
+      </button>
+
+    </div>
+
+  </div>
+
+</div>
+
+
 <div class="app">
 
 <!-- =====================================================
@@ -630,6 +863,13 @@ header {
       class="sidebarMemoryButton"
     >
       🧠 Memory
+    </button>
+
+    <button
+      id="logoutButton"
+      class="logoutButton"
+    >
+      🚪 Log out
     </button>
 
   </div>
@@ -829,6 +1069,23 @@ header {
 <script>
 
 /* =====================================================
+   SUPABASE
+===================================================== */
+
+const SUPABASE_URL =
+  'https://fzwqunpnohgwgwikumkt.supabase.co';
+
+const SUPABASE_KEY =
+  'sb_publishable_kNUxEr43Kp5qVC4Evxgz0A_iCTLw7GB';
+
+const supabaseClient =
+  window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_KEY
+  );
+
+
+/* =====================================================
    CONFIG
 ===================================================== */
 
@@ -869,16 +1126,45 @@ let progressCloseTimer = null;
 
 let messageCount = 0;
 
-let lastImage = {
-  sourceImage: null,
-  prompt: '',
-  wasEdit: false
-};
+let currentUser = null;
+let authMode = 'login';
+
+let cloudSyncBusy = false;
 
 
 /* =====================================================
    ELEMENTS
 ===================================================== */
+
+const authScreen =
+  document.getElementById('authScreen');
+
+const authTitle =
+  document.getElementById('authTitle');
+
+const authSubtitle =
+  document.getElementById('authSubtitle');
+
+const authEmail =
+  document.getElementById('authEmail');
+
+const authPassword =
+  document.getElementById('authPassword');
+
+const authSubmit =
+  document.getElementById('authSubmit');
+
+const authSwitchButton =
+  document.getElementById('authSwitchButton');
+
+const authSwitchText =
+  document.getElementById('authSwitchText');
+
+const authError =
+  document.getElementById('authError');
+
+const logoutButton =
+  document.getElementById('logoutButton');
 
 const chat =
   document.getElementById('chat');
@@ -957,30 +1243,353 @@ const chatHistory =
 
 
 /* =====================================================
-   DOCK HEIGHT
+   AUTH UI
 ===================================================== */
 
-function updateDockHeight() {
+function showAuthError(message) {
 
-  document.documentElement.style.setProperty(
-    '--dock-h',
-    `${dock.offsetHeight}px`
+  authError.textContent =
+    message || 'Something went wrong.';
+
+  authError.classList.add(
+    'open'
   );
 
 }
 
-if ('ResizeObserver' in window) {
 
-  new ResizeObserver(
-    updateDockHeight
-  ).observe(dock);
+function clearAuthError() {
+
+  authError.textContent =
+    '';
+
+  authError.classList.remove(
+    'open'
+  );
 
 }
 
-window.addEventListener(
-  'resize',
-  updateDockHeight
+
+function updateAuthMode() {
+
+  clearAuthError();
+
+  if (authMode === 'login') {
+
+    authTitle.textContent =
+      'Welcome to Nastivee';
+
+    authSubtitle.textContent =
+      'Sign in to save your chats and memory.';
+
+    authSubmit.textContent =
+      'Log in';
+
+    authSwitchText.textContent =
+      "Don't have an account?";
+
+    authSwitchButton.textContent =
+      'Sign up';
+
+    authPassword.autocomplete =
+      'current-password';
+
+  } else {
+
+    authTitle.textContent =
+      'Create your Nastivee account';
+
+    authSubtitle.textContent =
+      'Create an account to save your chats in the cloud.';
+
+    authSubmit.textContent =
+      'Create account';
+
+    authSwitchText.textContent =
+      'Already have an account?';
+
+    authSwitchButton.textContent =
+      'Log in';
+
+    authPassword.autocomplete =
+      'new-password';
+
+  }
+
+}
+
+
+authSwitchButton.addEventListener(
+  'click',
+  () => {
+
+    authMode =
+      authMode === 'login'
+        ? 'signup'
+        : 'login';
+
+    updateAuthMode();
+
+  }
 );
+
+
+async function handleAuthSubmit() {
+
+  clearAuthError();
+
+  const email =
+    authEmail.value.trim();
+
+  const password =
+    authPassword.value;
+
+
+  if (!email || !password) {
+
+    showAuthError(
+      'Please enter your email and password.'
+    );
+
+    return;
+
+  }
+
+
+  if (password.length < 6) {
+
+    showAuthError(
+      'Your password must be at least 6 characters.'
+    );
+
+    return;
+
+  }
+
+
+  authSubmit.disabled =
+    true;
+
+  authSubmit.textContent =
+    authMode === 'login'
+      ? 'Logging in…'
+      : 'Creating account…';
+
+
+  try {
+
+    if (authMode === 'login') {
+
+      const result =
+        await supabaseClient.auth.signInWithPassword({
+          email,
+          password
+        });
+
+
+      if (result.error) {
+        throw result.error;
+      }
+
+
+      currentUser =
+        result.data.user;
+
+
+      await initialiseUser();
+
+    } else {
+
+      const result =
+        await supabaseClient.auth.signUp({
+          email,
+          password
+        });
+
+
+      if (result.error) {
+        throw result.error;
+      }
+
+
+      if (result.data.session) {
+
+        currentUser =
+          result.data.user;
+
+        await initialiseUser();
+
+      } else {
+
+        showAuthError(
+          'Account created. Check your email to confirm your account, then log in.'
+        );
+
+      }
+
+    }
+
+  } catch (error) {
+
+    showAuthError(
+      error.message ||
+      'Authentication failed.'
+    );
+
+  } finally {
+
+    authSubmit.disabled =
+      false;
+
+    updateAuthMode();
+
+  }
+
+}
+
+
+authSubmit.addEventListener(
+  'click',
+  handleAuthSubmit
+);
+
+
+authPassword.addEventListener(
+  'keydown',
+  event => {
+
+    if (event.key === 'Enter') {
+
+      event.preventDefault();
+
+      handleAuthSubmit();
+
+    }
+
+  }
+);
+
+
+async function logout() {
+
+  if (chatBusy || imageBusy) {
+    return;
+  }
+
+  await supabaseClient.auth.signOut();
+
+  currentUser =
+    null;
+
+  chats =
+    [];
+
+  activeChatId =
+    null;
+
+  conversation =
+    [];
+
+  memory =
+    {};
+
+  chat.innerHTML =
+    '';
+
+  renderChatHistory();
+
+  renderMemory();
+
+  authScreen.classList.remove(
+    'hidden'
+  );
+
+}
+
+
+logoutButton.addEventListener(
+  'click',
+  logout
+);
+
+
+/* =====================================================
+   CLOUD MEMORY
+===================================================== */
+
+async function loadCloudMemory() {
+
+  if (!currentUser) {
+    return;
+  }
+
+  try {
+
+    const result =
+      await supabaseClient
+        .from('profiles')
+        .select('memory')
+        .eq('id', currentUser.id)
+        .maybeSingle();
+
+
+    if (
+      !result.error &&
+      result.data &&
+      result.data.memory
+    ) {
+
+      memory =
+        result.data.memory;
+
+      localStorage.setItem(
+        MEMORY_KEY,
+        JSON.stringify(memory)
+      );
+
+      renderMemory();
+
+    }
+
+  } catch (error) {
+
+    console.warn(
+      'Cloud memory load failed:',
+      error
+    );
+
+  }
+
+}
+
+
+async function saveCloudMemory() {
+
+  if (!currentUser) {
+    return;
+  }
+
+  try {
+
+    await supabaseClient
+      .from('profiles')
+      .upsert({
+        id:
+          currentUser.id,
+
+        memory
+      });
+
+  } catch (error) {
+
+    console.warn(
+      'Cloud memory save failed:',
+      error
+    );
+
+  }
+
+}
 
 
 /* =====================================================
@@ -991,9 +1600,7 @@ function createChat(title = 'New chat') {
 
   return {
     id:
-      `chat_${Date.now()}_${Math.random()
-        .toString(36)
-        .slice(2, 8)}`,
+      crypto.randomUUID(),
 
     title,
 
@@ -1035,7 +1642,7 @@ function saveChats() {
 }
 
 
-function loadChats() {
+function loadLocalChats() {
 
   try {
 
@@ -1055,11 +1662,6 @@ function loadChats() {
 
   }
 
-
-  /*
-     Migrate the old single conversation
-     into the new chat system.
-  */
 
   if (!chats.length) {
 
@@ -1085,23 +1687,27 @@ function loadChats() {
 
       const migrated =
         createChat(
-          makeChatTitle(oldConversation)
+          makeChatTitle(
+            oldConversation
+          )
         );
 
       migrated.messages =
         oldConversation;
 
-      chats.push(migrated);
+      chats.push(
+        migrated
+      );
 
     } else {
 
       chats.push(
-        createChat('New chat')
+        createChat(
+          'New chat'
+        )
       );
 
     }
-
-    saveChats();
 
   }
 
@@ -1115,16 +1721,467 @@ function loadChats() {
   if (
     !activeChatId ||
     !chats.some(
-      chat => chat.id === activeChatId
+      item =>
+        item.id === activeChatId
     )
   ) {
 
     activeChatId =
       chats[0].id;
 
-    saveChats();
+  }
+
+
+  saveChats();
+
+}
+
+
+/* =====================================================
+   CLOUD CHAT LOADING
+===================================================== */
+
+async function loadCloudChats() {
+
+  if (!currentUser) {
+    return;
+  }
+
+
+  const chatsResult =
+    await supabaseClient
+      .from('chats')
+      .select('*')
+      .eq(
+        'user_id',
+        currentUser.id
+      )
+      .order(
+        'updated_at',
+        {
+          ascending:
+            false
+        }
+      );
+
+
+  if (chatsResult.error) {
+
+    console.error(
+      'Could not load chats:',
+      chatsResult.error
+    );
+
+    return;
 
   }
+
+
+  const cloudChats =
+    chatsResult.data || [];
+
+
+  if (!cloudChats.length) {
+
+    if (!chats.length) {
+
+      chats.push(
+        createChat(
+          'New chat'
+        )
+      );
+
+    }
+
+    for (
+      const localChat
+      of chats
+    ) {
+
+      await uploadChat(
+        localChat
+      );
+
+    }
+
+  } else {
+
+    const loadedChats = [];
+
+
+    for (
+      const cloudChat
+      of cloudChats
+    ) {
+
+      const messagesResult =
+        await supabaseClient
+          .from('messages')
+          .select('*')
+          .eq(
+            'chat_id',
+            cloudChat.id
+          )
+          .eq(
+            'user_id',
+            currentUser.id
+          )
+          .order(
+            'created_at',
+            {
+              ascending:
+                true
+            }
+          );
+
+
+      const messages =
+        messagesResult.data || [];
+
+
+      loadedChats.push({
+        id:
+          cloudChat.id,
+
+        title:
+          cloudChat.title ||
+          'New chat',
+
+        createdAt:
+          new Date(
+            cloudChat.created_at
+          ).getTime(),
+
+        updatedAt:
+          new Date(
+            cloudChat.updated_at
+          ).getTime(),
+
+        messages:
+          messages.map(
+            message => ({
+              role:
+                message.role,
+
+              type:
+                message.type,
+
+              content:
+                message.content
+            })
+          )
+      });
+
+    }
+
+
+    chats =
+      loadedChats;
+
+  }
+
+
+  activeChatId =
+    chats[0]?.id ||
+    null;
+
+
+  if (activeChatId) {
+
+    const active =
+      getActiveChat();
+
+    conversation =
+      active?.messages || [];
+
+  }
+
+
+  saveChats();
+
+  renderChatHistory();
+
+  chat.innerHTML = '';
+
+  restoreConversation();
+
+}
+
+
+/* =====================================================
+   CLOUD CHAT SAVE
+===================================================== */
+
+async function uploadChat(
+  chatObject
+) {
+
+  if (!currentUser) {
+    return;
+  }
+
+
+  if (!chatObject.id) {
+
+    chatObject.id =
+      crypto.randomUUID();
+
+  }
+
+
+  const chatResult =
+    await supabaseClient
+      .from('chats')
+      .upsert({
+        id:
+          chatObject.id,
+
+        user_id:
+          currentUser.id,
+
+        title:
+          chatObject.title ||
+          'New chat',
+
+        created_at:
+          new Date(
+            chatObject.createdAt ||
+            Date.now()
+          ).toISOString(),
+
+        updated_at:
+          new Date(
+            chatObject.updatedAt ||
+            Date.now()
+          ).toISOString()
+      });
+
+
+  if (chatResult.error) {
+
+    console.error(
+      'Chat cloud save failed:',
+      chatResult.error
+    );
+
+    return;
+
+  }
+
+
+  /*
+     Remove existing messages and
+     replace them with the current
+     conversation.
+
+     This keeps cloud history
+     straightforward and reliable.
+  */
+
+  await supabaseClient
+    .from('messages')
+    .delete()
+    .eq(
+      'chat_id',
+      chatObject.id
+    )
+    .eq(
+      'user_id',
+      currentUser.id
+    );
+
+
+  const messages =
+    (chatObject.messages || [])
+      .map(
+        message => ({
+          chat_id:
+            chatObject.id,
+
+          user_id:
+            currentUser.id,
+
+          role:
+            message.role ||
+            'assistant',
+
+          type:
+            message.type ||
+            'text',
+
+          content:
+            message.content ||
+            ''
+        })
+      );
+
+
+  if (messages.length) {
+
+    const messageResult =
+      await supabaseClient
+        .from('messages')
+        .insert(
+          messages
+        );
+
+
+    if (messageResult.error) {
+
+      console.error(
+        'Message cloud save failed:',
+        messageResult.error
+      );
+
+    }
+
+  }
+
+}
+
+
+async function syncActiveChat() {
+
+  if (
+    !currentUser ||
+    cloudSyncBusy
+  ) {
+    return;
+  }
+
+
+  const current =
+    getActiveChat();
+
+  if (!current) {
+    return;
+  }
+
+
+  cloudSyncBusy =
+    true;
+
+
+  try {
+
+    await uploadChat(
+      current
+    );
+
+    await saveCloudMemory();
+
+  } catch (error) {
+
+    console.warn(
+      'Cloud sync failed:',
+      error
+    );
+
+  } finally {
+
+    cloudSyncBusy =
+      false;
+
+  }
+
+}
+
+
+async function deleteCloudChat(
+  id
+) {
+
+  if (!currentUser) {
+    return;
+  }
+
+
+  try {
+
+    await supabaseClient
+      .from('messages')
+      .delete()
+      .eq(
+        'chat_id',
+        id
+      )
+      .eq(
+        'user_id',
+        currentUser.id
+      );
+
+
+    await supabaseClient
+      .from('chats')
+      .delete()
+      .eq(
+        'id',
+        id
+      )
+      .eq(
+        'user_id',
+        currentUser.id
+      );
+
+  } catch (error) {
+
+    console.warn(
+      'Cloud chat deletion failed:',
+      error
+    );
+
+  }
+
+}
+
+
+/* =====================================================
+   INITIALISE USER
+===================================================== */
+
+async function initialiseUser() {
+
+  authScreen.classList.add(
+    'hidden'
+  );
+
+
+  try {
+
+    await loadCloudMemory();
+
+    await loadCloudChats();
+
+  } catch (error) {
+
+    console.error(
+      'User initialisation failed:',
+      error
+    );
+
+    loadLocalChats();
+
+    const active =
+      getActiveChat();
+
+    if (active) {
+
+      conversation =
+        active.messages || [];
+
+    }
+
+    chat.innerHTML =
+      '';
+
+    renderChatHistory();
+
+    restoreConversation();
+
+  }
+
+
+  updateDockHeight();
 
 }
 
@@ -1142,23 +2199,33 @@ function makeChatTitle(messages) {
         typeof message.content === 'string'
     );
 
+
   if (!firstUserMessage) {
     return 'New chat';
   }
+
 
   let title =
     firstUserMessage.content
       .replace(/\s+/g, ' ')
       .trim();
 
+
   if (!title) {
     return 'New chat';
   }
 
+
   if (title.length > 32) {
+
     title =
-      title.substring(0, 32).trim() + '…';
+      title.substring(
+        0,
+        32
+      ).trim() + '…';
+
   }
+
 
   return title;
 
@@ -1172,10 +2239,12 @@ function updateChatTitle() {
 
   if (!current) return;
 
+
   const title =
     makeChatTitle(
       current.messages
     );
+
 
   if (title !== 'New chat') {
 
@@ -1194,8 +2263,8 @@ function updateChatTitle() {
 function getActiveChat() {
 
   return chats.find(
-    chat =>
-      chat.id === activeChatId
+    item =>
+      item.id === activeChatId
   );
 
 }
@@ -1208,17 +2277,21 @@ function saveActiveConversation() {
 
   if (!current) return;
 
+
   current.messages =
     conversation;
 
   current.updatedAt =
     Date.now();
 
+
   updateChatTitle();
 
   saveChats();
 
   renderChatHistory();
+
+  syncActiveChat();
 
 }
 
@@ -1229,16 +2302,23 @@ function saveActiveConversation() {
 
 function openChat(id) {
 
-  if (chatBusy || imageBusy) {
+  if (
+    chatBusy ||
+    imageBusy
+  ) {
     return;
   }
 
+
   const selected =
     chats.find(
-      chat => chat.id === id
+      item =>
+        item.id === id
     );
 
+
   if (!selected) return;
+
 
   activeChatId =
     id;
@@ -1259,15 +2339,14 @@ function openChat(id) {
     'open'
   );
 
-  lastImage = {
-    sourceImage: null,
-    prompt: '',
-    wasEdit: false
-  };
 
-  setImageMode(false);
+  setImageMode(
+    false
+  );
 
-  chat.innerHTML = '';
+
+  chat.innerHTML =
+    '';
 
   restoreConversation();
 
@@ -1282,16 +2361,22 @@ function openChat(id) {
 
 function createNewChat() {
 
-  if (chatBusy || imageBusy) {
+  if (
+    chatBusy ||
+    imageBusy
+  ) {
     return;
   }
+
 
   const newChat =
     createChat();
 
+
   chats.unshift(
     newChat
   );
+
 
   activeChatId =
     newChat.id;
@@ -1312,21 +2397,25 @@ function createNewChat() {
     'open'
   );
 
-  lastImage = {
-    sourceImage: null,
-    prompt: '',
-    wasEdit: false
-  };
 
-  setImageMode(false);
+  setImageMode(
+    false
+  );
 
-  chat.innerHTML = '';
+
+  chat.innerHTML =
+    '';
+
 
   addMessage(
     'assistant',
     'Hi 👋 I’m Nastivee. What would you like to do?',
-    { silent: true }
+    {
+      silent:
+        true
+    }
   );
+
 
   saveActiveConversation();
 
@@ -1341,14 +2430,32 @@ function createNewChat() {
    DELETE CHAT
 ===================================================== */
 
-function deleteChat(id, event) {
+function deleteChat(
+  id,
+  event
+) {
 
   event.stopPropagation();
+
+
+  if (
+    chatBusy ||
+    imageBusy
+  ) {
+    return;
+  }
+
+
+  deleteCloudChat(
+    id
+  );
+
 
   if (chats.length === 1) {
 
     chats[0] =
       createChat();
+
 
     activeChatId =
       chats[0].id;
@@ -1356,16 +2463,24 @@ function deleteChat(id, event) {
     conversation =
       [];
 
-    chat.innerHTML = '';
+    chat.innerHTML =
+      '';
 
     messageCount =
       0;
 
+
     addMessage(
       'assistant',
       'Hi 👋 I’m Nastivee. What would you like to do?',
-      { silent: true }
+      {
+        silent:
+          true
+      }
     );
+
+
+    saveActiveConversation();
 
   } else {
 
@@ -1375,7 +2490,10 @@ function deleteChat(id, event) {
           item.id !== id
       );
 
-    if (activeChatId === id) {
+
+    if (
+      activeChatId === id
+    ) {
 
       activeChatId =
         chats[0].id;
@@ -1383,7 +2501,8 @@ function deleteChat(id, event) {
       conversation =
         chats[0].messages || [];
 
-      chat.innerHTML = '';
+      chat.innerHTML =
+        '';
 
       messageCount =
         0;
@@ -1392,9 +2511,10 @@ function deleteChat(id, event) {
 
     }
 
+    saveChats();
+
   }
 
-  saveChats();
 
   renderChatHistory();
 
@@ -1407,21 +2527,27 @@ function deleteChat(id, event) {
 
 function renderChatHistory() {
 
-  chatHistory.innerHTML = '';
+  chatHistory.innerHTML =
+    '';
+
 
   if (!chats.length) {
     return;
   }
 
+
   const sorted =
     [...chats].sort(
       (a, b) =>
-        b.updatedAt - a.updatedAt
+        b.updatedAt -
+        a.updatedAt
     );
 
 
   const label =
-    document.createElement('div');
+    document.createElement(
+      'div'
+    );
 
   label.className =
     'historyLabel';
@@ -1438,10 +2564,13 @@ function renderChatHistory() {
     item => {
 
       const row =
-        document.createElement('div');
+        document.createElement(
+          'div'
+        );
 
       row.className =
         'chatItem';
+
 
       if (
         item.id === activeChatId
@@ -1455,14 +2584,18 @@ function renderChatHistory() {
 
 
       const icon =
-        document.createElement('span');
+        document.createElement(
+          'span'
+        );
 
       icon.textContent =
         '💬';
 
 
       const title =
-        document.createElement('div');
+        document.createElement(
+          'div'
+        );
 
       title.className =
         'chatItemTitle';
@@ -1473,7 +2606,9 @@ function renderChatHistory() {
 
 
       const deleteButton =
-        document.createElement('button');
+        document.createElement(
+          'button'
+        );
 
       deleteButton.className =
         'deleteChat';
@@ -1483,6 +2618,7 @@ function renderChatHistory() {
 
       deleteButton.title =
         'Delete chat';
+
 
       deleteButton.addEventListener(
         'click',
@@ -1494,15 +2630,25 @@ function renderChatHistory() {
       );
 
 
-      row.appendChild(icon);
-      row.appendChild(title);
-      row.appendChild(deleteButton);
+      row.appendChild(
+        icon
+      );
+
+      row.appendChild(
+        title
+      );
+
+      row.appendChild(
+        deleteButton
+      );
 
 
       row.addEventListener(
         'click',
         () =>
-          openChat(item.id)
+          openChat(
+            item.id
+          )
       );
 
 
@@ -1517,28 +2663,29 @@ function renderChatHistory() {
 
 
 /* =====================================================
-   LOAD MEMORY
+   MEMORY
 ===================================================== */
 
-try {
+function loadLocalMemory() {
 
-  memory =
-    JSON.parse(
-      localStorage.getItem(
-        MEMORY_KEY
-      )
-    ) || {};
+  try {
 
-} catch {
+    memory =
+      JSON.parse(
+        localStorage.getItem(
+          MEMORY_KEY
+        )
+      ) || {};
 
-  memory = {};
+  } catch {
+
+    memory =
+      {};
+
+  }
 
 }
 
-
-/* =====================================================
-   MEMORY STORAGE
-===================================================== */
 
 function saveMemory() {
 
@@ -1546,21 +2693,22 @@ function saveMemory() {
 
     localStorage.setItem(
       MEMORY_KEY,
-      JSON.stringify(memory)
+      JSON.stringify(
+        memory
+      )
     );
 
   } catch {}
 
+  saveCloudMemory();
+
 }
 
-
-/* =====================================================
-   MEMORY
-===================================================== */
 
 function extractMemory(text) {
 
   if (!text) return;
+
 
   let match;
 
@@ -1569,6 +2717,7 @@ function extractMemory(text) {
     text.match(
       /my\s+(?:dog|dogs|puppy)(?:'s)?\s+(?:name\s+is|is\s+called|is\s+named)\s+([A-Za-z][A-Za-z0-9_-]{1,30})/i
     );
+
 
   if (match) {
 
@@ -1583,6 +2732,7 @@ function extractMemory(text) {
       /my\s+name\s+is\s+([A-Za-z][A-Za-z0-9_-]{1,30})/i
     );
 
+
   if (match) {
 
     memory.userName =
@@ -1596,6 +2746,7 @@ function extractMemory(text) {
       /(?:my\s+dog|my\s+puppy)\s+is\s+a\s+([A-Za-z][A-Za-z -]{2,30})/i
     );
 
+
   if (match) {
 
     memory.dogBreed =
@@ -1605,6 +2756,7 @@ function extractMemory(text) {
 
 
   saveMemory();
+
   renderMemory();
 
 }
@@ -1728,18 +2880,26 @@ async function apiFetch(
    MESSAGE WRAPPER
 ===================================================== */
 
-function createMessageWrapper(role) {
+function createMessageWrapper(
+  role
+) {
 
   const wrapper =
-    document.createElement('div');
+    document.createElement(
+      'div'
+    );
+
 
   messageCount++;
+
 
   wrapper.id =
     `msg-${messageCount}`;
 
+
   wrapper.className =
     `message ${role}`;
+
 
   return wrapper;
 
@@ -1757,14 +2917,20 @@ function addMessage(
 ) {
 
   const wrapper =
-    createMessageWrapper(role);
+    createMessageWrapper(
+      role
+    );
 
 
   const bubble =
-    document.createElement('div');
+    document.createElement(
+      'div'
+    );
+
 
   bubble.className =
     'bubble';
+
 
   bubble.textContent =
     content;
@@ -1773,6 +2939,7 @@ function addMessage(
   wrapper.appendChild(
     bubble
   );
+
 
   chat.appendChild(
     wrapper
@@ -1812,14 +2979,20 @@ function addImageMessage(
 
 
   const card =
-    document.createElement('div');
+    document.createElement(
+      'div'
+    );
+
 
   card.className =
     'imageCard';
 
 
   const img =
-    document.createElement('img');
+    document.createElement(
+      'img'
+    );
+
 
   img.src =
     imageUrl;
@@ -1829,17 +3002,24 @@ function addImageMessage(
 
 
   const actions =
-    document.createElement('div');
+    document.createElement(
+      'div'
+    );
+
 
   actions.className =
     'imageActions';
 
 
   const button =
-    document.createElement('button');
+    document.createElement(
+      'button'
+    );
+
 
   button.className =
     'rerenderButton';
+
 
   button.textContent =
     '🔄 Re-render';
@@ -1878,6 +3058,7 @@ function addImageMessage(
     button
   );
 
+
   card.appendChild(
     img
   );
@@ -1886,9 +3067,11 @@ function addImageMessage(
     actions
   );
 
+
   wrapper.appendChild(
     card
   );
+
 
   chat.appendChild(
     wrapper
@@ -1904,8 +3087,13 @@ function addImageMessage(
     img.addEventListener(
       'load',
       () =>
-        showMessage(wrapper),
-      { once: true }
+        showMessage(
+          wrapper
+        ),
+      {
+        once:
+          true
+      }
     );
 
   }
@@ -1920,14 +3108,19 @@ function addImageMessage(
    SCROLL
 ===================================================== */
 
-function showMessage(element) {
+function showMessage(
+  element
+) {
 
   requestAnimationFrame(
     () => {
 
       element.scrollIntoView({
-        block: 'start',
-        behavior: 'smooth'
+        block:
+          'start',
+
+        behavior:
+          'smooth'
       });
 
     }
@@ -1975,6 +3168,7 @@ function startImageProgress(
     'done',
     'failed'
   );
+
 
   imageProgress.classList.add(
     'open'
@@ -2085,7 +3279,9 @@ function startImageProgress(
 }
 
 
-function closeProgressAfter(ms) {
+function closeProgressAfter(
+  ms
+) {
 
   clearTimeout(
     progressCloseTimer
@@ -2126,6 +3322,7 @@ function closeProgressAfter(ms) {
           'failed'
         );
 
+
         progressFill.style.width =
           '5%';
 
@@ -2142,15 +3339,19 @@ function finishImageProgress() {
     progressTimer
   );
 
+
   imageProgress.classList.add(
     'done'
   );
 
+
   progressStage.textContent =
     'Done ✓';
 
+
   progressFill.style.width =
     '100%';
+
 
   closeProgressAfter(
     1200
@@ -2165,16 +3366,20 @@ function failImageProgress() {
     progressTimer
   );
 
+
   imageProgress.classList.add(
     'done',
     'failed'
   );
 
+
   progressStage.textContent =
     'Something went wrong.';
 
+
   progressFill.style.width =
     '100%';
+
 
   closeProgressAfter(
     2000
@@ -2224,10 +3429,13 @@ async function sendMessage() {
 
   if (!text) return;
 
+
   if (
     chatBusy ||
     imageBusy
-  ) return;
+  ) {
+    return;
+  }
 
 
   if (imageMode) {
@@ -2293,8 +3501,10 @@ async function sendMessage() {
       'div'
     );
 
+
   thinkingBubble.className =
     'bubble';
+
 
   thinkingBubble.textContent =
     'Nastivee is thinking…';
@@ -2303,6 +3513,7 @@ async function sendMessage() {
   thinking.appendChild(
     thinkingBubble
   );
+
 
   chat.appendChild(
     thinking
@@ -2480,14 +3691,6 @@ async function createImage(
     finishImageProgress();
 
 
-    lastImage = {
-      sourceImage,
-      prompt:
-        originalPrompt,
-      wasEdit
-    };
-
-
     addImageMessage(
       data.image,
       sourceImage,
@@ -2566,6 +3769,7 @@ async function rerenderImage(
   imageBusy =
     true;
 
+
   button.disabled =
     true;
 
@@ -2630,14 +3834,6 @@ async function rerenderImage(
 
 
     finishImageProgress();
-
-
-    lastImage = {
-      sourceImage,
-      prompt:
-        originalPrompt,
-      wasEdit
-    };
 
 
     addImageMessage(
@@ -2707,8 +3903,10 @@ function setImageMode(
       'imageMode'
     );
 
+
     imageButton.textContent =
       '🖼️';
+
 
     messageInput.placeholder =
       selectedPhoto
@@ -2721,8 +3919,10 @@ function setImageMode(
       'imageMode'
     );
 
+
     imageButton.textContent =
       '🎨';
+
 
     messageInput.placeholder =
       'Message Nastivee…';
@@ -2856,6 +4056,7 @@ memoryButton.addEventListener(
   toggleMemory
 );
 
+
 sidebarMemoryButton.addEventListener(
   'click',
   toggleMemory
@@ -2870,6 +4071,7 @@ newChatButton.addEventListener(
   'click',
   createNewChat
 );
+
 
 newChatSideButton.addEventListener(
   'click',
@@ -2957,6 +4159,7 @@ function resizeInput() {
   messageInput.style.height =
     'auto';
 
+
   messageInput.style.height =
     `${Math.min(
       messageInput.scrollHeight,
@@ -2983,7 +4186,10 @@ function restoreConversation() {
     addMessage(
       'assistant',
       'Hi 👋 I’m Nastivee. What would you like to do?',
-      { silent: true }
+      {
+        silent:
+          true
+      }
     );
 
     return;
@@ -3039,28 +4245,96 @@ function restoreConversation() {
    START
 ===================================================== */
 
-loadChats();
+async function startApp() {
+
+  updateAuthMode();
+
+  loadLocalMemory();
+
+  loadLocalChats();
+
+  renderChatHistory();
+
+  renderMemory();
+
+  updateDockHeight();
 
 
-const active =
-  getActiveChat();
+  const result =
+    await supabaseClient.auth.getSession();
 
 
-if (active) {
+  if (
+    result.error
+  ) {
 
-  conversation =
-    active.messages || [];
+    console.error(
+      'Supabase session error:',
+      result.error
+    );
+
+    authScreen.classList.remove(
+      'hidden'
+    );
+
+    return;
+
+  }
+
+
+  if (
+    result.data.session
+  ) {
+
+    currentUser =
+      result.data.session.user;
+
+    await initialiseUser();
+
+  } else {
+
+    authScreen.classList.remove(
+      'hidden'
+    );
+
+  }
 
 }
 
 
-renderChatHistory();
+supabaseClient.auth.onAuthStateChange(
+  async (
+    event,
+    session
+  ) => {
 
-renderMemory();
+    if (
+      event === 'SIGNED_IN' &&
+      session
+    ) {
 
-restoreConversation();
+      currentUser =
+        session.user;
 
-updateDockHeight();
+      await initialiseUser();
+
+    }
+
+
+    if (
+      event === 'SIGNED_OUT'
+    ) {
+
+      currentUser =
+        null;
+
+    }
+
+  }
+);
+
+
+startApp();
 
 </script>
 
