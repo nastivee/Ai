@@ -1,58 +1,50 @@
-import express from 'express';
-import cors from 'cors';
-import OpenAI, { toFile } from 'openai';
-import sharp from 'sharp';
+const express = require('express');
+const cors = require('cors');
+const OpenAI = require('openai');
+const sharp = require('sharp');
+const { toFile } = require('openai/uploads');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
 
 app.use(cors());
+app.use(express.json({ limit: '25mb' }));
 
-app.use(
-  express.json({
-    limit: '50mb'
-  })
-);
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY
+});
 
-function getOpenAIClient() {
-  const apiKey = process.env.OPENAI_API_KEY;
+const PORT = process.env.PORT || 3000;
 
-  if (!apiKey) {
-    return null;
-  }
+// --------------------------------------------------
+// BASIC ROUTE
+// --------------------------------------------------
 
-  return new OpenAI({
-    apiKey,
-    timeout: 180000
-  });
-}
+app.get('/', (req, res) => {
+  res.send('Nastivee AI Bot backend is running.');
+});
 
-
-/* =========================
-   CHAT
-========================= */
+// --------------------------------------------------
+// CHAT
+// --------------------------------------------------
 
 app.post('/api/chat', async (req, res) => {
   try {
     const { message } = req.body;
 
-    if (!message) {
+    if (!message || !message.trim()) {
       return res.status(400).json({
         error: 'Message is required.'
       });
     }
 
-    const openai = getOpenAIClient();
-
-    if (!openai) {
-      return res.status(500).json({
-        error: 'OPENAI_API_KEY is missing on Render.'
-      });
-    }
-
-    const completion = await openai.chat.completions.create({
+    const response = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [
+        {
+          role: 'system',
+          content:
+            'You are Nastivee AI Bot, a helpful, friendly and intelligent personal AI assistant.'
+        },
         {
           role: 'user',
           content: message
@@ -60,206 +52,162 @@ app.post('/api/chat', async (req, res) => {
       ]
     });
 
-    const answer =
-      completion.choices?.[0]?.message?.content ||
-      'No response received.';
+    const reply =
+      response.choices?.[0]?.message?.content ||
+      'Sorry, I could not generate a response.';
 
-    return res.json({
-      answer
-    });
+    res.json({ reply });
 
   } catch (error) {
+    console.error('CHAT ERROR:', error);
 
-    console.error(
-      'CHAT ERROR:',
-      error?.status,
-      error?.message || error
-    );
-
-    return res.status(500).json({
-      error:
-        error?.message ||
-        'Chat service error.'
+    res.status(500).json({
+      error: 'Chat request failed.'
     });
   }
 });
 
+// --------------------------------------------------
+// IMAGE VARIATIONS
+// --------------------------------------------------
 
-/* =========================
-   IMAGE GENERATION
-========================= */
+const variationInstructions = [
+  'Create a completely different composition from the previous version. Change the camera angle, subject positioning and visual arrangement while keeping the core subject and requested details accurate.',
+
+  'Create a fresh visual interpretation. Use a different camera angle, different framing, different lighting and a noticeably different composition. Do not simply reproduce the previous image.',
+
+  'Make this version substantially different from the previous result. Change the perspective, environment details, lighting, subject placement and overall visual arrangement while preserving the original request.',
+
+  'Create an alternative version with a new composition and visual concept. Use a different perspective, depth, lighting setup and arrangement. Avoid repeating the previous image.',
+
+  'Reimagine the scene from a completely different viewpoint. Change the framing, camera position, lighting, background arrangement and subject placement while maintaining the original prompt.',
+
+  'Produce a distinctly different interpretation of the prompt. Use an unexpected but appropriate composition, different perspective, different lighting and different environmental details.',
+
+  'Create another unique version. Do not copy the previous composition. Change the camera angle, lens perspective, lighting, subject position and background arrangement.',
+
+  'Create a fresh cinematic interpretation of the request. Use a substantially different composition, perspective, lighting design and scene arrangement from the previous result.'
+];
+
+function getRandomVariation() {
+  return variationInstructions[
+    Math.floor(Math.random() * variationInstructions.length)
+  ];
+}
+
+// --------------------------------------------------
+// IMAGE GENERATION
+// --------------------------------------------------
 
 app.post('/api/image', async (req, res) => {
-
   try {
+    const { prompt, regenerate } = req.body;
 
-    const { prompt } = req.body;
-
-    if (!prompt) {
+    if (!prompt || !prompt.trim()) {
       return res.status(400).json({
-        error: 'Prompt is required.'
+        error: 'Image prompt is required.'
       });
     }
 
-    const openai = getOpenAIClient();
+    let finalPrompt = prompt.trim();
 
-    if (!openai) {
-      return res.status(500).json({
-        error: 'OPENAI_API_KEY is missing on Render.'
-      });
+    // When Regenerate is pressed, automatically force
+    // the image model to create a substantially different version.
+    if (regenerate === true) {
+      const variation = getRandomVariation();
+
+      finalPrompt = `${finalPrompt}
+
+IMPORTANT VARIATION INSTRUCTION:
+${variation}
+
+The original request is the priority. Keep all important requested subjects, objects, text and details accurate, but make the resulting image clearly different from the previous generation.`;
     }
 
-    console.log(
-      'IMAGE GENERATION:',
-      prompt
-    );
+    console.log('IMAGE GENERATION:', finalPrompt);
 
-    const response =
-      await openai.images.generate({
+    const response = await openai.images.generate({
+      model: 'gpt-image-2',
+      prompt: finalPrompt,
+      size: '1024x1024',
+      quality: 'medium',
+      n: 1
+    });
 
-        model: 'gpt-image-2',
+    console.log('IMAGE GENERATED SUCCESSFULLY');
 
-        prompt,
+    const imageData = response.data?.[0];
 
-        size: '1024x1024',
+    if (!imageData) {
+      throw new Error('No image returned from OpenAI.');
+    }
 
-        /*
-         * Medium is quicker than high
-         * while still producing good images.
-         */
-        quality: 'medium',
-
-        n: 1
-      });
-
-    const image =
-      response?.data?.[0];
-
-    if (image?.b64_json) {
-
-      console.log(
-        'IMAGE GENERATED SUCCESSFULLY'
-      );
-
+    if (imageData.b64_json) {
       return res.json({
-
-        imageUrl:
-          `data:image/png;base64,${image.b64_json}`
-
+        image: `data:image/png;base64,${imageData.b64_json}`
       });
     }
 
-    if (image?.url) {
-
-      console.log(
-        'IMAGE GENERATED SUCCESSFULLY - URL'
-      );
-
+    if (imageData.url) {
       return res.json({
-
-        imageUrl:
-          image.url
-
+        image: imageData.url
       });
     }
 
-    throw new Error(
-      'OpenAI returned no image.'
-    );
+    throw new Error('Image response contained no usable image.');
 
   } catch (error) {
+    console.error('IMAGE GENERATION ERROR:', error);
 
-    console.error(
-      'IMAGE GENERATION ERROR:',
-      error?.status,
-      error?.message || error
-    );
-
-    return res.status(500).json({
-
+    res.status(500).json({
       error:
+        error?.error?.message ||
         error?.message ||
         'Image generation failed.'
-
     });
   }
 });
 
-
-/* =========================
-   IMAGE EDITING
-========================= */
+// --------------------------------------------------
+// IMAGE EDITING
+// --------------------------------------------------
 
 app.post('/api/image/edit', async (req, res) => {
-
   try {
+    const { prompt, image, regenerate } = req.body;
 
-    const {
-      prompt,
-      image
-    } = req.body;
-
-    if (!prompt) {
-
+    if (!prompt || !prompt.trim()) {
       return res.status(400).json({
-        error:
-          'Edit prompt is required.'
+        error: 'Image edit prompt is required.'
       });
-
     }
 
     if (!image) {
-
       return res.status(400).json({
-        error:
-          'No image was uploaded.'
+        error: 'An image is required.'
       });
-
     }
 
-    const openai =
-      getOpenAIClient();
+    console.log('IMAGE EDIT:', prompt);
 
-    if (!openai) {
+    // ------------------------------------------------
+    // Convert incoming image to a clean JPEG.
+    // This prevents "Invalid image file or mode" errors.
+    // ------------------------------------------------
 
-      return res.status(500).json({
-        error:
-          'OPENAI_API_KEY is missing on Render.'
-      });
+    let originalBuffer;
 
+    if (typeof image === 'string' && image.startsWith('data:')) {
+      const base64Data = image.split(',')[1];
+
+      if (!base64Data) {
+        throw new Error('Invalid image data.');
+      }
+
+      originalBuffer = Buffer.from(base64Data, 'base64');
+    } else {
+      throw new Error('Unsupported image format.');
     }
-
-    console.log(
-      'IMAGE EDIT:',
-      prompt
-    );
-
-
-    /* =========================
-       READ UPLOADED IMAGE
-    ========================= */
-
-    const match = image.match(
-      /^data:image\/[a-zA-Z0-9.+-]+;base64,(.+)$/
-    );
-
-    if (!match) {
-
-      return res.status(400).json({
-        error:
-          'Invalid uploaded image data.'
-      });
-
-    }
-
-    const base64Data =
-      match[1];
-
-    const originalBuffer =
-      Buffer.from(
-        base64Data,
-        'base64'
-      );
 
     console.log(
       'ORIGINAL IMAGE:',
@@ -267,28 +215,22 @@ app.post('/api/image/edit', async (req, res) => {
       'bytes'
     );
 
-
-    /* =========================
-       NORMALISE IMAGE
-    ========================= */
-
-    const normalizedBuffer =
-      await sharp(originalBuffer)
-        .rotate()
-        .resize({
-          width: 1536,
-          height: 1536,
-          fit: 'inside',
-          withoutEnlargement: true
-        })
-        .flatten({
-          background: '#ffffff'
-        })
-        .jpeg({
-          quality: 90,
-          mozjpeg: true
-        })
-        .toBuffer();
+    const normalizedBuffer = await sharp(originalBuffer)
+      .rotate()
+      .resize({
+        width: 1536,
+        height: 1536,
+        fit: 'inside',
+        withoutEnlargement: true
+      })
+      .flatten({
+        background: '#ffffff'
+      })
+      .jpeg({
+        quality: 90,
+        mozjpeg: true
+      })
+      .toBuffer();
 
     console.log(
       'IMAGE CONVERTED:',
@@ -296,145 +238,79 @@ app.post('/api/image/edit', async (req, res) => {
       'bytes'
     );
 
-
-    /* =========================
-       CREATE OPENAI FILE
-    ========================= */
-
-    const imageFile =
-      await toFile(
-        normalizedBuffer,
-        'uploaded-image.jpg',
-        {
-          type: 'image/jpeg'
-        }
-      );
-
-
-    console.log(
-      'SENDING IMAGE TO OPENAI...'
+    const imageFile = await toFile(
+      normalizedBuffer,
+      'uploaded-image.jpg',
+      {
+        type: 'image/jpeg'
+      }
     );
 
+    let finalPrompt = prompt.trim();
 
-    /* =========================
-       EDIT IMAGE
-    ========================= */
+    // Make regenerated edits visibly different.
+    if (regenerate === true) {
+      const variation = getRandomVariation();
 
-    const response =
-      await openai.images.edit({
+      finalPrompt = `${finalPrompt}
 
-        model: 'gpt-image-2',
+IMPORTANT VARIATION INSTRUCTION:
+${variation}
 
-        image: imageFile,
-
-        prompt,
-
-        size: '1024x1024',
-
-        quality: 'medium',
-
-        n: 1
-
-      });
-
-
-    const result =
-      response?.data?.[0];
-
-
-    if (result?.b64_json) {
-
-      console.log(
-        'IMAGE EDITED SUCCESSFULLY'
-      );
-
-      return res.json({
-
-        imageUrl:
-          `data:image/png;base64,${result.b64_json}`
-
-      });
-
+Keep the requested edit accurate, but create a noticeably different interpretation from the previous result.`;
     }
 
+    console.log('SENDING IMAGE TO OPENAI...');
 
-    if (result?.url) {
-
-      console.log(
-        'IMAGE EDITED SUCCESSFULLY - URL'
-      );
-
-      return res.json({
-
-        imageUrl:
-          result.url
-
-      });
-
-    }
-
-
-    throw new Error(
-      'OpenAI returned no edited image.'
-    );
-
-
-  } catch (error) {
-
-    console.error(
-      'IMAGE EDIT ERROR:',
-      error?.status,
-      error?.message || error
-    );
-
-    return res.status(500).json({
-
-      error:
-        error?.message ||
-        'Image editing failed.'
-
+    const response = await openai.images.edit({
+      model: 'gpt-image-2',
+      image: imageFile,
+      prompt: finalPrompt,
+      size: '1024x1024',
+      quality: 'medium',
+      n: 1
     });
 
-  }
+    console.log('IMAGE EDITED SUCCESSFULLY');
 
-});
+    const imageData = response.data?.[0];
 
+    if (!imageData) {
+      throw new Error('No edited image returned from OpenAI.');
+    }
 
-/* =========================
-   STATUS
-========================= */
+    if (imageData.b64_json) {
+      return res.json({
+        image: `data:image/png;base64,${imageData.b64_json}`
+      });
+    }
 
-app.get('/', (req, res) => {
+    if (imageData.url) {
+      return res.json({
+        image: imageData.url
+      });
+    }
 
-  res.json({
-
-    status: 'online',
-
-    service:
-      'Nastivee AI Bot',
-
-    chat: true,
-
-    imageGeneration: true,
-
-    imageEditing: true
-
-  });
-
-});
-
-
-/* =========================
-   START SERVER
-========================= */
-
-app.listen(
-  PORT,
-  () => {
-
-    console.log(
-      `Server running on port ${PORT}`
+    throw new Error(
+      'Edited image response contained no usable image.'
     );
 
+  } catch (error) {
+    console.error('IMAGE EDIT ERROR:', error);
+
+    res.status(500).json({
+      error:
+        error?.error?.message ||
+        error?.message ||
+        'Image editing failed.'
+    });
   }
-);
+});
+
+// --------------------------------------------------
+// START SERVER
+// --------------------------------------------------
+
+app.listen(PORT, () => {
+  console.log(`Nastivee AI Bot running on port ${PORT}`);
+});
