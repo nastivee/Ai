@@ -14,6 +14,7 @@
 :root {
   --header-h: 65px;
   --dock-h: 90px;
+  --sidebar-w: 285px;
 }
 
 body {
@@ -31,6 +32,153 @@ textarea {
 }
 
 .app {
+  min-height: 100vh;
+  display: flex;
+}
+
+/* =====================================================
+   SIDEBAR
+===================================================== */
+
+.sidebar {
+  width: var(--sidebar-w);
+  height: 100vh;
+  flex-shrink: 0;
+  background: rgba(10,5,20,.96);
+  border-right: 1px solid rgba(255,255,255,.08);
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 30;
+}
+
+.sidebarTop {
+  padding: 15px;
+  border-bottom: 1px solid rgba(255,255,255,.08);
+}
+
+.sidebarLogo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 19px;
+  font-weight: bold;
+  margin-bottom: 15px;
+}
+
+.sidebarLogo img {
+  width: 38px;
+  height: 38px;
+  object-fit: contain;
+  border-radius: 9px;
+}
+
+.newChatSideButton {
+  width: 100%;
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.07);
+  color: white;
+  padding: 11px 13px;
+  border-radius: 11px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.newChatSideButton:hover {
+  background: rgba(255,255,255,.12);
+}
+
+.chatHistory {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 9px;
+}
+
+.historyLabel {
+  color: #91879f;
+  font-size: 12px;
+  font-weight: bold;
+  padding: 8px 9px;
+  text-transform: uppercase;
+}
+
+.chatItem {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  padding: 10px 9px;
+  margin-bottom: 3px;
+  border-radius: 9px;
+  color: #eee;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+}
+
+.chatItem:hover {
+  background: rgba(255,255,255,.07);
+}
+
+.chatItem.active {
+  background: rgba(124,60,255,.25);
+}
+
+.chatItemTitle {
+  flex: 1;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 14px;
+}
+
+.deleteChat {
+  opacity: 0;
+  border: 0;
+  background: transparent;
+  color: #aaa;
+  cursor: pointer;
+  padding: 3px 5px;
+  border-radius: 6px;
+}
+
+.chatItem:hover .deleteChat {
+  opacity: 1;
+}
+
+.deleteChat:hover {
+  color: white;
+  background: rgba(255,255,255,.1);
+}
+
+.sidebarBottom {
+  padding: 12px;
+  border-top: 1px solid rgba(255,255,255,.08);
+}
+
+.sidebarMemoryButton {
+  width: 100%;
+  border: 0;
+  background: rgba(255,255,255,.06);
+  color: white;
+  padding: 10px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+/* =====================================================
+   MAIN
+===================================================== */
+
+.mainArea {
+  width: 100%;
+  min-height: 100vh;
+  margin-left: var(--sidebar-w);
+}
+
+.appInner {
   max-width: 1000px;
   min-height: 100vh;
   margin: auto;
@@ -38,7 +186,9 @@ textarea {
   flex-direction: column;
 }
 
-/* HEADER */
+/* =====================================================
+   HEADER
+===================================================== */
 
 header {
   height: var(--header-h);
@@ -79,9 +229,16 @@ header {
   color: white;
   padding: 8px 11px;
   border-radius: 10px;
+  cursor: pointer;
 }
 
-/* MEMORY */
+.menuButton {
+  display: none;
+}
+
+/* =====================================================
+   MEMORY
+===================================================== */
 
 .memoryPanel {
   display: none;
@@ -106,7 +263,9 @@ header {
   font-size: 14px;
 }
 
-/* CHAT */
+/* =====================================================
+   CHAT
+===================================================== */
 
 #chat {
   flex: 1;
@@ -143,7 +302,9 @@ header {
   border-bottom-left-radius: 5px;
 }
 
-/* IMAGE */
+/* =====================================================
+   IMAGE
+===================================================== */
 
 .imageCard {
   width: min(100%, 650px);
@@ -176,11 +337,13 @@ header {
   opacity: .55;
 }
 
-/* DOCK */
+/* =====================================================
+   DOCK
+===================================================== */
 
 .dock {
   position: fixed;
-  left: 0;
+  left: var(--sidebar-w);
   right: 0;
   bottom: 0;
   display: flex;
@@ -197,7 +360,9 @@ header {
   gap: 8px;
 }
 
-/* PROGRESS */
+/* =====================================================
+   PROGRESS
+===================================================== */
 
 .imageProgress {
   display: none;
@@ -275,7 +440,9 @@ header {
   background: #f97316;
 }
 
-/* UPLOAD PREVIEW */
+/* =====================================================
+   UPLOAD
+===================================================== */
 
 .uploadPreview {
   display: none;
@@ -306,7 +473,9 @@ header {
   cursor: pointer;
 }
 
-/* COMPOSER */
+/* =====================================================
+   COMPOSER
+===================================================== */
 
 .composer {
   display: flex;
@@ -357,9 +526,53 @@ header {
   opacity: .5;
 }
 
-/* MOBILE */
+/* =====================================================
+   MOBILE SIDEBAR
+===================================================== */
 
-@media(max-width:600px) {
+.sidebarOverlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.55);
+  z-index: 25;
+}
+
+.sidebarOverlay.open {
+  display: block;
+}
+
+@media(max-width:700px) {
+
+  .sidebar {
+    transform: translateX(-100%);
+    transition: transform .25s ease;
+  }
+
+  .sidebar.open {
+    transform: translateX(0);
+  }
+
+  .mainArea {
+    margin-left: 0;
+  }
+
+  .dock {
+    left: 0;
+  }
+
+  .menuButton {
+    display: block;
+  }
+
+  .logo span {
+    font-size: 18px;
+  }
+
+  .headerButtons button {
+    padding: 7px 9px;
+  }
+
   .bubble {
     max-width: 92%;
   }
@@ -368,9 +581,12 @@ header {
     padding-left: 9px;
     padding-right: 9px;
   }
+}
 
-  .headerButtons button {
-    padding: 7px 9px;
+@media(min-width:701px) {
+
+  .sidebarOverlay {
+    display: none !important;
   }
 }
 </style>
@@ -380,61 +596,190 @@ header {
 
 <div class="app">
 
+<!-- =====================================================
+     SIDEBAR
+===================================================== -->
+
+<aside id="sidebar" class="sidebar">
+
+  <div class="sidebarTop">
+
+    <div class="sidebarLogo">
+      <img src="IMG_0471.jpeg" alt="Nastivee AI">
+      <span>Nastivee AI</span>
+    </div>
+
+    <button
+      id="newChatSideButton"
+      class="newChatSideButton"
+    >
+      ＋ New Chat
+    </button>
+
+  </div>
+
+  <div
+    id="chatHistory"
+    class="chatHistory"
+  ></div>
+
+  <div class="sidebarBottom">
+
+    <button
+      id="sidebarMemoryButton"
+      class="sidebarMemoryButton"
+    >
+      🧠 Memory
+    </button>
+
+  </div>
+
+</aside>
+
+<div
+  id="sidebarOverlay"
+  class="sidebarOverlay"
+></div>
+
+
+<!-- =====================================================
+     MAIN
+===================================================== -->
+
+<div class="mainArea">
+
+<div class="appInner">
+
 <header>
 
   <div class="logo">
-    <img src="IMG_0471.jpeg" alt="Nastivee AI">
+
+    <button
+      id="menuButton"
+      class="headerButtons button menuButton"
+      style="border:0;background:transparent;color:white;font-size:22px;"
+    >
+      ☰
+    </button>
+
+    <img
+      src="IMG_0471.jpeg"
+      alt="Nastivee AI"
+    >
+
     <span>Nastivee AI</span>
+
   </div>
 
   <div class="headerButtons">
-    <button id="memoryButton">🧠 Memory</button>
-    <button id="newChatButton">＋ New</button>
+
+    <button id="memoryButton">
+      🧠 Memory
+    </button>
+
+    <button id="newChatButton">
+      ＋ New
+    </button>
+
   </div>
 
 </header>
 
-<div id="memoryPanel" class="memoryPanel">
-  <div class="memoryTitle">Long-term memory</div>
-  <div id="memoryContent" class="memoryContent">
+
+<div
+  id="memoryPanel"
+  class="memoryPanel"
+>
+
+  <div class="memoryTitle">
+    Long-term memory
+  </div>
+
+  <div
+    id="memoryContent"
+    class="memoryContent"
+  >
     No saved memories yet.
   </div>
+
 </div>
+
 
 <main id="chat"></main>
 
+
+<!-- =====================================================
+     DOCK
+===================================================== -->
+
 <div id="dock" class="dock">
+
 <div class="dockInner">
 
-  <div id="uploadPreview" class="uploadPreview">
-    <img id="uploadPreviewImage" src="" alt="Uploaded image">
+  <div
+    id="uploadPreview"
+    class="uploadPreview"
+  >
 
-    <button id="removePhoto" class="removePhoto" title="Remove photo" aria-label="Remove photo">
+    <img
+      id="uploadPreviewImage"
+      src=""
+      alt="Uploaded image"
+    >
+
+    <button
+      id="removePhoto"
+      class="removePhoto"
+      title="Remove photo"
+      aria-label="Remove photo"
+    >
       ×
     </button>
+
   </div>
 
-  <div id="imageProgress" class="imageProgress">
+
+  <div
+    id="imageProgress"
+    class="imageProgress"
+  >
 
     <div class="progressTop">
+
       <div class="progressSpinner"></div>
 
-      <div id="progressTitle" class="progressTitle">
+      <div
+        id="progressTitle"
+        class="progressTitle"
+      >
         Creating your image…
       </div>
+
     </div>
 
-    <div id="progressStage" class="progressStage">
+    <div
+      id="progressStage"
+      class="progressStage"
+    >
       Preparing…
     </div>
 
     <div class="progressBar">
-      <div id="progressFill" class="progressFill"></div>
+
+      <div
+        id="progressFill"
+        class="progressFill"
+      ></div>
+
     </div>
 
   </div>
 
-  <div id="composer" class="composer">
+
+  <div
+    id="composer"
+    class="composer"
+  >
 
     <button
       id="uploadButton"
@@ -479,6 +824,7 @@ header {
 </div>
 
 </div>
+</div>
 
 <script>
 
@@ -489,8 +835,14 @@ header {
 const API_BASE =
   'https://ai-8vlt.onrender.com';
 
-const CONVERSATION_KEY =
+const OLD_CONVERSATION_KEY =
   'nastivee_conversation_v3';
+
+const CHATS_KEY =
+  'nastivee_chats_v1';
+
+const ACTIVE_CHAT_KEY =
+  'nastivee_active_chat_v1';
 
 const MEMORY_KEY =
   'nastivee_long_term_memory_v1';
@@ -500,10 +852,15 @@ const MEMORY_KEY =
    STATE
 ===================================================== */
 
+let chats = [];
+let activeChatId = null;
+
 let conversation = [];
 let memory = {};
+
 let imageMode = false;
 let selectedPhoto = null;
+
 let chatBusy = false;
 let imageBusy = false;
 
@@ -550,6 +907,9 @@ const composer =
 const memoryButton =
   document.getElementById('memoryButton');
 
+const sidebarMemoryButton =
+  document.getElementById('sidebarMemoryButton');
+
 const memoryPanel =
   document.getElementById('memoryPanel');
 
@@ -558,6 +918,9 @@ const memoryContent =
 
 const newChatButton =
   document.getElementById('newChatButton');
+
+const newChatSideButton =
+  document.getElementById('newChatSideButton');
 
 const imageProgress =
   document.getElementById('imageProgress');
@@ -580,81 +943,614 @@ const uploadPreviewImage =
 const removePhoto =
   document.getElementById('removePhoto');
 
+const sidebar =
+  document.getElementById('sidebar');
+
+const sidebarOverlay =
+  document.getElementById('sidebarOverlay');
+
+const menuButton =
+  document.getElementById('menuButton');
+
+const chatHistory =
+  document.getElementById('chatHistory');
+
 
 /* =====================================================
    DOCK HEIGHT
 ===================================================== */
 
 function updateDockHeight() {
+
   document.documentElement.style.setProperty(
     '--dock-h',
     `${dock.offsetHeight}px`
   );
+
 }
 
 if ('ResizeObserver' in window) {
-  new ResizeObserver(updateDockHeight).observe(dock);
+
+  new ResizeObserver(
+    updateDockHeight
+  ).observe(dock);
+
 }
 
-window.addEventListener('resize', updateDockHeight);
+window.addEventListener(
+  'resize',
+  updateDockHeight
+);
 
 
 /* =====================================================
-   LOAD STORAGE
+   CHAT STORAGE
+===================================================== */
+
+function createChat(title = 'New chat') {
+
+  return {
+    id:
+      `chat_${Date.now()}_${Math.random()
+        .toString(36)
+        .slice(2, 8)}`,
+
+    title,
+
+    createdAt:
+      Date.now(),
+
+    updatedAt:
+      Date.now(),
+
+    messages: []
+  };
+
+}
+
+
+function saveChats() {
+
+  try {
+
+    localStorage.setItem(
+      CHATS_KEY,
+      JSON.stringify(chats)
+    );
+
+    localStorage.setItem(
+      ACTIVE_CHAT_KEY,
+      activeChatId || ''
+    );
+
+  } catch (error) {
+
+    console.warn(
+      'Could not save chats:',
+      error
+    );
+
+  }
+
+}
+
+
+function loadChats() {
+
+  try {
+
+    const stored =
+      localStorage.getItem(CHATS_KEY);
+
+    if (stored) {
+
+      chats =
+        JSON.parse(stored);
+
+    }
+
+  } catch {
+
+    chats = [];
+
+  }
+
+
+  /*
+     Migrate the old single conversation
+     into the new chat system.
+  */
+
+  if (!chats.length) {
+
+    let oldConversation = [];
+
+    try {
+
+      oldConversation =
+        JSON.parse(
+          localStorage.getItem(
+            OLD_CONVERSATION_KEY
+          )
+        ) || [];
+
+    } catch {
+
+      oldConversation = [];
+
+    }
+
+
+    if (oldConversation.length) {
+
+      const migrated =
+        createChat(
+          makeChatTitle(oldConversation)
+        );
+
+      migrated.messages =
+        oldConversation;
+
+      chats.push(migrated);
+
+    } else {
+
+      chats.push(
+        createChat('New chat')
+      );
+
+    }
+
+    saveChats();
+
+  }
+
+
+  activeChatId =
+    localStorage.getItem(
+      ACTIVE_CHAT_KEY
+    );
+
+
+  if (
+    !activeChatId ||
+    !chats.some(
+      chat => chat.id === activeChatId
+    )
+  ) {
+
+    activeChatId =
+      chats[0].id;
+
+    saveChats();
+
+  }
+
+}
+
+
+/* =====================================================
+   CHAT TITLE
+===================================================== */
+
+function makeChatTitle(messages) {
+
+  const firstUserMessage =
+    messages.find(
+      message =>
+        message.role === 'user' &&
+        typeof message.content === 'string'
+    );
+
+  if (!firstUserMessage) {
+    return 'New chat';
+  }
+
+  let title =
+    firstUserMessage.content
+      .replace(/\s+/g, ' ')
+      .trim();
+
+  if (!title) {
+    return 'New chat';
+  }
+
+  if (title.length > 32) {
+    title =
+      title.substring(0, 32).trim() + '…';
+  }
+
+  return title;
+
+}
+
+
+function updateChatTitle() {
+
+  const current =
+    getActiveChat();
+
+  if (!current) return;
+
+  const title =
+    makeChatTitle(
+      current.messages
+    );
+
+  if (title !== 'New chat') {
+
+    current.title =
+      title;
+
+  }
+
+}
+
+
+/* =====================================================
+   ACTIVE CHAT
+===================================================== */
+
+function getActiveChat() {
+
+  return chats.find(
+    chat =>
+      chat.id === activeChatId
+  );
+
+}
+
+
+function saveActiveConversation() {
+
+  const current =
+    getActiveChat();
+
+  if (!current) return;
+
+  current.messages =
+    conversation;
+
+  current.updatedAt =
+    Date.now();
+
+  updateChatTitle();
+
+  saveChats();
+
+  renderChatHistory();
+
+}
+
+
+/* =====================================================
+   LOAD CHAT
+===================================================== */
+
+function openChat(id) {
+
+  if (chatBusy || imageBusy) {
+    return;
+  }
+
+  const selected =
+    chats.find(
+      chat => chat.id === id
+    );
+
+  if (!selected) return;
+
+  activeChatId =
+    id;
+
+  conversation =
+    selected.messages || [];
+
+  messageCount =
+    0;
+
+  selectedPhoto =
+    null;
+
+  fileInput.value =
+    '';
+
+  uploadPreview.classList.remove(
+    'open'
+  );
+
+  lastImage = {
+    sourceImage: null,
+    prompt: '',
+    wasEdit: false
+  };
+
+  setImageMode(false);
+
+  chat.innerHTML = '';
+
+  restoreConversation();
+
+  saveChats();
+
+  renderChatHistory();
+
+  closeSidebar();
+
+}
+
+
+function createNewChat() {
+
+  if (chatBusy || imageBusy) {
+    return;
+  }
+
+  const newChat =
+    createChat();
+
+  chats.unshift(
+    newChat
+  );
+
+  activeChatId =
+    newChat.id;
+
+  conversation =
+    [];
+
+  messageCount =
+    0;
+
+  selectedPhoto =
+    null;
+
+  fileInput.value =
+    '';
+
+  uploadPreview.classList.remove(
+    'open'
+  );
+
+  lastImage = {
+    sourceImage: null,
+    prompt: '',
+    wasEdit: false
+  };
+
+  setImageMode(false);
+
+  chat.innerHTML = '';
+
+  addMessage(
+    'assistant',
+    'Hi 👋 I’m Nastivee. What would you like to do?',
+    { silent: true }
+  );
+
+  saveActiveConversation();
+
+  renderChatHistory();
+
+  closeSidebar();
+
+}
+
+
+/* =====================================================
+   DELETE CHAT
+===================================================== */
+
+function deleteChat(id, event) {
+
+  event.stopPropagation();
+
+  if (chats.length === 1) {
+
+    chats[0] =
+      createChat();
+
+    activeChatId =
+      chats[0].id;
+
+    conversation =
+      [];
+
+    chat.innerHTML = '';
+
+    messageCount =
+      0;
+
+    addMessage(
+      'assistant',
+      'Hi 👋 I’m Nastivee. What would you like to do?',
+      { silent: true }
+    );
+
+  } else {
+
+    chats =
+      chats.filter(
+        item =>
+          item.id !== id
+      );
+
+    if (activeChatId === id) {
+
+      activeChatId =
+        chats[0].id;
+
+      conversation =
+        chats[0].messages || [];
+
+      chat.innerHTML = '';
+
+      messageCount =
+        0;
+
+      restoreConversation();
+
+    }
+
+  }
+
+  saveChats();
+
+  renderChatHistory();
+
+}
+
+
+/* =====================================================
+   RENDER SIDEBAR
+===================================================== */
+
+function renderChatHistory() {
+
+  chatHistory.innerHTML = '';
+
+  if (!chats.length) {
+    return;
+  }
+
+  const sorted =
+    [...chats].sort(
+      (a, b) =>
+        b.updatedAt - a.updatedAt
+    );
+
+
+  const label =
+    document.createElement('div');
+
+  label.className =
+    'historyLabel';
+
+  label.textContent =
+    'Chats';
+
+  chatHistory.appendChild(
+    label
+  );
+
+
+  sorted.forEach(
+    item => {
+
+      const row =
+        document.createElement('div');
+
+      row.className =
+        'chatItem';
+
+      if (
+        item.id === activeChatId
+      ) {
+
+        row.classList.add(
+          'active'
+        );
+
+      }
+
+
+      const icon =
+        document.createElement('span');
+
+      icon.textContent =
+        '💬';
+
+
+      const title =
+        document.createElement('div');
+
+      title.className =
+        'chatItemTitle';
+
+      title.textContent =
+        item.title ||
+        'New chat';
+
+
+      const deleteButton =
+        document.createElement('button');
+
+      deleteButton.className =
+        'deleteChat';
+
+      deleteButton.textContent =
+        '×';
+
+      deleteButton.title =
+        'Delete chat';
+
+      deleteButton.addEventListener(
+        'click',
+        event =>
+          deleteChat(
+            item.id,
+            event
+          )
+      );
+
+
+      row.appendChild(icon);
+      row.appendChild(title);
+      row.appendChild(deleteButton);
+
+
+      row.addEventListener(
+        'click',
+        () =>
+          openChat(item.id)
+      );
+
+
+      chatHistory.appendChild(
+        row
+      );
+
+    }
+  );
+
+}
+
+
+/* =====================================================
+   LOAD MEMORY
 ===================================================== */
 
 try {
-  conversation =
-    JSON.parse(
-      localStorage.getItem(CONVERSATION_KEY)
-    ) || [];
-} catch {
-  conversation = [];
-}
 
-try {
   memory =
     JSON.parse(
-      localStorage.getItem(MEMORY_KEY)
+      localStorage.getItem(
+        MEMORY_KEY
+      )
     ) || {};
+
 } catch {
+
   memory = {};
+
 }
 
 
 /* =====================================================
-   STORAGE
+   MEMORY STORAGE
 ===================================================== */
 
-function saveConversation() {
-  try {
-    localStorage.setItem(
-      CONVERSATION_KEY,
-      JSON.stringify(
-        conversation.slice(-100)
-      )
-    );
-  } catch {
-    try {
-      localStorage.setItem(
-        CONVERSATION_KEY,
-        JSON.stringify(
-          conversation
-            .filter(m => m.type !== 'image')
-            .slice(-100)
-        )
-      );
-    } catch {}
-  }
-}
-
 function saveMemory() {
+
   try {
+
     localStorage.setItem(
       MEMORY_KEY,
       JSON.stringify(memory)
     );
+
   } catch {}
+
 }
 
 
@@ -668,33 +1564,49 @@ function extractMemory(text) {
 
   let match;
 
-  match = text.match(
-    /my\s+(?:dog|dogs|puppy)(?:'s)?\s+(?:name\s+is|is\s+called|is\s+named)\s+([A-Za-z][A-Za-z0-9_-]{1,30})/i
-  );
+
+  match =
+    text.match(
+      /my\s+(?:dog|dogs|puppy)(?:'s)?\s+(?:name\s+is|is\s+called|is\s+named)\s+([A-Za-z][A-Za-z0-9_-]{1,30})/i
+    );
 
   if (match) {
-    memory.dogName = match[1];
+
+    memory.dogName =
+      match[1];
+
   }
 
-  match = text.match(
-    /my\s+name\s+is\s+([A-Za-z][A-Za-z0-9_-]{1,30})/i
-  );
+
+  match =
+    text.match(
+      /my\s+name\s+is\s+([A-Za-z][A-Za-z0-9_-]{1,30})/i
+    );
 
   if (match) {
-    memory.userName = match[1];
+
+    memory.userName =
+      match[1];
+
   }
 
-  match = text.match(
-    /(?:my\s+dog|my\s+puppy)\s+is\s+a\s+([A-Za-z][A-Za-z -]{2,30})/i
-  );
+
+  match =
+    text.match(
+      /(?:my\s+dog|my\s+puppy)\s+is\s+a\s+([A-Za-z][A-Za-z -]{2,30})/i
+    );
 
   if (match) {
+
     memory.dogBreed =
       match[1].trim();
+
   }
+
 
   saveMemory();
   renderMemory();
+
 }
 
 
@@ -702,34 +1614,48 @@ function renderMemory() {
 
   const entries = [];
 
+
   if (memory.userName) {
+
     entries.push(
       `Your name: ${memory.userName}`
     );
+
   }
 
+
   if (memory.dogName) {
+
     entries.push(
       `Dog's name: ${memory.dogName}`
     );
+
   }
 
+
   if (memory.dogBreed) {
+
     entries.push(
       `Dog breed: ${memory.dogBreed}`
     );
+
   }
 
+
   if (memory.favourites) {
+
     entries.push(
       `Favourites: ${memory.favourites}`
     );
+
   }
+
 
   memoryContent.textContent =
     entries.length
       ? entries.join('\n')
       : 'No saved memories yet.';
+
 }
 
 
@@ -737,7 +1663,10 @@ function renderMemory() {
    API
 ===================================================== */
 
-async function apiFetch(path, options = {}) {
+async function apiFetch(
+  path,
+  options = {}
+) {
 
   const response =
     await fetch(
@@ -746,38 +1675,52 @@ async function apiFetch(path, options = {}) {
         ...options,
 
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type':
+            'application/json',
+
           ...(options.headers || {})
         }
       }
     );
 
+
   const text =
     await response.text();
 
+
   let data;
 
+
   try {
+
     data =
       text
         ? JSON.parse(text)
         : {};
+
   } catch {
+
     throw new Error(
       text ||
       `Server returned HTTP ${response.status}`
     );
+
   }
 
+
   if (!response.ok) {
+
     throw new Error(
       data.details ||
       data.error ||
       `HTTP ${response.status}`
     );
+
   }
 
+
   return data;
+
 }
 
 
@@ -799,6 +1742,7 @@ function createMessageWrapper(role) {
     `message ${role}`;
 
   return wrapper;
+
 }
 
 
@@ -806,10 +1750,15 @@ function createMessageWrapper(role) {
    CHAT MESSAGE
 ===================================================== */
 
-function addMessage(role, content, options = {}) {
+function addMessage(
+  role,
+  content,
+  options = {}
+) {
 
   const wrapper =
     createMessageWrapper(role);
+
 
   const bubble =
     document.createElement('div');
@@ -820,14 +1769,27 @@ function addMessage(role, content, options = {}) {
   bubble.textContent =
     content;
 
-  wrapper.appendChild(bubble);
-  chat.appendChild(wrapper);
+
+  wrapper.appendChild(
+    bubble
+  );
+
+  chat.appendChild(
+    wrapper
+  );
+
 
   if (!options.silent) {
-    showMessage(wrapper);
+
+    showMessage(
+      wrapper
+    );
+
   }
 
+
   return wrapper;
+
 }
 
 
@@ -844,13 +1806,17 @@ function addImageMessage(
 ) {
 
   const wrapper =
-    createMessageWrapper('assistant');
+    createMessageWrapper(
+      'assistant'
+    );
+
 
   const card =
     document.createElement('div');
 
   card.className =
     'imageCard';
+
 
   const img =
     document.createElement('img');
@@ -861,11 +1827,13 @@ function addImageMessage(
   img.alt =
     'Nastivee AI image';
 
+
   const actions =
     document.createElement('div');
 
   actions.className =
     'imageActions';
+
 
   const button =
     document.createElement('button');
@@ -875,6 +1843,7 @@ function addImageMessage(
 
   button.textContent =
     '🔄 Re-render';
+
 
   button.addEventListener(
     'click',
@@ -890,32 +1859,60 @@ function addImageMessage(
     }
   );
 
-  if (wasEdit && !sourceImage) {
-    button.disabled = true;
+
+  if (
+    wasEdit &&
+    !sourceImage
+  ) {
+
+    button.disabled =
+      true;
+
     button.title =
       'Upload the original image again to re-render';
+
   }
 
-  actions.appendChild(button);
 
-  card.appendChild(img);
-  card.appendChild(actions);
+  actions.appendChild(
+    button
+  );
 
-  wrapper.appendChild(card);
+  card.appendChild(
+    img
+  );
 
-  chat.appendChild(wrapper);
+  card.appendChild(
+    actions
+  );
+
+  wrapper.appendChild(
+    card
+  );
+
+  chat.appendChild(
+    wrapper
+  );
+
 
   if (!options.silent) {
-    showMessage(wrapper);
+
+    showMessage(
+      wrapper
+    );
 
     img.addEventListener(
       'load',
-      () => showMessage(wrapper),
+      () =>
+        showMessage(wrapper),
       { once: true }
     );
+
   }
 
+
   return wrapper;
+
 }
 
 
@@ -924,21 +1921,35 @@ function addImageMessage(
 ===================================================== */
 
 function showMessage(element) {
-  requestAnimationFrame(() => {
-    element.scrollIntoView({
-      block: 'start',
-      behavior: 'smooth'
-    });
-  });
+
+  requestAnimationFrame(
+    () => {
+
+      element.scrollIntoView({
+        block: 'start',
+        behavior: 'smooth'
+      });
+
+    }
+  );
+
 }
 
+
 function scrollToBottom() {
-  requestAnimationFrame(() => {
-    window.scrollTo(
-      0,
-      document.documentElement.scrollHeight
-    );
-  });
+
+  requestAnimationFrame(
+    () => {
+
+      window.scrollTo(
+        0,
+        document.documentElement
+          .scrollHeight
+      );
+
+    }
+  );
+
 }
 
 
@@ -946,10 +1957,18 @@ function scrollToBottom() {
    PROGRESS
 ===================================================== */
 
-function startImageProgress(isRerender) {
+function startImageProgress(
+  isRerender
+) {
 
-  clearInterval(progressTimer);
-  clearTimeout(progressCloseTimer);
+  clearInterval(
+    progressTimer
+  );
+
+  clearTimeout(
+    progressCloseTimer
+  );
+
 
   imageProgress.classList.remove(
     'closing',
@@ -957,32 +1976,73 @@ function startImageProgress(isRerender) {
     'failed'
   );
 
-  imageProgress.classList.add('open');
+  imageProgress.classList.add(
+    'open'
+  );
+
 
   progressTitle.textContent =
     isRerender
       ? 'Re-rendering your image…'
       : 'Creating your image…';
 
+
   const stages =
     isRerender
 
       ? [
-          ['Preparing your original photo…', 8],
-          ['Using your original photo for likeness…', 25],
-          ['Reworking your original request…', 45],
-          ['Creating a fresh variation…', 68],
-          ['Finishing the new image…', 88]
+          [
+            'Preparing your original photo…',
+            8
+          ],
+
+          [
+            'Using your original photo for likeness…',
+            25
+          ],
+
+          [
+            'Reworking your original request…',
+            45
+          ],
+
+          [
+            'Creating a fresh variation…',
+            68
+          ],
+
+          [
+            'Finishing the new image…',
+            88
+          ]
         ]
 
       : [
-          ['Preparing your request…', 10],
-          ['Understanding your image instructions…', 28],
-          ['Creating your image…', 58],
-          ['Finishing the image…', 85]
+          [
+            'Preparing your request…',
+            10
+          ],
+
+          [
+            'Understanding your image instructions…',
+            28
+          ],
+
+          [
+            'Creating your image…',
+            58
+          ],
+
+          [
+            'Finishing the image…',
+            85
+          ]
         ];
 
-  let index = 0;
+
+  let index =
+    0;
+
 
   progressStage.textContent =
     stages[0][0];
@@ -990,61 +2050,101 @@ function startImageProgress(isRerender) {
   progressFill.style.width =
     `${stages[0][1]}%`;
 
+
   progressTimer =
-    setInterval(() => {
+    setInterval(
+      () => {
 
-      index++;
+        index++;
 
-      if (index >= stages.length) {
-        clearInterval(progressTimer);
-        return;
-      }
 
-      progressStage.textContent =
-        stages[index][0];
+        if (
+          index >=
+          stages.length
+        ) {
 
-      progressFill.style.width =
-        `${stages[index][1]}%`;
+          clearInterval(
+            progressTimer
+          );
 
-    }, 1600);
+          return;
+
+        }
+
+
+        progressStage.textContent =
+          stages[index][0];
+
+        progressFill.style.width =
+          `${stages[index][1]}%`;
+
+      },
+      1600
+    );
+
 }
+
 
 function closeProgressAfter(ms) {
 
-  clearTimeout(progressCloseTimer);
+  clearTimeout(
+    progressCloseTimer
+  );
+
 
   imageProgress.style.setProperty(
     '--drain-ms',
     `${ms}ms`
   );
 
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-      imageProgress.classList.add('closing');
-    });
-  });
 
-  progressCloseTimer =
-    setTimeout(() => {
+  requestAnimationFrame(
+    () => {
 
-      imageProgress.classList.remove(
-        'open',
-        'closing',
-        'done',
-        'failed'
+      requestAnimationFrame(
+        () => {
+
+          imageProgress.classList.add(
+            'closing'
+          );
+
+        }
       );
 
-      progressFill.style.width =
-        '5%';
+    }
+  );
 
-    }, ms);
+
+  progressCloseTimer =
+    setTimeout(
+      () => {
+
+        imageProgress.classList.remove(
+          'open',
+          'closing',
+          'done',
+          'failed'
+        );
+
+        progressFill.style.width =
+          '5%';
+
+      },
+      ms
+    );
+
 }
+
 
 function finishImageProgress() {
 
-  clearInterval(progressTimer);
+  clearInterval(
+    progressTimer
+  );
 
-  imageProgress.classList.add('done');
+  imageProgress.classList.add(
+    'done'
+  );
 
   progressStage.textContent =
     'Done ✓';
@@ -1052,12 +2152,18 @@ function finishImageProgress() {
   progressFill.style.width =
     '100%';
 
-  closeProgressAfter(1200);
+  closeProgressAfter(
+    1200
+  );
+
 }
+
 
 function failImageProgress() {
 
-  clearInterval(progressTimer);
+  clearInterval(
+    progressTimer
+  );
 
   imageProgress.classList.add(
     'done',
@@ -1070,7 +2176,39 @@ function failImageProgress() {
   progressFill.style.width =
     '100%';
 
-  closeProgressAfter(2000);
+  closeProgressAfter(
+    2000
+  );
+
+}
+
+
+/* =====================================================
+   CHAT HISTORY FOR API
+===================================================== */
+
+function chatHistoryForApi() {
+
+  return conversation
+
+    .filter(
+      message =>
+        message.type !== 'image' &&
+        typeof message.content === 'string'
+    )
+
+    .slice(-30)
+
+    .map(
+      message => ({
+        role:
+          message.role,
+
+        content:
+          message.content
+      })
+    );
+
 }
 
 
@@ -1078,57 +2216,82 @@ function failImageProgress() {
    NORMAL CHAT
 ===================================================== */
 
-function chatHistoryForApi() {
-  return conversation
-    .filter(m =>
-      m.type !== 'image' &&
-      typeof m.content === 'string'
-    )
-    .slice(-30)
-    .map(m => ({
-      role: m.role,
-      content: m.content
-    }));
-}
-
 async function sendMessage() {
 
   const text =
     messageInput.value.trim();
 
+
   if (!text) return;
 
-  if (chatBusy || imageBusy) return;
+  if (
+    chatBusy ||
+    imageBusy
+  ) return;
+
 
   if (imageMode) {
-    messageInput.value = '';
+
+    messageInput.value =
+      '';
+
     resizeInput();
-    await createImage(text);
+
+    await createImage(
+      text
+    );
+
     return;
+
   }
 
-  chatBusy = true;
-  sendButton.disabled = true;
 
-  addMessage('user', text);
+  chatBusy =
+    true;
+
+  sendButton.disabled =
+    true;
+
+
+  addMessage(
+    'user',
+    text
+  );
+
 
   conversation.push({
-    role: 'user',
-    content: text
+    role:
+      'user',
+
+    content:
+      text
   });
 
-  extractMemory(text);
 
-  messageInput.value = '';
+  extractMemory(
+    text
+  );
+
+
+  messageInput.value =
+    '';
+
   resizeInput();
 
-  saveConversation();
+
+  saveActiveConversation();
+
 
   const thinking =
-    createMessageWrapper('assistant');
+    createMessageWrapper(
+      'assistant'
+    );
+
 
   const thinkingBubble =
-    document.createElement('div');
+    document.createElement(
+      'div'
+    );
 
   thinkingBubble.className =
     'bubble';
@@ -1136,8 +2299,15 @@ async function sendMessage() {
   thinkingBubble.textContent =
     'Nastivee is thinking…';
 
-  thinking.appendChild(thinkingBubble);
-  chat.appendChild(thinking);
+
+  thinking.appendChild(
+    thinkingBubble
+  );
+
+  chat.appendChild(
+    thinking
+  );
+
 
   try {
 
@@ -1145,34 +2315,45 @@ async function sendMessage() {
       await apiFetch(
         '/api/chat',
         {
-          method: 'POST',
+          method:
+            'POST',
 
-          body: JSON.stringify({
-            messages:
-              chatHistoryForApi(),
+          body:
+            JSON.stringify({
+              messages:
+                chatHistoryForApi(),
 
-            memory
-          })
+              memory
+            })
         }
       );
 
+
     thinking.remove();
+
 
     addMessage(
       'assistant',
       data.reply
     );
 
+
     conversation.push({
-      role: 'assistant',
-      content: data.reply
+      role:
+        'assistant',
+
+      content:
+        data.reply
     });
 
-    saveConversation();
+
+    saveActiveConversation();
+
 
   } catch (error) {
 
     thinking.remove();
+
 
     addMessage(
       'assistant',
@@ -1181,10 +2362,14 @@ async function sendMessage() {
 
   } finally {
 
-    chatBusy = false;
-    sendButton.disabled = false;
+    chatBusy =
+      false;
+
+    sendButton.disabled =
+      false;
 
   }
+
 }
 
 
@@ -1192,32 +2377,59 @@ async function sendMessage() {
    CREATE IMAGE
 ===================================================== */
 
-async function createImage(prompt) {
+async function createImage(
+  prompt
+) {
 
   if (imageBusy) return;
 
-  imageBusy = true;
-  sendButton.disabled = true;
+
+  imageBusy =
+    true;
+
+  sendButton.disabled =
+    true;
+
 
   const wasEdit =
     !!selectedPhoto;
 
+
   const sourceImage =
     selectedPhoto;
 
+
   const originalPrompt =
     prompt;
+
 
   addMessage(
     'user',
     prompt
   );
 
-  startImageProgress(false);
+
+  conversation.push({
+    role:
+      'user',
+
+    content:
+      prompt
+  });
+
+
+  saveActiveConversation();
+
+
+  startImageProgress(
+    false
+  );
+
 
   try {
 
     let data;
+
 
     if (wasEdit) {
 
@@ -1225,13 +2437,20 @@ async function createImage(prompt) {
         await apiFetch(
           '/api/image/edit',
           {
-            method: 'POST',
+            method:
+              'POST',
 
-            body: JSON.stringify({
-              prompt: originalPrompt,
-              image: sourceImage,
-              regenerate: false
-            })
+            body:
+              JSON.stringify({
+                prompt:
+                  originalPrompt,
+
+                image:
+                  sourceImage,
+
+                regenerate:
+                  false
+              })
           }
         );
 
@@ -1241,24 +2460,33 @@ async function createImage(prompt) {
         await apiFetch(
           '/api/image',
           {
-            method: 'POST',
+            method:
+              'POST',
 
-            body: JSON.stringify({
-              prompt: originalPrompt,
-              regenerate: false
-            })
+            body:
+              JSON.stringify({
+                prompt:
+                  originalPrompt,
+
+                regenerate:
+                  false
+              })
           }
         );
 
     }
 
+
     finishImageProgress();
+
 
     lastImage = {
       sourceImage,
-      prompt: originalPrompt,
+      prompt:
+        originalPrompt,
       wasEdit
     };
+
 
     addImageMessage(
       data.image,
@@ -1267,17 +2495,26 @@ async function createImage(prompt) {
       wasEdit
     );
 
+
     conversation.push({
-      role: 'assistant',
-      type: 'image',
-      content: data.image
+      role:
+        'assistant',
+
+      type:
+        'image',
+
+      content:
+        data.image
     });
 
-    saveConversation();
+
+    saveActiveConversation();
+
 
   } catch (error) {
 
     failImageProgress();
+
 
     addMessage(
       'assistant',
@@ -1286,10 +2523,14 @@ async function createImage(prompt) {
 
   } finally {
 
-    imageBusy = false;
-    sendButton.disabled = false;
+    imageBusy =
+      false;
+
+    sendButton.disabled =
+      false;
 
   }
+
 }
 
 
@@ -1306,7 +2547,11 @@ async function rerenderImage(
 
   if (imageBusy) return;
 
-  if (wasEdit && !sourceImage) {
+
+  if (
+    wasEdit &&
+    !sourceImage
+  ) {
 
     addMessage(
       'assistant',
@@ -1314,20 +2559,29 @@ async function rerenderImage(
     );
 
     return;
+
   }
 
-  imageBusy = true;
 
-  button.disabled = true;
+  imageBusy =
+    true;
+
+  button.disabled =
+    true;
 
   button.textContent =
     '⏳ Re-rendering…';
 
-  startImageProgress(true);
+
+  startImageProgress(
+    true
+  );
+
 
   try {
 
     let data;
+
 
     if (wasEdit) {
 
@@ -1335,13 +2589,20 @@ async function rerenderImage(
         await apiFetch(
           '/api/image/edit',
           {
-            method: 'POST',
+            method:
+              'POST',
 
-            body: JSON.stringify({
-              prompt: originalPrompt,
-              image: sourceImage,
-              regenerate: true
-            })
+            body:
+              JSON.stringify({
+                prompt:
+                  originalPrompt,
+
+                image:
+                  sourceImage,
+
+                regenerate:
+                  true
+              })
           }
         );
 
@@ -1351,24 +2612,33 @@ async function rerenderImage(
         await apiFetch(
           '/api/image',
           {
-            method: 'POST',
+            method:
+              'POST',
 
-            body: JSON.stringify({
-              prompt: originalPrompt,
-              regenerate: true
-            })
+            body:
+              JSON.stringify({
+                prompt:
+                  originalPrompt,
+
+                regenerate:
+                  true
+              })
           }
         );
 
     }
 
+
     finishImageProgress();
+
 
     lastImage = {
       sourceImage,
-      prompt: originalPrompt,
+      prompt:
+        originalPrompt,
       wasEdit
     };
+
 
     addImageMessage(
       data.image,
@@ -1377,9 +2647,26 @@ async function rerenderImage(
       wasEdit
     );
 
+
+    conversation.push({
+      role:
+        'assistant',
+
+      type:
+        'image',
+
+      content:
+        data.image
+    });
+
+
+    saveActiveConversation();
+
+
   } catch (error) {
 
     failImageProgress();
+
 
     addMessage(
       'assistant',
@@ -1388,14 +2675,17 @@ async function rerenderImage(
 
   } finally {
 
-    imageBusy = false;
+    imageBusy =
+      false;
 
-    button.disabled = false;
+    button.disabled =
+      false;
 
     button.textContent =
       '🔄 Re-render';
 
   }
+
 }
 
 
@@ -1403,14 +2693,19 @@ async function rerenderImage(
    IMAGE MODE
 ===================================================== */
 
-function setImageMode(enabled) {
+function setImageMode(
+  enabled
+) {
 
   imageMode =
     enabled;
 
+
   if (imageMode) {
 
-    composer.classList.add('imageMode');
+    composer.classList.add(
+      'imageMode'
+    );
 
     imageButton.textContent =
       '🖼️';
@@ -1422,7 +2717,9 @@ function setImageMode(enabled) {
 
   } else {
 
-    composer.classList.remove('imageMode');
+    composer.classList.remove(
+      'imageMode'
+    );
 
     imageButton.textContent =
       '🎨';
@@ -1431,12 +2728,18 @@ function setImageMode(enabled) {
       'Message Nastivee…';
 
   }
+
 }
+
 
 imageButton.addEventListener(
   'click',
   () => {
-    setImageMode(!imageMode);
+
+    setImageMode(
+      !imageMode
+    );
+
   }
 );
 
@@ -1448,9 +2751,12 @@ imageButton.addEventListener(
 uploadButton.addEventListener(
   'click',
   () => {
+
     fileInput.click();
+
   }
 );
+
 
 fileInput.addEventListener(
   'change',
@@ -1459,10 +2765,13 @@ fileInput.addEventListener(
     const file =
       fileInput.files?.[0];
 
+
     if (!file) return;
+
 
     const reader =
       new FileReader();
+
 
     reader.onload =
       () => {
@@ -1470,20 +2779,30 @@ fileInput.addEventListener(
         selectedPhoto =
           reader.result;
 
-        setImageMode(true);
+
+        setImageMode(
+          true
+        );
+
 
         uploadPreviewImage.src =
           selectedPhoto;
+
 
         uploadPreview.classList.add(
           'open'
         );
 
+
         messageInput.placeholder =
           'Describe what you want changed…';
+
       };
 
-    reader.readAsDataURL(file);
+
+    reader.readAsDataURL(
+      file
+    );
 
   }
 );
@@ -1507,6 +2826,7 @@ removePhoto.addEventListener(
       'open'
     );
 
+
     messageInput.placeholder =
       imageMode
         ? 'Describe the image you want…'
@@ -1517,67 +2837,85 @@ removePhoto.addEventListener(
 
 
 /* =====================================================
-   MEMORY BUTTON
+   MEMORY BUTTONS
 ===================================================== */
+
+function toggleMemory() {
+
+  memoryPanel.classList.toggle(
+    'open'
+  );
+
+  renderMemory();
+
+}
+
 
 memoryButton.addEventListener(
   'click',
-  () => {
+  toggleMemory
+);
 
-    memoryPanel.classList.toggle(
-      'open'
-    );
-
-    renderMemory();
-
-  }
+sidebarMemoryButton.addEventListener(
+  'click',
+  toggleMemory
 );
 
 
 /* =====================================================
-   NEW CHAT
+   NEW CHAT BUTTONS
 ===================================================== */
 
 newChatButton.addEventListener(
   'click',
-  () => {
+  createNewChat
+);
 
-    conversation = [];
+newChatSideButton.addEventListener(
+  'click',
+  createNewChat
+);
 
-    try {
-      localStorage.removeItem(
-        CONVERSATION_KEY
-      );
-    } catch {}
 
-    chat.innerHTML = '';
+/* =====================================================
+   MOBILE SIDEBAR
+===================================================== */
 
-    messageCount = 0;
+function openSidebar() {
 
-    selectedPhoto =
-      null;
+  sidebar.classList.add(
+    'open'
+  );
 
-    fileInput.value =
-      '';
+  sidebarOverlay.classList.add(
+    'open'
+  );
 
-    uploadPreview.classList.remove(
-      'open'
-    );
+}
 
-    lastImage = {
-      sourceImage: null,
-      prompt: '',
-      wasEdit: false
-    };
 
-    setImageMode(false);
+function closeSidebar() {
 
-    addMessage(
-      'assistant',
-      'New chat started. How can I help?'
-    );
+  sidebar.classList.remove(
+    'open'
+  );
 
-  }
+  sidebarOverlay.classList.remove(
+    'open'
+  );
+
+}
+
+
+menuButton.addEventListener(
+  'click',
+  openSidebar
+);
+
+
+sidebarOverlay.addEventListener(
+  'click',
+  closeSidebar
 );
 
 
@@ -1589,6 +2927,7 @@ sendButton.addEventListener(
   'click',
   sendMessage
 );
+
 
 messageInput.addEventListener(
   'keydown',
@@ -1623,7 +2962,9 @@ function resizeInput() {
       messageInput.scrollHeight,
       140
     )}px`;
+
 }
+
 
 messageInput.addEventListener(
   'input',
@@ -1632,7 +2973,7 @@ messageInput.addEventListener(
 
 
 /* =====================================================
-   RESTORE CHAT
+   RESTORE CONVERSATION
 ===================================================== */
 
 function restoreConversation() {
@@ -1646,7 +2987,9 @@ function restoreConversation() {
     );
 
     return;
+
   }
+
 
   conversation.forEach(
     message => {
@@ -1660,7 +3003,10 @@ function restoreConversation() {
           null,
           '',
           false,
-          { silent: true }
+          {
+            silent:
+              true
+          }
         );
 
       } else {
@@ -1669,8 +3015,13 @@ function restoreConversation() {
           message.role === 'user'
             ? 'user'
             : 'assistant',
+
           message.content,
-          { silent: true }
+
+          {
+            silent:
+              true
+          }
         );
 
       }
@@ -1678,13 +3029,9 @@ function restoreConversation() {
     }
   );
 
+
   scrollToBottom();
 
-  window.addEventListener(
-    'load',
-    scrollToBottom,
-    { once: true }
-  );
 }
 
 
@@ -1692,11 +3039,28 @@ function restoreConversation() {
    START
 ===================================================== */
 
-updateDockHeight();
+loadChats();
+
+
+const active =
+  getActiveChat();
+
+
+if (active) {
+
+  conversation =
+    active.messages || [];
+
+}
+
+
+renderChatHistory();
 
 renderMemory();
 
 restoreConversation();
+
+updateDockHeight();
 
 </script>
 
