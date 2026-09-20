@@ -52,8 +52,7 @@ app.post('/api/image', async (req, res) => {
         model: "gpt-image-2",
         prompt: prompt + ", realistic photograph, highly detailed, 8k resolution",
         n: 1,
-        size: "1024x1024",
-        response_format: "url"
+        size: "1024x1024"
       });
 
       if (response.data && response.data[0]?.url) {
@@ -65,7 +64,7 @@ app.post('/api/image', async (req, res) => {
     }
   }
 
-  // Fallback Engine
+  // Backup Fallback Engine
   try {
     const safePrompt = encodeURIComponent(prompt.replace(/[^a-zA-Z0-9 ]/g, "").trim() + ', realistic photo');
     const seed = Date.now();
