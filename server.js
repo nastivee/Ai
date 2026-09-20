@@ -11,7 +11,7 @@ app.use(express.json({ limit: '10mb' }));
 function getOpenAIClient() {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) return null;
-  return new OpenAI({ apiKey, timeout: 15000 }); // 15s timeout to prevent hanging
+  return new OpenAI({ apiKey, timeout: 20000 });
 }
 
 // Chat Route
@@ -47,9 +47,9 @@ app.post('/api/image', async (req, res) => {
 
   if (openai) {
     try {
-      console.log('Attempting OpenAI image generation...');
+      console.log('Attempting OpenAI image generation with gpt-image-2.5-flare...');
       const response = await openai.images.generate({
-        model: "gpt-image-2",
+        model: "gpt-image-2.5-flare",
         prompt: prompt + ", realistic photograph, highly detailed, 8k resolution",
         n: 1,
         size: "1024x1024"
@@ -60,13 +60,13 @@ app.post('/api/image', async (req, res) => {
         return res.json({ imageUrl: response.data[0].url });
       }
     } catch (openAiError) {
-      console.warn('OpenAI request failed, switching to backup engine:', openAiError.message);
+      console.error('OPENAI API REJECTION DETAILS:', openAiError?.status, openAiError?.message || openAiError);
     }
   } else {
-    console.warn('OPENAI_API_KEY missing, jumping to fallback engine...');
+    console.warn('OPENAI_API_KEY missing from environment.');
   }
 
-  // Backup Engine (Always guarantees an immediate return URL)
+  // Fallback Engine guarantees your UI always receives an image url
   try {
     const safePrompt = encodeURIComponent(prompt.replace(/[^a-zA-Z0-9 ]/g, "").trim() + ', realistic photo');
     const seed = Date.now();
