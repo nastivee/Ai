@@ -4,254 +4,418 @@ import OpenAI from 'openai';
 import sharp from 'sharp';
 import { toFile } from 'openai/uploads';
 
-/* ==================================================
-   CONFIG
-================================================== */
-
-const {
-  OPENAI_API_KEY,
-  PORT = 3000,
-  CORS_ORIGINS = '',              // comma separated, empty = allow all
-  CHAT_MODEL = 'gpt-4o-mini',
-  IMAGE_MODEL = 'gpt-image-2',
-  IMAGE_SIZE = '1024x1024',
-  IMAGE_QUALITY = 'medium'
-} = process.env;
-
-if (!OPENAI_API_KEY) {
-  console.error('OPENAI_API_KEY is not set. Exiting.');
-  process.exit(1);
-}
-
-const SYSTEM_PROMPT =
-  'You are Nastivee AI Bot, a helpful, friendly and intelligent personal AI assistant.';
-
-const openai = new OpenAI({
-  apiKey: OPENAI_API_KEY
-});
-
-/* ==================================================
-   APP
-================================================== */
-
 const app = express();
 
-app.disable('x-powered-by');
-
-const allowedOrigins = CORS_ORIGINS.split(',').map(s => s.trim()).filter(Boolean);
-app.use(cors(allowedOrigins.length ? { origin: allowedOrigins } : undefined));
-
+app.use(cors());
 app.use(express.json({ limit: '25mb' }));
 
-/* ==================================================
-   HELPERS
-================================================== */
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY
+});
 
-class HttpError extends Error {
-  constructor(status, message) {
-    super(message);
-    this.status = status;
-  }
-}
+const PORT = process.env.PORT || 3000;
 
-// Wraps async handlers so any thrown error goes to the error middleware.
-const route = fn => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
+/* =========================================================
+   BASIC ROUTE
+========================================================= */
 
-const pick = list => list[Math.floor(Math.random() * list.length)];
+app.get('/', (req, res) => {
+  res.send('Nastivee AI Bot is online.');
+});
 
-const isTrue = value => value === true || value === 'true';
 
-function requireText(value, label) {
-  if (typeof value !== 'string' || !value.trim()) {
-    throw new HttpError(400, `${label} is required.`);
-  }
-  return value.trim();
-}
+/* =========================================================
+   CHAT
+========================================================= */
 
-function parseDataUrl(image) {
-  if (typeof image !== 'string') {
-    throw new HttpError(400, 'An image is required.');
-  }
-  const comma = image.indexOf(',');
-  if (!image.startsWith('data:') || comma === -1) {
-    throw new HttpError(400, 'Image must be a data URL.');
-  }
-  const buffer = Buffer.from(image.slice(comma + 1), 'base64');
-  if (!buffer.length) {
-    throw new HttpError(400, 'Image data is empty.');
-  }
-  return buffer;
-}
-
-async function normaliseImage(buffer) {
+app.post('/api/chat', async (req, res) => {
   try {
-    return await sharp(buffer)
-      .rotate()
-      .resize({ width: 1536, height: 1536, fit: 'inside', withoutEnlargement: true })
-      .flatten({ background: '#ffffff' })
-      .jpeg({ quality: 95, mozjpeg: true })
-      .toBuffer();
-  } catch {
-    throw new HttpError(400, 'The uploaded image could not be read.');
-  }
-}
+    const { message } = req.body;
 
-function imageFromResponse(response) {
-  const item = response.data?.[0];
-  if (item?.b64_json) {
-    const format = response.output_format || 'png';
-    return `data:image/${format};base64,${item.b64_json}`;
-  }
-  if (item?.url) return item.url;
-  throw new Error('OpenAI returned no usable image.');
-}
+    if (!message || !message.trim()) {
+      return res.status(400).json({
+        error: 'Message is required.'
+      });
+    }
 
-// Keeps only well formed { role, content } turns from the client.
-function cleanHistory(history) {
-  if (!Array.isArray(history)) return [];
-  return history
-    .filter(m =>
-      m &&
-      (m.role === 'user' || m.role === 'assistant') &&
-      typeof m.content === 'string' &&
-      m.content.trim()
-    )
-    .map(m => ({ role: m.role, content: m.content }));
-}
+    console.log('CHAT:', message);
 
-/* ==================================================
-   PROMPTS
-================================================== */
+    const response =
+      await openai.chat.completions.create({
+        model: 'gpt-4o-mini',
 
-// Your original prompt text, kept word for word.
+        messages: [
+          {
+            role: 'system',
 
-const GENERATE_VARIATIONS = [
+            content: `
+You are Nastivee AI, a fun, confident, playful AI companion.
 
-  `
-Create a fresh interpretation of the request.
-Use a different composition, camera angle,
-framing and lighting while keeping the original
-subject and requested details accurate.
-Do not simply reproduce the previous image.
-`,
+Your personality is:
 
-  `
-Create another distinct version of the request.
-Change the perspective, framing, lighting and
-arrangement of the scene while preserving the
-original subject and important details.
-`,
+- Friendly and natural
+- Funny and able to joke around
+- Playful and cheeky when the user is being playful
+- Flirty when the conversation is flirty
+- Comfortable discussing attraction, romance and sexual topics in a mature, non-judgmental way
+- Warm and conversational rather than robotic
+- Able to tease and banter naturally
+- Match the user's energy and tone
 
-  `
-Create a noticeably different composition.
-Change the camera position, subject placement,
-background arrangement and lighting, while keeping
-the original request accurate.
-`,
+Do not constantly remind the user that you are an AI.
 
-  `
-Reimagine the requested scene from a different
-viewpoint with different framing, lighting and
-visual arrangement. Keep the original concept
-and requested details intact.
+Do not sound overly formal or corporate.
+
+Do not turn playful conversations into lectures.
+
+If the user jokes, joke back.
+
+If the user flirts, respond playfully and naturally.
+
+If the user is being cheeky, you can be cheeky back.
+
+Keep responses conversational and human-sounding while still being helpful when the user asks a serious question.
+
+The user should feel like they are chatting with a personality, not a generic customer-service bot.
 `
+          },
 
-];
+          {
+            role: 'user',
+            content: message
+          }
+        ]
+      });
 
-const EDIT_VARIATIONS = [
+    const reply =
+      response.choices?.[0]?.message?.content ||
+      'Sorry, I could not generate a response.';
 
-  `
-Make a subtle alternative interpretation of the
-requested edit.
+    res.json({
+      reply
+    });
 
-Keep the exact same person and preserve their
-identity and likeness.
+  } catch (error) {
 
-Only slightly vary the requested scene, positioning,
-lighting, environment or styling.
+    console.error('CHAT ERROR:', error);
 
-Do not substantially change the person's face.
+    res.status(500).json({
+      error:
+        error?.message ||
+        'Chat request failed.'
+    });
+  }
+});
+
+
+/* =========================================================
+   IMAGE GENERATION
+========================================================= */
+
+app.post('/api/image', async (req, res) => {
+  try {
+
+    const {
+      prompt,
+      regenerate
+    } = req.body;
+
+    if (!prompt || !prompt.trim()) {
+      return res.status(400).json({
+        error: 'Image prompt is required.'
+      });
+    }
+
+    console.log('========================================');
+    console.log(
+      regenerate
+        ? 'IMAGE REGENERATION'
+        : 'IMAGE GENERATION'
+    );
+
+    console.log('PROMPT:', prompt);
+
+    let finalPrompt = prompt.trim();
+
+    /*
+      When regenerating a text-only image, add a little
+      variation so the result isn't simply identical.
+    */
+
+    if (regenerate === true) {
+
+      const variations = [
+
+        `
+Create another version of the requested image.
+
+Keep the original idea, subject and overall concept,
+but make a subtle creative variation in composition,
+lighting, camera angle, positioning or environment.
 `,
 
-  `
-Create another version of the requested edit.
+        `
+Generate a fresh alternative interpretation of the
+requested image.
 
-Keep the uploaded person extremely consistent
-with the original photograph.
-
-Make only modest changes to the requested edit,
-such as slightly different lighting, positioning,
-background details or atmosphere.
-
-Do not change the person's identity.
+Keep the same subject and concept while making
+modest changes to composition, lighting and details.
 `,
 
-  `
-Create a fresh but subtle variation of the edit.
+        `
+Create another version of this image concept.
 
-The uploaded photograph remains the authoritative
-reference for the person's appearance.
-
-Keep their face, facial structure, hairstyle,
-skin tone and body proportions consistent.
-
-Only vary the requested edit slightly.
+Keep the important elements from the original request,
+but slightly change the composition, perspective,
+lighting or surrounding details.
 `,
 
-  `
-Produce another version of the same edit.
+        `
+Produce a new variation of the requested image.
 
-Preserve the original person's likeness as closely
-as possible.
-
-Do not turn the person into someone else.
-
-Make a small creative variation in the requested
-scene, lighting, composition or environment.
-`,
-
-  `
-Keep the person exactly recognisable from the
-uploaded photograph.
-
-Create a slightly different interpretation of
-the user's requested edit.
-
-Make changes only where appropriate to the edit.
-
-Avoid unnecessary changes to the person's face,
-body or identity.
+Maintain the same core subject and idea but introduce
+small creative differences in framing, atmosphere,
+lighting or positioning.
 `
+      ];
 
-];
+      const variation =
+        variations[
+          Math.floor(
+            Math.random() * variations.length
+          )
+        ];
 
-function buildGeneratePrompt(prompt, regenerate) {
+      finalPrompt = `
+${prompt.trim()}
 
-  if (!regenerate) return prompt;
-
-  return `
-
-${prompt}
-
-IMPORTANT REGENERATION INSTRUCTION:
-
-${pick(GENERATE_VARIATIONS)}
-
-The original user request remains the priority.
-
+${variation}
 `;
+    }
 
-}
+    console.log(
+      'FINAL IMAGE PROMPT:',
+      finalPrompt
+    );
 
-function buildEditPrompt(prompt, regenerate) {
+    const response =
+      await openai.images.generate({
+        model: 'gpt-image-2',
 
-  /*
-   * FIRST EDIT
-   */
+        prompt: finalPrompt,
 
-  if (!regenerate) {
+        size: '1024x1024',
 
-    return `
+        quality: 'medium',
+
+        n: 1
+      });
+
+    console.log(
+      'IMAGE GENERATED SUCCESSFULLY'
+    );
+
+    const imageData =
+      response.data?.[0];
+
+    if (!imageData) {
+      throw new Error(
+        'No image returned from OpenAI.'
+      );
+    }
+
+    if (imageData.b64_json) {
+
+      return res.json({
+        image:
+          `data:image/png;base64,${imageData.b64_json}`
+      });
+
+    }
+
+    if (imageData.url) {
+
+      return res.json({
+        image:
+          imageData.url
+      });
+
+    }
+
+    throw new Error(
+      'Image response contained no usable image.'
+    );
+
+  } catch (error) {
+
+    console.error(
+      'IMAGE GENERATION ERROR:',
+      error
+    );
+
+    res.status(500).json({
+      error:
+        error?.error?.message ||
+        error?.message ||
+        'Image generation failed.'
+    });
+  }
+});
+
+
+/* =========================================================
+   IMAGE EDITING
+========================================================= */
+
+app.post('/api/image/edit', async (req, res) => {
+
+  try {
+
+    const {
+      prompt,
+      image,
+      regenerate
+    } = req.body;
+
+    if (!prompt || !prompt.trim()) {
+
+      return res.status(400).json({
+        error: 'Image edit prompt is required.'
+      });
+
+    }
+
+    if (!image) {
+
+      return res.status(400).json({
+        error: 'An image is required.'
+      });
+
+    }
+
+    console.log('========================================');
+
+    console.log(
+      regenerate
+        ? 'IMAGE EDIT REGENERATION'
+        : 'IMAGE EDIT'
+    );
+
+    console.log(
+      'PROMPT:',
+      prompt
+    );
+
+
+    /* =====================================================
+       CONVERT DATA URL INTO BUFFER
+    ===================================================== */
+
+    let originalBuffer;
+
+    if (
+      typeof image === 'string' &&
+      image.startsWith('data:')
+    ) {
+
+      const parts =
+        image.split(',');
+
+      if (parts.length < 2) {
+
+        throw new Error(
+          'Invalid image data.'
+        );
+
+      }
+
+      const base64Data =
+        parts[1];
+
+      originalBuffer =
+        Buffer.from(
+          base64Data,
+          'base64'
+        );
+
+    } else {
+
+      throw new Error(
+        'Unsupported image format.'
+      );
+
+    }
+
+    console.log(
+      'ORIGINAL UPLOADED PHOTO:',
+      originalBuffer.length,
+      'bytes'
+    );
+
+
+    /* =====================================================
+       NORMALISE ORIGINAL IMAGE
+
+       This helps prevent OpenAI rejecting certain
+       phone photos, HEIC-style images, rotations,
+       transparency and unusual image formats.
+    ===================================================== */
+
+    const normalizedBuffer =
+      await sharp(originalBuffer)
+
+        .rotate()
+
+        .resize({
+          width: 1536,
+          height: 1536,
+          fit: 'inside',
+          withoutEnlargement: true
+        })
+
+        .flatten({
+          background: '#ffffff'
+        })
+
+        .jpeg({
+          quality: 95,
+          mozjpeg: true
+        })
+
+        .toBuffer();
+
+
+    console.log(
+      'NORMALISED ORIGINAL:',
+      normalizedBuffer.length,
+      'bytes'
+    );
+
+
+    /* =====================================================
+       CREATE OPENAI IMAGE FILE
+    ===================================================== */
+
+    const imageFile =
+      await toFile(
+        normalizedBuffer,
+        'original-upload.jpg',
+        {
+          type: 'image/jpeg'
+        }
+      );
+
+
+    /* =====================================================
+       FIRST EDIT
+    ===================================================== */
+
+    let finalPrompt;
+
+
+    if (!regenerate) {
+
+      finalPrompt = `
 
 Use the uploaded photograph as the primary reference.
 
@@ -280,25 +444,107 @@ Do not unnecessarily alter the person's face.
 
 USER'S EDIT REQUEST:
 
-${prompt}
+${prompt.trim()}
 
 Make the requested edit while keeping the original
 person clearly recognisable and faithful to the
 uploaded photograph.
 
+Do not change unrelated parts of the image unless
+necessary to complete the requested edit.
 `;
 
-  }
+    }
 
-  /*
-   * REGENERATION OF AN EDIT
-   *
-   * The uploaded photo is still the source image.
-   * We are NOT sending the previous generated
-   * image back into the model.
-   */
 
-  return `
+    /* =====================================================
+       REGENERATION
+       
+       IMPORTANT:
+       The ORIGINAL uploaded photograph is sent again.
+       
+       The previous AI-generated image is NOT used.
+    ===================================================== */
+
+    if (regenerate === true) {
+
+      const regenerationVariations = [
+
+        `
+Make a subtle alternative interpretation of the
+requested edit.
+
+Keep the exact same person and preserve their
+identity and likeness.
+
+Only slightly vary the requested scene, positioning,
+lighting, environment or styling.
+
+Do not substantially change the person's face.
+`,
+
+        `
+Create another version of the requested edit.
+
+Keep the uploaded person extremely consistent
+with the original photograph.
+
+Make only modest changes to the requested edit,
+such as slightly different lighting, positioning,
+background details or atmosphere.
+
+Do not change the person's identity.
+`,
+
+        `
+Create a fresh but subtle variation of the edit.
+
+The uploaded photograph remains the authoritative
+reference for the person's appearance.
+
+Keep their face, facial structure, hairstyle,
+skin tone and body proportions consistent.
+
+Only vary the requested edit slightly.
+`,
+
+        `
+Produce another version of the same edit.
+
+Preserve the original person's likeness as closely
+as possible.
+
+Do not turn the person into someone else.
+
+Make a small creative variation in the requested
+scene, lighting, composition or environment.
+`,
+
+        `
+Keep the person exactly recognisable from the
+uploaded photograph.
+
+Create a slightly different interpretation of
+the user's requested edit.
+
+Make changes only where appropriate to the edit.
+
+Avoid unnecessary changes to the person's face,
+body or identity.
+`
+      ];
+
+
+      const variation =
+        regenerationVariations[
+          Math.floor(
+            Math.random() *
+            regenerationVariations.length
+          )
+        ];
+
+
+      finalPrompt = `
 
 THE UPLOADED PHOTOGRAPH IS THE ORIGINAL SOURCE IMAGE.
 
@@ -307,8 +553,7 @@ AUTHORITATIVE reference for the person.
 
 USER'S ORIGINAL EDIT REQUEST:
 
-${prompt}
-
+${prompt.trim()}
 
 IDENTITY PRESERVATION:
 
@@ -340,7 +585,7 @@ Do NOT use a different person as the reference.
 
 REGENERATION:
 
-${pick(EDIT_VARIATIONS)}
+${variation}
 
 IMPORTANT:
 
@@ -355,171 +600,136 @@ reference for the person's likeness.
 
 The requested edit should remain essentially the
 same, with only a modest visual variation.
-
 `;
 
-}
+    }
 
-/* ==================================================
-   ROUTES
-================================================== */
 
-app.get('/', (req, res) => {
-  res.send('Nastivee AI Bot backend is running.');
-});
+    /* =====================================================
+       OPENAI IMAGE EDIT
+    ===================================================== */
 
-app.get('/health', (req, res) => {
-  res.json({ ok: true });
-});
+    console.log(
+      'SENDING ORIGINAL PHOTO TO OPENAI...'
+    );
 
-/*
- * CHAT
- * Body: { message: string, history?: [{ role: 'user'|'assistant', content: string }] }
- * History is optional, so existing clients keep working.
- */
-app.post('/api/chat', route(async (req, res) => {
-  const message = requireText(req.body?.message, 'Message');
-  const history = cleanHistory(req.body?.history);
+    console.log(
+      'REGENERATION:',
+      regenerate === true
+    );
 
-  console.log('CHAT:', message);
+    console.log(
+      'SENDING EDIT REQUEST...'
+    );
 
-  const response = await openai.chat.completions.create({
-    model: CHAT_MODEL,
-    messages: [
-      { role: 'system', content: SYSTEM_PROMPT },
-      ...history,
-      { role: 'user', content: message }
-    ]
-  });
 
-  const reply =
-    response.choices?.[0]?.message?.content ||
-    'Sorry, I could not generate a response.';
+    const response =
+      await openai.images.edit({
 
-  res.json({ reply });
-}));
+        model: 'gpt-image-2',
 
-/*
- * IMAGE GENERATION
- * Body: { prompt: string, regenerate?: boolean }
- */
-app.post('/api/image', route(async (req, res) => {
-  const prompt = requireText(req.body?.prompt, 'Image prompt');
-  const regenerate = isTrue(req.body?.regenerate);
+        image: imageFile,
 
-  const finalPrompt = buildGeneratePrompt(prompt, regenerate);
-  console.log(regenerate ? 'IMAGE REGENERATION:' : 'IMAGE GENERATION:', finalPrompt);
+        prompt: finalPrompt,
 
-  const response = await openai.images.generate({
-    model: IMAGE_MODEL,
-    prompt: finalPrompt,
-    size: IMAGE_SIZE,
-    quality: IMAGE_QUALITY,
-    n: 1
-  });
+        size: '1024x1024',
 
-  console.log(
-    regenerate
-      ? 'IMAGE REGENERATED SUCCESSFULLY'
-      : 'IMAGE GENERATED SUCCESSFULLY'
-  );
+        quality: 'medium',
 
-  res.json({ image: imageFromResponse(response) });
-}));
+        n: 1
 
-/*
- * IMAGE EDITING
- * Body: { prompt: string, image: dataURL, regenerate?: boolean }
- * The client must always send the ORIGINAL uploaded photo,
- * never a previous AI result, so likeness does not drift.
- */
-app.post('/api/image/edit', route(async (req, res) => {
-  const prompt = requireText(req.body?.prompt, 'Image edit prompt');
-  const regenerate = isTrue(req.body?.regenerate);
+      });
 
-  console.log('========================================');
-  console.log(regenerate ? 'IMAGE EDIT REGENERATION' : 'IMAGE EDIT');
-  console.log('PROMPT:', prompt);
 
-  // THIS MUST ALWAYS BE THE ORIGINAL PHOTO.
-  // We never use the previous AI-generated result
-  // as the reference for regeneration.
-  const original = parseDataUrl(req.body?.image);
-  console.log('ORIGINAL UPLOADED PHOTO:', original.length, 'bytes');
+    console.log(
+      regenerate
+        ? 'IMAGE EDIT REGENERATED SUCCESSFULLY'
+        : 'IMAGE EDITED SUCCESSFULLY'
+    );
 
-  const normalised = await normaliseImage(original);
-  console.log('NORMALISED ORIGINAL:', normalised.length, 'bytes');
 
-  const imageFile = await toFile(normalised, 'original-upload.jpg', { type: 'image/jpeg' });
+    const imageData =
+      response.data?.[0];
 
-  console.log('SENDING ORIGINAL PHOTO TO OPENAI...');
-  console.log('REGENERATION:', regenerate);
-  console.log('SENDING EDIT REQUEST...');
 
-  const response = await openai.images.edit({
-    model: IMAGE_MODEL,
-    image: imageFile,
-    prompt: buildEditPrompt(prompt, regenerate),
-    size: IMAGE_SIZE,
-    quality: IMAGE_QUALITY,
-    n: 1
-  });
+    if (!imageData) {
 
-  console.log(
-    regenerate
-      ? 'IMAGE EDIT REGENERATED SUCCESSFULLY'
-      : 'IMAGE EDITED SUCCESSFULLY'
-  );
+      throw new Error(
+        'No edited image returned from OpenAI.'
+      );
 
-  res.json({ image: imageFromResponse(response) });
-}));
+    }
 
-/* ==================================================
-   ERRORS
-================================================== */
 
-app.use((req, res) => {
-  res.status(404).json({ error: 'Not found.' });
-});
+    /* =====================================================
+       RETURN BASE64 IMAGE
+    ===================================================== */
 
-// eslint-disable-next-line no-unused-vars
-app.use((err, req, res, next) => {
-  // Body too large or bad JSON from express.json()
-  if (err.type === 'entity.too.large') {
-    return res.status(413).json({ error: 'Request is too large.' });
-  }
-  if (err.type === 'entity.parse.failed') {
-    return res.status(400).json({ error: 'Invalid JSON body.' });
-  }
+    if (imageData.b64_json) {
 
-  // Our own validation errors
-  if (err instanceof HttpError) {
-    return res.status(err.status).json({ error: err.message });
-  }
+      return res.json({
 
-  // OpenAI API errors: pass OpenAI's own status and message straight through
-  if (err instanceof OpenAI.APIError) {
-    console.error(`OPENAI ERROR ${err.status}:`, err.message);
-    return res.status(err.status || 500).json({
-      error: err.error?.message || err.message
+        image:
+          `data:image/png;base64,${imageData.b64_json}`
+
+      });
+
+    }
+
+
+    /* =====================================================
+       FALLBACK URL
+    ===================================================== */
+
+    if (imageData.url) {
+
+      return res.json({
+
+        image:
+          imageData.url
+
+      });
+
+    }
+
+
+    throw new Error(
+      'Edited image response contained no usable image.'
+    );
+
+
+  } catch (error) {
+
+    console.error(
+      'IMAGE EDIT ERROR:',
+      error
+    );
+
+    res.status(500).json({
+
+      error:
+        error?.error?.message ||
+        error?.message ||
+        'Image editing failed.'
+
     });
+
   }
 
-  console.error('SERVER ERROR:', err);
-  res.status(500).json({ error: err?.message || 'Request failed.' });
 });
 
-/* ==================================================
-   START
-================================================== */
 
-const server = app.listen(PORT, () => {
-  console.log(`Nastivee AI Bot running on port ${PORT}`);
-});
+/* =========================================================
+   START SERVER
+========================================================= */
 
-for (const signal of ['SIGINT', 'SIGTERM']) {
-  process.on(signal, () => {
-    console.log(`${signal} received, shutting down.`);
-    server.close(() => process.exit(0));
-  });
-}
+app.listen(
+  PORT,
+  () => {
+
+    console.log(
+      `Nastivee AI Bot running on port ${PORT}`
+    );
+
+  }
+);
