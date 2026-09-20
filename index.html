@@ -13,6 +13,65 @@
   box-sizing: border-box;
 }
 
+:root {
+  --bg: #0b0714;
+  --panel: #120c1e;
+  --panel-2: #181123;
+  --line: #271d38;
+  --line-soft: #1f1730;
+  --text: #f3eefa;
+  --muted: #9b90ab;
+  --brand: #8b5cf6;
+  --brand-2: #c084fc;
+  --radius: 16px;
+  --ease: cubic-bezier(.2, .8, .3, 1);
+}
+
+::selection {
+  background: rgba(139,92,246,.35);
+}
+
+/* Slim scrollbars that match the theme */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #372a4d transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: #372a4d;
+  border-radius: 999px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+button {
+  transition:
+    background .18s var(--ease),
+    border-color .18s var(--ease),
+    color .18s var(--ease),
+    transform .12s var(--ease);
+}
+
+button:active {
+  transform: translateY(1px);
+}
+
+button:focus-visible,
+textarea:focus-visible,
+input:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
 html,
 body {
   margin: 0;
@@ -209,11 +268,11 @@ button {
 ===================================================== */
 
 .sidebar {
-  width: 270px;
+  width: 280px;
   height: 100%;
   flex-shrink: 0;
-  background: #120d1e;
-  border-right: 1px solid #2a2138;
+  background: var(--panel);
+  border-right: 1px solid var(--line);
   display: flex;
   flex-direction: column;
   z-index: 50;
@@ -236,16 +295,17 @@ button {
 .newChatButton {
   width: 100%;
   margin-top: 20px;
-  padding: 13px;
-  border-radius: 12px;
-  border: 1px solid #493560;
-  background: #211731;
+  padding: 13px 18px;
+  border-radius: 13px;
+  border: 0;
+  background: linear-gradient(135deg, #7c3aed, #9333ea);
   color: white;
   font-weight: 700;
+  letter-spacing: .1px;
 }
 
 .newChatButton:hover {
-  background: #2b1d40;
+  filter: brightness(1.08);
 }
 
 .chatHistory {
@@ -263,17 +323,21 @@ button {
 }
 
 .chatHistoryItem {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 8px;
   width: 100%;
-  border: 0;
-  border-radius: 10px;
-  padding: 11px;
-  color: #d6cedf;
+  border: 1px solid transparent;
+  border-radius: 13px;
+  padding: 4px 4px 4px 12px;
+  color: #cfc5db;
   background: transparent;
   text-align: left;
-  margin-bottom: 3px;
+  margin-bottom: 4px;
+  transition:
+    background .18s var(--ease),
+    border-color .18s var(--ease);
 }
 
 /*
@@ -296,7 +360,20 @@ button {
 
 .chatHistoryItem.active {
   background: #241933;
+  border-color: #3d2c58;
   color: white;
+}
+
+/* The bar marking the open chat, inset so it is never clipped */
+.chatHistoryItem.active::before {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 10px;
+  bottom: 10px;
+  width: 3px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, var(--brand), var(--brand-2));
 }
 
 .chatHistoryItem,
@@ -315,7 +392,7 @@ button {
 
 /*
   End of row delete. Just the mark, no background and no
-  border, large enough to read and to hit with a thumb.
+  border, in a clearly marked red area at the end of the row.
 */
 .deleteChatButton {
   flex-shrink: 0;
@@ -323,34 +400,67 @@ button {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 42px;
+  min-width: 44px;
   padding: 0 12px;
-  margin-left: 4px;
+  margin-left: 6px;
   border: 0;
+  border-left: 1px solid #33263f;
   background: none;
-  color: #9b8fa8;
-  font-size: 24px;
+  color: #ff8a8a;
+  font-size: 26px;
   line-height: 1;
-  opacity: .75;
-  transition: color .15s ease, opacity .15s ease;
+  transition: color .15s ease, transform .15s ease;
 }
 
+.deleteChatButton:hover,
 .deleteChatButton:active {
-  color: #ff7676;
-  opacity: 1;
+  color: #ff5f5f;
+  transform: scale(1.12);
 }
 
-@media (hover: hover) {
+/* CONFIRM DELETE */
 
-  .deleteChatButton {
-    opacity: 0;
-  }
+.chatHistoryItem.confirming {
+  background: #3a1520;
+  color: #ffd9d9;
+}
 
-  .deleteChatButton:hover {
-    color: #ff7676;
-    opacity: 1;
-  }
+.confirmDelete {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+}
 
+.confirmDeleteText {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  color: #ffd2d2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.confirmDeleteYes,
+.confirmDeleteNo {
+  flex-shrink: 0;
+  border: 0;
+  border-radius: 9px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.confirmDeleteYes {
+  background: #e23d4f;
+  color: white;
+}
+
+.confirmDeleteNo {
+  background: #2b2238;
+  color: #cfc4da;
 }
 
 .sidebarBottom {
@@ -456,13 +566,15 @@ button {
 }
 
 .header {
-  height: 64px;
+  height: 66px;
   flex-shrink: 0;
   display: flex;
   align-items: center;
+  gap: 12px;
   padding: 0 22px;
-  border-bottom: 1px solid #241c31;
-  background: rgba(13,9,23,.8);
+  border-bottom: 1px solid var(--line);
+  background: rgba(11,7,20,.85);
+  backdrop-filter: blur(10px);
 }
 
 .mobileMenuButton {
@@ -477,22 +589,41 @@ button {
 .headerTitle {
   font-weight: 700;
   font-size: 16px;
+  letter-spacing: -.2px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .headerStatus {
   margin-left: auto;
   display: flex;
   align-items: center;
-  gap: 7px;
-  color: #8e8498;
+  gap: 8px;
+  padding: 7px 13px;
+  border: 1px solid #2c2340;
+  border-radius: 999px;
+  background: #16101f;
+  color: #c0b5cd;
   font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
 }
 
 .statusDot {
-  width: 7px;
-  height: 7px;
+  width: 8px;
+  height: 8px;
+  flex-shrink: 0;
   border-radius: 50%;
-  background: #6ee7a0;
+  background: #4ade80;
+  /* Room around the halo so it is never clipped */
+  box-shadow: 0 0 0 4px rgba(74,222,128,.14);
+}
+
+.statusDot.offline {
+  background: #f97316;
+  box-shadow: 0 0 0 4px rgba(249,115,22,.14);
 }
 
 /* =====================================================
@@ -587,22 +718,31 @@ button {
 
 .messageBubble {
   max-width: min(760px, 88%);
-  padding: 13px 16px;
-  border-radius: 17px;
-  line-height: 1.55;
+  padding: 14px 17px;
+  border-radius: 18px;
+  line-height: 1.6;
+  font-size: 15px;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
+  animation: bubbleIn .22s var(--ease) both;
+}
+
+@keyframes bubbleIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
 }
 
 .messageRow.user .messageBubble {
-  background: linear-gradient(135deg, #6f42c1, #7c3aed);
-  border-bottom-right-radius: 5px;
+  background: linear-gradient(135deg, #6f42c1, #8b5cf6);
+  color: white;
+  border-bottom-right-radius: 6px;
+  box-shadow: 0 8px 24px rgba(124,58,237,.18);
 }
 
 .messageRow.assistant .messageBubble {
-  background: #191323;
-  border: 1px solid #2b2137;
-  border-bottom-left-radius: 5px;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-bottom-left-radius: 6px;
 }
 
 .messageImageWrap {
@@ -614,9 +754,10 @@ button {
   display: block;
   width: 100%;
   max-width: 760px;
-  border-radius: 17px;
+  border-radius: 18px;
   border: 1px solid #352743;
   background: #120d1c;
+  box-shadow: 0 14px 40px rgba(0,0,0,.35);
 }
 
 .imagePrompt {
@@ -637,9 +778,10 @@ button {
   border: 1px solid #40304f;
   background: #1a1226;
   color: #d8cde3;
-  border-radius: 9px;
-  padding: 8px 11px;
-  font-size: 12px;
+  border-radius: 11px;
+  padding: 9px 16px;
+  font-size: 12.5px;
+  font-weight: 600;
 }
 
 .imageActionButton:hover {
@@ -665,10 +807,11 @@ button {
   display: none;
   margin: 0 auto 12px;
   width: min(900px, calc(100% - 40px));
-  padding: 11px 14px;
-  border: 1px solid #332641;
-  background: #15101f;
-  border-radius: 12px;
+  padding: 12px 16px;
+  border: 1px solid #3a2a55;
+  background: #17112a;
+  border-radius: 14px;
+  animation: bubbleIn .2s var(--ease) both;
 }
 
 .imageProgress.show {
@@ -714,11 +857,16 @@ button {
 .composer {
   width: min(900px, 100%);
   margin: 0 auto;
-  border: 1px solid #392b47;
+  border: 1px solid #33264a;
   background: #15101f;
-  border-radius: 18px;
-  padding: 8px;
-  box-shadow: 0 10px 40px rgba(0,0,0,.2);
+  border-radius: 20px;
+  padding: 9px;
+  box-shadow: 0 14px 45px rgba(0,0,0,.35);
+  transition: border-color .18s var(--ease);
+}
+
+.composer:focus-within {
+  border-color: #563f7e;
 }
 
 .uploadPreview {
@@ -786,16 +934,17 @@ button {
 }
 
 .composerButton {
-  width: 42px;
-  height: 42px;
+  width: 44px;
+  height: 44px;
   flex-shrink: 0;
   border: 0;
-  border-radius: 12px;
+  border-radius: 13px;
   background: #241a31;
   color: #c7bbd2;
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 0 12px;
 }
 
 .composerButton:hover {
@@ -807,9 +956,55 @@ button {
   color: white;
 }
 
+/* CREATE IMAGE */
+
+.createImageButton {
+  width: auto;
+  gap: 8px;
+  padding: 0 15px;
+  background: #251a38;
+  border: 1px solid #4a3568;
+  color: #e4d9f1;
+  font-size: 14px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.createImageButton:hover {
+  background: #2f2145;
+}
+
+.createImageButton.imageModeActive {
+  background: linear-gradient(135deg, #7c3aed, #9333ea);
+  border-color: transparent;
+  color: white;
+}
+
+.createImageIcon {
+  font-size: 15px;
+}
+
+@media (max-width: 760px) {
+
+  .createImageLabel {
+    display: none;
+  }
+
+  .createImageButton {
+    width: 42px;
+    padding: 0;
+  }
+
+}
+
 .sendButton {
   background: linear-gradient(135deg, #7c3aed, #9333ea);
   color: white;
+  box-shadow: 0 8px 22px rgba(124,58,237,.28);
+}
+
+.sendButton:hover {
+  filter: brightness(1.08);
 }
 
 .sendButton:disabled {
@@ -1164,11 +1359,11 @@ button {
         New chat
       </div>
 
-      <div class="headerStatus">
+      <div class="headerStatus" id="headerStatus" title="People using Nastivee AI right now">
 
-        <span class="statusDot"></span>
+        <span class="statusDot" id="statusDot"></span>
 
-        Online
+        <span id="onlineCount">Connecting</span>
 
       </div>
 
@@ -1294,19 +1489,21 @@ button {
 
           <button
             id="imageButton"
-            class="composerButton"
+            class="composerButton createImageButton"
             type="button"
-            title="Create image"
+            title="Create an image from your description"
             aria-pressed="false"
           >
-            🖼️
+            <span class="createImageIcon">✨</span>
+            <span class="createImageLabel">Create image</span>
           </button>
 
           <button
             id="uploadButton"
             class="composerButton"
             type="button"
-            title="Upload image"
+            title="Upload a photo to edit"
+            aria-label="Upload a photo to edit"
           >
             📎
           </button>
@@ -1647,6 +1844,12 @@ const newChatButton =
 
 const chatHistoryList =
   document.getElementById('chatHistoryList');
+
+const onlineCountLabel =
+  document.getElementById('onlineCount');
+
+const statusDot =
+  document.getElementById('statusDot');
 
 const guestButton =
   document.getElementById('guestButton');
@@ -2421,6 +2624,8 @@ async function initialiseApp() {
 
   guestNotice.classList.toggle('show', guestMode);
 
+  startPresence();
+
   memory =
     await loadMemory();
 
@@ -2737,13 +2942,11 @@ function renderChatHistory() {
 
       deleteButton.addEventListener(
         'click',
-        async event => {
+        event => {
 
           event.stopPropagation();
 
-          await deleteChat(
-            chatItem.id
-          );
+          askToDelete(row, chatItem);
 
         }
       );
@@ -2766,6 +2969,81 @@ function renderChatHistory() {
 
 
 /* =====================================================
+   CONFIRM DELETE
+
+   The row turns into its own confirmation, so nothing
+   is removed from the sidebar by a single stray tap.
+===================================================== */
+
+function askToDelete(row, chatItem) {
+
+  row.classList.add('confirming');
+
+  row.innerHTML = '';
+
+  const wrap =
+    document.createElement('div');
+
+  wrap.className = 'confirmDelete';
+
+  const text =
+    document.createElement('div');
+
+  text.className = 'confirmDeleteText';
+
+  text.textContent =
+    `Delete "${chatItem.title || 'New chat'}"?`;
+
+  const yes =
+    document.createElement('button');
+
+  yes.className = 'confirmDeleteYes';
+
+  yes.textContent = 'Delete';
+
+  const no =
+    document.createElement('button');
+
+  no.className = 'confirmDeleteNo';
+
+  no.textContent = 'Keep';
+
+  yes.addEventListener(
+    'click',
+    async event => {
+
+      event.stopPropagation();
+
+      yes.disabled = true;
+
+      yes.textContent = 'Deleting...';
+
+      await deleteChat(chatItem.id);
+
+    }
+  );
+
+  no.addEventListener(
+    'click',
+    event => {
+
+      event.stopPropagation();
+
+      renderChatHistory();
+
+    }
+  );
+
+  wrap.appendChild(text);
+  wrap.appendChild(no);
+  wrap.appendChild(yes);
+
+  row.appendChild(wrap);
+
+}
+
+
+/* =====================================================
    DELETE CHAT
 ===================================================== */
 
@@ -2778,15 +3056,6 @@ async function deleteChat(
   }
 
 
-  const confirmed =
-    confirm(
-      'Delete this chat?'
-    );
-
-
-  if (!confirmed) {
-    return;
-  }
 
 
   if (guestMode) {
@@ -4538,6 +4807,9 @@ async function sendNormalMessage(
     );
 
 
+    nameChatFromContent(requestChatId);
+
+
   } catch (error) {
 
     console.error(
@@ -4565,6 +4837,133 @@ async function sendNormalMessage(
   } finally {
 
     endJob(jobId);
+
+  }
+
+}
+
+
+/* =====================================================
+   NAME THE CHAT FROM ITS CONTENT
+
+   The first message makes a rough title. Once there is
+   a real exchange, the model is asked for a short title
+   describing what the chat is actually about.
+===================================================== */
+
+const titledChats = new Set();
+
+async function nameChatFromContent(chatId) {
+
+  if (!chatId || titledChats.has(String(chatId))) {
+    return;
+  }
+
+  titledChats.add(String(chatId));
+
+
+  try {
+
+    let history;
+
+
+    if (guestMode) {
+
+      history =
+        guestMessages(chatId)
+          .filter(item => !item.image_url)
+          .map(item => ({
+            role: item.role,
+            content: item.content || ''
+          }));
+
+    } else {
+
+      const { data } =
+        await supabaseClient
+          .from('messages')
+          .select('role,content')
+          .eq('chat_id', chatId)
+          .eq('user_id', currentUser.id)
+          .order('created_at', { ascending: true });
+
+      history =
+        (data || []).map(item => ({
+          role: item.role,
+          content: item.content || ''
+        }));
+
+    }
+
+
+    const conversation =
+      history
+        .slice(0, 6)
+        .map(item =>
+          `${item.role === 'user' ? 'User' : 'Assistant'}: ${item.content}`
+        )
+        .join('\n')
+        .slice(0, 2000);
+
+
+    if (!conversation.trim()) {
+      titledChats.delete(String(chatId));
+      return;
+    }
+
+
+    const response =
+      await fetch(
+        `${API_BASE}/api/chat`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            messages: [
+              {
+                role: 'user',
+                content:
+                  'Read this conversation and reply with a title of ' +
+                  'two to five words describing what it is about. ' +
+                  'Reply with the title only, no quotes, no full stop.' +
+                  '\n\n' + conversation
+              }
+            ]
+          })
+        }
+      );
+
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data?.error || 'Title request failed.');
+    }
+
+
+    const title =
+      (data?.reply || '')
+        .replace(/["'`]/g, '')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .slice(0, 55);
+
+
+    if (title) {
+
+      await updateChatTitle(chatId, title);
+
+    }
+
+
+  } catch (error) {
+
+    console.error('TITLE ERROR:', error);
+
+    // let a later message try again
+    titledChats.delete(String(chatId));
 
   }
 
@@ -5107,6 +5506,8 @@ logoutButton.addEventListener(
 
     if (guestMode) {
 
+      stopPresence();
+
       stopGuestMode();
 
       imageState.clear();
@@ -5118,6 +5519,8 @@ logoutButton.addEventListener(
       return;
 
     }
+
+    stopPresence();
 
     await supabaseClient.auth.signOut();
 
@@ -5142,6 +5545,133 @@ logoutButton.addEventListener(
 
 
 /* =====================================================
+   WHO IS ONLINE
+
+   A Supabase realtime presence channel. Everyone in the
+   app joins it, signed in or guest, and the header shows
+   how many are connected right now.
+===================================================== */
+
+let presenceChannel = null;
+
+function onlineLabel(count) {
+
+  if (count <= 1) {
+    return 'Just you online';
+  }
+
+  return `${count} online`;
+
+}
+
+function setOnlineCount(count) {
+
+  onlineCountLabel.textContent = onlineLabel(count);
+
+  statusDot.classList.remove('offline');
+
+}
+
+function setOffline() {
+
+  onlineCountLabel.textContent = 'Offline';
+
+  statusDot.classList.add('offline');
+
+}
+
+function startPresence() {
+
+  if (presenceChannel) {
+    return;
+  }
+
+
+  const who =
+    currentUser?.id ||
+    `guest-${Math.random().toString(36).slice(2, 10)}`;
+
+
+  try {
+
+    presenceChannel =
+      supabaseClient.channel(
+        'nastivee-online',
+        {
+          config: {
+            presence: { key: who }
+          }
+        }
+      );
+
+    presenceChannel.on(
+      'presence',
+      { event: 'sync' },
+      () => {
+
+        const state =
+          presenceChannel.presenceState();
+
+        setOnlineCount(
+          Object.keys(state || {}).length
+        );
+
+      }
+    );
+
+    presenceChannel.subscribe(async status => {
+
+      if (status === 'SUBSCRIBED') {
+
+        await presenceChannel.track({
+          online_at: new Date().toISOString(),
+          guest: guestMode
+        });
+
+      } else if (
+        status === 'CHANNEL_ERROR' ||
+        status === 'TIMED_OUT'
+      ) {
+
+        setOffline();
+
+      }
+
+    });
+
+  } catch (error) {
+
+    console.error('PRESENCE ERROR:', error);
+
+    setOffline();
+
+  }
+
+}
+
+function stopPresence() {
+
+  if (!presenceChannel) {
+    return;
+  }
+
+  try {
+    supabaseClient.removeChannel(presenceChannel);
+  } catch {}
+
+  presenceChannel = null;
+
+}
+
+window.addEventListener('offline', setOffline);
+
+window.addEventListener('online', () => {
+  stopPresence();
+  startPresence();
+});
+
+
+/* =====================================================
    APP VERSION / CACHE BUSTING
 
    Bump APP_VERSION on every deploy. The service worker
@@ -5151,7 +5681,7 @@ logoutButton.addEventListener(
    clearing anything by hand.
 ===================================================== */
 
-const APP_VERSION = '2026-09-20-2';
+const APP_VERSION = '2026-09-20-3';
 
 const RELOAD_FLAG = 'nastivee_reloaded_for';
 
