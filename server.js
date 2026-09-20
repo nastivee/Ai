@@ -31,38 +31,24 @@ app.post('/api/chat', async (req, res) => {
   }
 });
 
-// Fast, Reliable Image Route
+// Multi-word Reliable Image Route
 app.post('/api/image', async (req, res) => {
   try {
     const { prompt } = req.body;
     if (!prompt) return res.status(400).json({ error: 'Prompt is required' });
 
-    const seed = Math.floor(Math.random() * 100000);
-    // Optimized prompt & 512x512 size for 3x faster generation speeds
-    const encodedPrompt = encodeURIComponent(prompt + ', realistic photo, detailed');
-    const imageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=512&height=512&nologo=true&seed=${seed}`;
+    // 1. Clean multi-word text into a safe string
+    const safePrompt = prompt.replace(/[^a-zA-Z0-9 ]/g, "").trim();
+    const encoded = encodeURIComponent(safePrompt + ' realistic photo highly detailed');
+    const uniqueSeed = Date.now();
 
-    // Download image with a safety controller to prevent browser timeouts
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 12000);
+    // 2. Direct high-speed link optimized for multi-word phrases
+    const imageUrl = `https://image.pollinations.ai/prompt/${encoded}?width=512&height=512&nologo=true&seed=${uniqueSeed}&model=flux`;
 
-    const imageResponse = await fetch(imageUrl, { signal: controller.signal });
-    clearTimeout(timeout);
-
-    const arrayBuffer = await imageResponse.arrayBuffer();
-    const base64Data = Buffer.from(arrayBuffer).toString('base64');
-    const dataUri = `data:image/jpeg;base64,${base64Data}`;
-
-    return res.json({ imageUrl: dataUri });
+    return res.json({ imageUrl });
   } catch (error) {
-    console.error('Image generation error:', error);
-    
-    // Fast Direct URL Fallback if server fetch exceeds 12s
-    const seed = Math.floor(Math.random() * 100000);
-    const fallbackPrompt = encodeURIComponent(req.body.prompt || 'photo');
-    const directUrl = `https://image.pollinations.ai/prompt/${fallbackPrompt}?width=512&height=512&nologo=true&seed=${seed}`;
-    
-    return res.json({ imageUrl: directUrl });
+    console.error('Image route error:', error);
+    return res.status(500).json({ error: 'Failed to generate image' });
   }
 });
 
