@@ -11,7 +11,7 @@ app.use(express.json({ limit: '10mb' }));
 function getOpenAIClient() {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) return null;
-  return new OpenAI({ apiKey });
+  return new OpenAI({ apiKey, timeout: 15000 }); // 15s timeout to prevent hanging
 }
 
 // Chat Route
@@ -55,21 +55,24 @@ app.post('/api/image', async (req, res) => {
         size: "1024x1024"
       });
 
-      if (response.data && response.data[0]?.url) {
+      if (response && response.data && response.data[0]?.url) {
         console.log('Image generated successfully via OpenAI!');
         return res.json({ imageUrl: response.data[0].url });
       }
     } catch (openAiError) {
-      console.warn('OpenAI error, using fallback:', openAiError.message);
+      console.warn('OpenAI request failed, switching to backup engine:', openAiError.message);
     }
+  } else {
+    console.warn('OPENAI_API_KEY missing, jumping to fallback engine...');
   }
 
-  // Backup Fallback Engine
+  // Backup Engine (Always guarantees an immediate return URL)
   try {
     const safePrompt = encodeURIComponent(prompt.replace(/[^a-zA-Z0-9 ]/g, "").trim() + ', realistic photo');
     const seed = Date.now();
     const backupUrl = `https://image.pollinations.ai/prompt/${safePrompt}?width=768&height=768&nologo=true&seed=${seed}&model=flux`;
 
+    console.log('Serving image via backup engine...');
     return res.json({ imageUrl: backupUrl });
   } catch (fallbackError) {
     console.error('All image paths failed:', fallbackError);
