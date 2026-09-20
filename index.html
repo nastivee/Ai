@@ -3168,6 +3168,9 @@ async function deleteChat(
       error
     );
 
+    // put the row back the way it was
+    renderChatHistory();
+
     alert(
       error?.message ||
       'Could not delete chat.'
@@ -5648,7 +5651,7 @@ window.addEventListener('online', () => {
    clearing anything by hand.
 ===================================================== */
 
-const APP_VERSION = '2026-09-20-4';
+const APP_VERSION = '2026-09-20-5';
 
 const RELOAD_FLAG = 'nastivee_reloaded_for';
 
