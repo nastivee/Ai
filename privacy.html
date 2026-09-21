@@ -61,7 +61,7 @@
       <td>Performance of a contract</td>
     </tr>
     <tr>
-      <td>Images you generate</td>
+      <td>Images you generate or upload, <strong>encrypted</strong></td>
       <td>To show them to you and let you return to them later</td>
       <td>Performance of a contract</td>
     </tr>
@@ -99,9 +99,12 @@
 </p>
 
 <p>
-  From then on, your <strong>message text, chat titles and profile
-  notes</strong> are encrypted in your browser with AES-GCM before they
-  are stored. What sits in our database is ciphertext. Neither we, nor
+  From then on, your <strong>message text, chat titles, profile notes
+  and pictures</strong> are encrypted in your browser with AES-GCM before
+  they are stored. Pictures sit in private storage that only your
+  signed in account can fetch, and even then only as ciphertext.
+  Anything you wrote before encryption was switched on is sealed the
+  same way the next time you open the app. What sits in our database is ciphertext. Neither we, nor
   our hosting providers, nor anyone who obtained a copy of the database,
   can read it without your password.
 </p>
@@ -118,8 +121,9 @@
     having processed by a third party.
   </li>
   <li>
-    <strong>Images you generate.</strong> These are stored as files and are
-    not currently end-to-end encrypted.
+    <strong>Pictures on their way to be made or edited.</strong> Like
+    your messages, a picture you ask to change is sent to OpenAI in
+    readable form so the change can be made.
   </li>
   <li>
     <strong>Your email address, credit balance and payment records.</strong>
@@ -128,11 +132,20 @@
   </li>
 </ul>
 
+<h3>Your recovery code</h3>
+
+<p>
+  When your encryption is set up, you are given a recovery code. It is
+  a second key to your chats that you hold and we never see. Changing
+  your password from inside the app keeps your chats, because the
+  encryption key itself does not change, only the lock on it.
+</p>
+
 <div class="note warn">
-  <strong>If you forget your password, your chat history is gone.</strong>
-  Not withheld, not recoverable by asking us nicely, gone. We do not hold
-  a spare key, which is the entire point. Resetting your password gets you
-  back into your account but not back into chats written before the reset.
+  <strong>If you forget your password and lose your recovery code, your
+  chat history is gone.</strong> Not withheld, not recoverable by asking
+  us nicely, gone. We do not hold a spare key, which is the entire point.
+  Keep the recovery code somewhere safe and away from the device you use.
 </div>
 
 <h2>4. Who processes data for us</h2>
@@ -171,7 +184,8 @@
 <ul>
   <li>Chats and images: until you delete them, or until you delete your account.</li>
   <li>Account records: until you delete your account, then removed within 30 days.</li>
-  <li>Payment and tax records: six years, as UK law requires.</li>
+  <li>Payment records: held by Stripe for as long as UK tax law requires.
+      Our own record of your credits is deleted with your account.</li>
   <li>Technical logs: normally 30 days.</li>
 </ul>
 
@@ -185,7 +199,14 @@
 </p>
 
 <p>
-  Ask at <a href="mailto:privacy@nastiv.ee">privacy@nastiv.ee</a> and we
+  You can export all your chats, and delete your account and everything
+  in it, yourself, from My profile in the app. It takes effect straight
+  away.
+</p>
+
+<p>
+  For anything else, ask at
+  <a href="mailto:privacy@nastiv.ee">privacy@nastiv.ee</a> and we
   will answer within one month. If we get it wrong, you can complain to
   the Information Commissioner's Office at
   <a href="https://ico.org.uk" rel="noopener">ico.org.uk</a>.

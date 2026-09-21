@@ -22,7 +22,32 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 });
 
-app.use(cors());
+/*
+  Only the app itself may call this from a browser. Stripe
+  calls the webhook server to server, which CORS does not
+  touch, so it is unaffected.
+*/
+const ALLOWED_ORIGINS =
+  (process.env.ALLOWED_ORIGINS ||
+   'https://nastivee.github.io,http://localhost:5500,http://127.0.0.1:5500')
+    .split(',')
+    .map(one => one.trim())
+    .filter(Boolean);
+
+app.use(
+  cors({
+    origin(origin, done) {
+
+      /* no Origin header: curl, health checks, Stripe */
+      if (!origin || ALLOWED_ORIGINS.includes(origin)) {
+        return done(null, true);
+      }
+
+      return done(null, false);
+
+    }
+  })
+);
 
 
 // =====================================================
@@ -926,6 +951,139 @@ app.post('/api/coupon', async (req, res) => {
     unlimited: true,
     message: 'Code accepted. Images are on the house from here.'
   });
+
+});
+
+
+/*
+  Deletes an account and everything in it, for good.
+
+  Order matters: the files and rows go first and the login
+  last, so if anything fails part way the user can still
+  sign in and try again rather than being left with an
+  orphaned half an account they cannot reach.
+*/
+app.post('/api/account/delete', async (req, res) => {
+
+  const user = await getUser(req);
+
+  if (!user) {
+
+    return res.status(401).json({
+      error: 'Please sign in first.'
+    });
+
+  }
+
+  if (String(req.body?.confirm || '') !== 'DELETE') {
+
+    return res.status(400).json({
+      error: 'Type DELETE to confirm.'
+    });
+
+  }
+
+  if (!supabaseAdmin) {
+
+    return res.status(503).json({
+      error: 'Deletion is not available right now. Try again shortly.'
+    });
+
+  }
+
+  if (!withinLimit(`delete:${user.id}`, 5)) {
+
+    return res.status(429).json({
+      error: 'Too many tries. Give it an hour.'
+    });
+
+  }
+
+  const uid = user.id;
+
+  const removed = {
+    files: 0
+  };
+
+  try {
+
+    /* 1. every picture in their folder, a page at a time */
+
+    for (let page = 0; page < 50; page += 1) {
+
+      const { data: files, error: listError } =
+        await supabaseAdmin
+          .storage
+          .from('images')
+          .list(uid, { limit: 1000 });
+
+      if (listError) throw new Error(listError.message);
+
+      if (!files?.length) break;
+
+      const paths =
+        files.map(file => `${uid}/${file.name}`);
+
+      const { error: removeError } =
+        await supabaseAdmin
+          .storage
+          .from('images')
+          .remove(paths);
+
+      if (removeError) throw new Error(removeError.message);
+
+      removed.files += paths.length;
+
+      if (files.length < 1000) break;
+
+    }
+
+    /* 2. the rows, children before parents */
+
+    for (const [table, column] of [
+      ['messages', 'user_id'],
+      ['chats', 'user_id'],
+      ['credit_events', 'user_id'],
+      ['profiles', 'id']
+    ]) {
+
+      const { error } =
+        await supabaseAdmin
+          .from(table)
+          .delete()
+          .eq(column, uid);
+
+      if (error) {
+        throw new Error(`${table}: ${error.message}`);
+      }
+
+    }
+
+    /* 3. the login itself, last */
+
+    const { error: authError } =
+      await supabaseAdmin.auth.admin.deleteUser(uid);
+
+    if (authError) throw new Error(authError.message);
+
+    console.log(
+      `ACCOUNT DELETED: ${uid} (${removed.files} files)`
+    );
+
+    res.json({ ok: true });
+
+  } catch (error) {
+
+    console.error('ACCOUNT DELETE FAILED:', uid, error);
+
+    res.status(500).json({
+      error:
+        'Part of your account could not be deleted. Nothing ' +
+        'is half gone that you cannot reach, try again, and ' +
+        'if it keeps failing, email privacy@nastiv.ee.'
+    });
+
+  }
 
 });
 

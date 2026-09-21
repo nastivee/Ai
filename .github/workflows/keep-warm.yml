@@ -1,0 +1,26 @@
+# Render's free tier puts the server to sleep after 15 quiet
+# minutes, and waking it takes the best part of a minute. This
+# knocks on the door every ten minutes during UK waking hours
+# so the first person in each morning is not the one who waits.
+#
+# It is a stopgap. The real fix is Render's Starter plan, which
+# never sleeps. When you move to it, delete this file.
+
+name: Keep the server warm
+
+on:
+  schedule:
+    # every 10 minutes, 06:00 to 23:59 UTC
+    - cron: '*/10 6-23 * * *'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Knock
+        run: |
+          curl --silent --show-error --fail \
+               --max-time 90 \
+               https://ai-8vlt.onrender.com/api/health

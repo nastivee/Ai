@@ -223,3 +223,43 @@ grant update (memory, key_salt, key_iv, key_wrapped)
 
 alter table public.app_settings
   add column if not exists holding_mode boolean not null default true;
+
+
+-- =========================================================
+-- RECOVERY CODES, AND RE-SEALING OLD ROWS
+-- =========================================================
+
+alter table public.profiles add column if not exists key_recovery_salt text;
+alter table public.profiles add column if not exists key_recovery_iv text;
+alter table public.profiles add column if not exists key_recovery_wrapped text;
+
+grant insert (id, memory, key_salt, key_iv, key_wrapped,
+              key_recovery_salt, key_recovery_iv, key_recovery_wrapped)
+  on public.profiles to authenticated;
+
+grant update (memory, key_salt, key_iv, key_wrapped,
+              key_recovery_salt, key_recovery_iv, key_recovery_wrapped)
+  on public.profiles to authenticated;
+
+-- the app rewrites old plain rows as ciphertext, so it needs this
+drop policy if exists "messages update own" on public.messages;
+create policy "messages update own" on public.messages for update
+  using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+
+-- =========================================================
+-- PRIVATE PICTURES
+-- =========================================================
+
+-- Owners read their own folder and nobody else's.
+drop policy if exists "images read own" on storage.objects;
+create policy "images read own" on storage.objects for select to authenticated
+  using (bucket_id = 'images'
+         and (storage.foldername(name))[1] = auth.uid()::text);
+
+-- RUN THESE TWO ONLY AFTER the app version that reads pictures
+-- through the signed in API is live, or older copies of the app
+-- will show broken images:
+--
+--   drop policy if exists "images read" on storage.objects;
+--   update storage.buckets set public = false where id = 'images';

@@ -1057,6 +1057,194 @@ button {
 
 /* ---- the paywall sheet ---- */
 
+.foldCard {
+  margin-top: 12px;
+  border: 1px solid #2c2244;
+  border-radius: 14px;
+  background: #140f24;
+  overflow: hidden;
+  scroll-margin-top: 12px;
+}
+
+.foldCard.good { border-color: #3b5a44; }
+.foldCard.warn { border-color: #6b4a22; }
+.foldCard.bad  { border-color: #6b3341; }
+
+.foldSummary {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 14px 16px;
+  border: 0;
+  background: transparent;
+  color: #ded3ec;
+  text-align: left;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.foldSummary:hover {
+  background: rgba(124, 58, 237, .07);
+}
+
+.foldCard.good .foldSummary { color: #a8cdb6; opacity: .85; }
+.foldCard.warn .foldSummary { color: #f6c98a; }
+.foldCard.bad  .foldSummary { color: #ff9d9d; }
+
+.foldDot {
+  flex-shrink: 0;
+  width: 9px;
+  height: 9px;
+  margin-left: 2px;
+  border-radius: 50%;
+  background: #6f6580;
+  /* room for the halo so it is never clipped */
+  box-shadow: 0 0 0 4px rgba(111, 101, 128, .14);
+}
+
+.foldCard.good .foldDot { background: #4ade80; box-shadow: 0 0 0 4px rgba(74,222,128,.13); }
+.foldCard.warn .foldDot { background: #f59e0b; box-shadow: 0 0 0 4px rgba(245,158,11,.14); }
+.foldCard.bad  .foldDot { background: #ef4444; box-shadow: 0 0 0 4px rgba(239,68,68,.14); }
+
+.foldText {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.foldNote {
+  display: block;
+  margin-top: 2px;
+  color: #6f6580;
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.foldChevron {
+  flex-shrink: 0;
+  color: #6f6580;
+  transition: transform .18s var(--ease);
+}
+
+.foldCard.open .foldChevron {
+  transform: rotate(180deg);
+}
+
+.foldBody {
+  display: none;
+  padding: 4px 16px 16px;
+  border-top: 1px solid #241b38;
+}
+
+.foldCard.open .foldBody {
+  display: block;
+}
+
+.foldText2 {
+  margin: 12px 0 0;
+  color: #9b90ab;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.lockButtonQuiet {
+  border: 1px solid #4a3568;
+  background: linear-gradient(135deg, #2a1c44, #1d1430);
+}
+
+.dangerZone {
+  margin-top: 18px;
+  padding: 14px;
+  border: 1px solid #6b3341;
+  border-radius: 12px;
+  background: rgba(60, 20, 28, .35);
+}
+
+.dangerTitle {
+  color: #ff9d9d;
+  font-size: 13.5px;
+  font-weight: 800;
+}
+
+.dangerButton {
+  width: 100%;
+  min-height: 44px;
+  margin-top: 12px;
+  padding: 0 16px;
+  border: 1px solid #8a3a4a;
+  border-radius: 12px;
+  background: #3a1520;
+  color: #ffb3b3;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.dangerButton:hover {
+  background: #4a1a28;
+  border-color: #b04a5d;
+}
+
+.dangerButton:disabled {
+  opacity: .5;
+}
+
+.recoveryCode {
+  margin-top: 18px;
+  padding: 16px 12px;
+  border: 1px dashed #6d4fb8;
+  border-radius: 12px;
+  background: #120c20;
+  color: #f2ecff;
+  font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  word-break: break-all;
+  user-select: all;
+}
+
+.recoveryActions {
+  display: flex;
+  gap: 8px;
+}
+
+.recoveryActions .lockButton {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.recoverField {
+  margin-top: 18px;
+  padding-right: 14px;
+  font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  letter-spacing: .6px;
+}
+
+.deleteLabel {
+  display: block;
+  margin-top: 20px;
+  color: #9b90ab;
+  font-size: 12px;
+  font-weight: 700;
+  text-align: left;
+}
+
+.deleteField {
+  margin-top: 8px;
+  padding-right: 14px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.recoverOr {
+  margin: 14px 0 0;
+  color: #5f566f;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .6px;
+  text-transform: uppercase;
+}
+
 .lockScreen {
   display: none;
   position: fixed;
@@ -1070,6 +1258,11 @@ button {
 
 .lockScreen.show {
   display: flex;
+  overflow-y: auto;
+}
+
+.lockScreen .lockCard {
+  margin: auto;
 }
 
 .lockCard {
@@ -2546,6 +2739,31 @@ button {
   white-space: pre-wrap;
 }
 
+.generatedImage.imageLoading,
+.userImage.imageLoading {
+  min-width: 220px;
+  min-height: 220px;
+  border-radius: 16px;
+  background:
+    linear-gradient(110deg, #181123 30%, #231935 50%, #181123 70%);
+  background-size: 220% 100%;
+  animation: imageShimmer 1.3s linear infinite;
+}
+
+@keyframes imageShimmer {
+  from { background-position: 120% 0; }
+  to { background-position: -120% 0; }
+}
+
+.generatedImage.imageFailed,
+.userImage.imageFailed {
+  min-width: 220px;
+  min-height: 120px;
+  border: 1px dashed #4a3568;
+  border-radius: 16px;
+  background: #140f24;
+}
+
 .imageActions {
   display: flex;
   gap: 8px;
@@ -3232,8 +3450,8 @@ button {
       <a href="./terms.html" target="_blank" rel="noopener">Terms</a>
       and
       <a href="./privacy.html" target="_blank" rel="noopener">Privacy Policy</a>.
-      Your chats are encrypted with your password, so if you lose it they
-      cannot be recovered.
+      Your chats are encrypted with a key only you hold. You get a
+      recovery code in case you forget your password.
     </div>
 
     <div class="authForgot">
@@ -3825,6 +4043,260 @@ button {
     >
       Save
     </button>
+
+    <div class="foldCard" id="foldPassword">
+
+      <button class="foldSummary" type="button" data-fold="foldPassword">
+        <span class="foldDot" aria-hidden="true"></span>
+        <span class="foldText">
+          Password
+          <span class="foldNote" id="foldPasswordNote">Change it without losing your chats</span>
+        </span>
+        <svg class="foldChevron" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
+      </button>
+
+      <div class="foldBody">
+
+        <div class="lockFieldWrap">
+          <input id="pwCurrent" class="lockInput" type="password"
+                 placeholder="Current password" autocomplete="current-password">
+          <button class="lockEye" type="button" data-eye="pwCurrent"
+                  aria-label="Show password" title="Show password"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg></button>
+        </div>
+        <div class="lockFieldWrap">
+          <input id="pwNew" class="lockInput" type="password"
+                 placeholder="New password" autocomplete="new-password">
+          <button class="lockEye" type="button" data-eye="pwNew"
+                  aria-label="Show password" title="Show password"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg></button>
+        </div>
+        <div class="lockFieldWrap">
+          <input id="pwConfirm" class="lockInput" type="password"
+                 placeholder="New password again" autocomplete="new-password">
+          <button class="lockEye" type="button" data-eye="pwConfirm"
+                  aria-label="Show password" title="Show password"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg></button>
+        </div>
+
+        <div class="lockError" id="pwResult"></div>
+
+        <button class="lockButton" id="pwSave" type="button">
+          Change password
+        </button>
+
+        <a class="lockLink" id="pwForgot" href="#">
+          Forgotten your password?
+        </a>
+
+      </div>
+
+    </div>
+
+    <div class="foldCard" id="foldRecovery">
+
+      <button class="foldSummary" type="button" data-fold="foldRecovery">
+        <span class="foldDot" aria-hidden="true"></span>
+        <span class="foldText">
+          Recovery code
+          <span class="foldNote" id="foldRecoveryNote">Checking...</span>
+        </span>
+        <svg class="foldChevron" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
+      </button>
+
+      <div class="foldBody">
+
+        <p class="foldText2">
+          If you forget your password, this code is the only
+          other way into your chats. We cannot see it, and we
+          cannot recover it for you.
+        </p>
+
+        <button class="lockButton" id="recoveryMake" type="button">
+          Make a new recovery code
+        </button>
+
+        <div class="lockError" id="recoveryResult"></div>
+
+      </div>
+
+    </div>
+
+    <div class="foldCard" id="foldData">
+
+      <button class="foldSummary" type="button" data-fold="foldData">
+        <span class="foldDot" aria-hidden="true"></span>
+        <span class="foldText">
+          Your data
+          <span class="foldNote" id="foldDataNote">Export, or delete your account</span>
+        </span>
+        <svg class="foldChevron" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
+      </button>
+
+      <div class="foldBody">
+
+        <p class="foldText2">
+          Everything you have here, in a form you can keep.
+        </p>
+
+        <button class="lockButton lockButtonQuiet" id="exportAll" type="button">
+          Export all my chats
+        </button>
+
+        <div class="dangerZone">
+
+          <div class="dangerTitle">Delete my account</div>
+
+          <p class="foldText2">
+            Removes your chats, pictures, credits and the account
+            itself, for good. Unused credits are not refunded by
+            deleting, ask us first if you want them back.
+          </p>
+
+          <button class="dangerButton" id="deleteStart" type="button">
+            Delete my account
+          </button>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
+
+<div class="lockScreen" id="recoveryCodeScreen">
+
+  <div class="lockCard">
+
+    <div class="lockTitle">Your recovery code</div>
+
+    <p class="lockText">
+      Keep this somewhere safe, away from this device. If you
+      ever forget your password, it is the only way back into
+      your chats. We do not have a copy.
+    </p>
+
+    <div class="recoveryCode" id="recoveryCodeText"></div>
+
+    <div class="recoveryActions">
+      <button class="lockButton lockButtonQuiet" id="recoveryCopy" type="button">
+        Copy
+      </button>
+      <button class="lockButton lockButtonQuiet" id="recoveryDownload" type="button">
+        Save as a file
+      </button>
+    </div>
+
+    <button class="lockButton" id="recoveryDone" type="button">
+      I have saved it somewhere safe
+    </button>
+
+  </div>
+
+</div>
+
+
+<div class="lockScreen" id="deleteScreen">
+
+  <div class="lockCard">
+
+    <div class="lockTitle">Delete your account?</div>
+
+    <p class="lockText">
+      This removes, for good, every chat, every picture, your
+      profile notes, any unused image credits, and the account
+      itself. There is no undo, and because your chats are
+      encrypted, nobody can bring them back afterwards.
+    </p>
+
+    <button class="lockButton lockButtonQuiet" id="deleteExport" type="button">
+      Export my chats first
+    </button>
+
+    <label class="deleteLabel" for="deleteConfirm">
+      Type DELETE to confirm
+    </label>
+
+    <input
+      id="deleteConfirm"
+      class="lockInput deleteField"
+      type="text"
+      autocomplete="off"
+      autocapitalize="characters"
+      spellcheck="false"
+    >
+
+    <div class="lockError" id="deleteError"></div>
+
+    <button class="dangerButton" id="deleteGo" type="button" disabled>
+      Delete everything
+    </button>
+
+    <button class="lockQuiet" id="deleteCancel" type="button">
+      Keep my account
+    </button>
+
+  </div>
+
+</div>
+
+
+<div class="lockScreen" id="recoverScreen">
+
+  <div class="lockCard">
+
+    <img class="lockMark" src="./NAI-Logo.webp" alt="">
+
+    <div class="lockTitle">Your chats are still locked</div>
+
+    <p class="lockText">
+      Your password changed, but your chats are locked with
+      the old one. Open them with your recovery code or your
+      old password, and they move over to the new one.
+    </p>
+
+    <input
+      id="recoverCode"
+      class="lockInput recoverField"
+      type="text"
+      placeholder="Recovery code, XXXXX-XXXXX-XXXXX-XXXXX"
+      autocomplete="off"
+      autocapitalize="characters"
+      spellcheck="false"
+    >
+
+    <button class="lockButton" id="recoverWithCode" type="button">
+      Unlock with recovery code
+    </button>
+
+    <div class="recoverOr">or</div>
+
+        <div class="lockFieldWrap">
+          <input id="recoverOldPassword" class="lockInput" type="password"
+                 placeholder="Your old password" autocomplete="current-password">
+          <button class="lockEye" type="button" data-eye="recoverOldPassword"
+                  aria-label="Show password" title="Show password"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg></button>
+        </div>
+
+    <button class="lockButton lockButtonQuiet" id="recoverWithPassword" type="button">
+      Unlock with old password
+    </button>
+
+    <div class="lockError" id="recoverError"></div>
+
+    <div class="dangerZone">
+
+      <p class="foldText2" id="recoverFreshText">
+        Neither? You can carry on with a fresh start. Your old
+        chats stay locked for good.
+      </p>
+
+      <button class="dangerButton" id="recoverFresh" type="button">
+        Start fresh
+      </button>
+
+    </div>
 
   </div>
 
@@ -4985,6 +5457,26 @@ async function saveNewPassword() {
 
     if (error) throw error;
 
+    /*
+      If this device still holds the key, move the lock onto
+      the new password now and nothing is lost. If it does
+      not, the new password is handed to the unlock step,
+      which asks for a recovery code or the old password.
+    */
+    if (currentUser && (dataKey || (await recallDataKey()))) {
+
+      try {
+        await relockWithPassword(password);
+      } catch (relockError) {
+        console.error('RELOCK AFTER RESET FAILED:', relockError);
+      }
+
+    } else {
+
+      pendingPassword = password;
+
+    }
+
     resetError.style.color = '#9ee6bd';
 
     resetError.textContent =
@@ -5628,6 +6120,9 @@ async function initialiseApp() {
 
   checkPaymentReturn();
 
+  /* in the background, never in the way */
+  setTimeout(encryptLegacy, 1500);
+
 }
 
 
@@ -5655,6 +6150,8 @@ function openProfile() {
     memory || '';
 
   profileOverlay.classList.add('show');
+
+  paintSecurity();
 
   closeMobileSidebar();
 
@@ -7316,6 +7813,388 @@ function dataUrlToBlob(dataUrl) {
   data URL it was given if anything goes wrong, so an
   image is never lost to a storage problem.
 */
+/*
+  Opened pictures, so scrolling back through a chat does
+  not download and decrypt the same file twice.
+*/
+const imageCache = new Map();
+
+
+function blobToDataUrl(blob) {
+
+  return new Promise((resolve, reject) => {
+
+    const reader = new FileReader();
+
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(reader.error);
+
+    reader.readAsDataURL(blob);
+
+  });
+
+}
+
+
+/*
+  An address in our own bucket, public or not. These are
+  fetched through the signed in API so they keep working
+  once the bucket stops being public.
+*/
+function storagePathFromUrl(ref) {
+
+  if (typeof ref !== 'string') return null;
+
+  const match =
+    ref.match(
+      new RegExp(
+        `/storage/v1/object/(?:public/|sign/|authenticated/)?` +
+        `${IMAGE_BUCKET}/([^?]+)`
+      )
+    );
+
+  return match
+    ? decodeURIComponent(match[1])
+    : null;
+
+}
+
+
+/*
+  Whatever is stored, hand back something an <img> can
+  show and the API can send: always a data URL when it can
+  be had, otherwise what came in.
+*/
+async function resolveImage(ref) {
+
+  if (typeof ref !== 'string' || !ref) return ref;
+
+  if (ref.startsWith('data:')) return ref;
+
+  if (imageCache.has(ref)) return imageCache.get(ref);
+
+  if (ref.startsWith('encimg:')) {
+
+    const firstColon = ref.indexOf(':');
+    const secondColon = ref.indexOf(':', firstColon + 1);
+
+    const type =
+      ref.slice(firstColon + 1, secondColon);
+
+    const path =
+      ref.slice(secondColon + 1);
+
+    if (!dataKey) {
+      throw new Error('Unlock your chats to see this picture.');
+    }
+
+    const { data, error } =
+      await supabaseClient
+        .storage
+        .from(IMAGE_BUCKET)
+        .download(path);
+
+    if (error) throw error;
+
+    const plain =
+      await decBytes(
+        new Uint8Array(await data.arrayBuffer())
+      );
+
+    const url =
+      await blobToDataUrl(new Blob([plain], { type }));
+
+    imageCache.set(ref, url);
+
+    return url;
+
+  }
+
+  const legacyPath =
+    storagePathFromUrl(ref);
+
+  if (legacyPath && currentUser && !guestMode) {
+
+    const { data, error } =
+      await supabaseClient
+        .storage
+        .from(IMAGE_BUCKET)
+        .download(legacyPath);
+
+    if (!error && data) {
+
+      const url = await blobToDataUrl(data);
+
+      imageCache.set(ref, url);
+
+      return url;
+
+    }
+
+  }
+
+  return ref;
+
+}
+
+
+/*
+  Puts a stored picture into an <img>, showing a quiet
+  placeholder while a sealed one is opened.
+*/
+function setImageSource(img, ref) {
+
+  const needsWork =
+    typeof ref === 'string' &&
+    (ref.startsWith('encimg:') || storagePathFromUrl(ref));
+
+  if (!needsWork) {
+    img.src = ref;
+    return;
+  }
+
+  if (imageCache.has(ref)) {
+    img.src = imageCache.get(ref);
+    return;
+  }
+
+  img.classList.add('imageLoading');
+
+  resolveImage(ref)
+    .then(url => {
+      img.src = url;
+    })
+    .catch(error => {
+
+      console.error('IMAGE OPEN ERROR:', error);
+
+      img.classList.add('imageFailed');
+
+      img.alt = 'This picture could not be opened';
+
+    })
+    .finally(() => {
+      img.classList.remove('imageLoading');
+    });
+
+}
+
+
+/* =====================================================
+   SEALING WHAT CAME BEFORE
+
+   Anything written before encryption existed is still
+   readable in the database. Once the vault is open, this
+   goes back through and seals it, quietly, a row at a
+   time. It is safe to stop half way and pick up again on
+   the next visit, because each row is only ever touched
+   if it is still plain.
+===================================================== */
+
+let sealingOldData = false;
+
+
+/*
+  Moves one old picture into sealed storage. Hands back
+  the new reference and the old file to remove, but does
+  not remove it, so a row that fails to update is never
+  left pointing at nothing.
+*/
+async function sealLegacyImage(ref) {
+
+  try {
+
+    const opened =
+      await resolveImage(ref);
+
+    if (typeof opened !== 'string' || !opened.startsWith('data:')) {
+      return null;
+    }
+
+    const sealedRef =
+      await storeImage(opened);
+
+    if (typeof sealedRef !== 'string' ||
+        !sealedRef.startsWith('encimg:')) {
+      return null;
+    }
+
+    return {
+      ref: sealedRef,
+      oldPath: storagePathFromUrl(ref)
+    };
+
+  } catch (error) {
+
+    console.warn('OLD PICTURE NOT SEALED:', error);
+
+    return null;
+
+  }
+
+}
+
+
+async function encryptLegacy() {
+
+  if (
+    sealingOldData ||
+    !dataKey ||
+    guestMode ||
+    !currentUser ||
+    !cryptoReady()
+  ) {
+    return;
+  }
+
+  sealingOldData = true;
+
+  const uid = currentUser.id;
+
+  let sealed = 0;
+
+  try {
+
+    /* 1. chat titles */
+
+    const { data: chatRows, error: chatError } =
+      await supabaseClient
+        .from('chats')
+        .select('id,title')
+        .eq('user_id', uid);
+
+    if (chatError) throw chatError;
+
+    for (const row of chatRows || []) {
+
+      if (!row.title || row.title.startsWith(ENC_PREFIX)) continue;
+
+      const { error } =
+        await supabaseClient
+          .from('chats')
+          .update({ title: await encField(row.title) })
+          .eq('id', row.id)
+          .eq('user_id', uid);
+
+      if (error) throw error;
+
+      sealed += 1;
+
+    }
+
+
+    /* 2. message text and pictures, a page at a time */
+
+    const PAGE = 400;
+
+    for (let from = 0; from < 20000; from += PAGE) {
+
+      const { data: rows, error: pageError } =
+        await supabaseClient
+          .from('messages')
+          .select('id,content,image_url')
+          .eq('user_id', uid)
+          .order('id', { ascending: true })
+          .range(from, from + PAGE - 1);
+
+      if (pageError) throw pageError;
+
+      for (const row of rows || []) {
+
+        const patch = {};
+
+        let oldPath = null;
+
+        if (row.content && !row.content.startsWith(ENC_PREFIX)) {
+          patch.content = await encField(row.content);
+        }
+
+        if (row.image_url && !row.image_url.startsWith('encimg:')) {
+
+          const moved =
+            await sealLegacyImage(row.image_url);
+
+          if (moved) {
+            patch.image_url = moved.ref;
+            oldPath = moved.oldPath;
+          }
+
+        }
+
+        if (!Object.keys(patch).length) continue;
+
+        const { error } =
+          await supabaseClient
+            .from('messages')
+            .update(patch)
+            .eq('id', row.id)
+            .eq('user_id', uid);
+
+        if (error) throw error;
+
+        sealed += 1;
+
+        /* only now is the readable copy safe to remove */
+        if (oldPath) {
+
+          await supabaseClient
+            .storage
+            .from(IMAGE_BUCKET)
+            .remove([oldPath]);
+
+        }
+
+      }
+
+      if (!rows || rows.length < PAGE) break;
+
+    }
+
+
+    /* 3. profile notes */
+
+    const { data: profile } =
+      await supabaseClient
+        .from('profiles')
+        .select('memory')
+        .eq('id', uid)
+        .maybeSingle();
+
+    if (profile?.memory && !profile.memory.startsWith(ENC_PREFIX)) {
+
+      const { error } =
+        await supabaseClient
+          .from('profiles')
+          .update({ memory: await encField(profile.memory) })
+          .eq('id', uid);
+
+      if (error) throw error;
+
+      sealed += 1;
+
+    }
+
+    if (sealed) {
+      console.log(`SEALED ${sealed} OLDER ITEMS`);
+    }
+
+  } catch (error) {
+
+    /*
+      Stopping here is safe. Whatever was sealed stays
+      sealed, and the rest is picked up next time.
+    */
+    console.error('SEALING STOPPED, WILL RESUME:', error);
+
+  } finally {
+
+    sealingOldData = false;
+
+  }
+
+}
+
+
 async function storeImage(dataUrl) {
 
   if (
@@ -7332,6 +8211,50 @@ async function storeImage(dataUrl) {
     const blob = dataUrlToBlob(dataUrl);
 
     if (!blob) return dataUrl;
+
+    /*
+      With the vault open, the picture is sealed here before
+      it leaves the browser, and stored privately. What the
+      chat keeps is a reference only this account can open.
+    */
+    if (dataKey && cryptoReady()) {
+
+      const sealed =
+        await encBytes(
+          new Uint8Array(await blob.arrayBuffer())
+        );
+
+      const sealedPath =
+        `${currentUser.id}/${Date.now()}-${Math.random()
+          .toString(36)
+          .slice(2, 8)}.enc`;
+
+      const { error: sealError } =
+        await supabaseClient
+          .storage
+          .from(IMAGE_BUCKET)
+          .upload(
+            sealedPath,
+            new Blob([sealed], {
+              type: 'application/octet-stream'
+            }),
+            {
+              contentType: 'application/octet-stream',
+              upsert: false
+            }
+          );
+
+      if (sealError) throw sealError;
+
+      const ref =
+        `encimg:${blob.type || 'image/png'}:${sealedPath}`;
+
+      /* we already have the picture, no need to fetch it back */
+      imageCache.set(ref, dataUrl);
+
+      return ref;
+
+    }
 
     const extension =
       blob.type === 'image/jpeg' ? 'jpg' : 'png';
@@ -7693,7 +8616,7 @@ function addUserImage(chatId, imageUrl, caption) {
 
   img.className = 'userImage';
 
-  img.src = imageUrl;
+  setImageSource(img, imageUrl);
 
   img.alt = 'Photo you sent';
 
@@ -7762,8 +8685,7 @@ function addImageMessage(
   image.className =
     'generatedImage';
 
-  image.src =
-    imageData;
+  setImageSource(image, imageData);
 
   image.alt =
     'Nastivee AI generated image';
@@ -7856,12 +8778,22 @@ function addImageMessage(
   continueButton.dataset.hint =
     'Attaches this picture so your next message edits it.';
 
-  continueButton.addEventListener('click', () => {
+  continueButton.addEventListener('click', async () => {
 
     const state = imageState.get(stateId);
 
-    selectedImageData =
-      state?.currentImage || imageData;
+    try {
+
+      selectedImageData =
+        await resolveImage(state?.currentImage || imageData);
+
+    } catch (error) {
+
+      console.error('CHANGE THIS ERROR:', error);
+
+      return;
+
+    }
 
     photoAction = 'edit';
 
@@ -7907,7 +8839,9 @@ function addImageMessage(
     try {
 
       const source =
-        imageState.get(stateId)?.currentImage || imageData;
+        await resolveImage(
+          imageState.get(stateId)?.currentImage || imageData
+        );
 
       const blob =
         source.startsWith('data:')
@@ -8387,6 +9321,13 @@ async function editImage(
 
 
   try {
+
+    /*
+      The server cannot open a sealed picture, so it gets
+      the opened one.
+    */
+    image =
+      await resolveImage(image);
 
     const response =
       await fetch(
@@ -9114,6 +10055,52 @@ async function decField(value) {
 }
 
 
+/*
+  The same thing for raw bytes, used for images. The IV
+  rides in the first 12 bytes of what is stored.
+*/
+async function encBytes(plain) {
+
+  const iv =
+    crypto.getRandomValues(new Uint8Array(12));
+
+  const sealed =
+    new Uint8Array(
+      await crypto.subtle.encrypt(
+        { name: 'AES-GCM', iv },
+        dataKey,
+        plain
+      )
+    );
+
+  const out =
+    new Uint8Array(iv.length + sealed.length);
+
+  out.set(iv, 0);
+  out.set(sealed, iv.length);
+
+  return out;
+
+}
+
+
+async function decBytes(stored) {
+
+  const plain =
+    await crypto.subtle.decrypt(
+      {
+        name: 'AES-GCM',
+        iv: stored.slice(0, 12)
+      },
+      dataKey,
+      stored.slice(12)
+    );
+
+  return new Uint8Array(plain);
+
+}
+
+
 async function decRows(rows, fields) {
 
   return Promise.all(
@@ -9355,6 +10342,292 @@ async function createVault(password) {
 }
 
 
+/* =====================================================
+   RE-LOCKING THE KEY
+
+   The data key never changes, only what it is locked
+   with. So a new password, or a recovery code, is just a
+   second lock on the same key, and nothing that was
+   written under it is lost.
+===================================================== */
+
+/* No 0/O, 1/I/L: a code people copy by hand */
+const RECOVERY_ALPHABET =
+  'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+
+
+function makeRecoveryCode() {
+
+  /*
+    Throw away bytes that would favour the first few letters,
+    so every character is exactly as likely as every other.
+  */
+  const size = RECOVERY_ALPHABET.length;
+
+  const ceiling = 256 - (256 % size);
+
+  const chars = [];
+
+  while (chars.length < 20) {
+
+    for (const byte of crypto.getRandomValues(new Uint8Array(32))) {
+
+      if (byte < ceiling && chars.length < 20) {
+        chars.push(RECOVERY_ALPHABET[byte % size]);
+      }
+
+    }
+
+  }
+
+  return [0, 5, 10, 15]
+    .map(at => chars.slice(at, at + 5).join(''))
+    .join('-');
+
+}
+
+
+/* What people type is forgiving, what we derive from is exact */
+function normaliseRecoveryCode(code) {
+
+  return String(code || '')
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, '');
+
+}
+
+
+/*
+  Locks the data key under a secret. Returns the three
+  columns to store, and never the secret or the key.
+*/
+async function wrapDataKey(secret) {
+
+  const salt =
+    crypto.getRandomValues(new Uint8Array(16));
+
+  const iv =
+    crypto.getRandomValues(new Uint8Array(12));
+
+  const kek =
+    await deriveKek(secret, salt);
+
+  const raw =
+    new Uint8Array(
+      await crypto.subtle.exportKey('raw', dataKey)
+    );
+
+  const wrapped =
+    new Uint8Array(
+      await crypto.subtle.encrypt(
+        { name: 'AES-GCM', iv },
+        kek,
+        raw
+      )
+    );
+
+  return {
+    salt: toBase64(salt),
+    iv: toBase64(iv),
+    wrapped: toBase64(wrapped)
+  };
+
+}
+
+
+async function unwrapDataKey(secret, salt, iv, wrapped) {
+
+  const kek =
+    await deriveKek(secret, fromBase64(salt));
+
+  const raw =
+    new Uint8Array(
+      await crypto.subtle.decrypt(
+        { name: 'AES-GCM', iv: fromBase64(iv) },
+        kek,
+        fromBase64(wrapped)
+      )
+    );
+
+  return importDataKey(raw);
+
+}
+
+
+/*
+  Puts the password lock on the key. Hands back what was
+  there before, so a caller can put it back if the rest of
+  a password change fails.
+*/
+async function relockWithPassword(password) {
+
+  const { data: before } =
+    await supabaseClient
+      .from('profiles')
+      .select('key_salt, key_iv, key_wrapped')
+      .eq('id', currentUser.id)
+      .maybeSingle();
+
+  const lock =
+    await wrapDataKey(password);
+
+  const { error } =
+    await supabaseClient
+      .from('profiles')
+      .upsert({
+        id: currentUser.id,
+        key_salt: lock.salt,
+        key_iv: lock.iv,
+        key_wrapped: lock.wrapped
+      });
+
+  if (error) throw error;
+
+  return before || null;
+
+}
+
+
+async function restorePasswordLock(before) {
+
+  if (!before?.key_wrapped) return;
+
+  await supabaseClient
+    .from('profiles')
+    .upsert({
+      id: currentUser.id,
+      key_salt: before.key_salt,
+      key_iv: before.key_iv,
+      key_wrapped: before.key_wrapped
+    });
+
+}
+
+
+/*
+  Makes a fresh recovery code and locks the key under it.
+  Any earlier code stops working the moment this saves.
+*/
+async function createRecoveryCode() {
+
+  if (!dataKey) {
+    throw new Error('Unlock your chats first.');
+  }
+
+  const code =
+    makeRecoveryCode();
+
+  const lock =
+    await wrapDataKey(normaliseRecoveryCode(code));
+
+  const { error } =
+    await supabaseClient
+      .from('profiles')
+      .upsert({
+        id: currentUser.id,
+        key_recovery_salt: lock.salt,
+        key_recovery_iv: lock.iv,
+        key_recovery_wrapped: lock.wrapped
+      });
+
+  if (error) throw error;
+
+  return code;
+
+}
+
+
+async function hasRecoveryCode() {
+
+  try {
+
+    const { data } =
+      await supabaseClient
+        .from('profiles')
+        .select('key_recovery_wrapped')
+        .eq('id', currentUser.id)
+        .maybeSingle();
+
+    return Boolean(data?.key_recovery_wrapped);
+
+  } catch {
+
+    return false;
+
+  }
+
+}
+
+
+/*
+  Opens the vault with a recovery code, then puts the new
+  password lock on it so next time the password is enough.
+*/
+async function openWithRecoveryCode(code, newPassword) {
+
+  const { data } =
+    await supabaseClient
+      .from('profiles')
+      .select('key_recovery_salt, key_recovery_iv, key_recovery_wrapped')
+      .eq('id', currentUser.id)
+      .maybeSingle();
+
+  if (!data?.key_recovery_wrapped) {
+    return 'none';
+  }
+
+  try {
+
+    dataKey =
+      await unwrapDataKey(
+        normaliseRecoveryCode(code),
+        data.key_recovery_salt,
+        data.key_recovery_iv,
+        data.key_recovery_wrapped
+      );
+
+  } catch {
+
+    return 'wrong';
+
+  }
+
+  if (newPassword) {
+    await relockWithPassword(newPassword);
+  }
+
+  vaultLocked = false;
+
+  await rememberDataKey();
+
+  return 'opened';
+
+}
+
+
+/*
+  Opens the vault with a password that is no longer the
+  sign in password, typically the one from before a reset,
+  and moves the lock over to the current one.
+*/
+async function openWithOldPassword(oldPassword, newPassword) {
+
+  const how =
+    await openVault(oldPassword);
+
+  if (how !== 'opened') {
+    return how;
+  }
+
+  if (newPassword) {
+    await relockWithPassword(newPassword);
+  }
+
+  return 'opened';
+
+}
+
+
 /*
   Throws the old key away and starts again. Everything
   written under the old one is lost, which is the price of
@@ -9467,18 +10740,24 @@ async function unlockVaultInner() {
     const how =
       await openVault(password);
 
+    if (how === 'created') {
+      offerRecoveryCodeSoon();
+      return true;
+    }
+
     if (how !== 'wrong') {
       return true;
     }
 
     /*
-      Password works for signing in but not for the vault,
-      which means it was reset. The old chats cannot come
-      back, so start a fresh one.
+      The password signs in but does not open the vault, so
+      it was reset. Nothing is wiped here: the user chooses,
+      with a recovery code, their old password, or, only if
+      they say so, a fresh start.
     */
-    await resetVault(password);
+    showRecover(password);
 
-    return true;
+    return false;
 
   }
 
@@ -9607,6 +10886,833 @@ document
     location.reload();
 
   });
+
+
+/* =====================================================
+   SHOW AND HIDE, ON EVERY PASSWORD FIELD
+===================================================== */
+
+document.addEventListener('click', event => {
+
+  const button =
+    event.target.closest?.('[data-eye]');
+
+  if (!button) return;
+
+  const input =
+    document.getElementById(button.dataset.eye);
+
+  if (!input) return;
+
+  const showing =
+    input.type === 'text';
+
+  input.type =
+    showing ? 'password' : 'text';
+
+  const label =
+    showing ? 'Show password' : 'Hide password';
+
+  button.setAttribute('aria-label', label);
+  button.title = label;
+
+});
+
+
+/* =====================================================
+   FOLDING CARDS IN MY PROFILE
+
+   Shut until tapped, one open at a time, and the one you
+   open comes to the top of the panel.
+===================================================== */
+
+function toggleFold(id) {
+
+  const card =
+    document.getElementById(id);
+
+  if (!card) return;
+
+  const opening =
+    !card.classList.contains('open');
+
+  const holder =
+    card.closest('.profileCard');
+
+  [...(holder?.querySelectorAll('.foldCard') || [])]
+    .forEach(one => one.classList.remove('open'));
+
+  card.classList.toggle('open', opening);
+
+  if (opening && holder) {
+
+    requestAnimationFrame(() => {
+
+      const top =
+        card.offsetTop - holder.offsetTop - 8;
+
+      if (typeof holder.scrollTo === 'function') {
+        holder.scrollTo({ top, behavior: 'smooth' });
+      } else {
+        holder.scrollTop = top;
+      }
+
+    });
+
+  }
+
+}
+
+document.addEventListener('click', event => {
+
+  const summary =
+    event.target.closest?.('.foldSummary');
+
+  if (summary) {
+    toggleFold(summary.dataset.fold);
+  }
+
+});
+
+
+function setFold(id, state, note) {
+
+  const card =
+    document.getElementById(id);
+
+  if (!card) return;
+
+  card.classList.remove('good', 'warn', 'bad');
+
+  if (state) card.classList.add(state);
+
+  const noteEl =
+    card.querySelector('.foldNote');
+
+  if (noteEl && note) noteEl.textContent = note;
+
+}
+
+
+/*
+  What the security cards should say, drawn each time My
+  profile opens.
+*/
+async function paintSecurity() {
+
+  if (guestMode || !currentUser) {
+
+    ['foldPassword', 'foldRecovery', 'foldData']
+      .forEach(id => {
+        const card = document.getElementById(id);
+        if (card) card.style.display = 'none';
+      });
+
+    return;
+
+  }
+
+  ['foldPassword', 'foldRecovery', 'foldData']
+    .forEach(id => {
+      const card = document.getElementById(id);
+      if (card) card.style.display = '';
+    });
+
+  const hasCode =
+    await hasRecoveryCode();
+
+  setFold(
+    'foldRecovery',
+    hasCode ? 'good' : 'bad',
+    hasCode
+      ? 'Set. Make a new one if you have lost it'
+      : 'Not set. Without one, a forgotten password loses your chats'
+  );
+
+  document.getElementById('recoveryMake').textContent =
+    hasCode
+      ? 'Make a new recovery code'
+      : 'Make my recovery code';
+
+}
+
+
+/* =====================================================
+   THE RECOVERY CODE, SHOWN ONCE
+===================================================== */
+
+const recoveryCodeScreen =
+  document.getElementById('recoveryCodeScreen');
+
+let shownRecoveryCode = '';
+
+
+function showRecoveryCode(code) {
+
+  shownRecoveryCode = code;
+
+  document.getElementById('recoveryCodeText').textContent =
+    code;
+
+  recoveryCodeScreen.classList.add('show');
+
+}
+
+
+/*
+  A brand new vault gets its recovery code offered once
+  the app is up, rather than in the middle of signing in.
+*/
+function offerRecoveryCodeSoon() {
+
+  setTimeout(async () => {
+
+    try {
+
+      if (!dataKey || (await hasRecoveryCode())) return;
+
+      showRecoveryCode(await createRecoveryCode());
+
+    } catch (error) {
+
+      console.error('RECOVERY CODE NOT MADE:', error);
+
+    }
+
+  }, 1200);
+
+}
+
+
+document
+  .getElementById('recoveryCopy')
+  ?.addEventListener('click', () => {
+
+    navigator.clipboard
+      ?.writeText(shownRecoveryCode)
+      .then(() => {
+
+        const button =
+          document.getElementById('recoveryCopy');
+
+        button.textContent = 'Copied';
+
+        setTimeout(() => {
+          button.textContent = 'Copy';
+        }, 1400);
+
+      })
+      .catch(() => {});
+
+  });
+
+document
+  .getElementById('recoveryDownload')
+  ?.addEventListener('click', () => {
+
+    const text =
+      'Nastivee AI recovery code\n\n' +
+      `${shownRecoveryCode}\n\n` +
+      `Account: ${currentUser?.email || ''}\n` +
+      `Made: ${new Date().toLocaleString('en-GB')}\n\n` +
+      'If you forget your password, this code unlocks your ' +
+      'chats. Keep it private. Anyone with it and access to ' +
+      'your email can read your history.\n';
+
+    const link =
+      document.createElement('a');
+
+    link.href =
+      URL.createObjectURL(
+        new Blob([text], { type: 'text/plain' })
+      );
+
+    link.download = 'nastivee-recovery-code.txt';
+
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+
+  });
+
+document
+  .getElementById('recoveryDone')
+  ?.addEventListener('click', () => {
+
+    shownRecoveryCode = '';
+
+    document.getElementById('recoveryCodeText').textContent = '';
+
+    recoveryCodeScreen.classList.remove('show');
+
+    paintSecurity();
+
+  });
+
+
+document
+  .getElementById('recoveryMake')
+  ?.addEventListener('click', async () => {
+
+    const result =
+      document.getElementById('recoveryResult');
+
+    result.textContent = '';
+
+    try {
+
+      showRecoveryCode(await createRecoveryCode());
+
+    } catch (error) {
+
+      result.textContent =
+        error?.message || 'Could not make a code.';
+
+    }
+
+  });
+
+
+/* =====================================================
+   CHANGING THE PASSWORD
+
+   The data key stays exactly as it is, only the lock on it
+   changes, so no chat is lost. If Supabase refuses the new
+   password, the old lock goes back on.
+===================================================== */
+
+document
+  .getElementById('pwSave')
+  ?.addEventListener('click', async () => {
+
+    const result =
+      document.getElementById('pwResult');
+
+    const button =
+      document.getElementById('pwSave');
+
+    const current =
+      document.getElementById('pwCurrent').value;
+
+    const next =
+      document.getElementById('pwNew').value;
+
+    const again =
+      document.getElementById('pwConfirm').value;
+
+    result.style.color = '#ff8585';
+
+    if (!current || !next) {
+      result.textContent = 'Fill in both passwords.';
+      return;
+    }
+
+    if (next.length < 6) {
+      result.textContent = 'The new one needs at least 6 characters.';
+      return;
+    }
+
+    if (next !== again) {
+      result.textContent = 'The two new passwords do not match.';
+      return;
+    }
+
+    if (next === current) {
+      result.textContent = 'That is the same as your current one.';
+      return;
+    }
+
+    button.disabled = true;
+
+    result.style.color = '#9b90ab';
+    result.textContent = 'Working...';
+
+    let before = null;
+
+    try {
+
+      /* prove it is really them before touching anything */
+      const { error: checkError } =
+        await supabaseClient.auth.signInWithPassword({
+          email: currentUser.email,
+          password: current
+        });
+
+      if (checkError) {
+        throw new Error('Your current password is not right.');
+      }
+
+      if (dataKey) {
+        before = await relockWithPassword(next);
+      }
+
+      const { error } =
+        await supabaseClient.auth.updateUser({
+          password: next
+        });
+
+      if (error) {
+
+        if (before) {
+          await restorePasswordLock(before);
+        }
+
+        throw error;
+
+      }
+
+      ['pwCurrent', 'pwNew', 'pwConfirm'].forEach(id => {
+        document.getElementById(id).value = '';
+      });
+
+      result.style.color = '#9ee6bd';
+
+      result.textContent =
+        'Password changed. Your chats came with it.';
+
+      setFold('foldPassword', 'good', 'Changed just now');
+
+    } catch (error) {
+
+      result.style.color = '#ff8585';
+
+      result.textContent =
+        error?.message || 'Could not change it.';
+
+    }
+
+    button.disabled = false;
+
+  });
+
+document
+  .getElementById('pwForgot')
+  ?.addEventListener('click', event => {
+
+    event.preventDefault();
+
+    document
+      .getElementById('unlockForgot')
+      ?.click();
+
+  });
+
+
+/* =====================================================
+   GETTING BACK IN AFTER A RESET
+===================================================== */
+
+const recoverScreen =
+  document.getElementById('recoverScreen');
+
+const recoverError =
+  document.getElementById('recoverError');
+
+let recoverNewPassword = null;
+
+let freshArmed = false;
+
+
+function showRecover(newPassword) {
+
+  recoverNewPassword = newPassword;
+
+  freshArmed = false;
+
+  recoverError.textContent = '';
+
+  document.getElementById('recoverFresh').textContent =
+    'Start fresh';
+
+  document.getElementById('recoverFreshText').textContent =
+    'Neither? You can carry on with a fresh start. Your old ' +
+    'chats stay locked for good.';
+
+  recoverScreen.classList.add('show');
+
+}
+
+
+async function finishRecover() {
+
+  recoverNewPassword = null;
+
+  recoverScreen.classList.remove('show');
+
+  await initialiseApp();
+
+}
+
+
+document
+  .getElementById('recoverWithCode')
+  ?.addEventListener('click', async () => {
+
+    const code =
+      document.getElementById('recoverCode').value;
+
+    if (normaliseRecoveryCode(code).length < 20) {
+      recoverError.textContent =
+        'A recovery code is 20 letters and numbers.';
+      return;
+    }
+
+    recoverError.textContent = 'Working...';
+
+    const how =
+      await openWithRecoveryCode(code, recoverNewPassword);
+
+    if (how === 'none') {
+      recoverError.textContent =
+        'This account never had a recovery code made.';
+      return;
+    }
+
+    if (how !== 'opened') {
+      recoverError.textContent =
+        'That code does not open your chats.';
+      return;
+    }
+
+    await finishRecover();
+
+  });
+
+document
+  .getElementById('recoverWithPassword')
+  ?.addEventListener('click', async () => {
+
+    const old =
+      document.getElementById('recoverOldPassword').value;
+
+    if (!old) {
+      recoverError.textContent = 'Enter your old password.';
+      return;
+    }
+
+    recoverError.textContent = 'Working...';
+
+    const how =
+      await openWithOldPassword(old, recoverNewPassword);
+
+    if (how !== 'opened') {
+      recoverError.textContent =
+        'That password does not open your chats either.';
+      return;
+    }
+
+    await finishRecover();
+
+  });
+
+/*
+  Two taps, the first one saying plainly what it costs.
+*/
+document
+  .getElementById('recoverFresh')
+  ?.addEventListener('click', async () => {
+
+    const button =
+      document.getElementById('recoverFresh');
+
+    if (!freshArmed) {
+
+      freshArmed = true;
+
+      document.getElementById('recoverFreshText').textContent =
+        'Are you sure? Every chat and picture you made before ' +
+        'the reset stays locked forever. Nobody, including us, ' +
+        'can get them back.';
+
+      button.textContent = 'Yes, start fresh';
+
+      return;
+
+    }
+
+    button.disabled = true;
+
+    await resetVault(recoverNewPassword);
+
+    button.disabled = false;
+
+    offerRecoveryCodeSoon();
+
+    await finishRecover();
+
+  });
+
+
+/* =====================================================
+   EXPORTING EVERYTHING
+
+   One markdown file with every chat, decrypted here in the
+   browser. Nothing readable passes through our server to
+   make it.
+===================================================== */
+
+async function exportAllChats(button) {
+
+  const label =
+    button?.textContent;
+
+  if (button) {
+    button.disabled = true;
+    button.textContent = 'Gathering your chats...';
+  }
+
+  try {
+
+    let chatRows = [];
+    let messageRows = [];
+
+    if (guestMode) {
+
+      chatRows = guestChats();
+
+      chatRows.forEach(item => {
+        guestMessages(item.id).forEach(message => {
+          messageRows.push({ ...message, chat_id: item.id });
+        });
+      });
+
+    } else {
+
+      const { data: chatsData, error: chatsError } =
+        await supabaseClient
+          .from('chats')
+          .select('id,title,created_at')
+          .eq('user_id', currentUser.id)
+          .order('created_at', { ascending: true });
+
+      if (chatsError) throw chatsError;
+
+      chatRows =
+        await decRows(chatsData, ['title']);
+
+      for (let from = 0; from < 20000; from += 500) {
+
+        const { data, error } =
+          await supabaseClient
+            .from('messages')
+            .select('chat_id,role,content,image_url,created_at')
+            .eq('user_id', currentUser.id)
+            .order('created_at', { ascending: true })
+            .range(from, from + 499);
+
+        if (error) throw error;
+
+        messageRows.push(
+          ...(await decRows(data, ['content']))
+        );
+
+        if (!data || data.length < 500) break;
+
+      }
+
+    }
+
+    const when =
+      value => value
+        ? new Date(value).toLocaleString('en-GB')
+        : '';
+
+    const lines = [
+      '# Nastivee AI, all chats',
+      '',
+      `Exported ${when(new Date())}` +
+        (currentUser?.email ? ` for ${currentUser.email}` : ''),
+      '',
+      `${chatRows.length} chats, ${messageRows.length} messages.`,
+      'Pictures are listed but not included, save any you want',
+      'to keep from inside each chat.',
+      ''
+    ];
+
+    chatRows.forEach(item => {
+
+      lines.push('---', '', `## ${item.title || 'Untitled chat'}`, '');
+
+      if (item.created_at) {
+        lines.push(`_Started ${when(item.created_at)}_`, '');
+      }
+
+      messageRows
+        .filter(message => String(message.chat_id) === String(item.id))
+        .forEach(message => {
+
+          const who =
+            message.role === 'user' ? 'You' : 'Nastivee';
+
+          const picture =
+            message.image_url ? ' _[picture]_' : '';
+
+          lines.push(
+            `**${who}**${picture}`,
+            '',
+            message.content || '',
+            ''
+          );
+
+        });
+
+    });
+
+    const link =
+      document.createElement('a');
+
+    link.href =
+      URL.createObjectURL(
+        new Blob([lines.join('\n')], { type: 'text/markdown' })
+      );
+
+    link.download =
+      `nastivee-all-chats-${new Date()
+        .toISOString()
+        .slice(0, 10)}.md`;
+
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+
+    if (button) button.textContent = 'Downloaded';
+
+  } catch (error) {
+
+    console.error('EXPORT ALL ERROR:', error);
+
+    if (button) button.textContent = 'Export failed, try again';
+
+  }
+
+  if (button) {
+
+    setTimeout(() => {
+      button.disabled = false;
+      button.textContent = label;
+    }, 2200);
+
+  }
+
+}
+
+document
+  .getElementById('exportAll')
+  ?.addEventListener('click', event => {
+    exportAllChats(event.currentTarget);
+  });
+
+
+/* =====================================================
+   DELETING THE ACCOUNT
+===================================================== */
+
+const deleteScreen =
+  document.getElementById('deleteScreen');
+
+const deleteConfirm =
+  document.getElementById('deleteConfirm');
+
+const deleteGo =
+  document.getElementById('deleteGo');
+
+const deleteError =
+  document.getElementById('deleteError');
+
+
+document
+  .getElementById('deleteStart')
+  ?.addEventListener('click', () => {
+
+    deleteConfirm.value = '';
+
+    deleteGo.disabled = true;
+
+    deleteError.textContent = '';
+
+    deleteScreen.classList.add('show');
+
+  });
+
+document
+  .getElementById('deleteCancel')
+  ?.addEventListener('click', () => {
+    deleteScreen.classList.remove('show');
+  });
+
+document
+  .getElementById('deleteExport')
+  ?.addEventListener('click', event => {
+    exportAllChats(event.currentTarget);
+  });
+
+deleteConfirm?.addEventListener('input', () => {
+
+  deleteGo.disabled =
+    deleteConfirm.value.trim().toUpperCase() !== 'DELETE';
+
+});
+
+deleteGo?.addEventListener('click', async () => {
+
+  deleteGo.disabled = true;
+
+  deleteError.style.color = '#9b90ab';
+  deleteError.textContent = 'Deleting...';
+
+  try {
+
+    const response =
+      await fetch(`${API_BASE}/api/account/delete`, {
+        method: 'POST',
+        headers: await apiHeaders(),
+        body: JSON.stringify({ confirm: 'DELETE' })
+      });
+
+    const data =
+      await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error(data?.error || 'Could not delete the account.');
+    }
+
+    /* nothing of theirs is left behind on this device either */
+    forgetDataKey();
+
+    try {
+
+      Object.keys(localStorage)
+        .filter(key => key.startsWith('nastivee'))
+        .forEach(key => localStorage.removeItem(key));
+
+    } catch {}
+
+    await supabaseClient.auth.signOut().catch(() => {});
+
+    deleteScreen.classList.remove('show');
+
+    profileOverlay?.classList.remove('show');
+
+    currentUser = null;
+
+    showAuth();
+
+    authError.style.color = '#9ee6bd';
+
+    authError.textContent =
+      'Your account and everything in it has been deleted.';
+
+  } catch (error) {
+
+    deleteError.style.color = '#ff8585';
+
+    deleteError.textContent = error.message;
+
+    deleteGo.disabled = false;
+
+  }
+
+});
 
 
 /* =====================================================
@@ -12429,11 +14535,20 @@ jumpButton.addEventListener(
    DOWNLOAD IMAGE
 ===================================================== */
 
-function downloadImage(
-  imageData
+async function downloadImage(
+  imageRef
 ) {
 
-  if (!imageData) {
+  if (!imageRef) {
+    return;
+  }
+
+  let imageData;
+
+  try {
+    imageData = await resolveImage(imageRef);
+  } catch (error) {
+    console.error('SAVE ERROR:', error);
     return;
   }
 
@@ -12710,7 +14825,7 @@ window.addEventListener('online', () => {
    clearing anything by hand.
 ===================================================== */
 
-const APP_VERSION = '2026-09-21-03';
+const APP_VERSION = '2026-09-21-04';
 
 const RELOAD_FLAG = 'nastivee_reloaded_for';
 
