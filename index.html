@@ -6484,7 +6484,7 @@ body .sidebarBottom {
   type="file"
   id="fileInput"
   class="fileInput"
-  accept="image/*"
+  accept="image/*,.heic,.heif"
 >
 
 
@@ -18603,9 +18603,112 @@ uploadButton.addEventListener(
    FILE UPLOAD
 ===================================================== */
 
+/* =====================================================
+   PREPARING AN UPLOAD
+
+   Every photo is redrawn in the browser before it goes
+   anywhere: turned the right way up, shrunk so its longest
+   side is at most 1600px, and saved as a JPEG (or a PNG
+   when it has see-through parts). That keeps uploads small
+   and fast, turns odd formats into ones every model reads,
+   and drops the hidden details phones add, like where the
+   photo was taken.
+===================================================== */
+
+const UPLOAD_MAX_SIDE = 1600;
+
+async function decodeImageFile(file) {
+
+  if (window.createImageBitmap) {
+    try {
+      return await createImageBitmap(file, { imageOrientation: 'from-image' });
+    } catch {}
+  }
+
+  const url = URL.createObjectURL(file);
+
+  try {
+
+    const img = new Image();
+
+    await new Promise((resolve, reject) => {
+      img.onload = resolve;
+      img.onerror = reject;
+      img.src = url;
+    });
+
+    return img;
+
+  } finally {
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+}
+
+async function prepareUpload(file) {
+
+  let source;
+
+  try {
+    source = await decodeImageFile(file);
+  } catch {
+    throw new Error(
+      'That photo could not be opened here. Try a JPEG or PNG. ' +
+      'On an iPhone: Settings, Camera, Formats, Most Compatible.'
+    );
+  }
+
+  const width = source.width || source.naturalWidth;
+  const height = source.height || source.naturalHeight;
+
+  if (!width || !height) {
+    throw new Error('That photo looks empty. Try another one.');
+  }
+
+  const scale = Math.min(1, UPLOAD_MAX_SIDE / Math.max(width, height));
+
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.max(1, Math.round(width * scale));
+  canvas.height = Math.max(1, Math.round(height * scale));
+
+  const ctx = canvas.getContext('2d');
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(source, 0, 0, canvas.width, canvas.height);
+
+  source.close?.();
+
+  /* only formats that can be see-through are checked for it */
+  let transparent = false;
+
+  if (/png|webp|gif|avif/i.test(file.type || file.name)) {
+
+    const { data } = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const step = Math.max(4, Math.floor(data.length / 4 / 40000) * 4);
+
+    for (let i = 3; i < data.length; i += step) {
+      if (data[i] < 250) { transparent = true; break; }
+    }
+
+  }
+
+  const dataUrl =
+    transparent
+      ? canvas.toDataURL('image/png')
+      : canvas.toDataURL('image/jpeg', 0.86);
+
+  return {
+    dataUrl,
+    width: canvas.width,
+    height: canvas.height,
+    resized: scale < 1
+  };
+
+}
+
+
 fileInput.addEventListener(
   'change',
-  event => {
+  async event => {
 
     const file =
       event.target.files?.[0];
@@ -18616,11 +18719,32 @@ fileInput.addEventListener(
     }
 
 
-    if (
-      !file.type.startsWith(
-        'image/'
-      )
-    ) {
+    const looksLikeImage =
+      (file.type || '').startsWith('image/') ||
+      /\.(heic|heif|jpe?g|png|webp|gif|avif|bmp)$/i.test(file.name || '');
+
+    if (!looksLikeImage) {
+
+      addTextMessage('assistant', 'That file is not a photo. Upload a picture (JPEG, PNG, HEIC and the like).');
+
+      fileInput.value = '';
+
+      return;
+
+    }
+
+
+    let prepared;
+
+    try {
+
+      prepared = await prepareUpload(file);
+
+    } catch (error) {
+
+      addTextMessage('assistant', error.message);
+
+      fileInput.value = '';
 
       return;
 
@@ -18631,15 +18755,10 @@ fileInput.addEventListener(
       file;
 
 
-    const reader =
-      new FileReader();
-
-
-    reader.onload =
-      () => {
+    {
 
         selectedImageData =
-          reader.result;
+          prepared.dataUrl;
 
 
         uploadThumb.src =
@@ -18674,12 +18793,7 @@ fileInput.addEventListener(
 
         messageInput.focus();
 
-      };
-
-
-    reader.readAsDataURL(
-      file
-    );
+    }
 
   }
 );
@@ -19140,7 +19254,7 @@ window.addEventListener('online', () => {
    clearing anything by hand.
 ===================================================== */
 
-const APP_VERSION = '2026-09-22-09';
+const APP_VERSION = '2026-09-22-10';
 
 const RELOAD_FLAG = 'nastivee_reloaded_for';
 
