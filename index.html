@@ -819,25 +819,30 @@ button {
 }
 
 /* ----- SMART MODE -----
-   A cooler, deeper light over the chat while Smart is on,
-   so the heavier model feels like a different gear without
-   shouting about it. The glow is a layer that fades,
+   Its own layer, ::after. The watermark already owns
+   ::before, and sharing it once set the watermark to full
+   opacity in Smart mode.
+
+   Smart turns the chat a deep red, so there is no doubt
+   which gear it is in. The glow is a layer that fades,
    because gradients cannot be animated directly. */
 
-.main::before {
+.main::after {
   content: '';
   position: absolute;
   inset: 0;
+  /* below the watermark (z 0) and the chat (z 1) */
   z-index: -1;
   background:
-    radial-gradient(ellipse 70% 45% at 50% 0%, rgba(56,132,248,.22), transparent 70%),
-    radial-gradient(ellipse 60% 40% at 50% 100%, rgba(34,211,238,.06), transparent 70%);
+    radial-gradient(ellipse 75% 55% at 50% 0%, rgba(220,38,38,.30), transparent 70%),
+    radial-gradient(ellipse 90% 50% at 50% 100%, rgba(159,18,57,.18), transparent 70%),
+    #16060b;
   opacity: 0;
   transition: opacity .7s var(--ease);
   pointer-events: none;
 }
 
-body.smartMode .main::before {
+body.smartMode .main::after {
   opacity: 1;
 }
 
@@ -852,26 +857,46 @@ body.smartMode .main::before {
 }
 
 body.smartMode .composer {
-  border-color: #28365a;
+  border-color: #5a2232;
+  background: #1c0a10;
+}
+
+.header,
+.composerArea {
+  transition: background .7s var(--ease);
+}
+
+body.smartMode .header {
+  background: rgba(22, 6, 11, .85);
+  border-bottom-color: #3a1520;
+}
+
+body.smartMode .composerArea {
+  background: linear-gradient(to top, #16060b 75%, transparent);
 }
 
 body.smartMode .composer:focus-within {
-  border-color: #3d5f9c;
+  border-color: #9b2c42;
 }
 
 body.smartMode .sendButton,
 body.smartMode .modeButton.active {
-  background: linear-gradient(135deg, #4f46e5, #0ea5e9);
-  box-shadow: 0 8px 22px rgba(56,132,248,.26);
+  background: linear-gradient(135deg, #9f1239, #dc2626);
+  box-shadow: 0 8px 22px rgba(220,38,38,.30);
 }
 
 body.smartMode .messageRow.user .messageBubble {
-  background: linear-gradient(135deg, #4338ca, #3b82f6);
-  box-shadow: 0 8px 24px rgba(59,130,246,.18);
+  background: linear-gradient(135deg, #881337, #c2263a);
+  box-shadow: 0 8px 24px rgba(220,38,38,.20);
+}
+
+body.smartMode .messageRow.assistant .messageBubble {
+  border-color: #3a1822;
+  background: #1d0c12;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .main::before { transition: none; }
+  .main::after { transition: none; }
 }
 
 .header {
@@ -4594,23 +4619,6 @@ body.smartMode .messageRow.user .messageBubble {
         </svg>
         Admin
       </button>
-
-      <div class="creditsRow" id="creditsRow">
-
-        <div class="creditsBody">
-          <div class="creditsCount" id="creditsCount"></div>
-          <div class="creditsSub" id="creditsSub"></div>
-        </div>
-
-        <button
-          class="topUpButton"
-          id="topUpButton"
-          type="button"
-        >
-          Top up
-        </button>
-
-      </div>
 
       <div class="accountRow">
 
@@ -12179,7 +12187,18 @@ async function refreshAccount() {
 }
 
 
+/*
+  Image balances live in My profile only, never the
+  sidebar. If My profile is open, keep it current.
+*/
 function drawCredits() {
+
+  if (
+    typeof profileOverlay !== 'undefined' &&
+    profileOverlay?.classList.contains('show')
+  ) {
+    paintImages();
+  }
 
   if (!creditsRow) return;
 
@@ -15174,7 +15193,7 @@ window.addEventListener('online', () => {
    clearing anything by hand.
 ===================================================== */
 
-const APP_VERSION = '2026-09-21-06';
+const APP_VERSION = '2026-09-21-09';
 
 const RELOAD_FLAG = 'nastivee_reloaded_for';
 
