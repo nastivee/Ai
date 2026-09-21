@@ -5587,6 +5587,9 @@ let chats = [];
 
 let memory = '';
 
+/* Set when saved memory is under a key this device cannot open */
+let memoryLocked = false;
+
 let selectedImageFile = null;
 let selectedImageData = null;
 
@@ -7157,7 +7160,23 @@ async function loadMemory() {
     }
 
 
-    return await decField(data?.memory || '');
+    const opened =
+      await decFieldResult(data?.memory || '');
+
+    memoryLocked = opened.locked;
+
+    /* never hand the placeholder to the AI as if it were memory */
+    if (opened.locked) return '';
+
+    if (opened.stale && opened.text) {
+      supabaseClient
+        .from('profiles')
+        .update({ memory: await encField(opened.text) })
+        .eq('id', currentUser.id)
+        .then(() => {}, () => {});
+    }
+
+    return opened.text;
 
   } catch (error) {
 
@@ -7188,6 +7207,13 @@ async function saveMemory() {
     writeLocal(GUEST_MEMORY_KEY, memory);
     return;
   }
+
+  /* do not wipe memory we simply could not open here */
+  if (memoryLocked && !memory) {
+    return;
+  }
+
+  memoryLocked = false;
 
 
   try {
@@ -7278,6 +7304,8 @@ async function loadChats() {
 
     chats =
       await decRows(data, ['title']);
+
+    resealStale('chats', chats, ['title']);
 
     renderChatHistory();
 
@@ -8243,6 +8271,8 @@ async function loadChat(
 
     const rows =
       await decRows(data, ['content']);
+
+    resealStale('messages', rows, ['content']);
 
 
     emptyState?.remove();
@@ -10902,42 +10932,73 @@ async function encField(text) {
   Reading a field back. Anything written before this
   existed is plain text and comes through untouched.
 */
+/*
+  What a message that cannot be opened shows as. It is
+  only ever for display: anything marked locked is kept out
+  of what is sent to the AI.
+*/
+const LOCKED_NOTE =
+  'This message could not be unlocked on this device.';
+
+/*
+  Keys this device used before its current one. Kept only
+  so that anything written under them can still be read,
+  and moved over to the current key, then dropped.
+*/
+let olderKeys = [];
+
+
+async function tryDecrypt(key, value) {
+
+  const [, ivPart, cipherPart] =
+    value.split(':');
+
+  const plain =
+    await crypto.subtle.decrypt(
+      { name: 'AES-GCM', iv: fromBase64(ivPart) },
+      key,
+      fromBase64(cipherPart)
+    );
+
+  return new TextDecoder().decode(plain);
+
+}
+
+
+/*
+  { text, locked, stale }. Stale means it opened with an
+  older key and should be re-sealed under the current one.
+*/
+async function decFieldResult(value) {
+
+  if (typeof value !== 'string' || !value.startsWith(ENC_PREFIX)) {
+    return { text: value, locked: false, stale: false };
+  }
+
+  if (dataKey) {
+
+    try {
+      return { text: await tryDecrypt(dataKey, value), locked: false, stale: false };
+    } catch {}
+
+  }
+
+  for (const key of olderKeys) {
+
+    try {
+      return { text: await tryDecrypt(key, value), locked: false, stale: true };
+    } catch {}
+
+  }
+
+  return { text: LOCKED_NOTE, locked: true, stale: false };
+
+}
+
+
 async function decField(value) {
 
-  if (typeof value !== 'string') {
-    return value;
-  }
-
-  if (!value.startsWith(ENC_PREFIX)) {
-    return value;
-  }
-
-  if (!dataKey) {
-    return '[locked]';
-  }
-
-  try {
-
-    const [, ivPart, cipherPart] =
-      value.split(':');
-
-    const plain =
-      await crypto.subtle.decrypt(
-        {
-          name: 'AES-GCM',
-          iv: fromBase64(ivPart)
-        },
-        dataKey,
-        fromBase64(cipherPart)
-      );
-
-    return new TextDecoder().decode(plain);
-
-  } catch (error) {
-
-    return '[could not be decrypted]';
-
-  }
+  return (await decFieldResult(value)).text;
 
 }
 
@@ -10996,13 +11057,113 @@ async function decRows(rows, fields) {
       const copy = { ...row };
 
       for (const field of fields) {
-        copy[field] = await decField(row[field]);
+
+        const result =
+          await decFieldResult(row[field]);
+
+        copy[field] = result.text;
+
+        if (result.locked) copy.__locked = true;
+        if (result.stale) copy.__stale = true;
+
       }
 
       return copy;
 
     })
   );
+
+}
+
+
+/*
+  Rows that only opened with an older key are written
+  again under the current one, quietly, so every device
+  can read them from now on.
+*/
+function resealStale(table, rows, fields) {
+
+  if (!dataKey || !currentUser) return;
+
+  (rows || [])
+    .filter(row => row.__stale && row.id != null)
+    .forEach(async row => {
+
+      try {
+
+        const update = {};
+
+        for (const field of fields) {
+          update[field] = await encField(row[field]);
+        }
+
+        await supabaseClient
+          .from(table)
+          .update(update)
+          .eq('id', row.id);
+
+      } catch (error) {
+        console.warn('RESEAL FAILED:', error);
+      }
+
+    });
+
+}
+
+
+/*
+  When this device held a different key from the one on
+  the account, keep it aside so messages written under it
+  can still be opened and moved over to the right key.
+*/
+function olderKeyName() {
+  return `${DEK_KEY}_${currentUser.id}_old`;
+}
+
+async function keepOlderKey(previous, current) {
+
+  if (!previous || !current || !currentUser) return;
+
+  try {
+
+    const before = toBase64(new Uint8Array(await crypto.subtle.exportKey('raw', previous)));
+    const now = toBase64(new Uint8Array(await crypto.subtle.exportKey('raw', current)));
+
+    if (before === now) return;
+
+    const saved = JSON.parse(localStorage.getItem(olderKeyName()) || '[]');
+
+    if (!saved.includes(before)) saved.push(before);
+
+    localStorage.setItem(olderKeyName(), JSON.stringify(saved.slice(-5)));
+
+    olderKeys.push(previous);
+
+  } catch {}
+
+}
+
+async function loadOlderKeys() {
+
+  olderKeys = [];
+
+  try {
+
+    const saved = JSON.parse(localStorage.getItem(olderKeyName()) || '[]');
+
+    for (const item of saved) {
+      olderKeys.push(await importDataKey(fromBase64(item)));
+    }
+
+  } catch {}
+
+}
+
+function forgetOlderKey() {
+
+  try {
+    if (currentUser) localStorage.removeItem(olderKeyName());
+  } catch {}
 
 }
 
@@ -11031,19 +11192,119 @@ async function rememberDataKey() {
 }
 
 
-async function recallDataKey() {
+/* The key this device has saved, without using it yet */
+async function storedDataKey() {
 
   try {
 
     const stored =
-      localStorage.getItem(
-        `${DEK_KEY}_${currentUser.id}`
-      );
+      localStorage.getItem(`${DEK_KEY}_${currentUser.id}`);
 
-    if (!stored) return false;
+    return stored ? await importDataKey(fromBase64(stored)) : null;
 
-    dataKey =
-      await importDataKey(fromBase64(stored));
+  } catch {
+
+    return null;
+
+  }
+
+}
+
+
+/* Which lock on the account this device's key came from */
+function noteLock(wrapped) {
+
+  try {
+    if (currentUser && wrapped) {
+      localStorage.setItem(`${DEK_KEY}_${currentUser.id}_lock`, wrapped);
+    }
+  } catch {}
+
+}
+
+
+/*
+  Is the key saved on this device still the account's key?
+  A device can hold one that was replaced elsewhere, and
+  then everything it writes is unreadable anywhere else.
+  Each device notes which lock its key came from. If the
+  lock on the account has changed since (a reset, or a
+  password change on another device), ask for the password
+  once. A device from before this check asks once too,
+  unless there is nothing encrypted yet. A network blip
+  never locks anyone out.
+*/
+async function keyStillCurrent(key) {
+
+  try {
+
+    const { data, error } =
+      await supabaseClient
+        .from('profiles')
+        .select('key_wrapped')
+        .eq('id', currentUser.id)
+        .maybeSingle();
+
+    if (error) return true;
+
+    if (!data?.key_wrapped) return true;
+
+    let noted = null;
+
+    try {
+      noted = localStorage.getItem(`${DEK_KEY}_${currentUser.id}_lock`);
+    } catch {}
+
+    if (noted) return noted === data.key_wrapped;
+
+    const { data: recent, error: recentError } =
+      await supabaseClient
+        .from('messages')
+        .select('id')
+        .like('content', `${ENC_PREFIX}%`)
+        .limit(1);
+
+    if (recentError) return true;
+
+    /* nothing written yet, so nothing can be out of step */
+    if (!recent?.length) {
+      noteLock(data.key_wrapped);
+      return true;
+    }
+
+    /*
+      Otherwise we cannot tell from here alone (a device
+      whose key went stale may have written everything
+      recent itself), so the password settles it, once.
+    */
+    return false;
+
+  } catch {
+
+    return true;
+
+  }
+
+}
+
+
+async function recallDataKey() {
+
+  try {
+
+    const key = await storedDataKey();
+
+    if (!key) return false;
+
+    /* Out of date: ask for the password, and keep this one to rescue what it wrote */
+    if (!(await keyStillCurrent(key))) {
+      console.warn('SAVED KEY IS OUT OF DATE, ASKING FOR PASSWORD');
+      return false;
+    }
+
+    dataKey = key;
+
+    await loadOlderKeys();
 
     return true;
 
@@ -11061,14 +11322,16 @@ function forgetDataKey() {
   try {
 
     if (currentUser) {
-      localStorage.removeItem(
-        `${DEK_KEY}_${currentUser.id}`
-      );
+      localStorage.removeItem(`${DEK_KEY}_${currentUser.id}`);
+      localStorage.removeItem(`${DEK_KEY}_${currentUser.id}_lock`);
+      localStorage.removeItem(`${DEK_KEY}_${currentUser.id}_old`);
     }
 
   } catch {}
 
   dataKey = null;
+
+  olderKeys = [];
 
 }
 
@@ -11128,17 +11391,32 @@ async function openVault(password) {
     return 'wrong';
   }
 
-  const { data } =
+  const { data, error: readError } =
     await supabaseClient
       .from('profiles')
       .select('key_salt, key_iv, key_wrapped')
       .eq('id', currentUser.id)
       .maybeSingle();
 
+  /*
+    A failed read is not the same as no vault. Treating it
+    as one used to make a brand new key over the top of the
+    real one, locking away everything written before.
+  */
+  if (readError) {
+    throw new Error('Could not reach your account. Try again.');
+  }
+
   /* First time here: make a key and lock it away */
   if (!data?.key_wrapped) {
 
-    await createVault(password);
+    const made =
+      await createVault(password);
+
+    /* someone else made one a moment ago, so open that */
+    if (made === 'exists') {
+      return openVault(password);
+    }
 
     return 'created';
 
@@ -11164,7 +11442,15 @@ async function openVault(password) {
         )
       );
 
-    dataKey = await importDataKey(raw);
+    const opened = await importDataKey(raw);
+
+    /* the key this device had, if it was a different one */
+    await loadOlderKeys();
+    await keepOlderKey(dataKey || (await storedDataKey()), opened);
+
+    noteLock(data.key_wrapped);
+
+    dataKey = opened;
 
     vaultLocked = false;
 
@@ -11181,7 +11467,7 @@ async function openVault(password) {
 }
 
 
-async function createVault(password) {
+async function createVault(password, { replace = false } = {}) {
 
   const salt =
     crypto.getRandomValues(new Uint8Array(16));
@@ -11213,18 +11499,97 @@ async function createVault(password) {
       )
     );
 
-  await supabaseClient
-    .from('profiles')
-    .upsert({
-      id: currentUser.id,
-      key_salt: toBase64(salt),
-      key_iv: toBase64(iv),
-      key_wrapped: toBase64(wrapped)
-    });
+  const lock = {
+    key_salt: toBase64(salt),
+    key_iv: toBase64(iv),
+    key_wrapped: toBase64(wrapped)
+  };
+
+  /*
+    A deliberate reset replaces the key outright, and the
+    old recovery code goes with it, since it only opens
+    the old key.
+  */
+  if (replace) {
+
+    const { data: swapped, error: swapError } =
+      await supabaseClient
+        .from('profiles')
+        .update({
+          ...lock,
+          key_recovery_salt: null,
+          key_recovery_iv: null,
+          key_recovery_wrapped: null
+        })
+        .eq('id', currentUser.id)
+        .select('id');
+
+    if (swapError || !swapped?.length) {
+      dataKey = null;
+      throw new Error('Could not save your key. Try again.');
+    }
+
+    olderKeys = [];
+    forgetOlderKey();
+    noteLock(lock.key_wrapped);
+    vaultLocked = false;
+    await rememberDataKey();
+    return 'created';
+
+  }
+
+  /*
+    Only ever fill an empty slot. The update touches a row
+    only where there is no key yet; if there is no row at
+    all, one is inserted. Neither can overwrite a key that
+    already exists.
+  */
+  const { data: filled, error: updateError } =
+    await supabaseClient
+      .from('profiles')
+      .update(lock)
+      .eq('id', currentUser.id)
+      .is('key_wrapped', null)
+      .select('id');
+
+  if (updateError) {
+    dataKey = null;
+    throw new Error('Could not save your key. Try again.');
+  }
+
+  if (!filled?.length) {
+
+    const { data: existing } =
+      await supabaseClient
+        .from('profiles')
+        .select('key_wrapped')
+        .eq('id', currentUser.id)
+        .maybeSingle();
+
+    if (existing?.key_wrapped) {
+      dataKey = null;
+      return 'exists';
+    }
+
+    const { error: insertError } =
+      await supabaseClient
+        .from('profiles')
+        .insert({ id: currentUser.id, ...lock });
+
+    if (insertError) {
+      dataKey = null;
+      throw new Error('Could not save your key. Try again.');
+    }
+
+  }
+
+  noteLock(lock.key_wrapped);
 
   vaultLocked = false;
 
   await rememberDataKey();
+
+  return 'created';
 
 }
 
@@ -11370,6 +11735,8 @@ async function relockWithPassword(password) {
 
   if (error) throw error;
 
+  noteLock(lock.wrapped);
+
   return before || null;
 
 }
@@ -11387,6 +11754,8 @@ async function restorePasswordLock(before) {
       key_iv: before.key_iv,
       key_wrapped: before.key_wrapped
     });
+
+  noteLock(before.key_wrapped);
 
 }
 
@@ -11524,7 +11893,7 @@ async function resetVault(password) {
 
   forgetDataKey();
 
-  await createVault(password);
+  await createVault(password, { replace: true });
 
 }
 
@@ -15174,6 +15543,7 @@ async function sendNormalMessage(
 
     messages =
       clearRows
+        .filter(item => !item.__locked)
         .map(
           item => ({
             role:
@@ -15363,7 +15733,7 @@ async function nameChatFromContent(chatId) {
         await decRows(data, ['content']);
 
       history =
-        clear.map(item => ({
+        clear.filter(item => !item.__locked).map(item => ({
           role: item.role,
           content: item.content || ''
         }));
@@ -16315,7 +16685,7 @@ window.addEventListener('online', () => {
    clearing anything by hand.
 ===================================================== */
 
-const APP_VERSION = '2026-09-21-15';
+const APP_VERSION = '2026-09-21-16';
 
 const RELOAD_FLAG = 'nastivee_reloaded_for';
 
