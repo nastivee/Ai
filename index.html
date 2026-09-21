@@ -143,6 +143,8 @@ button {
 }
 
 .authCard {
+  position: relative;
+  z-index: 1;
   width: 100%;
   max-width: 430px;
   padding: 35px;
@@ -184,6 +186,76 @@ button {
 
 .authInput:focus {
   border-color: #8b5cf6;
+}
+
+/* ----- SIGN UP MODE -----
+   The whole screen turns teal, so nobody is left wondering
+   whether they are logging in or making a new account.
+   The glow is a layer that fades in, because gradients
+   themselves cannot be animated. */
+
+.authScreen::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background:
+    radial-gradient(circle at 50% 20%, #0f4a47 0%, #0f1f24 35%, #0a1114 75%);
+  opacity: 0;
+  transition: opacity .45s var(--ease);
+  pointer-events: none;
+}
+
+.authScreen.signup::before {
+  opacity: 1;
+}
+
+.authCard,
+.authInput,
+.authButton,
+.logoLarge span,
+.authSwitch button,
+.authForgot button,
+.authLegal a {
+  transition:
+    border-color .35s var(--ease),
+    background .35s var(--ease),
+    color .35s var(--ease),
+    box-shadow .35s var(--ease);
+}
+
+.authScreen.signup .authCard {
+  border-color: rgba(45, 212, 191, .28);
+  background: rgba(14, 30, 34, .92);
+  box-shadow: 0 25px 80px rgba(0, 0, 0, .45),
+              0 0 0 1px rgba(45, 212, 191, .06);
+}
+
+.authScreen.signup .logoLarge span {
+  color: #2dd4bf;
+}
+
+.authScreen.signup .authInput {
+  border-color: #1f4a4a;
+  background: #0b1a1d;
+}
+
+.authScreen.signup .authInput:focus {
+  border-color: #2dd4bf;
+}
+
+.authScreen.signup .authButton {
+  background: linear-gradient(135deg, #0d9488, #14b8a6);
+}
+
+.authScreen.signup .authSwitch button,
+.authScreen.signup .authForgot button,
+.authScreen.signup .authLegal a {
+  color: #5eead4;
+}
+
+.authScreen.signup .passwordToggle:hover {
+  color: #ccfbf1;
 }
 
 /* PASSWORD FIELD WITH VIEW/HIDE TOGGLE */
@@ -3411,7 +3483,7 @@ button {
       Nastivee<span>AI</span>
     </div>
 
-    <div class="authSubtitle">
+    <div class="authSubtitle" id="authSubtitle">
       Your personal AI assistant
     </div>
 
@@ -5645,6 +5717,25 @@ authForgotButton.addEventListener(
 let signupMode = false;
 
 function updateAuthMode() {
+
+  document
+    .getElementById('authScreen')
+    ?.classList.toggle('signup', signupMode);
+
+  const subtitle =
+    document.getElementById('authSubtitle');
+
+  if (subtitle) {
+
+    subtitle.dataset.login =
+      subtitle.dataset.login || subtitle.textContent.trim();
+
+    subtitle.textContent =
+      signupMode
+        ? 'Create your account'
+        : subtitle.dataset.login;
+
+  }
 
   if (signupMode) {
 
@@ -11886,11 +11977,26 @@ function drawCredits() {
 
   if (account.unlimited) {
 
+    const reason =
+      account.unlimitedReason;
+
+    const left =
+      account.credits || 0;
+
     creditsCount.textContent =
-      'Unlimited images';
+      reason === 'paywall_off'
+        ? 'Images are free right now'
+        : 'Unlimited images';
 
     creditsSub.textContent =
-      'Your coupon is doing the work.';
+      reason === 'coupon'
+        ? 'Your coupon is doing the work.'
+        : reason === 'admin'
+          ? 'Admin account.'
+          : reason === 'paywall_off'
+            ? `The paywall is off. ${left} ` +
+              `${left === 1 ? 'image' : 'images'} banked for when it is on.`
+            : 'No limit on this account.';
 
     document
       .getElementById('topUpButton')
@@ -14825,7 +14931,7 @@ window.addEventListener('online', () => {
    clearing anything by hand.
 ===================================================== */
 
-const APP_VERSION = '2026-09-21-04';
+const APP_VERSION = '2026-09-21-05';
 
 const RELOAD_FLAG = 'nastivee_reloaded_for';
 

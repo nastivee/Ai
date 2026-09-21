@@ -854,13 +854,24 @@ app.get('/api/account', async (req, res) => {
 
   const admin = isAdmin(user);
 
+  /*
+    Why images are free for this person, if they are. The
+    app must never credit a coupon that was not used.
+  */
+  const unlimitedReason =
+    admin
+      ? 'admin'
+      : account.unlimited
+        ? 'coupon'
+        : account.unmetered
+          ? 'paywall_off'
+          : null;
+
   res.json({
     signedIn: true,
     credits: account.credits,
-    unlimited:
-      admin ||
-      account.unlimited ||
-      account.unmetered,
+    unlimited: unlimitedReason !== null,
+    unlimitedReason,
     packImages: settings.pack_images,
     packPricePence: settings.pack_price_pence,
     canBuy: paywallReady(),
