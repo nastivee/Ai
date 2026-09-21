@@ -6814,6 +6814,44 @@ body .sidebarBottom {
 >
 
 
+<div class="voiceScreen" id="voiceScreen" role="dialog" aria-modal="true" aria-label="Voice conversation">
+
+  <button class="voiceClose" id="voiceClose" type="button" aria-label="End the call">&times;</button>
+
+  <div class="voiceStage">
+
+    <div class="voiceOrbRoom">
+      <div class="voiceOrb" id="voiceOrb"></div>
+    </div>
+
+    <div class="voiceStatus" id="voiceStatus">Connecting...</div>
+
+    <div class="voiceTranscript" id="voiceTranscript"></div>
+
+    <div class="voiceControls">
+      <button class="voiceControl" id="voiceMute" type="button">Mute</button>
+      <button class="voiceControl end" id="voiceEnd" type="button">End call</button>
+    </div>
+
+    <div class="voiceNote">What you both say is saved to this chat as text.</div>
+
+  </div>
+
+</div>
+
+<div class="savedViewer" id="savedViewer" role="dialog" aria-modal="true" aria-label="Saved comment">
+  <div class="savedViewerCard">
+    <button class="savedViewerClose" id="savedViewerClose" type="button" aria-label="Close">&times;</button>
+    <div class="savedViewerMeta" id="savedViewerMeta"></div>
+    <div class="savedViewerBody markdown" id="savedViewerBody"></div>
+    <div class="savedViewerActions">
+      <button type="button" class="savedAction" id="savedViewerCopy">Copy</button>
+      <button type="button" class="savedAction" id="savedViewerOpen">Open the chat</button>
+      <button type="button" class="savedAction danger" id="savedViewerRemove">Remove</button>
+    </div>
+  </div>
+</div>
+
 <script>
 
 /* =====================================================
@@ -20058,7 +20096,7 @@ window.addEventListener('online', () => {
    clearing anything by hand.
 ===================================================== */
 
-const APP_VERSION = '2026-09-22-13';
+const APP_VERSION = '2026-09-22-14';
 
 const RELOAD_FLAG = 'nastivee_reloaded_for';
 
@@ -20155,44 +20193,6 @@ resizeTextarea();
 checkSession();
 
 </script>
-
-<div class="voiceScreen" id="voiceScreen" role="dialog" aria-modal="true" aria-label="Voice conversation">
-
-  <button class="voiceClose" id="voiceClose" type="button" aria-label="End the call">&times;</button>
-
-  <div class="voiceStage">
-
-    <div class="voiceOrbRoom">
-      <div class="voiceOrb" id="voiceOrb"></div>
-    </div>
-
-    <div class="voiceStatus" id="voiceStatus">Connecting...</div>
-
-    <div class="voiceTranscript" id="voiceTranscript"></div>
-
-    <div class="voiceControls">
-      <button class="voiceControl" id="voiceMute" type="button">Mute</button>
-      <button class="voiceControl end" id="voiceEnd" type="button">End call</button>
-    </div>
-
-    <div class="voiceNote">What you both say is saved to this chat as text.</div>
-
-  </div>
-
-</div>
-
-<div class="savedViewer" id="savedViewer" role="dialog" aria-modal="true" aria-label="Saved comment">
-  <div class="savedViewerCard">
-    <button class="savedViewerClose" id="savedViewerClose" type="button" aria-label="Close">&times;</button>
-    <div class="savedViewerMeta" id="savedViewerMeta"></div>
-    <div class="savedViewerBody markdown" id="savedViewerBody"></div>
-    <div class="savedViewerActions">
-      <button type="button" class="savedAction" id="savedViewerCopy">Copy</button>
-      <button type="button" class="savedAction" id="savedViewerOpen">Open the chat</button>
-      <button type="button" class="savedAction danger" id="savedViewerRemove">Remove</button>
-    </div>
-  </div>
-</div>
 
 </body>
 </html>
