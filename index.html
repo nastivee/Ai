@@ -3221,6 +3221,12 @@ body.smartMode .messageRow.assistant .messageBubble {
   line-height: 1.45;
 }
 
+.learnedNote.problem {
+  border-color: #8a5a1c;
+  background: #2a1d0e;
+  color: #f3d6a8;
+}
+
 .learnedUndo {
   padding: 5px 12px;
   border: 0;
@@ -4263,6 +4269,102 @@ body.smartMode .voiceOrb {
   0%, 100% { opacity: 0.35; transform: scale(0.8); }
   50% { opacity: 1; transform: scale(1.1); }
 }
+
+/* =====================================================
+   PEEKING ROBOT
+   The little face from the logo hides behind the top of
+   the message box and now and then takes a sneaky look.
+===================================================== */
+
+.composer {
+  position: relative;
+}
+
+.peekStage {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  width: 80px;
+  height: 58px;
+  margin-bottom: 1px;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.peekBot {
+  position: absolute;
+  left: 4px;
+  bottom: 0;
+  width: 48px;
+  height: 45px;
+  transform: translateY(110%);
+  transform-origin: 50% 100%;
+  will-change: transform;
+}
+
+.peekBot svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.peekBot .eyeOpen,
+.peekBot .eyeWink {
+  display: none;
+}
+
+.peekBot.eyesOpen .eyeHappy {
+  display: none;
+}
+
+.peekBot.eyesOpen .eyeOpen {
+  display: inline;
+}
+
+.peekBot.winkRight .eyeHappy.right {
+  display: none;
+}
+
+.peekBot.winkRight .eyeWink {
+  display: inline;
+}
+
+.peekBot .eyes {
+  transform-box: fill-box;
+  transform-origin: 50% 50%;
+  transition: transform .18s ease;
+}
+
+.peekBot .antenna {
+  transform-box: view-box;
+  transform-origin: 38px 16px;
+}
+
+.peekHand {
+  position: absolute;
+  left: 54px;
+  bottom: 0;
+  width: 18px;
+  height: 30px;
+  transform: translateY(110%);
+  transform-origin: 50% 100%;
+  will-change: transform;
+}
+
+.peekHand svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .peekStage {
+    display: none;
+  }
+}
+
 </style>
 </head>
 
@@ -7443,10 +7545,39 @@ async function loadMemory() {
 }
 
 
+/*
+  Writes to the user's own profile row. An upsert asks
+  the database for permission to rewrite the id column as
+  well, which the column grants rightly refuse, so it is
+  an update first and an insert only when there is no row.
+*/
+async function saveProfile(fields) {
+
+  const { data, error } =
+    await supabaseClient
+      .from('profiles')
+      .update(fields)
+      .eq('id', currentUser.id)
+      .select('id');
+
+  if (error) return { error };
+
+  if (data?.length) return { error: null };
+
+  const { error: insertError } =
+    await supabaseClient
+      .from('profiles')
+      .insert({ id: currentUser.id, ...fields });
+
+  return { error: insertError || null };
+
+}
+
+
 async function saveMemory() {
 
   if (!currentUser && !guestMode) {
-    return;
+    return false;
   }
 
 
@@ -7456,12 +7587,12 @@ async function saveMemory() {
 
   if (guestMode) {
     writeLocal(GUEST_MEMORY_KEY, memory);
-    return;
+    return true;
   }
 
   /* do not wipe memory we simply could not open here */
   if (memoryLocked && !memory) {
-    return;
+    return false;
   }
 
   memoryLocked = false;
@@ -7469,36 +7600,24 @@ async function saveMemory() {
 
   try {
 
-    const {
-      error
-    } =
-      await supabaseClient
-        .from('profiles')
-        .upsert({
-
-          id: currentUser.id,
-
-          memory:
-            await encField(memory)
-
-        });
-
+    const { error } =
+      await saveProfile({ memory: await encField(memory) });
 
     if (error) {
 
-      console.error(
-        'MEMORY SAVE ERROR:',
-        error
-      );
+      console.error('MEMORY SAVE ERROR:', error);
+
+      return false;
 
     }
 
+    return true;
+
   } catch (error) {
 
-    console.error(
-      'MEMORY SAVE EXCEPTION:',
-      error
-    );
+    console.error('MEMORY SAVE EXCEPTION:', error);
+
+    return false;
 
   }
 
@@ -11991,7 +12110,18 @@ async function createVault(password, { replace = false } = {}) {
   const kek =
     await deriveKek(password, salt);
 
+  /*
+    If this device already holds a key that never made it
+    to the account (older saves could fail quietly), lock
+    that one away rather than making a new one, so nothing
+    it already sealed is lost. A deliberate reset always
+    starts fresh.
+  */
+  const existing =
+    replace ? null : (dataKey || (await storedDataKey()));
+
   dataKey =
+    existing ||
     await crypto.subtle.generateKey(
       { name: 'AES-GCM', length: 256 },
       true,
@@ -12237,14 +12367,11 @@ async function relockWithPassword(password) {
     await wrapDataKey(password);
 
   const { error } =
-    await supabaseClient
-      .from('profiles')
-      .upsert({
-        id: currentUser.id,
-        key_salt: lock.salt,
-        key_iv: lock.iv,
-        key_wrapped: lock.wrapped
-      });
+    await saveProfile({
+      key_salt: lock.salt,
+      key_iv: lock.iv,
+      key_wrapped: lock.wrapped
+    });
 
   if (error) throw error;
 
@@ -12259,14 +12386,11 @@ async function restorePasswordLock(before) {
 
   if (!before?.key_wrapped) return;
 
-  await supabaseClient
-    .from('profiles')
-    .upsert({
-      id: currentUser.id,
-      key_salt: before.key_salt,
-      key_iv: before.key_iv,
-      key_wrapped: before.key_wrapped
-    });
+  await saveProfile({
+    key_salt: before.key_salt,
+    key_iv: before.key_iv,
+    key_wrapped: before.key_wrapped
+  });
 
   noteLock(before.key_wrapped);
 
@@ -12290,14 +12414,11 @@ async function createRecoveryCode() {
     await wrapDataKey(normaliseRecoveryCode(code));
 
   const { error } =
-    await supabaseClient
-      .from('profiles')
-      .upsert({
-        id: currentUser.id,
-        key_recovery_salt: lock.salt,
-        key_recovery_iv: lock.iv,
-        key_recovery_wrapped: lock.wrapped
-      });
+    await saveProfile({
+      key_recovery_salt: lock.salt,
+      key_recovery_iv: lock.iv,
+      key_recovery_wrapped: lock.wrapped
+    });
 
   if (error) throw error;
 
@@ -15647,7 +15768,14 @@ async function learnNow(userText, reply, chatId) {
   memory = data.memory;
   memoryTextarea.value = memory;
 
-  await saveMemory();
+  const saved = await saveMemory();
+
+  if (!saved) {
+    if (isCurrentChat(chatId)) {
+      showLearnedNote([], [], previous, 'I tried to remember that but could not save it. Check your connection.');
+    }
+    return;
+  }
 
   const added = (data.added || []).filter(Boolean);
   const removed = (data.removed || []).filter(Boolean);
@@ -15659,7 +15787,7 @@ async function learnNow(userText, reply, chatId) {
 }
 
 
-function showLearnedNote(added, removed, previous) {
+function showLearnedNote(added, removed, previous, problem = '') {
 
   const row = document.createElement('div');
   row.className = 'messageRow assistant learnedRow';
@@ -15670,9 +15798,12 @@ function showLearnedNote(added, removed, previous) {
   const text = document.createElement('span');
   text.className = 'learnedText';
   text.textContent =
-    added.length
+    problem ||
+    (added.length
       ? `Remembered: ${added.join('; ')}`
-      : `Forgot: ${removed.join('; ')}`;
+      : `Forgot: ${removed.join('; ')}`);
+
+  if (problem) note.classList.add('problem');
 
   const undo = document.createElement('button');
   undo.type = 'button';
@@ -15692,7 +15823,7 @@ function showLearnedNote(added, removed, previous) {
   });
 
   note.appendChild(text);
-  note.appendChild(undo);
+  if (!problem) note.appendChild(undo);
   row.appendChild(note);
 
   chat.appendChild(row);
@@ -16996,6 +17127,348 @@ document.addEventListener('keydown', event => {
 
 
 /* =====================================================
+   PEEKING ROBOT
+
+   Ten little routines. Each one rises from behind the top
+   edge of the message box, has a look, and hides again.
+   He shows up now and then, never while you are typing,
+   and not at all if the device asks for less motion.
+===================================================== */
+
+const PEEK_SVG = `
+<svg viewBox="0 0 64 60" aria-hidden="true">
+  <defs>
+    <linearGradient id="peekHead" x1="0" y1="0" x2="0.9" y2="1">
+      <stop offset="0" stop-color="#6cc8ff"/>
+      <stop offset="1" stop-color="#2a5fe6"/>
+    </linearGradient>
+    <linearGradient id="peekEar" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#4aa6ff"/>
+      <stop offset="1" stop-color="#2248c9"/>
+    </linearGradient>
+  </defs>
+  <g class="antenna">
+    <path d="M38 16 L40.5 6" stroke="#5ab8ff" stroke-width="3" stroke-linecap="round"/>
+    <circle cx="41" cy="5" r="4.2" fill="#8fdcff"/>
+    <circle cx="39.8" cy="3.8" r="1.3" fill="#e6f8ff"/>
+  </g>
+  <rect x="2.5" y="26" width="8" height="18" rx="4" fill="url(#peekEar)"/>
+  <rect x="53.5" y="26" width="8" height="18" rx="4" fill="url(#peekEar)"/>
+  <rect x="7" y="14" width="50" height="42" rx="16" fill="url(#peekHead)"/>
+  <rect x="8.5" y="15.5" width="47" height="39" rx="14.5" fill="none" stroke="#bfe9ff" stroke-opacity=".45" stroke-width="1.2"/>
+  <rect x="12" y="19.5" width="40" height="31" rx="12" fill="#05060d"/>
+  <g class="eyes">
+    <path class="eyeHappy left" d="M19.5 38 q5 -7 10 0" fill="none" stroke="#3fb8ff" stroke-opacity=".35" stroke-width="5.5" stroke-linecap="round"/>
+    <path class="eyeHappy left" d="M19.5 38 q5 -7 10 0" fill="none" stroke="#9fe6ff" stroke-width="3" stroke-linecap="round"/>
+    <path class="eyeHappy right" d="M34.5 38 q5 -7 10 0" fill="none" stroke="#3fb8ff" stroke-opacity=".35" stroke-width="5.5" stroke-linecap="round"/>
+    <path class="eyeHappy right" d="M34.5 38 q5 -7 10 0" fill="none" stroke="#9fe6ff" stroke-width="3" stroke-linecap="round"/>
+    <path class="eyeWink" d="M34.5 36 h10" fill="none" stroke="#9fe6ff" stroke-width="3" stroke-linecap="round"/>
+    <circle class="eyeOpen" cx="24.5" cy="35" r="4" fill="#9fe6ff"/>
+    <circle class="eyeOpen" cx="39.5" cy="35" r="4" fill="#9fe6ff"/>
+  </g>
+</svg>`;
+
+/* how far up he comes: hidden, eyes just over the edge, most of his face */
+const PEEK_HIDDEN = 110;
+const PEEK_EYES = 28;
+const PEEK_HIGH = 8;
+
+const PEEK_HAND_SVG = `
+<svg viewBox="0 0 18 30" aria-hidden="true">
+  <rect x="6" y="11" width="6" height="19" rx="3" fill="#2f6fe8"/>
+  <circle cx="9" cy="8.5" r="7" fill="#58b6ff"/>
+  <ellipse cx="3.2" cy="10.5" rx="2.4" ry="3.2" fill="#4aa6ff"/>
+  <circle cx="7" cy="6" r="2" fill="#bfe9ff" fill-opacity=".55"/>
+</svg>`;
+
+function peekPose(y, extra = '') {
+  return { transform: `translateY(${y}%) ${extra}`.trim() };
+}
+
+const peekRoutines = [
+
+  /* 1. a quick look and a blink */
+  async bot => {
+    await bot.move([peekPose(PEEK_HIDDEN), peekPose(PEEK_EYES)], 520, 'cubic-bezier(.2,.8,.3,1)');
+    await bot.wait(500);
+    await bot.blink();
+    await bot.wait(500);
+    await bot.move([peekPose(PEEK_EYES), peekPose(PEEK_HIDDEN)], 380, 'ease-in');
+  },
+
+  /* 2. peek and blink */
+  async bot => {
+    await bot.move([peekPose(PEEK_HIDDEN), peekPose(PEEK_EYES)], 560, 'cubic-bezier(.2,.8,.3,1)');
+    await bot.wait(500);
+    await bot.blink();
+    await bot.wait(350);
+    await bot.blink();
+    await bot.wait(450);
+    await bot.move([peekPose(PEEK_EYES), peekPose(PEEK_HIDDEN)], 400, 'ease-in');
+  },
+
+  /* 3. looks left, then right */
+  async bot => {
+    await bot.move([peekPose(PEEK_HIDDEN), peekPose(PEEK_EYES)], 560, 'cubic-bezier(.2,.8,.3,1)');
+    await bot.look(-3.5);
+    await bot.wait(650);
+    await bot.look(3.5);
+    await bot.wait(650);
+    await bot.look(0);
+    await bot.blink();
+    await bot.wait(200);
+    await bot.move([peekPose(PEEK_EYES), peekPose(PEEK_HIDDEN)], 380, 'ease-in');
+  },
+
+  /* 4. pops up high and gives a big wave */
+  async bot => {
+    await bot.move([peekPose(PEEK_HIDDEN), peekPose(PEEK_HIGH)], 560, 'cubic-bezier(.2,.8,.3,1)');
+    await bot.wave(3);
+    await bot.blink();
+    await bot.wait(250);
+    await bot.move([peekPose(PEEK_HIGH), peekPose(PEEK_HIDDEN)], 420, 'ease-in');
+  },
+
+  /* 5. antenna first, a wiggle, then the face */
+  async bot => {
+    await bot.move([peekPose(PEEK_HIDDEN), peekPose(66)], 450, 'ease-out');
+    await bot.wiggle();
+    await bot.move([peekPose(66), peekPose(PEEK_EYES)], 380, 'cubic-bezier(.2,.8,.3,1)');
+    await bot.wait(350);
+    await bot.blink();
+    await bot.wait(350);
+    await bot.move([peekPose(PEEK_EYES), peekPose(PEEK_HIDDEN)], 380, 'ease-in');
+  },
+
+  /* 6. the tilt from the logo, then the other way */
+  async bot => {
+    await bot.move([peekPose(PEEK_HIDDEN, 'rotate(12deg)'), peekPose(PEEK_EYES, 'rotate(12deg)')], 560, 'cubic-bezier(.2,.8,.3,1)');
+    await bot.wait(500);
+    await bot.move([peekPose(PEEK_EYES, 'rotate(12deg)'), peekPose(PEEK_EYES, 'rotate(-12deg)')], 520, 'ease-in-out');
+    await bot.blink();
+    await bot.wait(350);
+    await bot.move([peekPose(PEEK_EYES, 'rotate(-12deg)'), peekPose(PEEK_HIDDEN, 'rotate(0deg)')], 420, 'ease-in');
+  },
+
+  /* 7. spotted! eyes go wide and he ducks */
+  async bot => {
+    await bot.move([peekPose(PEEK_HIDDEN), peekPose(PEEK_EYES)], 700, 'ease-out');
+    await bot.wait(500);
+    bot.eyes('open');
+    await bot.wait(380);
+    await bot.move([peekPose(PEEK_EYES), peekPose(PEEK_HIDDEN)], 180, 'ease-in');
+    bot.eyes('happy');
+  },
+
+  /* 8. a double take */
+  async bot => {
+    await bot.move([peekPose(PEEK_HIDDEN), peekPose(PEEK_EYES)], 450, 'cubic-bezier(.2,.8,.3,1)');
+    await bot.wait(300);
+    await bot.move([peekPose(PEEK_EYES), peekPose(PEEK_HIDDEN)], 260, 'ease-in');
+    await bot.wait(350);
+    bot.eyes('open');
+    await bot.move([peekPose(PEEK_HIDDEN), peekPose(PEEK_HIGH)], 280, 'cubic-bezier(.3,1.4,.5,1)');
+    await bot.wait(700);
+    bot.eyes('happy');
+    await bot.wait(300);
+    await bot.move([peekPose(PEEK_HIGH), peekPose(PEEK_HIDDEN)], 420, 'ease-in');
+  },
+
+  /* 9. pops up in one place, then another, and waves */
+  async bot => {
+    bot.place('left');
+    await bot.move([peekPose(PEEK_HIDDEN), peekPose(PEEK_EYES)], 420, 'cubic-bezier(.2,.8,.3,1)');
+    await bot.wait(550);
+    await bot.move([peekPose(PEEK_EYES), peekPose(PEEK_HIDDEN)], 300, 'ease-in');
+    await bot.wait(300);
+    bot.place('middle');
+    await bot.move([peekPose(PEEK_HIDDEN), peekPose(PEEK_EYES)], 420, 'cubic-bezier(.2,.8,.3,1)');
+    await bot.wave(2);
+    await bot.move([peekPose(PEEK_EYES), peekPose(PEEK_HIDDEN)], 360, 'ease-in');
+  },
+
+  /* 10. a cheeky wink and a wave */
+  async bot => {
+    await bot.move([peekPose(PEEK_HIDDEN), peekPose(PEEK_HIGH)], 620, 'cubic-bezier(.2,.8,.3,1)');
+    await bot.wait(450);
+    bot.eyes('wink');
+    await bot.wave(2);
+    bot.eyes('happy');
+    await bot.wait(250);
+    await bot.move([peekPose(PEEK_HIGH), peekPose(PEEK_HIDDEN)], 420, 'ease-in');
+  }
+
+];
+
+
+function createPeekBot(card) {
+
+  if (!card || card.querySelector('.peekStage')) return null;
+
+  const stage = document.createElement('div');
+  stage.className = 'peekStage';
+
+  const bot = document.createElement('div');
+  bot.className = 'peekBot';
+  bot.innerHTML = PEEK_SVG;
+
+  const hand = document.createElement('div');
+  hand.className = 'peekHand';
+  hand.innerHTML = PEEK_HAND_SVG;
+
+  stage.appendChild(bot);
+  stage.appendChild(hand);
+  card.appendChild(stage);
+
+  const eyes = bot.querySelector('.eyes');
+  const antenna = bot.querySelector('.antenna');
+
+  const api = {
+
+    busy: false,
+    last: -1,
+
+    wait: ms => new Promise(resolve => setTimeout(resolve, ms)),
+
+    move(frames, duration, easing) {
+      return bot.animate(frames, { duration, easing, fill: 'forwards' }).finished.catch(() => {});
+    },
+
+    place(where) {
+      const width = card.clientWidth || 300;
+      const spots = {
+        left: 18,
+        middle: Math.round(width * 0.42),
+        right: Math.max(18, width - 98)
+      };
+      stage.style.left = `${spots[where] ?? spots.left}px`;
+    },
+
+    eyes(kind) {
+      bot.classList.toggle('eyesOpen', kind === 'open');
+      bot.classList.toggle('winkRight', kind === 'wink');
+    },
+
+    async blink() {
+      await eyes.animate(
+        [{ transform: 'scaleY(1)' }, { transform: 'scaleY(.1)' }, { transform: 'scaleY(1)' }],
+        { duration: 180, easing: 'ease-in-out' }
+      ).finished.catch(() => {});
+    },
+
+    async look(x) {
+      eyes.style.transform = `translateX(${x}px)`;
+      await api.wait(180);
+    },
+
+    /* a little mitten pops up beside him and waves */
+    async wave(times = 2) {
+      await hand.animate(
+        [{ transform: 'translateY(110%)' }, { transform: 'translateY(8%)' }],
+        { duration: 260, easing: 'cubic-bezier(.3,1.3,.5,1)', fill: 'forwards' }
+      ).finished.catch(() => {});
+      const swing = [];
+      for (let i = 0; i < times; i += 1) {
+        swing.push(
+          { transform: 'translateY(8%) rotate(0deg)' },
+          { transform: 'translateY(8%) rotate(24deg)' },
+          { transform: 'translateY(8%) rotate(-14deg)' }
+        );
+      }
+      swing.push({ transform: 'translateY(8%) rotate(0deg)' });
+      await hand.animate(swing, { duration: 360 * times, easing: 'ease-in-out', fill: 'forwards' }).finished.catch(() => {});
+      await hand.animate(
+        [{ transform: 'translateY(8%)' }, { transform: 'translateY(110%)' }],
+        { duration: 220, easing: 'ease-in', fill: 'forwards' }
+      ).finished.catch(() => {});
+    },
+
+    async wiggle() {
+      await antenna.animate(
+        [
+          { transform: 'rotate(0deg)' },
+          { transform: 'rotate(-16deg)' },
+          { transform: 'rotate(14deg)' },
+          { transform: 'rotate(-8deg)' },
+          { transform: 'rotate(0deg)' }
+        ],
+        { duration: 650, easing: 'ease-in-out' }
+      ).finished.catch(() => {});
+    },
+
+    async play(index) {
+
+      if (api.busy) return;
+
+      api.busy = true;
+
+      let pick = index;
+
+      if (typeof pick !== 'number') {
+        do {
+          pick = Math.floor(Math.random() * peekRoutines.length);
+        } while (pick === api.last && peekRoutines.length > 1);
+      }
+
+      api.last = pick;
+
+      /* start from a clean, hidden spot on the left */
+      api.eyes('happy');
+      eyes.style.transform = '';
+      api.place('left');
+
+      try {
+        await peekRoutines[pick](api);
+      } finally {
+        bot.getAnimations().forEach(animation => animation.cancel());
+        hand.getAnimations().forEach(animation => animation.cancel());
+        api.eyes('happy');
+        eyes.style.transform = '';
+        api.busy = false;
+      }
+
+    }
+
+  };
+
+  return api;
+
+}
+
+
+/* now and then, never in the way */
+(function startPeeking() {
+
+  const card = document.querySelector('.composer');
+
+  if (!card || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
+
+  const peekBot = createPeekBot(card);
+
+  if (!peekBot) return;
+
+  const shouldSkip = () =>
+    document.hidden ||
+    !card.offsetParent ||
+    (messageInput.value || '').trim().length > 0 ||
+    document.querySelector('.voiceScreen.show, .profileOverlay.show, .adminOverlay.show, .payOverlay.show');
+
+  const next = delay => setTimeout(async () => {
+
+    if (!shouldSkip()) {
+      try { await peekBot.play(); } catch {}
+    }
+
+    next(60000 + Math.random() * 60000);
+
+  }, delay);
+
+  next(15000 + Math.random() * 10000);
+
+})();
+
+
+/* =====================================================
    SEND BUTTON
 ===================================================== */
 
@@ -17670,7 +18143,7 @@ window.addEventListener('online', () => {
    clearing anything by hand.
 ===================================================== */
 
-const APP_VERSION = '2026-09-21-21';
+const APP_VERSION = '2026-09-21-22';
 
 const RELOAD_FLAG = 'nastivee_reloaded_for';
 
