@@ -130,6 +130,17 @@ a { color: var(--accent); }
   color: #f0cc95;
 }
 
+.preview {
+  margin: 22px 0 0;
+  padding: 10px 14px;
+  border: 1px solid #6b4a22;
+  border-radius: 12px;
+  background: #1d1405;
+  color: #f0cc95;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
 .fill {
   padding: 1px 7px;
   border-radius: 6px;

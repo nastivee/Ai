@@ -16,9 +16,14 @@ and cannot get in. They will not know why.
 Emails, SMTP Settings. Resend, Postmark and Brevo all have free
 tiers big enough for a launch. You will need:
 
-- to verify `nastiv.ee` with the provider (a few DNS records, they
-  walk you through it), so mail comes from `hello@nastiv.ee` rather
-  than landing in spam
+- **`nastiv.ee` to exist first.** Checked 21 September 2026 against
+  two public resolvers: the domain does not resolve at all, so it is
+  either not registered, or registered with no nameservers set. Until
+  that is fixed, nothing can be sent from `hello@nastiv.ee`, and
+  `privacy@nastiv.ee` in the legal pages cannot receive mail either
+- then to verify `nastiv.ee` with the provider (a few DNS records,
+  they walk you through it), so mail comes from `hello@nastiv.ee`
+  rather than landing in spam
 - the provider's SMTP host, port, username and password, pasted
   into that Supabase screen
 
@@ -75,6 +80,7 @@ build showed it as http, which Stripe refuses.
 - swap `sk_test_` for the live `sk_live_` key on Render
 - create a **new** webhook endpoint in live mode, it has its own
   `whsec_`
-- fill in the company name, number and address blanks in
-  `privacy.html` and `terms.html`
+- replace the sample company details in `privacy.html` and
+  `terms.html` (highlighted, with a preview banner at the top) and
+  delete the `.preview` banner
 - switch the holding page off in Admin
