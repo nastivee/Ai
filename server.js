@@ -187,8 +187,15 @@ const SETTINGS_FALLBACK = {
   pack_price_pence: PACK_PRICE_PENCE,
   pack_images: PACK_IMAGES,
   coupon_code: COUPON_CODE,
-  starter_credits: Number(process.env.STARTER_CREDITS || 0)
+  starter_credits: Number(process.env.STARTER_CREDITS || 0),
+  /* how often the robot peeks over the message box, 0 is never */
+  peek_seconds: 30
 };
+
+function peekSeconds(settings) {
+  const value = Number(settings?.peek_seconds);
+  return Number.isFinite(value) && value >= 0 ? value : 30;
+}
 
 let settingsCache = null;
 let settingsReadAt = 0;
@@ -1103,7 +1110,8 @@ app.get('/api/account', async (req, res) => {
       packPricePence: settings.pack_price_pence,
       canBuy: paywallReady(),
       admin: false,
-      holding: settings.holding_mode !== false
+      holding: settings.holding_mode !== false,
+      peekSeconds: peekSeconds(settings)
     });
 
   }
@@ -1136,7 +1144,8 @@ app.get('/api/account', async (req, res) => {
     canBuy: paywallReady(),
     admin,
     alerts: admin ? await openAlertCount() : 0,
-    holding: settings.holding_mode !== false
+    holding: settings.holding_mode !== false,
+    peekSeconds: peekSeconds(settings)
   });
 
 });
@@ -1775,6 +1784,31 @@ app.post('/api/admin/settings', async (req, res) => {
     }
 
     patch.starter_credits = starter;
+
+  }
+
+  if (body.peek_seconds !== undefined) {
+
+    const seconds =
+      Math.round(Number(body.peek_seconds));
+
+    if (!Number.isFinite(seconds) || seconds < 0 || seconds > 3600) {
+
+      return res.status(400).json({
+        error: 'The robot timer must be between 0 and 3600 seconds.'
+      });
+
+    }
+
+    if (seconds > 0 && seconds < 5) {
+
+      return res.status(400).json({
+        error: 'Give him at least 5 seconds between peeks, or 0 to switch him off.'
+      });
+
+    }
+
+    patch.peek_seconds = seconds;
 
   }
 

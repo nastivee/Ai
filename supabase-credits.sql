@@ -294,3 +294,14 @@ alter table public.credit_events add column if not exists pence integer;
 -- The dashboard counts by date.
 create index if not exists messages_created_idx on public.messages (created_at);
 create index if not exists credit_events_created_idx on public.credit_events (created_at);
+
+
+-- =========================================================
+-- ROBOT TIMER
+-- How often the little robot peeks over the message box,
+-- in seconds, for everyone. 0 switches him off. Set from
+-- the admin panel (Test features).
+-- =========================================================
+
+alter table public.app_settings
+  add column if not exists peek_seconds integer not null default 30;
