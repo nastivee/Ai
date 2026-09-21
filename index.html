@@ -200,7 +200,7 @@ button {
   inset: 0;
   z-index: 0;
   background:
-    radial-gradient(circle at 50% 20%, #5c1222 0%, #210a11 35%, #12060a 75%);
+    radial-gradient(circle at 50% 20%, #3d1a24 0%, #1a0d12 35%, #0f080b 75%);
   opacity: 0;
   transition: opacity .45s var(--ease);
   pointer-events: none;
@@ -225,33 +225,33 @@ button {
 }
 
 .authScreen.signup .authCard {
-  border-color: rgba(220, 38, 38, .30);
-  background: rgba(34, 10, 16, .92);
+  border-color: rgba(176, 72, 90, .24);
+  background: rgba(26, 13, 18, .92);
   box-shadow: 0 25px 80px rgba(0, 0, 0, .45),
-              0 0 0 1px rgba(220, 38, 38, .06);
+              0 0 0 1px rgba(176, 72, 90, .05);
 }
 
 .authScreen.signup .logoLarge span {
-  color: #fb7185;
+  color: #d98a96;
 }
 
 .authScreen.signup .authInput {
-  border-color: #4a1c28;
-  background: #1a080d;
+  border-color: #3a222a;
+  background: #150b0f;
 }
 
 .authScreen.signup .authInput:focus {
-  border-color: #dc2626;
+  border-color: #a3384a;
 }
 
 .authScreen.signup .authButton {
-  background: linear-gradient(135deg, #9f1239, #dc2626);
+  background: linear-gradient(135deg, #7a2334, #a3384a);
 }
 
 .authScreen.signup .authSwitch button,
 .authScreen.signup .authForgot button,
 .authScreen.signup .authLegal a {
-  color: #fda4af;
+  color: #e0a3ad;
 }
 
 .authScreen.signup .passwordToggle:hover {
@@ -832,9 +832,12 @@ button {
    ::before, and sharing it once set the watermark to full
    opacity in Smart mode.
 
-   Smart turns the chat a deep red, so there is no doubt
-   which gear it is in. The glow is a layer that fades,
-   because gradients cannot be animated directly. */
+   Smart turns the whole site a muted wine red, sidebar and
+   buttons included, so there is no doubt which gear it is
+   in, without shouting. Colours come from the variables
+   where the site uses them, and are set directly where it
+   does not. The chat glow is a layer that fades, because
+   gradients cannot be animated directly. */
 
 .main::after {
   content: '';
@@ -843,31 +846,50 @@ button {
   /* below the watermark (z 0) and the chat (z 1) */
   z-index: -1;
   background:
-    radial-gradient(ellipse 75% 55% at 50% 0%, rgba(220,38,38,.30), transparent 70%),
-    radial-gradient(ellipse 90% 50% at 50% 100%, rgba(159,18,57,.18), transparent 70%),
-    #16060b;
+    radial-gradient(ellipse 75% 55% at 50% 0%, rgba(176,48,68,.15), transparent 70%),
+    radial-gradient(ellipse 90% 50% at 50% 100%, rgba(128,30,52,.08), transparent 70%),
+    #0f080b;
   opacity: 0;
   transition: opacity .7s var(--ease);
   pointer-events: none;
+}
+
+body.smartMode {
+  --bg: #0e080a;
+  --panel: #130b0e;
+  --panel-2: #1a0f13;
+  --line: #2e1b21;
+  --line-soft: #24151a;
+  --brand: #b0485a;
+  --brand-2: #d17f8b;
+  background: #0f080b;
 }
 
 body.smartMode .main::after {
   opacity: 1;
 }
 
+/* everything that changes, changes gently */
+.sidebar,
 .composer,
 .sendButton,
 .modeButton,
-.messageRow.user .messageBubble {
+.newChatButton,
+.searchToggle,
+.profileButton,
+.logoutButton,
+.adminButton,
+.chatMenuButton,
+.headerStatus,
+.toolButton,
+.chatHistoryItem,
+.messageRow.user .messageBubble,
+.messageRow.assistant .messageBubble {
   transition:
     border-color .5s var(--ease),
     box-shadow .5s var(--ease),
-    background-color .5s var(--ease);
-}
-
-body.smartMode .composer {
-  border-color: #5a2232;
-  background: #1c0a10;
+    background-color .5s var(--ease),
+    color .5s var(--ease);
 }
 
 .header,
@@ -875,33 +897,77 @@ body.smartMode .composer {
   transition: background .7s var(--ease);
 }
 
+/* the solid actions */
+body.smartMode .newChatButton,
+body.smartMode .sendButton,
+body.smartMode .modeButton.active,
+body.smartMode .toolButton.imageModeActive {
+  background: linear-gradient(135deg, #7a2334, #a3384a);
+  box-shadow: 0 8px 20px rgba(163, 56, 74, .20);
+}
+
+/* the outlined ones */
+body.smartMode .searchToggle,
+body.smartMode .logoutButton {
+  border-color: #3a2229;
+}
+
+body.smartMode .profileButton {
+  border-color: #4a2831;
+  background: linear-gradient(135deg, #25131a, #1a0d12);
+}
+
+body.smartMode .profileButtonIcon {
+  color: #d98a96;
+}
+
+body.smartMode .adminButton,
+body.smartMode .chatMenuButton,
+body.smartMode .headerStatus {
+  border-color: #2e1b21;
+  background: #170c10;
+}
+
+body.smartMode .toolButton {
+  border-color: #4a2831;
+  background: #22121a;
+}
+
+body.smartMode .toolButton:hover {
+  background: #2c1720;
+}
+
+body.smartMode .chatHistoryItem.active {
+  border-color: #3d2129;
+  background: #211117;
+}
+
+/* the chat */
 body.smartMode .header {
-  background: rgba(22, 6, 11, .85);
-  border-bottom-color: #3a1520;
+  background: rgba(15, 8, 11, .85);
 }
 
 body.smartMode .composerArea {
-  background: linear-gradient(to top, #16060b 75%, transparent);
+  background: linear-gradient(to top, #0f080b 75%, transparent);
+}
+
+body.smartMode .composer {
+  border-color: #3e222a;
+  background: #170c10;
 }
 
 body.smartMode .composer:focus-within {
-  border-color: #9b2c42;
-}
-
-body.smartMode .sendButton,
-body.smartMode .modeButton.active {
-  background: linear-gradient(135deg, #9f1239, #dc2626);
-  box-shadow: 0 8px 22px rgba(220,38,38,.30);
+  border-color: #7a3442;
 }
 
 body.smartMode .messageRow.user .messageBubble {
-  background: linear-gradient(135deg, #881337, #c2263a);
-  box-shadow: 0 8px 24px rgba(220,38,38,.20);
+  background: linear-gradient(135deg, #6e2231, #983447);
+  box-shadow: 0 8px 22px rgba(152, 52, 71, .16);
 }
 
 body.smartMode .messageRow.assistant .messageBubble {
-  border-color: #3a1822;
-  background: #1d0c12;
+  border-color: #2e1b21;
+  background: #180d11;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -16020,7 +16086,7 @@ window.addEventListener('online', () => {
    clearing anything by hand.
 ===================================================== */
 
-const APP_VERSION = '2026-09-21-11';
+const APP_VERSION = '2026-09-21-12';
 
 const RELOAD_FLAG = 'nastivee_reloaded_for';
 
