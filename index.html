@@ -4832,6 +4832,54 @@ body .sidebarFoot {
   background: #4a1d27;
   color: #ffd2d2;
 }
+
+/* =====================================================
+   REPLY TOOLS: copy and try again, always there, sitting
+   on the bottom left edge of each reply.
+===================================================== */
+
+body .bubbleWrap {
+  padding-bottom: 14px;
+}
+
+body .replyTools,
+body .bubbleWrap:hover .replyTools {
+  top: auto;
+  right: auto;
+  bottom: 1px;
+  left: 12px;
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+}
+
+body .replyTool {
+  border: 1px solid transparent;
+  background:
+    linear-gradient(var(--mute-fill), var(--mute-fill)) padding-box,
+    linear-gradient(var(--mute-line), var(--mute-line)) border-box;
+  color: var(--mute-text);
+  box-shadow: none;
+}
+
+body .replyTool:hover {
+  background:
+    linear-gradient(var(--mute-fill), var(--mute-fill)) padding-box,
+    var(--edge) border-box;
+  color: #fff;
+}
+
+body .replyTool.done {
+  color: #a78bfa;
+}
+
+/* search takes 15% of the top row, New chat the rest */
+body .searchToggle,
+body.smartMode .searchToggle {
+  flex: 0 0 15%;
+  width: auto;
+  min-width: 40px;
+}
 </style>
 </head>
 
@@ -19083,7 +19131,7 @@ window.addEventListener('online', () => {
    clearing anything by hand.
 ===================================================== */
 
-const APP_VERSION = '2026-09-22-06';
+const APP_VERSION = '2026-09-22-07';
 
 const RELOAD_FLAG = 'nastivee_reloaded_for';
 
