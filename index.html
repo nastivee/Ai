@@ -513,26 +513,65 @@ button {
 }
 
 .newChatButton {
+  --nc-edge: linear-gradient(135deg, #a78bfa, #7c3aed 45%, #38bdf8);
+  --nc-fill: #1b1330;
   flex: 1 1 auto;
   min-width: 0;
   height: 46px;
-  padding: 0 14px;
+  padding: 0 14px 0 8px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 11px;
+  white-space: nowrap;
+  border-radius: 14px;
+  border: 1.5px solid transparent;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,0)) padding-box,
+    linear-gradient(var(--nc-fill), var(--nc-fill)) padding-box,
+    var(--nc-edge) border-box;
+  color: #f3eefa;
+  font-weight: 700;
+  font-size: 14.5px;
+  letter-spacing: .2px;
+  cursor: pointer;
+  transition: transform .18s var(--ease), background .3s var(--ease);
+}
+
+.newChatIcon {
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  white-space: nowrap;
-  border-radius: 13px;
-  border: 0;
-  background: linear-gradient(135deg, #7c3aed, #9333ea);
-  color: white;
-  font-weight: 700;
-  font-size: 14px;
-  letter-spacing: .1px;
+  background: var(--nc-edge);
+  color: #fff;
+  transition: transform .25s var(--ease);
+}
+
+.newChatLabel {
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .newChatButton:hover {
-  filter: brightness(1.08);
+  --nc-fill: #231940;
+  transform: translateY(-1px);
+}
+
+.newChatButton:hover .newChatIcon {
+  transform: rotate(90deg);
+}
+
+.newChatButton:active {
+  transform: translateY(0) scale(.98);
+}
+
+.newChatButton:focus-visible {
+  outline: 2px solid #a78bfa;
+  outline-offset: 2px;
 }
 
 .searchToggle {
@@ -980,7 +1019,16 @@ body.smartMode .main::after {
 }
 
 /* the solid actions */
-body.smartMode .newChatButton,
+body.smartMode .newChatButton {
+  --nc-edge: linear-gradient(135deg, #93c5fd, #3d69b5 45%, #38bdf8);
+  --nc-fill: #121a2c;
+  box-shadow: none;
+}
+
+body.smartMode .newChatButton:hover {
+  --nc-fill: #172238;
+}
+
 body.smartMode .sendButton,
 body.smartMode .modeButton.active,
 body.smartMode .toolButton.imageModeActive {
@@ -5491,14 +5539,15 @@ body.smartMode .voiceOrb {
           id="newChatButton"
           type="button"
         >
-          <svg viewBox="0 0 24 24" width="17" height="17" fill="none"
-               stroke="currentColor" stroke-width="2.2"
-               stroke-linecap="round" stroke-linejoin="round"
-               aria-hidden="true">
-            <line x1="12" y1="5" x2="12" y2="19"></line>
-            <line x1="5" y1="12" x2="19" y2="12"></line>
-          </svg>
-          New chat
+          <span class="newChatIcon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none"
+                 stroke="currentColor" stroke-width="2.6"
+                 stroke-linecap="round" stroke-linejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+          </span>
+          <span class="newChatLabel">New chat</span>
         </button>
 
         <button
@@ -18376,7 +18425,7 @@ window.addEventListener('online', () => {
    clearing anything by hand.
 ===================================================== */
 
-const APP_VERSION = '2026-09-21-26';
+const APP_VERSION = '2026-09-21-27';
 
 const RELOAD_FLAG = 'nastivee_reloaded_for';
 
