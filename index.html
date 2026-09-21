@@ -4606,11 +4606,31 @@ body .titleButton:hover,
 body .titleButton.open,
 body.smartMode .titleButton:hover,
 body.smartMode .titleButton.open {
-  background:
-    linear-gradient(var(--mute-fill), var(--mute-fill)) padding-box,
-    var(--edge) border-box;
+  border-color: transparent;
+  background: rgba(255, 255, 255, .06);
   color: #fff;
   transform: none;
+}
+
+/*
+  The header sits above the conversation, so the menu that
+  drops from the title is on top and can be tapped. Before,
+  the chat area painted over it and swallowed the clicks.
+*/
+.header {
+  position: relative;
+  z-index: 30;
+}
+
+body .chatMenuItem {
+  cursor: pointer;
+  transition: background .15s var(--ease), color .15s var(--ease);
+}
+
+body .chatMenuItem:hover,
+body .chatMenuItem:focus-visible {
+  background: rgba(255, 255, 255, .07);
+  color: #fff;
 }
 
 .titleChevron {
@@ -4701,6 +4721,75 @@ body .deleteChatButton:active {
   color: #ff7a7a;
   background: rgba(255, 90, 90, .1);
   transform: none;
+}
+
+/* =====================================================
+   SIDEBAR FOOT
+   Version just above the line, then one row: settings
+   cog, My profile, log out. Privacy and Terms centred.
+===================================================== */
+
+.versionRow {
+  padding: 0 18px 7px;
+  text-align: left;
+}
+
+body .accountRow {
+  display: flex;
+  gap: 7px;
+  align-items: stretch;
+}
+
+body .adminButton,
+body.smartMode .adminButton {
+  display: none;
+  position: relative;
+  flex: 0 0 15%;
+  width: auto;
+  min-width: 40px;
+  height: 46px;
+  min-height: 0;
+  margin: 0;
+  padding: 0 10px;
+  align-items: center;
+  justify-content: center;
+}
+
+body .adminButton.show {
+  display: flex;
+}
+
+body .profileButton,
+body.smartMode .profileButton {
+  flex: 1 1 70%;
+  min-width: 0;
+}
+
+body .logoutButton,
+body.smartMode .logoutButton {
+  flex: 0 0 15%;
+  min-width: 40px;
+  padding: 0 10px;
+}
+
+/* the alert dot sits on the cog's corner, inside the button */
+body .adminButton .adminAlertDot {
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  margin: 0;
+}
+
+.adminButton svg {
+  transition: transform .4s var(--ease);
+}
+
+.adminButton:hover svg {
+  transform: rotate(60deg);
+}
+
+body .sidebarFoot {
+  justify-content: center;
 }
 </style>
 </head>
@@ -5883,6 +5972,14 @@ body .deleteChatButton:active {
 
     </div>
 
+    <div class="versionRow">
+      <span
+        class="versionTag"
+        id="versionTag"
+        title="App version"
+      ></span>
+    </div>
+
     <div class="sidebarBottom">
 
       <div class="guestNotice" id="guestNotice">
@@ -5893,23 +5990,26 @@ body .deleteChatButton:active {
       </div>
 
 
-      <button
-        class="adminButton"
-        id="adminButton"
-        type="button"
-      >
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-             stroke="currentColor" stroke-width="2"
-             stroke-linecap="round" stroke-linejoin="round"
-             aria-hidden="true">
-          <path d="M12 2 4 6v6c0 5 3.4 8.6 8 10 4.6-1.4 8-5 8-10V6Z"></path>
-          <polyline points="9 12 11 14 15 10"></polyline>
-        </svg>
-        Admin
-        <span class="adminAlertDot" id="adminAlertDot" aria-hidden="true"></span>
-      </button>
+
 
       <div class="accountRow">
+
+        <button
+          class="adminButton"
+          id="adminButton"
+          type="button"
+          title="Admin settings"
+          aria-label="Admin settings"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round"
+               aria-hidden="true">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
+          <span class="adminAlertDot" id="adminAlertDot" aria-hidden="true"></span>
+        </button>
 
         <button
           class="profileButton"
@@ -5952,12 +6052,6 @@ body .deleteChatButton:active {
 
         <a class="footLink" href="./terms.html" target="_blank"
            rel="noopener">Terms</a>
-
-        <span
-          class="versionTag"
-          id="versionTag"
-          title="App version"
-        ></span>
 
       </div>
 
@@ -18904,7 +18998,7 @@ window.addEventListener('online', () => {
    clearing anything by hand.
 ===================================================== */
 
-const APP_VERSION = '2026-09-22-03';
+const APP_VERSION = '2026-09-22-05';
 
 const RELOAD_FLAG = 'nastivee_reloaded_for';
 
