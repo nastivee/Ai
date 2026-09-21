@@ -2287,6 +2287,53 @@ async function findUserByEmail(email) {
 // CHAT
 // =====================================================
 
+
+/*
+  If the account cannot use the chosen model (not enabled
+  yet, or a typo in a setting), fall back to the previous
+  one rather than leaving everyone without replies.
+*/
+const FALLBACK_CHAT_MODEL = 'gpt-4o-mini';
+
+async function createReply(payload) {
+
+  try {
+
+    return await openai.chat.completions.create(payload);
+
+  } catch (error) {
+
+    const status = error?.status;
+    const text = String(error?.message || '');
+
+    const modelProblem =
+      (status === 404 || status === 400 || status === 403) &&
+      /model|reasoning_effort|does not exist|not have access/i.test(text);
+
+    if (!modelProblem || payload.model === FALLBACK_CHAT_MODEL) {
+      throw error;
+    }
+
+    console.error('CHAT MODEL REFUSED, FALLING BACK:', text);
+
+    raiseAlert(
+      'chat model fallback',
+      'medium',
+      `${payload.model} was refused, replies are using ${FALLBACK_CHAT_MODEL}.`,
+      text
+    );
+
+    const { reasoning_effort, ...rest } = payload;
+
+    return openai.chat.completions.create({
+      ...rest,
+      model: FALLBACK_CHAT_MODEL
+    });
+
+  }
+
+}
+
 app.post('/api/chat', async (req, res) => {
 
   try {
@@ -2403,15 +2450,27 @@ ${JSON.stringify(memory, null, 2)}
       for harder questions, so it is chosen per chat.
     */
 
+    /*
+      Back on the day one model, GPT-5.6. Fast thinks
+      briefly so replies start quickly, Smart thinks harder.
+      Both can be changed on Render without a deploy.
+    */
     const model =
       mode === 'smart'
-        ? (process.env.SMART_MODEL || 'gpt-4o')
-        : (process.env.FAST_MODEL || 'gpt-4o-mini');
+        ? (process.env.SMART_MODEL || 'gpt-5.6')
+        : (process.env.FAST_MODEL || 'gpt-5.6');
+
+    const effort =
+      mode === 'smart'
+        ? (process.env.SMART_EFFORT || 'medium')
+        : (process.env.FAST_EFFORT || 'low');
 
 
     const payload = {
 
       model,
+
+      reasoning_effort: effort,
 
       messages: [
         {
@@ -2444,7 +2503,7 @@ ${JSON.stringify(memory, null, 2)}
       try {
 
         const completion =
-          await openai.chat.completions.create({
+          await createReply({
             ...payload,
             stream: true
           });
@@ -2505,7 +2564,7 @@ ${JSON.stringify(memory, null, 2)}
 
 
     const response =
-      await openai.chat.completions.create(payload);
+      await createReply(payload);
 
     const reply =
       response.choices?.[0]?.message?.content ||
