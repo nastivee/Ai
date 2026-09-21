@@ -4932,13 +4932,15 @@ body.smartMode .voiceOrb {
 
         <div class="adminField">
           <label class="adminLabel" for="adminPeek">
-            Robot peeks about every (seconds)
+            Robot peeks every (seconds)
           </label>
           <input class="adminInput" id="adminPeek" type="number"
                  min="0" max="3600" step="1" inputmode="numeric">
           <div class="adminHint">
-            For everyone. Each gap varies a little so it never feels
-            mechanical. 0 switches him off.
+            For everyone. Each gap is a random time between this and
+            ten seconds more, so 30 means every 30 to 40 seconds.
+            All the routines play once, in a random order, before
+            any repeat. 0 switches him off.
           </div>
         </div>
 
@@ -14792,7 +14794,7 @@ document
         data.volatile
           ? 'Working now, but not saved to the database yet, so it goes back to 30 seconds if the server restarts. ' +
             'Run the robot timer SQL in Supabase to make it stick.'
-          : (seconds === 0 ? 'Saved. The robot is off for everyone.' : `Saved. He peeks about every ${seconds} seconds.`),
+          : (seconds === 0 ? 'Saved. The robot is off for everyone.' : `Saved. He peeks every ${seconds} to ${seconds + 10} seconds.`),
         !data.volatile
       );
 
@@ -17829,8 +17831,8 @@ let restartPeeking = null;
   const gap = () => {
     const seconds = Number(account?.peekSeconds ?? 30);
     if (!Number.isFinite(seconds) || seconds <= 0) return null;
-    /* vary each gap by about a third either way */
-    return seconds * 1000 * (0.7 + Math.random() * 0.6);
+    /* somewhere between the set time and ten seconds after it */
+    return (seconds + Math.random() * 10) * 1000;
   };
 
   const shouldSkip = () =>
@@ -17934,7 +17936,7 @@ function paintTestFeatures() {
     note.textContent =
       `Video ${featureHidden('video') ? 'hidden' : 'showing'}, ` +
       `voice ${featureHidden('voice') ? 'hidden' : 'showing'}, ` +
-      (peek > 0 ? `robot every ${peek}s` : 'robot off');
+      (peek > 0 ? `robot every ${peek} to ${peek + 10}s` : 'robot off');
   }
 
 }
@@ -18627,7 +18629,7 @@ window.addEventListener('online', () => {
    clearing anything by hand.
 ===================================================== */
 
-const APP_VERSION = '2026-09-21-29';
+const APP_VERSION = '2026-09-21-30';
 
 const RELOAD_FLAG = 'nastivee_reloaded_for';
 
