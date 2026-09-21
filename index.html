@@ -4474,6 +4474,101 @@ body.smartMode .voiceOrb {
   }
 }
 
+
+/* =====================================================
+   MUTED BUTTONS (plain hairline)
+
+   The bright buttons (New chat, Fast/Smart, Send) carry the
+   gradient edge. Everything else is quiet: a thin plain
+   border and soft text, and the gradient edge fades in only
+   on hover.
+===================================================== */
+
+:root {
+  --mute-fill: #150f21;
+  --mute-line: #2c2340;
+  --mute-text: #b4a8c6;
+}
+
+body.smartMode {
+  --mute-fill: #0f1522;
+  --mute-line: #1f2a3d;
+  --mute-text: #a9b6cc;
+}
+
+body .searchToggle,
+body .chatMenuButton,
+body .headerStatus,
+body .adminButton,
+body .profileButton,
+body .logoutButton,
+body .toolButton:not(.imageModeActive),
+body.smartMode .searchToggle,
+body.smartMode .chatMenuButton,
+body.smartMode .headerStatus,
+body.smartMode .adminButton,
+body.smartMode .profileButton,
+body.smartMode .logoutButton,
+body.smartMode .toolButton:not(.imageModeActive) {
+  border: 1px solid transparent;
+  background:
+    linear-gradient(var(--mute-fill), var(--mute-fill)) padding-box,
+    linear-gradient(var(--mute-line), var(--mute-line)) border-box;
+  color: var(--mute-text);
+  box-shadow: none;
+  transition:
+    color .2s var(--ease),
+    background .3s var(--ease),
+    transform .18s var(--ease),
+    padding .18s var(--ease);
+}
+
+body .searchToggle:hover,
+body .searchToggle.open,
+body .chatMenuButton:hover,
+body .headerStatus:hover,
+body .adminButton:hover,
+body .profileButton:hover,
+body .logoutButton:hover,
+body .toolButton:not(.imageModeActive):hover,
+body.smartMode .searchToggle:hover,
+body.smartMode .searchToggle.open,
+body.smartMode .chatMenuButton:hover,
+body.smartMode .headerStatus:hover,
+body.smartMode .adminButton:hover,
+body.smartMode .profileButton:hover,
+body.smartMode .logoutButton:hover,
+body.smartMode .toolButton:not(.imageModeActive):hover {
+  background:
+    linear-gradient(var(--mute-fill), var(--mute-fill)) padding-box,
+    var(--edge) border-box;
+  color: #fff;
+}
+
+body .searchToggle:hover,
+body .chatMenuButton:hover,
+body .adminButton:hover,
+body .profileButton:hover,
+body .logoutButton:hover,
+body .toolButton:not(.imageModeActive):hover {
+  transform: translateY(-1px);
+}
+
+body .profileButtonIcon,
+body.smartMode .profileButtonIcon {
+  color: inherit;
+}
+
+.searchToggle:focus-visible,
+.chatMenuButton:focus-visible,
+.headerStatus:focus-visible,
+.adminButton:focus-visible,
+.profileButton:focus-visible,
+.logoutButton:focus-visible,
+.toolButton:focus-visible {
+  outline: 2px solid #a78bfa;
+  outline-offset: 2px;
+}
 </style>
 </head>
 
@@ -18629,7 +18724,7 @@ window.addEventListener('online', () => {
    clearing anything by hand.
 ===================================================== */
 
-const APP_VERSION = '2026-09-21-30';
+const APP_VERSION = '2026-09-22-01';
 
 const RELOAD_FLAG = 'nastivee_reloaded_for';
 
