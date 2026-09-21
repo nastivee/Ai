@@ -2580,7 +2580,7 @@ Do not claim the user never told you something if it exists in memory.
 
 USER MEMORY:
 
-${JSON.stringify(memory, null, 2)}
+${typeof memory === 'string' ? (memory.trim() || '(nothing saved yet)') : JSON.stringify(memory, null, 2)}
 `;
 
     const cleanMessages =
@@ -2822,6 +2822,124 @@ ${JSON.stringify(memory, null, 2)}
 // =====================================================
 // IMAGE GENERATION
 // =====================================================
+
+// =====================================================
+// LEARNING (automatic memory)
+//
+// After each exchange, a small model reads what the user
+// said and decides whether anything is worth remembering
+// for every future chat. It hands back the updated list;
+// the browser seals it and saves it. Nothing is kept here.
+// =====================================================
+
+const MEMORY_MODEL =
+  process.env.MEMORY_MODEL || 'gpt-5.6-luna';
+
+const MEMORY_RULES = `
+You keep a short memory file about one user of a chat app, so the assistant knows them in every future chat.
+
+You get the current memory (one fact per line) and the latest exchange. Decide whether the USER revealed something durable:
+- who they are: name, age range, where they live or are based, languages
+- work and ventures: job, company, businesses they run, their role
+- people and pets in their life, by name and relationship
+- ongoing projects, plans and goals
+- how they want replies: tone, length, spelling, formats, things to avoid
+- stable likes and dislikes
+
+Rules:
+- Only use what the USER said, never what the assistant said.
+- Skip one-off questions, tasks, temporary moods and small talk.
+- If they correct or contradict a fact, replace the old line.
+- If they ask you to forget something, remove it.
+- If they say "remember ...", keep it (unless it is one of the never-store items below).
+- Never store passwords, card or bank numbers, ID numbers, or addresses of other people.
+- Keep each line short, plain and in the third person, e.g. "Name is Aaron", "Runs a pizza takeaway in Thornaby".
+- Keep existing lines unless they are wrong, duplicated, or asked to be forgotten. At most 80 lines.
+
+Reply with JSON only:
+{"changed": true|false, "memory": ["every line of the updated memory"], "added": ["new or changed lines"], "removed": ["lines taken out"]}
+`.trim();
+
+
+app.post('/api/memory/learn', async (req, res) => {
+
+  try {
+
+    const user = await getUser(req);
+
+    const who = user ? `learn:${user.id}` : `learn:${req.ip}`;
+
+    if (!withinLimit(who, 200)) {
+      return res.json({ changed: false });
+    }
+
+    const memory = String(req.body?.memory || '').slice(0, 8000);
+    const said = String(req.body?.userText || '').slice(0, 4000);
+    const reply = String(req.body?.reply || '').slice(0, 2000);
+
+    if (said.trim().length < 3) {
+      return res.json({ changed: false });
+    }
+
+    const completion =
+      await createReply({
+        model: MEMORY_MODEL,
+        reasoning_effort: 'low',
+        response_format: { type: 'json_object' },
+        messages: [
+          { role: 'system', content: MEMORY_RULES },
+          {
+            role: 'user',
+            content:
+              `CURRENT MEMORY:\n${memory || '(empty)'}\n\n` +
+              `USER SAID:\n${said}\n\n` +
+              `ASSISTANT REPLIED (context only, do not learn from it):\n${reply || '(none)'}`
+          }
+        ]
+      });
+
+    let result = {};
+
+    try {
+      result = JSON.parse(completion.choices?.[0]?.message?.content || '{}');
+    } catch {
+      return res.json({ changed: false });
+    }
+
+    const lines =
+      Array.isArray(result.memory)
+        ? result.memory.map(line => String(line).trim()).filter(Boolean).slice(0, 80)
+        : null;
+
+    if (!result.changed || !lines) {
+      return res.json({ changed: false });
+    }
+
+    /* a safety net: never wipe a long memory in one go */
+    const before = memory.split('\n').filter(line => line.trim()).length;
+
+    if (before >= 4 && lines.length < before / 2) {
+      console.warn('MEMORY SHRANK TOO FAR, IGNORED');
+      return res.json({ changed: false });
+    }
+
+    res.json({
+      changed: true,
+      memory: lines.join('\n'),
+      added: (result.added || []).map(String).slice(0, 10),
+      removed: (result.removed || []).map(String).slice(0, 10)
+    });
+
+  } catch (error) {
+
+    console.error('MEMORY LEARN ERROR:', error?.message);
+
+    res.json({ changed: false });
+
+  }
+
+});
+
 
 // =====================================================
 // VOICE (OpenAI Realtime)

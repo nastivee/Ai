@@ -3206,6 +3206,36 @@ body.smartMode .messageRow.assistant .messageBubble {
   box-shadow: 0 8px 24px rgba(124,58,237,.18);
 }
 
+.learnedNote {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  max-width: min(560px, 92%);
+  padding: 7px 8px 7px 14px;
+  border: 1px solid #2f5a3d;
+  border-radius: 12px;
+  background: #14251a;
+  color: #bfe3c9;
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+
+.learnedUndo {
+  padding: 5px 12px;
+  border: 0;
+  border-radius: 8px;
+  background: rgba(255,255,255,.08);
+  color: #e6f4ea;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.learnedUndo:hover {
+  background: rgba(255,255,255,.14);
+}
+
 .rememberOffer {
   max-width: min(520px, 92%);
   padding: 15px 17px;
@@ -15556,6 +15586,123 @@ function offerToRemember(text) {
 
 
 /* =====================================================
+   LEARNING
+
+   After every reply, what the user said is checked for
+   anything worth remembering in every future chat (their
+   name, work, people, projects, how they like answers).
+   The updated memory is sealed and saved like before, and
+   a small note under the reply says what was kept, with
+   Undo. Everything stays editable in My profile.
+===================================================== */
+
+let learning = Promise.resolve();
+
+function learnFromExchange(userText, reply, chatId) {
+
+  learning = learning.then(() => learnNow(userText, reply, chatId)).catch(() => {});
+
+  return learning;
+
+}
+
+
+async function learnNow(userText, reply, chatId) {
+
+  if (!currentUser && !guestMode) return;
+
+  /* memory we could not open here is never overwritten */
+  if (memoryLocked) return;
+
+  /* someone is typing in the profile box, leave it alone */
+  if (document.activeElement === memoryTextarea) return;
+
+  let data;
+
+  try {
+
+    const response =
+      await fetch(`${API_BASE}/api/memory/learn`, {
+        method: 'POST',
+        headers: await apiHeaders(),
+        body: JSON.stringify({
+          memory: memory || '',
+          userText,
+          reply: String(reply || '').slice(0, 2000)
+        })
+      });
+
+    data = await response.json();
+
+  } catch {
+    return;
+  }
+
+  if (!data?.changed || typeof data.memory !== 'string') return;
+
+  if (data.memory.trim() === (memory || '').trim()) return;
+
+  const previous = memory || '';
+
+  memory = data.memory;
+  memoryTextarea.value = memory;
+
+  await saveMemory();
+
+  const added = (data.added || []).filter(Boolean);
+  const removed = (data.removed || []).filter(Boolean);
+
+  if (isCurrentChat(chatId) && (added.length || removed.length)) {
+    showLearnedNote(added, removed, previous);
+  }
+
+}
+
+
+function showLearnedNote(added, removed, previous) {
+
+  const row = document.createElement('div');
+  row.className = 'messageRow assistant learnedRow';
+
+  const note = document.createElement('div');
+  note.className = 'learnedNote';
+
+  const text = document.createElement('span');
+  text.className = 'learnedText';
+  text.textContent =
+    added.length
+      ? `Remembered: ${added.join('; ')}`
+      : `Forgot: ${removed.join('; ')}`;
+
+  const undo = document.createElement('button');
+  undo.type = 'button';
+  undo.className = 'learnedUndo';
+  undo.textContent = 'Undo';
+
+  undo.addEventListener('click', async () => {
+
+    memory = previous;
+    memoryTextarea.value = memory;
+
+    await saveMemory();
+
+    text.textContent = 'Undone.';
+    undo.remove();
+
+  });
+
+  note.appendChild(text);
+  note.appendChild(undo);
+  row.appendChild(note);
+
+  chat.appendChild(row);
+
+  scrollToBottom();
+
+}
+
+
+/* =====================================================
    CHAT OPTIONS: RENAME AND EXPORT
 ===================================================== */
 
@@ -16140,9 +16287,8 @@ async function sendNormalMessage(
 
     nameChatFromContent(requestChatId);
 
-    if (isCurrentChat(requestChatId)) {
-      offerToRemember(text);
-    }
+    /* quietly learn anything worth keeping for next time */
+    learnFromExchange(text, reply, requestChatId);
 
 
   } catch (error) {
@@ -16611,6 +16757,10 @@ async function keepVoiceLine(role, text) {
 
       await saveMessage(role, clean, null, call.chatId);
 
+      if (role === 'user') {
+        learnFromExchange(clean, '', call.chatId);
+      }
+
     } catch (error) {
       console.error('VOICE SAVE ERROR:', error);
     }
@@ -16622,7 +16772,7 @@ async function keepVoiceLine(role, text) {
 
 function recentChatText() {
 
-  return [...document.querySelectorAll('#chat .messageRow')]
+  return [...document.querySelectorAll('#chat .messageRow:not(.learnedRow)')]
     .slice(-12)
     .map(row => {
       const who = row.classList.contains('user') ? 'User' : 'Nastivee';
@@ -17520,7 +17670,7 @@ window.addEventListener('online', () => {
    clearing anything by hand.
 ===================================================== */
 
-const APP_VERSION = '2026-09-21-19';
+const APP_VERSION = '2026-09-21-20';
 
 const RELOAD_FLAG = 'nastivee_reloaded_for';
 
