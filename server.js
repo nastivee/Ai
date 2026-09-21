@@ -2849,7 +2849,7 @@ You get the current memory (one fact per line) and the latest exchange. Decide w
 Rules:
 - Only use what the USER said, never what the assistant said.
 - Skip one-off questions, tasks, temporary moods and small talk.
-- If they correct or contradict a fact, replace the old line.
+- If they correct a fact, or their situation changes (moved, sold a business, new job), replace the old line with the new situation, e.g. "Sold the pizza takeaway in 2026", rather than just deleting it.
 - If they ask you to forget something, remove it.
 - If they say "remember ...", keep it (unless it is one of the never-store items below).
 - Never store passwords, card or bank numbers, ID numbers, or addresses of other people.
