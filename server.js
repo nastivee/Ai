@@ -717,6 +717,26 @@ async function refundCredit(user, why) {
 // So it is mounted before the JSON parser.
 // =====================================================
 
+/*
+  What happened to the last thing Stripe sent. Kept in
+  memory, so it resets when the server restarts, but it is
+  what makes a failed payment diagnosable from the admin
+  panel instead of from the server logs.
+*/
+let lastWebhook = null;
+
+function noteWebhook(ok, message, extra = {}) {
+
+  lastWebhook = {
+    at: new Date().toISOString(),
+    ok,
+    message,
+    ...extra
+  };
+
+}
+
+
 app.post(
   '/api/stripe/webhook',
   express.raw({ type: 'application/json' }),
@@ -742,6 +762,17 @@ app.post(
       console.error(
         'STRIPE SIGNATURE FAILED:',
         error.message
+      );
+
+      noteWebhook(
+        false,
+        /Timestamp/.test(error.message)
+          ? 'Rejected: the event was too old, a replay.'
+          : !req.headers['stripe-signature']
+            ? 'Rejected: it carried no Stripe signature.'
+            : 'Rejected: the signature did not match. The webhook ' +
+              'secret on Render is not the signing secret for this ' +
+              'endpoint in Stripe.'
       );
 
       return res.status(400).send('Bad signature.');
@@ -781,13 +812,42 @@ app.post(
             `PAID: ${userId} +${images}, balance ${balance}`
           );
 
+          noteWebhook(
+            true,
+            `Credited ${images} images. Balance now ${balance}.`,
+            { type: event.type }
+          );
+
+        } else {
+
+          noteWebhook(
+            true,
+            'Received, but the session was not paid or had no ' +
+            'account attached, so nothing was credited.',
+            { type: event.type }
+          );
+
         }
+
+      } else {
+
+        noteWebhook(
+          true,
+          `Received ${event.type}, which we do not act on.`,
+          { type: event.type }
+        );
 
       }
 
     } catch (error) {
 
       console.error('WEBHOOK HANDLING ERROR:', error);
+
+      noteWebhook(
+        false,
+        `Signature was fine, but crediting failed: ${error.message}. ` +
+        'Stripe will retry.'
+      );
 
       /* Tell Stripe to try again */
       return res.status(500).send('Not handled.');
@@ -878,6 +938,129 @@ app.get('/api/account', async (req, res) => {
     admin,
     holding: settings.holding_mode !== false
   });
+
+});
+
+
+/*
+  Running totals for My profile, worked out from the ledger.
+
+  There is one balance, so which image "was" free and which
+  paid is a convention, and the kind one is used here: free
+  images are spent first, so what someone paid for is what
+  lasts. The split is then pinned to the real balance, so
+  the two figures always add up to what they can actually
+  spend.
+*/
+app.get('/api/account/usage', async (req, res) => {
+
+  const user = await getUser(req);
+
+  if (!user) {
+
+    return res.status(401).json({
+      error: 'Please sign in first.'
+    });
+
+  }
+
+  if (!supabaseAdmin) {
+
+    return res.status(503).json({
+      error: 'Totals are not available right now.'
+    });
+
+  }
+
+  try {
+
+    const { data: events, error } =
+      await supabaseAdmin
+        .from('credit_events')
+        .select('amount, reason')
+        .eq('user_id', user.id);
+
+    if (error) throw new Error(error.message);
+
+    let freeIn = 0;
+    let paidIn = 0;
+    let made = 0;
+    let refunded = 0;
+    let packs = 0;
+
+    for (const event of events || []) {
+
+      const reason = String(event.reason || '');
+      const amount = Number(event.amount) || 0;
+
+      if (reason === 'stripe') {
+        paidIn += amount;
+        packs += 1;
+      } else if (reason === 'image') {
+        made += 1;
+      } else if (reason.startsWith('refund')) {
+        refunded += amount;
+      } else {
+        /* starter grants and admin adjustments, either way */
+        freeIn += amount;
+      }
+
+    }
+
+    const used =
+      Math.max(0, made - refunded);
+
+    const paidUsed =
+      Math.max(0, used - Math.max(0, freeIn));
+
+    const account =
+      await readAccount(user.id);
+
+    const balance =
+      Math.max(0, account.credits || 0);
+
+    const paidLeft =
+      Math.min(balance, Math.max(0, paidIn - paidUsed));
+
+    const freeLeft =
+      balance - paidLeft;
+
+    const admin = isAdmin(user);
+
+    res.json({
+
+      balance,
+      freeLeft,
+      paidLeft,
+
+      imagesMade: used,
+      packsBought: packs,
+      paidImagesBought: paidIn,
+      freeImagesGiven: Math.max(0, freeIn),
+
+      unlimited:
+        admin || account.unlimited || account.unmetered,
+
+      unlimitedReason:
+        admin
+          ? 'admin'
+          : account.unlimited
+            ? 'coupon'
+            : account.unmetered
+              ? 'paywall_off'
+              : null
+
+    });
+
+  } catch (error) {
+
+    console.error('USAGE ERROR:', error);
+
+    res.status(500).json({
+      error: 'Could not work out your totals.'
+    });
+
+  }
 
 });
 
@@ -1287,6 +1470,14 @@ app.get('/api/admin/overview', async (req, res) => {
       serviceKey: serviceKeyError,
       stripeKey: stripeKeyError
     },
+
+    lastWebhook,
+
+    webhookSecretShape:
+      STRIPE_WEBHOOK_SECRET
+        ? `${STRIPE_WEBHOOK_SECRET.slice(0, 10)}... ` +
+          `${STRIPE_WEBHOOK_SECRET.length} characters`
+        : null,
 
     serviceKeyShape:
       SUPABASE_SERVICE_KEY

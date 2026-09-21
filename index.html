@@ -806,6 +806,8 @@ button {
 
 .main {
   position: relative;
+  /* keeps the Smart glow behind everything inside */
+  isolation: isolate;
   flex: 1;
   min-width: 0;
   height: 100%;
@@ -814,6 +816,62 @@ button {
   background:
     radial-gradient(circle at 50% 0%, rgba(106,62,160,.13), transparent 35%),
     #0d0917;
+}
+
+/* ----- SMART MODE -----
+   A cooler, deeper light over the chat while Smart is on,
+   so the heavier model feels like a different gear without
+   shouting about it. The glow is a layer that fades,
+   because gradients cannot be animated directly. */
+
+.main::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(ellipse 70% 45% at 50% 0%, rgba(56,132,248,.22), transparent 70%),
+    radial-gradient(ellipse 60% 40% at 50% 100%, rgba(34,211,238,.06), transparent 70%);
+  opacity: 0;
+  transition: opacity .7s var(--ease);
+  pointer-events: none;
+}
+
+body.smartMode .main::before {
+  opacity: 1;
+}
+
+.composer,
+.sendButton,
+.modeButton,
+.messageRow.user .messageBubble {
+  transition:
+    border-color .5s var(--ease),
+    box-shadow .5s var(--ease),
+    background-color .5s var(--ease);
+}
+
+body.smartMode .composer {
+  border-color: #28365a;
+}
+
+body.smartMode .composer:focus-within {
+  border-color: #3d5f9c;
+}
+
+body.smartMode .sendButton,
+body.smartMode .modeButton.active {
+  background: linear-gradient(135deg, #4f46e5, #0ea5e9);
+  box-shadow: 0 8px 22px rgba(56,132,248,.26);
+}
+
+body.smartMode .messageRow.user .messageBubble {
+  background: linear-gradient(135deg, #4338ca, #3b82f6);
+  box-shadow: 0 8px 24px rgba(59,130,246,.18);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .main::before { transition: none; }
 }
 
 .header {
@@ -1035,15 +1093,6 @@ button {
   letter-spacing: .3px;
 }
 
-.installButton::before {
-  content: '';
-  width: 3px;
-  height: 3px;
-  margin-right: 2px;
-  border-radius: 50%;
-  background: #3e3550;
-}
-
 .installButton:hover {
   color: #c4a6ff;
   background: rgba(124, 58, 237, .12);
@@ -1222,6 +1271,43 @@ button {
 .lockButtonQuiet {
   border: 1px solid #4a3568;
   background: linear-gradient(135deg, #2a1c44, #1d1430);
+}
+
+.tally {
+  margin-top: 12px;
+  border: 1px solid #241b38;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.tallyRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 14px;
+  border-top: 1px solid #241b38;
+  color: #9b90ab;
+  font-size: 13.5px;
+}
+
+.tallyRow:first-child {
+  border-top: 0;
+}
+
+.tallyRow strong {
+  color: #efe7f9;
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+}
+
+.tallyTotal {
+  background: #1b1430;
+}
+
+.tallyTotal span {
+  color: #ded3ec;
+  font-weight: 700;
 }
 
 .dangerZone {
@@ -4116,6 +4202,40 @@ button {
       Save
     </button>
 
+    <div class="foldCard" id="foldImages">
+
+      <button class="foldSummary" type="button" data-fold="foldImages">
+        <span class="foldDot" aria-hidden="true"></span>
+        <span class="foldText">
+          <span id="imagesHeadline">Your images</span>
+          <span class="foldNote" id="foldImagesNote">Working it out...</span>
+        </span>
+        <svg class="foldChevron" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
+      </button>
+
+      <div class="foldBody">
+
+        <div class="tally">
+          <div class="tallyRow"><span>Free images left</span><strong id="tallyFree">-</strong></div>
+          <div class="tallyRow"><span>Paid images left</span><strong id="tallyPaid">-</strong></div>
+          <div class="tallyRow tallyTotal"><span>Total you can make</span><strong id="tallyTotal">-</strong></div>
+          <div class="tallyRow"><span>Images made so far</span><strong id="tallyMade">-</strong></div>
+          <div class="tallyRow"><span>Packs bought</span><strong id="tallyPacks">-</strong></div>
+        </div>
+
+        <p class="foldText2" id="tallyHint">
+          Free images are used first, so what you paid for lasts
+          longest. Paid images never expire.
+        </p>
+
+        <button class="lockButton" id="tallyTopUp" type="button">
+          Top up
+        </button>
+
+      </div>
+
+    </div>
+
     <div class="foldCard" id="foldPassword">
 
       <button class="foldSummary" type="button" data-fold="foldPassword">
@@ -6843,6 +6963,12 @@ const modeSwitchMenu =
   document.getElementById('modeSwitchMenu');
 
 function paintMode() {
+
+  document.body.classList.toggle(
+    'smartMode',
+    chatMode === 'smart'
+  );
+
 
   [modeSwitch, modeSwitchMenu].forEach(group => {
 
@@ -11089,7 +11215,98 @@ function setFold(id, state, note) {
   What the security cards should say, drawn each time My
   profile opens.
 */
+async function paintImages() {
+
+  const card =
+    document.getElementById('foldImages');
+
+  if (!card) return;
+
+  if (guestMode || !currentUser) {
+    card.style.display = 'none';
+    return;
+  }
+
+  card.style.display = '';
+
+  let usage;
+
+  try {
+
+    const response =
+      await fetch(`${API_BASE}/api/account/usage`, {
+        headers: await apiHeaders()
+      });
+
+    usage = await response.json();
+
+    if (!response.ok) throw new Error(usage?.error);
+
+  } catch (error) {
+
+    setFold('foldImages', 'warn', 'Could not load your totals just now');
+
+    return;
+
+  }
+
+  const put = (id, value) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = value;
+  };
+
+  put('tallyFree', usage.freeLeft);
+  put('tallyPaid', usage.paidLeft);
+  put('tallyTotal', usage.balance);
+  put('tallyMade', usage.imagesMade);
+  put('tallyPacks', usage.packsBought);
+
+  const topUp =
+    document.getElementById('tallyTopUp');
+
+  if (usage.unlimited) {
+
+    const why =
+      usage.unlimitedReason === 'admin'
+        ? 'Admin account, no limit'
+        : usage.unlimitedReason === 'coupon'
+          ? 'Your coupon gives you no limit'
+          : 'The paywall is off, images are free right now';
+
+    put('imagesHeadline', 'Your images, unlimited');
+
+    setFold('foldImages', null, why);
+
+    if (topUp) topUp.style.display = 'none';
+
+    return;
+
+  }
+
+  if (topUp) topUp.style.display = '';
+
+  const total = usage.balance;
+
+  put('imagesHeadline', `${total} ${total === 1 ? 'image' : 'images'} left`);
+
+  setFold(
+    'foldImages',
+    total === 0 ? 'bad' : total <= 10 ? 'warn' : null,
+    `${usage.freeLeft} free, ${usage.paidLeft} paid`
+  );
+
+}
+
+document
+  .getElementById('tallyTopUp')
+  ?.addEventListener('click', () => {
+    openPaywall('topup');
+  });
+
+
 async function paintSecurity() {
+
+  paintImages();
 
   if (guestMode || !currentUser) {
 
@@ -12450,13 +12667,39 @@ function paintAdmin() {
       ? '<li class="adminListItem"><code>The key it is using' +
         `<span class="adminWhy">${adminData.serviceKeyShape}</span>` +
         '</code></li>'
-      : '');
+      : '') +
+    (adminData.webhookSecretShape
+      ? '<li class="adminListItem"><code>Webhook secret in use' +
+        `<span class="adminWhy">${adminData.webhookSecretShape}, ` +
+        'compare with the signing secret on the endpoint in Stripe' +
+        '</span></code></li>'
+      : '') +
+    (() => {
+
+      const last = adminData.lastWebhook;
+
+      if (!last) {
+        return '<li class="adminListItem"><code>Last payment event' +
+          '<span class="adminWhy">None since the server last started' +
+          '</span></code></li>';
+      }
+
+      const when =
+        new Date(last.at).toLocaleString('en-GB');
+
+      return '<li class="adminListItem"><code>Last payment event' +
+        `<span class="adminWhy">${when}. ${last.message}</span></code>` +
+        `<span class="adminTick ${last.ok ? 'yes' : 'no'}">` +
+        `${last.ok ? 'OK' : 'NO'}</span></li>`;
+
+    })();
 
   document.getElementById('adminWebhookUrl').textContent =
     adminData.webhookUrl || '';
 
   const missing =
-    checks.filter(one => !one[1]).length;
+    checks.filter(one => !one[1]).length +
+    (adminData.lastWebhook && !adminData.lastWebhook.ok ? 1 : 0);
 
   setSectionState(
     'adminStatus',
@@ -14931,7 +15174,7 @@ window.addEventListener('online', () => {
    clearing anything by hand.
 ===================================================== */
 
-const APP_VERSION = '2026-09-21-05';
+const APP_VERSION = '2026-09-21-06';
 
 const RELOAD_FLAG = 'nastivee_reloaded_for';
 
