@@ -5,6 +5,7 @@ import sharp from 'sharp';
 import { toFile } from 'openai/uploads';
 import { createClient } from '@supabase/supabase-js';
 import Stripe from 'stripe';
+import { createHash } from 'crypto';
 
 const app = express();
 
@@ -2821,6 +2822,115 @@ ${JSON.stringify(memory, null, 2)}
 // =====================================================
 // IMAGE GENERATION
 // =====================================================
+
+// =====================================================
+// VOICE (OpenAI Realtime)
+//
+// Live spoken conversation. The browser talks to OpenAI
+// directly over WebRTC; all we do is hand it a short lived
+// key for one session, so our own key never leaves here.
+// Admins only while it is tested.
+// =====================================================
+
+const VOICE_MODEL =
+  process.env.VOICE_MODEL || 'gpt-realtime-2.1-mini';
+
+const VOICE_NAME =
+  process.env.VOICE_NAME || 'marin';
+
+
+app.post('/api/voice/session', async (req, res) => {
+
+  try {
+
+    const user = await getUser(req);
+
+    if (!user) {
+      return res.status(401).json({ error: 'Sign in to talk to Nastivee.' });
+    }
+
+    if (!isAdmin(user)) {
+      return res.status(403).json({ error: 'Voice is being tested and is not open yet.' });
+    }
+
+    if (!withinLimit(`voice:${user.id}`, 30)) {
+      return res.status(429).json({ error: 'Lots of calls this hour. Give it a little while.' });
+    }
+
+    const memory =
+      String(req.body?.memory || '').slice(0, 4000);
+
+    const recent =
+      String(req.body?.recent || '').slice(0, 4000);
+
+    const today =
+      new Date().toLocaleDateString('en-GB', {
+        weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
+        timeZone: 'Europe/London'
+      });
+
+    const instructions = `
+You are Nastivee AI, talking out loud with the user in a live voice call.
+
+- Speak naturally and warmly, like a friend on the phone. British English.
+- Keep replies short: a sentence or two unless they ask for more. No lists, no markdown, no reading out links.
+- If they interrupt, stop and listen.
+- Be helpful and direct. Only get flirty or cheeky if they clearly start it.
+- Today is ${today}. You cannot browse the web in a call; if they need something current, say so and suggest asking in the text chat.
+
+SAVED MEMORY (things they told you before):
+${memory || '(none)'}
+
+THE CHAT SO FAR (for context):
+${recent || '(new chat)'}
+`.trim();
+
+    const response =
+      await fetch('https://api.openai.com/v1/realtime/client_secrets', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${cleanKey(process.env.OPENAI_API_KEY)}`,
+          'Content-Type': 'application/json',
+          'OpenAI-Safety-Identifier':
+            createHash('sha256').update(String(user.id)).digest('hex')
+        },
+        body: JSON.stringify({
+          expires_after: { anchor: 'created_at', seconds: 120 },
+          session: {
+            type: 'realtime',
+            model: VOICE_MODEL,
+            instructions,
+            audio: {
+              input: {
+                transcription: { model: 'gpt-4o-mini-transcribe' },
+                turn_detection: { type: 'semantic_vad' }
+              },
+              output: { voice: VOICE_NAME }
+            }
+          }
+        })
+      });
+
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok || !data?.value) {
+      throw new Error(data?.error?.message || `Voice service error ${response.status}`);
+    }
+
+    res.json({ key: data.value, model: VOICE_MODEL });
+
+  } catch (error) {
+
+    console.error('VOICE SESSION ERROR:', error);
+
+    raiseAlert('voice failing', 'medium', 'A voice call could not be started.', error?.message);
+
+    res.status(500).json({ error: error?.message || 'Could not start the call.' });
+
+  }
+
+});
+
 
 // =====================================================
 // VIDEO (Google Veo)

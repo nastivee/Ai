@@ -3931,6 +3931,159 @@ body.smartMode .messageRow.assistant .messageBubble {
   filter: brightness(1.08);
 }
 
+/* voice is admins only while it is tested */
+.voiceButton:not(.show) {
+  display: none;
+}
+
+.voiceScreen {
+  position: fixed;
+  inset: 0;
+  z-index: 900;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(8, 5, 14, .94);
+  backdrop-filter: blur(6px);
+  padding: 24px 16px;
+}
+
+.voiceScreen.show {
+  display: flex;
+}
+
+/* Close mark: large, no background, no border */
+.voiceClose {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  border: 0;
+  background: none;
+  color: #cfc3dd;
+  font-size: 40px;
+  line-height: 1;
+  padding: 0 10px;
+  cursor: pointer;
+}
+
+.voiceClose:hover {
+  color: #fff;
+}
+
+.voiceStage {
+  width: min(100%, 520px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  text-align: center;
+}
+
+/* plenty of room so the glow is never clipped */
+.voiceOrbRoom {
+  width: 240px;
+  height: 240px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.voiceOrb {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #c4a5ff, #7c3aed 60%, #4c1d95);
+  box-shadow: 0 0 40px rgba(139, 92, 246, .45);
+  transition: transform .25s var(--ease), box-shadow .25s var(--ease);
+}
+
+.voiceScreen.listening .voiceOrb {
+  animation: voiceBreath 2.4s ease-in-out infinite;
+}
+
+.voiceScreen.speaking .voiceOrb {
+  animation: voiceTalk .7s ease-in-out infinite;
+  box-shadow: 0 0 60px rgba(192, 132, 252, .6);
+}
+
+@keyframes voiceBreath {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+}
+
+@keyframes voiceTalk {
+  0%, 100% { transform: scale(1.04); }
+  50% { transform: scale(1.18); }
+}
+
+body.smartMode .voiceOrb {
+  background: radial-gradient(circle at 35% 30%, #a9c4ff, #3d69b5 60%, #1e3a6e);
+  box-shadow: 0 0 40px rgba(61, 105, 181, .45);
+}
+
+.voiceStatus {
+  color: var(--text);
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.voiceTranscript {
+  width: 100%;
+  max-height: 32vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  text-align: left;
+  font-size: 14.5px;
+  line-height: 1.45;
+}
+
+.voiceLine {
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: #181123;
+  color: #e4d9f1;
+}
+
+.voiceLine.user {
+  align-self: flex-end;
+  background: #2a1d40;
+}
+
+.voiceControls {
+  display: flex;
+  gap: 10px;
+}
+
+.voiceControl {
+  height: 46px;
+  padding: 0 22px;
+  border-radius: 14px;
+  border: 1px solid #4a3568;
+  background: #251a38;
+  color: #e4d9f1;
+  font-weight: 700;
+  font-size: 14.5px;
+  cursor: pointer;
+}
+
+.voiceControl.muted {
+  background: #3a2a14;
+  border-color: #8a5a1c;
+}
+
+.voiceControl.end {
+  background: #7f1d2d;
+  border-color: transparent;
+  color: #fff;
+}
+
+.voiceNote {
+  color: var(--muted);
+  font-size: 12.5px;
+}
+
 .sendButton:disabled {
   opacity: .4;
   cursor: not-allowed;
@@ -5557,6 +5710,16 @@ body.smartMode .messageRow.assistant .messageBubble {
             rows="1"
             placeholder="Message Nastivee..."
           ></textarea>
+
+          <button
+            id="voiceButton"
+            class="composerButton voiceButton"
+            type="button"
+            title="Talk to Nastivee"
+            aria-label="Start a voice conversation"
+          >
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"></rect><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"></path></svg>
+          </button>
 
           <button
             id="sendButton"
@@ -13540,6 +13703,11 @@ async function refreshAccount() {
     account.admin === true
   );
 
+  document.getElementById('voiceButton')?.classList.toggle(
+    'show',
+    account.admin === true
+  );
+
   if (account.admin !== true && videoMode) {
     setVideoMode(false);
   }
@@ -16380,6 +16548,304 @@ async function sendMessage() {
 
 
 /* =====================================================
+   VOICE CONVERSATION
+
+   A live call with Nastivee through OpenAI's Realtime API.
+   The server hands over a short lived key; the browser
+   then talks to OpenAI directly over WebRTC, so audio
+   never passes through our server. What each side says
+   comes back as text and is saved to the chat, sealed like
+   any other message. Admins only while it is tested.
+===================================================== */
+
+const voiceScreen = document.getElementById('voiceScreen');
+const voiceStatus = document.getElementById('voiceStatus');
+const voiceTranscript = document.getElementById('voiceTranscript');
+const voiceMute = document.getElementById('voiceMute');
+
+let voiceCall = null;
+
+
+function setVoiceState(state, label) {
+
+  voiceScreen.classList.toggle('listening', state === 'listening');
+  voiceScreen.classList.toggle('speaking', state === 'speaking');
+
+  voiceStatus.textContent = label;
+
+}
+
+
+function addVoiceLine(role, text) {
+
+  const line = document.createElement('div');
+  line.className = `voiceLine ${role}`;
+  line.textContent = text;
+
+  voiceTranscript.appendChild(line);
+  voiceTranscript.scrollTop = voiceTranscript.scrollHeight;
+
+}
+
+
+/* each finished line goes into the chat straight away, so hanging up loses nothing */
+async function keepVoiceLine(role, text) {
+
+  const clean = String(text || '').trim();
+
+  if (!clean || !voiceCall) return;
+
+  addVoiceLine(role, clean);
+
+  const call = voiceCall;
+
+  call.saving = call.saving.then(async () => {
+
+    try {
+
+      if (!call.chatId) {
+        call.chatId = await ensureChat(role === 'user' ? clean : 'Voice chat');
+      }
+
+      addTextMessageTo(call.chatId, role, clean);
+
+      await saveMessage(role, clean, null, call.chatId);
+
+    } catch (error) {
+      console.error('VOICE SAVE ERROR:', error);
+    }
+
+  });
+
+}
+
+
+function recentChatText() {
+
+  return [...document.querySelectorAll('#chat .messageRow')]
+    .slice(-12)
+    .map(row => {
+      const who = row.classList.contains('user') ? 'User' : 'Nastivee';
+      const text = (row.querySelector('.messageBubble, .bubble')?.innerText || row.innerText || '').trim();
+      return text ? `${who}: ${text.slice(0, 300)}` : '';
+    })
+    .filter(Boolean)
+    .join('\n');
+
+}
+
+
+async function startVoiceCall() {
+
+  if (voiceCall) return;
+
+  if (!navigator.mediaDevices?.getUserMedia || !window.RTCPeerConnection) {
+    addTextMessage('assistant', 'Voice chat needs a browser with microphone support.');
+    return;
+  }
+
+  voiceTranscript.innerHTML = '';
+  voiceMute.textContent = 'Mute';
+  voiceMute.classList.remove('muted');
+  setVoiceState('connecting', 'Connecting...');
+  voiceScreen.classList.add('show');
+
+  voiceCall = {
+    pc: null,
+    stream: null,
+    audio: null,
+    channel: null,
+    chatId: currentChatId || null,
+    saving: Promise.resolve(),
+    muted: false
+  };
+
+  const call = voiceCall;
+
+  try {
+
+    const stream =
+      await navigator.mediaDevices.getUserMedia({ audio: true });
+
+    call.stream = stream;
+
+    if (voiceCall !== call) {
+      stream.getTracks().forEach(track => track.stop());
+      return;
+    }
+
+    const started =
+      await fetch(`${API_BASE}/api/voice/session`, {
+        method: 'POST',
+        headers: await apiHeaders(),
+        body: JSON.stringify({
+          memory: typeof memory === 'string' ? memory : '',
+          recent: recentChatText()
+        })
+      });
+
+    const session = await started.json().catch(() => ({}));
+
+    if (!started.ok || !session.key) {
+      throw new Error(session.error || 'The call could not be started.');
+    }
+
+    const pc = new RTCPeerConnection();
+
+    call.pc = pc;
+
+    const audio = document.createElement('audio');
+    audio.autoplay = true;
+    call.audio = audio;
+
+    pc.ontrack = event => {
+      audio.srcObject = event.streams[0];
+    };
+
+    stream.getTracks().forEach(track => pc.addTrack(track, stream));
+
+    const channel = pc.createDataChannel('oai-events');
+
+    call.channel = channel;
+
+    channel.addEventListener('open', () => {
+      setVoiceState('listening', 'Listening');
+    });
+
+    channel.addEventListener('message', event => {
+
+      let data;
+
+      try { data = JSON.parse(event.data); } catch { return; }
+
+      switch (data.type) {
+
+        case 'input_audio_buffer.speech_started':
+          setVoiceState('listening', 'Listening');
+          break;
+
+        case 'conversation.item.input_audio_transcription.completed':
+          keepVoiceLine('user', data.transcript);
+          break;
+
+        case 'response.output_audio.delta':
+        case 'response.audio.delta':
+        case 'response.output_audio_transcript.delta':
+        case 'response.audio_transcript.delta':
+          setVoiceState('speaking', 'Nastivee is talking');
+          break;
+
+        case 'response.output_audio_transcript.done':
+        case 'response.audio_transcript.done':
+          keepVoiceLine('assistant', data.transcript);
+          break;
+
+        case 'response.done':
+          setVoiceState('listening', 'Listening');
+          break;
+
+        case 'error':
+          console.error('VOICE EVENT ERROR:', data.error);
+          break;
+
+      }
+
+    });
+
+    pc.addEventListener('connectionstatechange', () => {
+      if (['failed', 'disconnected'].includes(pc.connectionState) && voiceCall === call) {
+        setVoiceState('connecting', 'The line dropped. End the call and try again.');
+      }
+    });
+
+    const offer = await pc.createOffer();
+
+    await pc.setLocalDescription(offer);
+
+    const answer =
+      await fetch('https://api.openai.com/v1/realtime/calls', {
+        method: 'POST',
+        body: offer.sdp,
+        headers: {
+          Authorization: `Bearer ${session.key}`,
+          'Content-Type': 'application/sdp'
+        }
+      });
+
+    if (!answer.ok) {
+      throw new Error(`The voice service refused the call (${answer.status}).`);
+    }
+
+    await pc.setRemoteDescription({ type: 'answer', sdp: await answer.text() });
+
+  } catch (error) {
+
+    console.error('VOICE START ERROR:', error);
+
+    const message =
+      error?.name === 'NotAllowedError'
+        ? 'Nastivee needs permission to use your microphone. Allow it in your browser and try again.'
+        : (error?.message || 'The call could not be started.');
+
+    endVoiceCall();
+
+    addTextMessage('assistant', message);
+
+  }
+
+}
+
+
+function endVoiceCall() {
+
+  const call = voiceCall;
+
+  voiceCall = null;
+
+  voiceScreen.classList.remove('show', 'listening', 'speaking');
+
+  if (!call) return;
+
+  try { call.channel?.close(); } catch {}
+  try { call.pc?.close(); } catch {}
+
+  call.stream?.getTracks().forEach(track => track.stop());
+
+  if (call.audio) call.audio.srcObject = null;
+
+  /* the chat list picks up a chat the call started */
+  call.saving.then(() => {
+    if (call.chatId && typeof loadChats === 'function') loadChats();
+  });
+
+}
+
+
+document.getElementById('voiceButton')?.addEventListener('click', startVoiceCall);
+document.getElementById('voiceClose')?.addEventListener('click', endVoiceCall);
+document.getElementById('voiceEnd')?.addEventListener('click', endVoiceCall);
+
+voiceMute?.addEventListener('click', () => {
+
+  if (!voiceCall?.stream) return;
+
+  voiceCall.muted = !voiceCall.muted;
+
+  voiceCall.stream.getAudioTracks().forEach(track => { track.enabled = !voiceCall.muted; });
+
+  voiceMute.textContent = voiceCall.muted ? 'Unmute' : 'Mute';
+  voiceMute.classList.toggle('muted', voiceCall.muted);
+
+  setVoiceState('listening', voiceCall.muted ? 'Muted' : 'Listening');
+
+});
+
+document.addEventListener('keydown', event => {
+  if (event.key === 'Escape' && voiceCall) endVoiceCall();
+});
+
+
+/* =====================================================
    SEND BUTTON
 ===================================================== */
 
@@ -17054,7 +17520,7 @@ window.addEventListener('online', () => {
    clearing anything by hand.
 ===================================================== */
 
-const APP_VERSION = '2026-09-21-18';
+const APP_VERSION = '2026-09-21-19';
 
 const RELOAD_FLAG = 'nastivee_reloaded_for';
 
@@ -17151,6 +17617,31 @@ resizeTextarea();
 checkSession();
 
 </script>
+
+<div class="voiceScreen" id="voiceScreen" role="dialog" aria-modal="true" aria-label="Voice conversation">
+
+  <button class="voiceClose" id="voiceClose" type="button" aria-label="End the call">&times;</button>
+
+  <div class="voiceStage">
+
+    <div class="voiceOrbRoom">
+      <div class="voiceOrb" id="voiceOrb"></div>
+    </div>
+
+    <div class="voiceStatus" id="voiceStatus">Connecting...</div>
+
+    <div class="voiceTranscript" id="voiceTranscript"></div>
+
+    <div class="voiceControls">
+      <button class="voiceControl" id="voiceMute" type="button">Mute</button>
+      <button class="voiceControl end" id="voiceEnd" type="button">End call</button>
+    </div>
+
+    <div class="voiceNote">What you both say is saved to this chat as text.</div>
+
+  </div>
+
+</div>
 
 </body>
 </html>
