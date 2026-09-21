@@ -4058,16 +4058,9 @@ body.smartMode {
   transition: transform .25s var(--ease);
 }
 
-.sendButton:hover:not(:disabled) {
-  transform: translateY(-1px);
-}
-
+/* no movement on hover, it just brightens a touch */
 .sendButton:hover:not(:disabled) .sendIcon {
-  transform: translateY(-2px);
-}
-
-.sendButton:active:not(:disabled) {
-  transform: scale(.96);
+  filter: brightness(1.12);
 }
 
 .sendButton:focus-visible,
@@ -19254,7 +19247,7 @@ window.addEventListener('online', () => {
    clearing anything by hand.
 ===================================================== */
 
-const APP_VERSION = '2026-09-22-10';
+const APP_VERSION = '2026-09-22-11';
 
 const RELOAD_FLAG = 'nastivee_reloaded_for';
 
