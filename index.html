@@ -189,7 +189,7 @@ button {
 }
 
 /* ----- SIGN UP MODE -----
-   The whole screen turns the same deep red as Smart, so nobody is left wondering
+   The whole screen turns the same subtle blue as Smart, so nobody is left wondering
    whether they are logging in or making a new account.
    The glow is a layer that fades in, because gradients
    themselves cannot be animated. */
@@ -200,7 +200,7 @@ button {
   inset: 0;
   z-index: 0;
   background:
-    radial-gradient(circle at 50% 20%, #3d1a24 0%, #1a0d12 35%, #0f080b 75%);
+    radial-gradient(circle at 50% 20%, #182a4a 0%, #0d1424 35%, #080b14 75%);
   opacity: 0;
   transition: opacity .45s var(--ease);
   pointer-events: none;
@@ -225,33 +225,33 @@ button {
 }
 
 .authScreen.signup .authCard {
-  border-color: rgba(176, 72, 90, .24);
-  background: rgba(26, 13, 18, .92);
+  border-color: rgba(79, 127, 217, .24);
+  background: rgba(13, 19, 32, .92);
   box-shadow: 0 25px 80px rgba(0, 0, 0, .45),
-              0 0 0 1px rgba(176, 72, 90, .05);
+              0 0 0 1px rgba(79, 127, 217, .05);
 }
 
 .authScreen.signup .logoLarge span {
-  color: #d98a96;
+  color: #8fb0ec;
 }
 
 .authScreen.signup .authInput {
   border-color: #3a222a;
-  background: #150b0f;
+  background: #0b101c;
 }
 
 .authScreen.signup .authInput:focus {
-  border-color: #a3384a;
+  border-color: #3d69b5;
 }
 
 .authScreen.signup .authButton {
-  background: linear-gradient(135deg, #7a2334, #a3384a);
+  background: linear-gradient(135deg, #2c4f8f, #3d69b5);
 }
 
 .authScreen.signup .authSwitch button,
 .authScreen.signup .authForgot button,
 .authScreen.signup .authLegal a {
-  color: #e0a3ad;
+  color: #a9c3f0;
 }
 
 .authScreen.signup .passwordToggle:hover {
@@ -402,22 +402,23 @@ button {
 }
 
 .sidebarHeader {
-  padding: 22px 18px 15px;
+  padding: 14px 16px 12px;
 }
 
 .logo {
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   /* a little room so the glow is never clipped by the header */
-  padding: 4px 2px;
+  padding: 0 2px;
 }
 
 .logoMark {
   display: block;
-  width: 52px;
-  height: 52px;
+  width: 36px;
+  height: 36px;
   object-fit: contain;
-  filter: drop-shadow(0 6px 14px rgba(139, 92, 246, .35));
+  filter: drop-shadow(0 4px 10px rgba(139, 92, 246, .35));
 }
 
 .logo span {
@@ -427,12 +428,11 @@ button {
 .newChatRow {
   display: flex;
   gap: 8px;
-  align-items: stretch;
-  margin-top: 20px;
+  align-items: center;
 }
 
 .newChatButton {
-  flex: 3 1 0;
+  flex: 1 1 auto;
   min-width: 0;
   height: 46px;
   padding: 0 14px;
@@ -455,7 +455,8 @@ button {
 }
 
 .searchToggle {
-  flex: 1 1 0;
+  flex: 0 0 46px;
+  width: 46px;
   min-width: 0;
   height: 46px;
   padding: 0 12px;
@@ -832,7 +833,7 @@ button {
    ::before, and sharing it once set the watermark to full
    opacity in Smart mode.
 
-   Smart turns the whole site a muted wine red, sidebar and
+   Smart turns the whole site a subtle blue, sidebar and
    buttons included, so there is no doubt which gear it is
    in, without shouting. Colours come from the variables
    where the site uses them, and are set directly where it
@@ -846,23 +847,23 @@ button {
   /* below the watermark (z 0) and the chat (z 1) */
   z-index: -1;
   background:
-    radial-gradient(ellipse 75% 55% at 50% 0%, rgba(176,48,68,.15), transparent 70%),
-    radial-gradient(ellipse 90% 50% at 50% 100%, rgba(128,30,52,.08), transparent 70%),
-    #0f080b;
+    radial-gradient(ellipse 75% 55% at 50% 0%, rgba(64,118,210,.15), transparent 70%),
+    radial-gradient(ellipse 90% 50% at 50% 100%, rgba(36,86,160,.08), transparent 70%),
+    #080b14;
   opacity: 0;
   transition: opacity .7s var(--ease);
   pointer-events: none;
 }
 
 body.smartMode {
-  --bg: #0e080a;
-  --panel: #130b0e;
-  --panel-2: #1a0f13;
-  --line: #2e1b21;
-  --line-soft: #24151a;
-  --brand: #b0485a;
-  --brand-2: #d17f8b;
-  background: #0f080b;
+  --bg: #080a12;
+  --panel: #0b0e18;
+  --panel-2: #10141f;
+  --line: #1c2333;
+  --line-soft: #161c2a;
+  --brand: #4f7fd9;
+  --brand-2: #8fb0ec;
+  background: #080b14;
 }
 
 body.smartMode .main::after {
@@ -902,72 +903,72 @@ body.smartMode .newChatButton,
 body.smartMode .sendButton,
 body.smartMode .modeButton.active,
 body.smartMode .toolButton.imageModeActive {
-  background: linear-gradient(135deg, #7a2334, #a3384a);
-  box-shadow: 0 8px 20px rgba(163, 56, 74, .20);
+  background: linear-gradient(135deg, #2c4f8f, #3d69b5);
+  box-shadow: 0 8px 20px rgba(61, 105, 181, .20);
 }
 
 /* the outlined ones */
 body.smartMode .searchToggle,
 body.smartMode .logoutButton {
-  border-color: #3a2229;
+  border-color: #22304a;
 }
 
 body.smartMode .profileButton {
-  border-color: #4a2831;
-  background: linear-gradient(135deg, #25131a, #1a0d12);
+  border-color: #2d3f63;
+  background: linear-gradient(135deg, #131b2c, #0e1422);
 }
 
 body.smartMode .profileButtonIcon {
-  color: #d98a96;
+  color: #8fb0ec;
 }
 
 body.smartMode .adminButton,
 body.smartMode .chatMenuButton,
 body.smartMode .headerStatus {
-  border-color: #2e1b21;
-  background: #170c10;
+  border-color: #1c2333;
+  background: #0e1320;
 }
 
 body.smartMode .toolButton {
-  border-color: #4a2831;
-  background: #22121a;
+  border-color: #2d3f63;
+  background: #121a2b;
 }
 
 body.smartMode .toolButton:hover {
-  background: #2c1720;
+  background: #182238;
 }
 
 body.smartMode .chatHistoryItem.active {
-  border-color: #3d2129;
-  background: #211117;
+  border-color: #263654;
+  background: #121a2b;
 }
 
 /* the chat */
 body.smartMode .header {
-  background: rgba(15, 8, 11, .85);
+  background: rgba(8, 11, 20, .85);
 }
 
 body.smartMode .composerArea {
-  background: linear-gradient(to top, #0f080b 75%, transparent);
+  background: linear-gradient(to top, #080b14 75%, transparent);
 }
 
 body.smartMode .composer {
-  border-color: #3e222a;
-  background: #170c10;
+  border-color: #243452;
+  background: #0e1320;
 }
 
 body.smartMode .composer:focus-within {
-  border-color: #7a3442;
+  border-color: #3d5f9c;
 }
 
 body.smartMode .messageRow.user .messageBubble {
-  background: linear-gradient(135deg, #6e2231, #983447);
-  box-shadow: 0 8px 22px rgba(152, 52, 71, .16);
+  background: linear-gradient(135deg, #2a4a86, #3a62a8);
+  box-shadow: 0 8px 22px rgba(58, 98, 168, .16);
 }
 
 body.smartMode .messageRow.assistant .messageBubble {
-  border-color: #2e1b21;
-  background: #180d11;
+  border-color: #1c2333;
+  background: #0e1320;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1182,28 +1183,30 @@ body.smartMode .messageRow.assistant .messageBubble {
 .installButton {
   display: none;
   align-items: center;
-  gap: 6px;
-  padding: 3px 10px;
-  border: 0;
-  border-radius: 8px;
-  background: none;
-  color: #6f6580;
-  font-size: 10.5px;
+  justify-content: center;
+  gap: 9px;
+  width: 100%;
+  min-height: 44px;
+  margin-bottom: 16px;
+  padding: 0 16px;
+  border: 1px solid #4a3568;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #2a1c44, #1d1430);
+  color: #efe7f9;
+  font-size: 13.5px;
   font-weight: 700;
-  letter-spacing: .3px;
 }
 
 .installButton:hover {
-  color: #c4a6ff;
-  background: rgba(124, 58, 237, .12);
+  border-color: #6d4fb8;
 }
 
 .installButton .icon {
-  color: inherit;
+  color: #b98aff;
 }
 
 .installButton.show {
-  display: inline-flex;
+  display: flex;
 }
 
 /* ---- the guided install sheet ---- */
@@ -4630,6 +4633,23 @@ body.smartMode .messageRow.assistant .messageBubble {
 
     </div>
 
+    <button
+      class="installButton"
+      id="installButton"
+      type="button"
+      title="Install Nastivee AI as an app"
+    >
+      <svg class="icon" width="17" height="17" viewBox="0 0 24 24"
+           fill="none" stroke="currentColor" stroke-width="2"
+           stroke-linecap="round" stroke-linejoin="round"
+           aria-hidden="true">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+        <polyline points="7 10 12 15 17 10"></polyline>
+        <line x1="12" y1="15" x2="12" y2="3"></line>
+      </svg>
+      Install Nastivee as an app
+    </button>
+
     <div class="profileRow">
       <div class="profileLabel">Signed in as</div>
       <div class="profileValue" id="profileEmail"></div>
@@ -4966,17 +4986,17 @@ body.smartMode .messageRow.assistant .messageBubble {
 
     <div class="sidebarHeader">
 
-      <div class="logo">
-        <img
-          class="logoMark"
-          src="./NAI-Logo.webp"
-          alt="Nastivee AI"
-          width="52"
-          height="52"
-        >
-      </div>
-
       <div class="newChatRow">
+
+        <div class="logo">
+          <img
+            class="logoMark"
+            src="./NAI-Logo.webp"
+            alt="Nastivee AI"
+            width="36"
+            height="36"
+          >
+        </div>
 
         <button
           class="newChatButton"
@@ -5099,34 +5119,17 @@ body.smartMode .messageRow.assistant .messageBubble {
 
       <div class="sidebarFoot">
 
-        <span
-          class="versionTag"
-          id="versionTag"
-          title="App version"
-        ></span>
-
         <a class="footLink" href="./privacy.html" target="_blank"
            rel="noopener">Privacy</a>
 
         <a class="footLink" href="./terms.html" target="_blank"
            rel="noopener">Terms</a>
 
-        <button
-          class="installButton"
-          id="installButton"
-          type="button"
-          title="Install Nastivee AI as an app"
-        >
-          <svg class="icon" width="12" height="12" viewBox="0 0 24 24"
-               fill="none" stroke="currentColor" stroke-width="2.2"
-               stroke-linecap="round" stroke-linejoin="round"
-               aria-hidden="true">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-            <polyline points="7 10 12 15 17 10"></polyline>
-            <line x1="12" y1="15" x2="12" y2="3"></line>
-          </svg>
-          Install app
-        </button>
+        <span
+          class="versionTag"
+          id="versionTag"
+          title="App version"
+        ></span>
 
       </div>
 
@@ -16086,12 +16089,19 @@ window.addEventListener('online', () => {
    clearing anything by hand.
 ===================================================== */
 
-const APP_VERSION = '2026-09-21-12';
+const APP_VERSION = '2026-09-21-14';
 
 const RELOAD_FLAG = 'nastivee_reloaded_for';
 
 /* the build this device is running, shown beside the email */
-versionTag.textContent = `v${APP_VERSION}`;
+versionTag.textContent =
+  (() => {
+    const [, month, day, build] =
+      APP_VERSION.split('-').map(Number);
+    return `v${month}.${day}.${build}`;
+  })();
+
+versionTag.title = `Version ${APP_VERSION}`;
 
 if ('serviceWorker' in navigator) {
 
