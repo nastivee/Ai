@@ -17430,6 +17430,7 @@ function createPeekBot(card) {
 
     busy: false,
     last: -1,
+    deck: [],
 
     wait: ms => new Promise(resolve => setTimeout(resolve, ms)),
 
@@ -17507,10 +17508,30 @@ function createPeekBot(card) {
 
       let pick = index;
 
+      /*
+        A shuffled deck: all ten play once, in a random
+        order, before any repeats. A fresh deck never starts
+        with the one that just played.
+      */
       if (typeof pick !== 'number') {
-        do {
-          pick = Math.floor(Math.random() * peekRoutines.length);
-        } while (pick === api.last && peekRoutines.length > 1);
+
+        if (!api.deck.length) {
+
+          api.deck = peekRoutines.map((_, i) => i);
+
+          for (let i = api.deck.length - 1; i > 0; i -= 1) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [api.deck[i], api.deck[j]] = [api.deck[j], api.deck[i]];
+          }
+
+          if (api.deck[0] === api.last && api.deck.length > 1) {
+            api.deck.push(api.deck.shift());
+          }
+
+        }
+
+        pick = api.deck.shift();
+
       }
 
       api.last = pick;
@@ -18355,7 +18376,7 @@ window.addEventListener('online', () => {
    clearing anything by hand.
 ===================================================== */
 
-const APP_VERSION = '2026-09-21-25';
+const APP_VERSION = '2026-09-21-26';
 
 const RELOAD_FLAG = 'nastivee_reloaded_for';
 
