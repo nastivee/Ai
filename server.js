@@ -2289,6 +2289,179 @@ async function findUserByEmail(email) {
 
 
 /*
+  The Responses API wants its own message shape. Text
+  stays text; a photo on the newest message becomes an
+  input image. Empty turns (image only replies) are left
+  out, since the API refuses them.
+*/
+function toResponsesInput(messages) {
+
+  return messages
+    .map(message => {
+
+      const role =
+        message.role === 'assistant' ? 'assistant' : 'user';
+
+      if (Array.isArray(message.content)) {
+
+        const parts =
+          message.content
+            .map(part => {
+              if (part.type === 'text' && part.text) {
+                return { type: role === 'assistant' ? 'output_text' : 'input_text', text: part.text };
+              }
+              if (part.type === 'image_url' && part.image_url?.url && role === 'user') {
+                return { type: 'input_image', image_url: part.image_url.url };
+              }
+              return null;
+            })
+            .filter(Boolean);
+
+        return parts.length ? { role, content: parts } : null;
+
+      }
+
+      const text = String(message.content || '').trim();
+
+      return text ? { role, content: text } : null;
+
+    })
+    .filter(Boolean);
+
+}
+
+
+function liveWebNote() {
+
+  const today =
+    new Date().toLocaleDateString('en-GB', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+      timeZone: 'Europe/London'
+    });
+
+  return `
+
+LIVE WEB:
+
+Today is ${today}. You can search the web.
+- Search before answering anything that may have changed since your training: news, prices, sport, weather, opening times, releases, laws, who holds a role, and anything the user calls current or latest.
+- Do not search for things that do not change, like maths, writing help, or general knowledge.
+- When you use the web, cite it with short inline markdown links, e.g. ([BBC](https://...)).
+- If results disagree or are thin, say so rather than guessing.
+`;
+
+}
+
+
+/*
+  Streams one reply with web search on. Sends text as it
+  arrives, a status while it searches, and a short source
+  list at the end for anything cited but not linked inline.
+  Resolves true once something was sent.
+*/
+async function streamWithSearch({ model, effort, instructions, messages, send }) {
+
+  const stream =
+    await openai.responses.create({
+      model,
+      reasoning: { effort },
+      instructions,
+      input: toResponsesInput(messages),
+      tools: [
+        {
+          type: 'web_search',
+          user_location: {
+            type: 'approximate',
+            country: 'GB',
+            timezone: 'Europe/London'
+          }
+        }
+      ],
+      stream: true
+    });
+
+  let text = '';
+  let searching = false;
+  let finalResponse = null;
+
+  try {
+
+    for await (const event of stream) {
+
+      const type = event?.type || '';
+
+      if (type.startsWith('response.web_search_call') && !searching) {
+        searching = true;
+        send({ status: 'searching' });
+      }
+
+      if (type === 'response.output_text.delta' && event.delta) {
+        text += event.delta;
+        send({ text: event.delta });
+      }
+
+      if (type === 'response.completed') {
+        finalResponse = event.response;
+      }
+
+      if (type === 'response.failed' || type === 'error') {
+        throw new Error(
+          event?.response?.error?.message ||
+          event?.message ||
+          'Reply failed'
+        );
+      }
+
+    }
+
+  } catch (error) {
+
+    if (text) error.sentSomething = true;
+    throw error;
+
+  }
+
+  /* sources cited but not already linked in the text */
+  const cited = new Map();
+
+  for (const item of finalResponse?.output || []) {
+    for (const part of item?.content || []) {
+      for (const note of part?.annotations || []) {
+        if (note?.type === 'url_citation' && note.url && !text.includes(note.url)) {
+          cited.set(note.url, note.title || new URL(note.url).hostname);
+        }
+      }
+    }
+  }
+
+  if (cited.size) {
+
+    const list =
+      [...cited]
+        .slice(0, 6)
+        .map(([url, title]) => `- [${String(title).replace(/[\[\]]/g, '')}](${url})`)
+        .join('\n');
+
+    const tail = `\n\nSources:\n${list}`;
+
+    text += tail;
+    send({ text: tail });
+
+  }
+
+  if (!text) {
+    send({ text: 'Sorry, I could not generate a response.' });
+  }
+
+  return true;
+
+}
+
+
+/*
   If the account cannot use the chosen model (not enabled
   yet, or a typo in a setting), fall back to the previous
   one rather than leaving everyone without replies.
@@ -2500,7 +2673,52 @@ ${JSON.stringify(memory, null, 2)}
 
       let sent = false;
 
+      const send = data =>
+        res.write(`data: ${JSON.stringify(data)}\n\n`);
+
       try {
+
+        /*
+          LIVE WEB
+
+          Replies go through the Responses API with web
+          search switched on, so anything current (news,
+          prices, sport, opening times, who holds a job) is
+          checked live. If that route fails before a word
+          is sent, the plain reply below takes over.
+        */
+        if (process.env.WEB_SEARCH !== 'off') {
+
+          try {
+
+            sent = await streamWithSearch({
+              model,
+              effort,
+              instructions: systemPrompt + liveWebNote(),
+              messages: cleanMessages,
+              send
+            });
+
+            res.write('data: [DONE]\n\n');
+            res.end();
+            return;
+
+          } catch (searchError) {
+
+            if (searchError?.sentSomething) throw searchError;
+
+            console.error('WEB SEARCH REPLY FAILED, PLAIN REPLY:', searchError?.message);
+
+            raiseAlert(
+              'web search failing',
+              'medium',
+              'Live web replies failed, answering without the web.',
+              searchError?.message
+            );
+
+          }
+
+        }
 
         const completion =
           await createReply({

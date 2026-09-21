@@ -4036,6 +4036,29 @@ body.smartMode .messageRow.assistant .messageBubble {
     background-size: min(52vmin, 260px);
   }
 }
+/* shown while a reply checks the live web */
+.webSearching {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 2px 0;
+  color: var(--muted, #9aa3b2);
+  font-size: 0.95em;
+}
+
+.webSearchingDot {
+  width: 9px;
+  height: 9px;
+  margin: 3px;
+  border-radius: 50%;
+  background: var(--brand-2);
+  animation: webSearchPulse 1.1s ease-in-out infinite;
+}
+
+@keyframes webSearchPulse {
+  0%, 100% { opacity: 0.35; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1.1); }
+}
 </style>
 </head>
 
@@ -15421,6 +15444,16 @@ async function streamReply(response, requestChatId) {
         throw new Error(parsed.error);
       }
 
+      /* checking the live web before answering */
+      if (parsed.status === 'searching' && bubble && !reply) {
+
+        bubble.innerHTML =
+          '<span class="webSearching"><span class="webSearchingDot"></span>Searching the web</span>';
+
+        scrollToBottom();
+
+      }
+
       if (parsed.text) {
 
         reply += parsed.text;
@@ -16685,7 +16718,7 @@ window.addEventListener('online', () => {
    clearing anything by hand.
 ===================================================== */
 
-const APP_VERSION = '2026-09-21-16';
+const APP_VERSION = '2026-09-21-17';
 
 const RELOAD_FLAG = 'nastivee_reloaded_for';
 
