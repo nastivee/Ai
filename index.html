@@ -188,6 +188,87 @@ button {
   border-color: #8b5cf6;
 }
 
+/* ----- WAITING -----
+   While the page is starting, or an account is opening,
+   the screen dims and a spinner shows, so nobody taps at
+   a half built page. It goes the moment things are ready,
+   never on a timer. */
+
+.bootOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(6, 4, 12, .74);
+  backdrop-filter: blur(3px);
+  opacity: 0;
+  transition: opacity .25s var(--ease, ease);
+}
+
+.bootOverlay.show {
+  display: flex;
+  opacity: 1;
+}
+
+.bootOverlay.leaving {
+  display: flex;
+  opacity: 0;
+}
+
+.bootInner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  max-width: 300px;
+  text-align: center;
+}
+
+.bootSpinner {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 3px solid rgba(139, 92, 246, .18);
+  border-top-color: #a78bfa;
+  animation: bootSpin .8s linear infinite;
+}
+
+@keyframes bootSpin {
+  to { transform: rotate(360deg); }
+}
+
+.bootText {
+  color: #cbbde0;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.bootSkip {
+  display: none;
+  min-height: 40px;
+  padding: 0 18px;
+  border: 1px solid #4a3568;
+  border-radius: 12px;
+  background: #1c1430;
+  color: #efe7f9;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.bootSkip.show {
+  display: block;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bootSpinner {
+    animation-duration: 2.4s;
+  }
+}
+
 /* ----- SIGN UP MODE -----
    The whole screen turns the same subtle blue as Smart, so nobody is left wondering
    whether they are logging in or making a new account.
@@ -3960,6 +4041,33 @@ body.smartMode .messageRow.assistant .messageBubble {
 
 <body>
 
+<div class="bootOverlay show" id="bootOverlay" role="status" aria-live="polite">
+  <div class="bootInner">
+    <div class="bootSpinner" aria-hidden="true"></div>
+    <div class="bootText" id="bootText">Loading</div>
+    <button class="bootSkip" id="bootSkip" type="button">
+      Carry on anyway
+    </button>
+  </div>
+</div>
+
+<!--
+  If the main script never runs at all, a bad connection or a
+  blocked script, the overlay must still let people through.
+-->
+<script id="bootGuard">
+  setTimeout(function () {
+    var overlay = document.getElementById('bootOverlay');
+    var skip = document.getElementById('bootSkip');
+    if (!overlay || !overlay.classList.contains('show')) return;
+    document.getElementById('bootText').textContent =
+      'This is taking longer than usual.';
+    skip.classList.add('show');
+    skip.onclick = function () { overlay.classList.remove('show'); };
+  }, 20000);
+</script>
+
+
 <!-- =====================================================
      AUTH SCREEN
 ===================================================== -->
@@ -6616,7 +6724,108 @@ guestSignUpButton.addEventListener(
 );
 
 
+/* =====================================================
+   WAITING FOR THE PAGE
+
+   A count, not a flag, because opening an account starts
+   inside starting the page, and the overlay should only go
+   when the outermost wait is over.
+===================================================== */
+
+let bootDepth = 0;
+
+let bootSlowTimer = null;
+let bootStuckTimer = null;
+
+
+function showBoot(message) {
+
+  const overlay =
+    document.getElementById('bootOverlay');
+
+  if (!overlay) return;
+
+  bootDepth += 1;
+
+  document.getElementById('bootText').textContent =
+    message || 'Loading';
+
+  document.getElementById('bootSkip').classList.remove('show');
+
+  overlay.classList.remove('leaving');
+  overlay.classList.add('show');
+
+  clearTimeout(bootSlowTimer);
+  clearTimeout(bootStuckTimer);
+
+  /* the free server sleeps, so a long first wait is normal */
+  bootSlowTimer = setTimeout(() => {
+    document.getElementById('bootText').textContent =
+      'Waking the server, this can take up to a minute...';
+  }, 4000);
+
+  /* never trap anyone behind it */
+  bootStuckTimer = setTimeout(() => {
+    document.getElementById('bootText').textContent =
+      'This is taking longer than usual.';
+    document.getElementById('bootSkip').classList.add('show');
+  }, 20000);
+
+}
+
+
+function hideBoot(force) {
+
+  const overlay =
+    document.getElementById('bootOverlay');
+
+  if (!overlay) return;
+
+  bootDepth = force ? 0 : Math.max(0, bootDepth - 1);
+
+  if (bootDepth > 0) return;
+
+  clearTimeout(bootSlowTimer);
+  clearTimeout(bootStuckTimer);
+
+  if (!overlay.classList.contains('show')) return;
+
+  overlay.classList.add('leaving');
+  overlay.classList.remove('show');
+
+  setTimeout(() => {
+    overlay.classList.remove('leaving');
+  }, 260);
+
+}
+
+document
+  .getElementById('bootSkip')
+  ?.addEventListener('click', () => hideBoot(true));
+
+
 async function checkSession() {
+
+  /*
+    The overlay is already showing from the markup, so this
+    claims it rather than showing it again.
+  */
+  bootDepth += 1;
+
+  try {
+
+    return await checkSessionInner();
+
+  } finally {
+
+    hideBoot();
+
+  }
+
+}
+
+
+async function checkSessionInner() {
 
   // the count is live on the login screen as well
   startPresence();
@@ -6699,6 +6908,23 @@ function showApp() {
 ===================================================== */
 
 async function initialiseApp() {
+
+  showBoot('Opening your chats');
+
+  try {
+
+    return await initialiseAppInner();
+
+  } finally {
+
+    hideBoot();
+
+  }
+
+}
+
+
+async function initialiseAppInner() {
 
   if (!currentUser && !guestMode) {
     return;
@@ -16089,7 +16315,7 @@ window.addEventListener('online', () => {
    clearing anything by hand.
 ===================================================== */
 
-const APP_VERSION = '2026-09-21-14';
+const APP_VERSION = '2026-09-21-15';
 
 const RELOAD_FLAG = 'nastivee_reloaded_for';
 
