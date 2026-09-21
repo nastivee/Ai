@@ -305,3 +305,16 @@ create index if not exists credit_events_created_idx on public.credit_events (cr
 
 alter table public.app_settings
   add column if not exists peek_seconds integer not null default 30;
+
+
+-- =========================================================
+-- NEW VIDEO AND VOICE: WHO GETS THEM
+-- 'off' (nobody, admins included), 'admins', or 'everyone'.
+-- Set from the admin panel (Test features).
+-- =========================================================
+
+alter table public.app_settings
+  add column if not exists video_access text not null default 'admins';
+
+alter table public.app_settings
+  add column if not exists voice_access text not null default 'admins';

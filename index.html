@@ -4791,6 +4791,47 @@ body .adminButton .adminAlertDot {
 body .sidebarFoot {
   justify-content: center;
 }
+
+/* three way switch: off / admins / everyone */
+.accessSwitch {
+  display: flex;
+  gap: 3px;
+  padding: 3px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  background:
+    linear-gradient(var(--mute-fill), var(--mute-fill)) padding-box,
+    linear-gradient(var(--mute-line), var(--mute-line)) border-box;
+}
+
+.accessSwitch button {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 34px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--mute-text);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.accessSwitch button:hover:not(.on) {
+  color: #fff;
+  background: rgba(255, 255, 255, .05);
+}
+
+.accessSwitch button.on {
+  background: var(--edge);
+  color: #fff;
+}
+
+.accessSwitch button[data-access="off"].on {
+  background: #4a1d27;
+  color: #ffd2d2;
+}
 </style>
 </head>
 
@@ -5232,20 +5273,32 @@ body .sidebarFoot {
 
       <div class="adminBody">
 
-        <div class="adminToggle">
-          <span>Show the New Video button</span>
-          <button class="adminSwitch" id="adminVideoSwitch" type="button">On</button>
+        <div class="adminField">
+          <div class="adminLabel">New Video</div>
+          <div class="accessSwitch" data-feature="video" role="group" aria-label="Who gets New Video">
+            <button type="button" data-access="off">Off for everyone</button>
+            <button type="button" data-access="admins">Admins only</button>
+            <button type="button" data-access="everyone">Everyone</button>
+          </div>
         </div>
 
-        <div class="adminToggle">
-          <span>Show the voice chat button</span>
-          <button class="adminSwitch" id="adminVoiceSwitch" type="button">On</button>
+        <div class="adminField">
+          <div class="adminLabel">Voice chat</div>
+          <div class="accessSwitch" data-feature="voice" role="group" aria-label="Who gets voice chat">
+            <button type="button" data-access="off">Off for everyone</button>
+            <button type="button" data-access="admins">Admins only</button>
+            <button type="button" data-access="everyone">Everyone</button>
+          </div>
         </div>
 
         <div class="adminHint">
-          Only admins ever see these two. Hiding them is saved on
-          this device, so each admin chooses for themselves.
+          These apply to every account straight away. Off hides the
+          button for admins too. For everyone else a video uses 10
+          images from their balance (coupon holders go free), and
+          voice is free with a limit of 30 calls an hour.
         </div>
+
+        <div class="adminResult" id="adminFeaturesResult"></div>
 
         <div class="adminField">
           <label class="adminLabel" for="adminPeek">
@@ -11082,6 +11135,11 @@ async function generateVideo(prompt, requestChatId, image = null) {
 
     const job = await started.json().catch(() => ({}));
 
+    if (started.status === 402 || job?.needsCredit) {
+      await refreshAccount();
+      openPaywall('empty');
+    }
+
     if (!started.ok || !job.id) {
       throw new Error(job.error || 'The video could not be started.');
     }
@@ -11122,6 +11180,9 @@ async function generateVideo(prompt, requestChatId, image = null) {
     if (!finished) {
       throw new Error('The video took too long. Try again in a moment.');
     }
+
+    /* the balance may have gone down */
+    refreshAccount();
 
     const storedRef = await storeImage(finished);
 
@@ -11191,7 +11252,8 @@ function setVideoMode(enabled) {
     videoMode
       ? (selectedImageData
           ? 'Describe how this photo should come to life...'
-          : 'Describe the video you want me to create...')
+          : 'Describe the video you want me to create...') +
+        (account?.videoCost ? ` (uses ${account.videoCost} images)` : '')
       : (selectedImageData ? 'Ask about it, or say what to change...' : 'Message Nastivee...');
 
 }
@@ -18240,39 +18302,17 @@ let restartPeeking = null;
 
 
 /* =====================================================
-   TEST FEATURES (admins only)
+   NEW VIDEO AND VOICE: WHO GETS THEM
 
-   New Video and voice chat are admins only while they are
-   tested. Each admin can hide either button on their own
-   device from the admin panel.
+   Set in the admin panel, for every account at once: off
+   (nobody, admins included), admins only, or everyone.
+   The server decides; this only shows what it said.
 ===================================================== */
-
-const FEATURE_KEYS = {
-  video: 'nastivee_hide_video',
-  voice: 'nastivee_hide_voice'
-};
-
-function featureHidden(name) {
-  try {
-    return localStorage.getItem(FEATURE_KEYS[name]) === '1';
-  } catch {
-    return false;
-  }
-}
-
-function setFeatureHidden(name, hidden) {
-  try {
-    if (hidden) localStorage.setItem(FEATURE_KEYS[name], '1');
-    else localStorage.removeItem(FEATURE_KEYS[name]);
-  } catch {}
-}
 
 function paintTestFeatures() {
 
-  const admin = account?.admin === true;
-
-  const showVideo = admin && !featureHidden('video');
-  const showVoice = admin && !featureHidden('voice');
+  const showVideo = account?.canVideo === true;
+  const showVoice = account?.canVoice === true;
 
   document.getElementById('videoButton')?.classList.toggle('show', showVideo);
   document.getElementById('voiceButton')?.classList.toggle('show', showVoice);
@@ -18281,40 +18321,85 @@ function paintTestFeatures() {
     setVideoMode(false);
   }
 
-  const videoSwitch = document.getElementById('adminVideoSwitch');
-  const voiceSwitch = document.getElementById('adminVoiceSwitch');
+  document.querySelectorAll('.accessSwitch').forEach(group => {
 
-  if (videoSwitch) {
-    videoSwitch.classList.toggle('on', !featureHidden('video'));
-    videoSwitch.textContent = featureHidden('video') ? 'Hidden' : 'On';
-  }
+    const current = account?.[`${group.dataset.feature}Access`] || 'admins';
 
-  if (voiceSwitch) {
-    voiceSwitch.classList.toggle('on', !featureHidden('voice'));
-    voiceSwitch.textContent = featureHidden('voice') ? 'Hidden' : 'On';
-  }
+    group.querySelectorAll('button').forEach(button => {
+      const on = button.dataset.access === current;
+      button.classList.toggle('on', on);
+      button.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+
+  });
 
   const note = document.getElementById('adminFeaturesNote');
 
   if (note) {
+
+    const word = value => ({ off: 'off', admins: 'admins', everyone: 'everyone' })[value] || 'admins';
+
     const peek = Number(account?.peekSeconds ?? 30);
 
     note.textContent =
-      `Video ${featureHidden('video') ? 'hidden' : 'showing'}, ` +
-      `voice ${featureHidden('voice') ? 'hidden' : 'showing'}, ` +
+      `Video ${word(account?.videoAccess)}, voice ${word(account?.voiceAccess)}, ` +
       (peek > 0 ? `robot every ${peek} to ${peek + 10}s` : 'robot off');
+
   }
 
 }
 
-document.getElementById('adminVideoSwitch')?.addEventListener('click', () => {
-  setFeatureHidden('video', !featureHidden('video'));
-  paintTestFeatures();
-});
+document.querySelectorAll('.accessSwitch').forEach(group => {
 
-document.getElementById('adminVoiceSwitch')?.addEventListener('click', () => {
-  setFeatureHidden('voice', !featureHidden('voice'));
-  paintTestFeatures();
+  group.addEventListener('click', async event => {
+
+    const button = event.target.closest('button[data-access]');
+
+    if (!button || button.classList.contains('on')) return;
+
+    const feature = group.dataset.feature;
+
+    const previous = account[`${feature}Access`];
+
+    /* show it straight away, put it back if the save fails */
+    account[`${feature}Access`] = button.dataset.access;
+    paintTestFeatures();
+
+    try {
+
+      const response =
+        await fetch(`${API_BASE}/api/admin/settings`, {
+          method: 'POST',
+          headers: await apiHeaders(),
+          body: JSON.stringify({ [`${feature}_access`]: button.dataset.access })
+        });
+
+      const data = await response.json();
+
+      if (!response.ok) throw new Error(data?.error || 'Could not save.');
+
+      await refreshAccount();
+
+      const label = { off: 'off for everyone, admins included', admins: 'on for admins only', everyone: 'on for everyone' }[button.dataset.access];
+
+      adminSay(
+        'adminFeaturesResult',
+        data.volatile
+          ? `${feature === 'video' ? 'New Video' : 'Voice chat'} is ${label}, but only until the server restarts. Run the feature SQL in Supabase to make it stick.`
+          : `${feature === 'video' ? 'New Video' : 'Voice chat'} is now ${label}.`,
+        !data.volatile
+      );
+
+    } catch (error) {
+
+      account[`${feature}Access`] = previous;
+      paintTestFeatures();
+      adminSay('adminFeaturesResult', error.message, false);
+
+    }
+
+  });
+
 });
 
 paintTestFeatures();
@@ -18998,7 +19083,7 @@ window.addEventListener('online', () => {
    clearing anything by hand.
 ===================================================== */
 
-const APP_VERSION = '2026-09-22-05';
+const APP_VERSION = '2026-09-22-06';
 
 const RELOAD_FLAG = 'nastivee_reloaded_for';
 

@@ -189,8 +189,29 @@ const SETTINGS_FALLBACK = {
   coupon_code: COUPON_CODE,
   starter_credits: Number(process.env.STARTER_CREDITS || 0),
   /* how often the robot peeks over the message box, 0 is never */
-  peek_seconds: 30
+  peek_seconds: 30,
+  /* who gets New Video and voice chat: off, admins or everyone */
+  video_access: 'admins',
+  voice_access: 'admins'
 };
+
+const ACCESS_LEVELS = ['off', 'admins', 'everyone'];
+
+/* image credits one video costs someone who is not unlimited */
+const VIDEO_CREDIT_COST = Number(process.env.VIDEO_CREDIT_COST || 10);
+
+function featureAccess(settings, name) {
+  const value = settings?.[`${name}_access`];
+  return ACCESS_LEVELS.includes(value) ? value : 'admins';
+}
+
+/* can this person use it, given who it is switched on for */
+function featureAllowed(settings, name, user) {
+  const access = featureAccess(settings, name);
+  if (access === 'everyone') return Boolean(user);
+  if (access === 'admins') return isAdmin(user);
+  return false;
+}
 
 function peekSeconds(settings) {
   const value = Number(settings?.peek_seconds);
@@ -1111,7 +1132,11 @@ app.get('/api/account', async (req, res) => {
       canBuy: paywallReady(),
       admin: false,
       holding: settings.holding_mode !== false,
-      peekSeconds: peekSeconds(settings)
+      peekSeconds: peekSeconds(settings),
+      videoAccess: featureAccess(settings, 'video'),
+      voiceAccess: featureAccess(settings, 'voice'),
+      canVideo: false,
+      canVoice: false
     });
 
   }
@@ -1145,7 +1170,12 @@ app.get('/api/account', async (req, res) => {
     admin,
     alerts: admin ? await openAlertCount() : 0,
     holding: settings.holding_mode !== false,
-    peekSeconds: peekSeconds(settings)
+    peekSeconds: peekSeconds(settings),
+    videoAccess: featureAccess(settings, 'video'),
+    voiceAccess: featureAccess(settings, 'voice'),
+    canVideo: featureAllowed(settings, 'video', user),
+    canVoice: featureAllowed(settings, 'voice', user),
+    videoCost: unlimitedReason ? 0 : VIDEO_CREDIT_COST
   });
 
 });
@@ -1809,6 +1839,22 @@ app.post('/api/admin/settings', async (req, res) => {
     }
 
     patch.peek_seconds = seconds;
+
+  }
+
+  for (const name of ['video', 'voice']) {
+
+    const key = `${name}_access`;
+
+    if (body[key] !== undefined) {
+
+      if (!ACCESS_LEVELS.includes(body[key])) {
+        return res.status(400).json({ error: 'Choose off, admins or everyone.' });
+      }
+
+      patch[key] = body[key];
+
+    }
 
   }
 
@@ -3001,8 +3047,12 @@ app.post('/api/voice/session', async (req, res) => {
       return res.status(401).json({ error: 'Sign in to talk to Nastivee.' });
     }
 
-    if (!isAdmin(user)) {
-      return res.status(403).json({ error: 'Voice is being tested and is not open yet.' });
+    if (!featureAllowed(await getSettings(), 'voice', user)) {
+      return res.status(403).json({ error: 'Voice chat is not switched on at the moment.' });
+    }
+
+    if (await holdingBlocks(user)) {
+      return res.status(503).json({ error: 'Nastivee is being prepared and is not open yet.' });
     }
 
     if (!withinLimit(`voice:${user.id}`, 30)) {
@@ -3136,6 +3186,19 @@ async function geminiFetch(path, options = {}) {
 }
 
 
+async function refundVideo(userId, amount, why) {
+
+  if (!amount) return;
+
+  try {
+    await addCredits(userId, amount, `refund: ${why}`, null);
+  } catch (error) {
+    raiseAlert('refund failed', 'high', `A failed video could not be refunded, account ${userId}. They are ${amount} credits short.`, error.message);
+  }
+
+}
+
+
 app.post('/api/video', async (req, res) => {
 
   try {
@@ -3146,8 +3209,14 @@ app.post('/api/video', async (req, res) => {
       return res.status(401).json({ error: 'Sign in to create videos.' });
     }
 
-    if (!isAdmin(user)) {
-      return res.status(403).json({ error: 'Video is being tested and is not open yet.' });
+    const settingsNow = await getSettings();
+
+    if (!featureAllowed(settingsNow, 'video', user)) {
+      return res.status(403).json({ error: 'Video is not switched on at the moment.' });
+    }
+
+    if (await holdingBlocks(user)) {
+      return res.status(503).json({ error: 'Nastivee is being prepared and is not open yet.' });
     }
 
     if (!GEMINI_API_KEY) {
@@ -3167,6 +3236,42 @@ app.post('/api/video', async (req, res) => {
     if (!prompt) {
       return res.status(400).json({ error: 'Describe the video you want.' });
     }
+
+    /*
+      A video costs VIDEO_CREDIT_COST image credits, unless
+      they are an admin, hold the coupon, or the paywall is
+      off. Taken now, handed back if the clip never arrives.
+    */
+    let charged = 0;
+
+    if (!isAdmin(user) && settingsNow.paywall_enabled !== false) {
+
+      const account = await readAccount(user.id);
+
+      if (account.broken) {
+        return res.status(503).json({ error: 'Could not check your balance. Try again in a moment.' });
+      }
+
+      if (!account.unlimited && !account.unmetered) {
+
+        if ((account.credits || 0) < VIDEO_CREDIT_COST) {
+          return res.status(402).json({
+            error: `A video uses ${VIDEO_CREDIT_COST} images and you have ${account.credits || 0} left. Top up to carry on.`,
+            needsCredit: true,
+            packImages: settingsNow.pack_images,
+            packPricePence: settingsNow.pack_price_pence
+          });
+        }
+
+        await addCredits(user.id, -VIDEO_CREDIT_COST, 'video', null);
+
+        charged = VIDEO_CREDIT_COST;
+
+      }
+
+    }
+
+    req.videoCharged = charged;
 
     const instance = { prompt };
 
@@ -3195,6 +3300,8 @@ app.post('/api/video', async (req, res) => {
 
     try {
 
+      try {
+
       operation =
         await geminiFetch(`models/${VIDEO_MODEL}:predictLongRunning`, {
           method: 'POST',
@@ -3221,9 +3328,17 @@ app.post('/api/video', async (req, res) => {
       throw new Error('The video service did not start a job.');
     }
 
+    } catch (startError) {
+
+      await refundVideo(user.id, charged, 'video did not start');
+
+      throw startError;
+
+    }
+
     tidyVideoJobs();
 
-    videoJobs.set(operation.name, { userId: user.id, created: Date.now(), video: null });
+    videoJobs.set(operation.name, { userId: user.id, created: Date.now(), video: null, charged });
 
     console.log(`VIDEO STARTED: ${operation.name}`);
 
@@ -3248,8 +3363,8 @@ app.get('/api/video/status', async (req, res) => {
 
     const user = await getUser(req);
 
-    if (!user || !isAdmin(user)) {
-      return res.status(403).json({ error: 'Not allowed.' });
+    if (!user) {
+      return res.status(401).json({ error: 'Sign in to see your video.' });
     }
 
     const id = String(req.query?.id || '');
@@ -3272,6 +3387,7 @@ app.get('/api/video/status', async (req, res) => {
 
     if (operation.error) {
       videoJobs.delete(id);
+      await refundVideo(user.id, job.charged, 'video failed');
       return res.json({ done: true, error: operation.error.message || 'The video could not be made.' });
     }
 
@@ -3282,6 +3398,8 @@ app.get('/api/video/status', async (req, res) => {
     if (!uri) {
 
       videoJobs.delete(id);
+
+      await refundVideo(user.id, job.charged, 'video blocked');
 
       const reason =
         (result.raiMediaFilteredReasons || []).join(' ') ||
