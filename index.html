@@ -4569,6 +4569,82 @@ body.smartMode .profileButtonIcon {
   outline: 2px solid #a78bfa;
   outline-offset: 2px;
 }
+
+/* =====================================================
+   THE CHAT TITLE IS THE OPTIONS BUTTON
+   Tap the name to rename or export. Quiet at rest; the
+   gradient edge shows on hover and while the menu is open.
+===================================================== */
+
+.titleWrap {
+  position: relative;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  margin-left: -12px;
+}
+
+body .titleButton,
+body.smartMode .titleButton {
+  width: auto;
+  max-width: 100%;
+  min-width: 0;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 10px 0 12px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--text);
+  font-size: inherit;
+  cursor: pointer;
+}
+
+body .titleButton:hover,
+body .titleButton.open,
+body.smartMode .titleButton:hover,
+body.smartMode .titleButton.open {
+  background:
+    linear-gradient(var(--mute-fill), var(--mute-fill)) padding-box,
+    var(--edge) border-box;
+  color: #fff;
+  transform: none;
+}
+
+.titleChevron {
+  flex-shrink: 0;
+  color: var(--mute-text);
+  transition: transform .2s var(--ease), color .2s var(--ease);
+}
+
+.titleButton:hover .titleChevron,
+.titleButton.open .titleChevron {
+  color: #fff;
+}
+
+.titleButton.open .titleChevron {
+  transform: rotate(180deg);
+}
+
+/* the menu drops from the title itself */
+.titleWrap .chatMenu {
+  top: calc(100% + 8px);
+  left: 0;
+  transform: none;
+}
+
+@media (max-width: 760px) {
+  .titleWrap {
+    margin-left: -4px;
+  }
+
+  body .titleButton,
+  body.smartMode .titleButton {
+    padding: 0 8px 0 10px;
+  }
+}
 </style>
 </head>
 
@@ -5853,21 +5929,18 @@ body.smartMode .profileButtonIcon {
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
       </button>
 
-      <div
-        class="headerTitle"
-        id="headerTitle"
-      >
-        New chat
-      </div>
+      <div class="titleWrap">
 
       <button
-        class="chatMenuButton"
+        class="chatMenuButton titleButton"
         id="chatMenuButton"
         type="button"
-        title="Chat options"
-        aria-label="Chat options"
+        title="Rename or export this chat"
+        aria-haspopup="true"
+        aria-expanded="false"
       >
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="1"></circle><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle></svg>
+        <span class="headerTitle" id="headerTitle">New chat</span>
+        <svg class="titleChevron" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
       </button>
 
       <div class="chatMenu" id="chatMenu">
@@ -5892,6 +5965,8 @@ body.smartMode .profileButtonIcon {
         <button type="button" class="chatMenuItem" data-action="export">
           Export chat
         </button>
+
+      </div>
 
       </div>
 
@@ -16155,10 +16230,15 @@ chatMenuButton.addEventListener('click', event => {
 
   chatMenu.classList.toggle('show');
 
+  chatMenuButton.setAttribute('aria-expanded', chatMenu.classList.contains('show') ? 'true' : 'false');
+  chatMenuButton.classList.toggle('open', chatMenu.classList.contains('show'));
+
 });
 
 document.addEventListener('click', () => {
   chatMenu.classList.remove('show');
+  chatMenuButton.setAttribute('aria-expanded', 'false');
+  chatMenuButton.classList.remove('open');
 });
 
 chatMenu.addEventListener('click', async event => {
@@ -16169,6 +16249,8 @@ chatMenu.addEventListener('click', async event => {
   if (!button) return;
 
   chatMenu.classList.remove('show');
+  chatMenuButton.setAttribute('aria-expanded', 'false');
+  chatMenuButton.classList.remove('open');
 
   if (button.dataset.action === 'rename') {
     await renameCurrentChat();
@@ -18724,7 +18806,7 @@ window.addEventListener('online', () => {
    clearing anything by hand.
 ===================================================== */
 
-const APP_VERSION = '2026-09-22-01';
+const APP_VERSION = '2026-09-22-02';
 
 const RELOAD_FLAG = 'nastivee_reloaded_for';
 
