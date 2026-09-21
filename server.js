@@ -301,6 +301,169 @@ async function saveSettings(patch) {
 }
 
 
+// =====================================================
+// ALERTS
+//
+// When something goes wrong that costs a user money or
+// stops them working, it is written down where the admin
+// panel can see it, and optionally pushed to a Discord or
+// Slack channel via ALERT_WEBHOOK_URL.
+//
+// The same trouble repeating inside 15 minutes is counted
+// on the first alert rather than raised again, so a bad
+// hour is one line reading "x 40", not forty pings.
+//
+// Never anything a user typed. Chats are encrypted and
+// alerts stay that way: an error message, a kind, and at
+// most an account id to help put things right.
+// =====================================================
+
+const ALERT_WEBHOOK_URL =
+  (process.env.ALERT_WEBHOOK_URL || '').trim();
+
+const ALERT_WINDOW_MS = 15 * 60 * 1000;
+
+const recentAlerts = new Map();
+
+
+function alertText(value) {
+
+  return String(value ?? '')
+    .replace(/sk-[A-Za-z0-9_-]{8,}/g, 'sk-[hidden]')
+    .replace(/sk_(live|test)_[A-Za-z0-9]+/g, 'sk_[hidden]')
+    .replace(/whsec_[A-Za-z0-9]+/g, 'whsec_[hidden]')
+    .replace(/sb_secret_[A-Za-z0-9_-]+/g, 'sb_secret_[hidden]')
+    .slice(0, 500);
+
+}
+
+
+async function pushAlert(severity, kind, message) {
+
+  if (!ALERT_WEBHOOK_URL) return;
+
+  const text =
+    `[${severity === 'high' ? 'URGENT' : 'Problem'}] Nastivee AI, ${kind}: ${message}`;
+
+  const controller = new AbortController();
+
+  const timer = setTimeout(() => controller.abort(), 5000);
+
+  try {
+
+    await fetch(ALERT_WEBHOOK_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      /* content for Discord, text for Slack */
+      body: JSON.stringify({ content: text, text }),
+      signal: controller.signal
+    });
+
+  } catch (error) {
+
+    console.error('ALERT PUSH FAILED:', error.message);
+
+  } finally {
+
+    clearTimeout(timer);
+
+  }
+
+}
+
+
+/*
+  Raising an alert must never be the thing that breaks a
+  request, so every failure in here is swallowed.
+*/
+async function raiseAlert(kind, severity, message, detail) {
+
+  try {
+
+    console.error(`ALERT [${severity}] ${kind}: ${message}`);
+
+    const now = Date.now();
+
+    const recent = recentAlerts.get(kind);
+
+    if (recent && now - recent.at < ALERT_WINDOW_MS) {
+
+      recent.at = now;
+      recent.count += 1;
+
+      if (supabaseAdmin && recent.id) {
+
+        await supabaseAdmin
+          .from('app_alerts')
+          .update({
+            count: recent.count,
+            last_at: new Date().toISOString(),
+            detail: alertText(detail)
+          })
+          .eq('id', recent.id);
+
+      }
+
+      return;
+
+    }
+
+    let id = null;
+
+    if (supabaseAdmin) {
+
+      const { data } =
+        await supabaseAdmin
+          .from('app_alerts')
+          .insert({
+            kind,
+            severity,
+            message: alertText(message),
+            detail: alertText(detail)
+          })
+          .select('id')
+          .maybeSingle();
+
+      id = data?.id ?? null;
+
+    }
+
+    recentAlerts.set(kind, { id, at: now, count: 1 });
+
+    await pushAlert(severity, kind, alertText(message));
+
+  } catch (error) {
+
+    console.error('ALERT FAILED:', error?.message);
+
+  }
+
+}
+
+
+async function openAlertCount() {
+
+  if (!supabaseAdmin) return 0;
+
+  try {
+
+    const { count } =
+      await supabaseAdmin
+        .from('app_alerts')
+        .select('id', { count: 'exact', head: true })
+        .is('resolved_at', null);
+
+    return count || 0;
+
+  } catch {
+
+    return 0;
+
+  }
+
+}
+
+
 /*
   Only the admin gets past here.
 */
@@ -705,6 +868,14 @@ async function refundCredit(user, why) {
 
     console.error('REFUND FAILED:', error.message);
 
+    raiseAlert(
+      'refund failed',
+      'high',
+      `A failed image could not be refunded, account ${user.id}. ` +
+      'They are one credit short.',
+      error.message
+    );
+
   }
 
 }
@@ -764,6 +935,15 @@ app.post(
         error.message
       );
 
+      raiseAlert(
+        'payment not credited',
+        'high',
+        'Stripe sent a payment the server could not verify, so no ' +
+        'images were credited. Check STRIPE_WEBHOOK_SECRET on Render, ' +
+        'then resend the event from Stripe.',
+        error.message
+      );
+
       noteWebhook(
         false,
         /Timestamp/.test(error.message)
@@ -808,6 +988,16 @@ app.post(
               `stripe:${session.id}`
             );
 
+          /* what was actually paid, for the dashboard */
+          if (supabaseAdmin && Number.isFinite(session.amount_total)) {
+
+            await supabaseAdmin
+              .from('credit_events')
+              .update({ pence: session.amount_total })
+              .eq('reference', `stripe:${session.id}`);
+
+          }
+
           console.log(
             `PAID: ${userId} +${images}, balance ${balance}`
           );
@@ -847,6 +1037,14 @@ app.post(
         false,
         `Signature was fine, but crediting failed: ${error.message}. ` +
         'Stripe will retry.'
+      );
+
+      raiseAlert(
+        'payment not credited',
+        'high',
+        'A verified payment could not be credited. Stripe will retry ' +
+        'on its own, but check Supabase is reachable.',
+        error.message
       );
 
       /* Tell Stripe to try again */
@@ -936,6 +1134,7 @@ app.get('/api/account', async (req, res) => {
     packPricePence: settings.pack_price_pence,
     canBuy: paywallReady(),
     admin,
+    alerts: admin ? await openAlertCount() : 0,
     holding: settings.holding_mode !== false
   });
 
@@ -1270,6 +1469,14 @@ app.post('/api/account/delete', async (req, res) => {
 
     console.error('ACCOUNT DELETE FAILED:', uid, error);
 
+    raiseAlert(
+      'account deletion failed',
+      'high',
+      `An account deletion stopped part way, account ${uid}. ` +
+      'They can retry, but check it completes.',
+      error?.message
+    );
+
     res.status(500).json({
       error:
         'Part of your account could not be deleted. Nothing ' +
@@ -1473,6 +1680,10 @@ app.get('/api/admin/overview', async (req, res) => {
 
     lastWebhook,
 
+    openAlerts: await openAlertCount(),
+
+    alertPushConfigured: Boolean(ALERT_WEBHOOK_URL),
+
     webhookSecretShape:
       STRIPE_WEBHOOK_SECRET
         ? `${STRIPE_WEBHOOK_SECRET.slice(0, 10)}... ` +
@@ -1608,6 +1819,256 @@ app.post('/api/admin/settings', async (req, res) => {
 
     res.status(500).json({
       error: error.message
+    });
+
+  }
+
+});
+
+
+/*
+  Open alerts, newest first.
+*/
+app.get('/api/admin/alerts', async (req, res) => {
+
+  const user = await requireAdmin(req, res);
+
+  if (!user) return;
+
+  const { data, error } =
+    await supabaseAdmin
+      .from('app_alerts')
+      .select('id, kind, severity, message, detail, count, first_at, last_at')
+      .is('resolved_at', null)
+      .order('last_at', { ascending: false })
+      .limit(50);
+
+  if (error) {
+
+    return res.status(500).json({
+      error: error.message
+    });
+
+  }
+
+  res.json({ alerts: data || [] });
+
+});
+
+
+app.post('/api/admin/alerts/resolve', async (req, res) => {
+
+  const user = await requireAdmin(req, res);
+
+  if (!user) return;
+
+  const stamp = { resolved_at: new Date().toISOString() };
+
+  const query =
+    req.body?.all === true
+      ? supabaseAdmin.from('app_alerts').update(stamp).is('resolved_at', null)
+      : supabaseAdmin.from('app_alerts').update(stamp).eq('id', Number(req.body?.id));
+
+  const { error } = await query;
+
+  if (error) {
+
+    return res.status(500).json({
+      error: error.message
+    });
+
+  }
+
+  /* a resolved kind can alert afresh next time */
+  if (req.body?.all === true) {
+    recentAlerts.clear();
+  }
+
+  res.json({ ok: true, open: await openAlertCount() });
+
+});
+
+
+/*
+  The dashboard: what has happened, day by day.
+
+  Everything is counted from rows that already exist, and
+  none of it reads a word of anybody's chats. Messages are
+  counted, never opened.
+*/
+app.get('/api/admin/stats', async (req, res) => {
+
+  const user = await requireAdmin(req, res);
+
+  if (!user) return;
+
+  const days =
+    Math.min(90, Math.max(7, Number(req.query.days) || 30));
+
+  const since =
+    new Date(Date.now() - (days - 1) * 86400000);
+
+  since.setUTCHours(0, 0, 0, 0);
+
+  const dayKey =
+    value => new Date(value).toISOString().slice(0, 10);
+
+  const series = {};
+
+  for (let i = 0; i < days; i += 1) {
+
+    const key =
+      dayKey(since.getTime() + i * 86400000);
+
+    series[key] = {
+      day: key,
+      signups: 0,
+      activeUsers: 0,
+      messages: 0,
+      images: 0,
+      packs: 0,
+      pence: 0
+    };
+
+  }
+
+  try {
+
+    /* signups, from every account */
+
+    let totalAccounts = 0;
+
+    for (let page = 1; page <= 20; page += 1) {
+
+      const { data, error } =
+        await supabaseAdmin.auth.admin.listUsers({
+          page,
+          perPage: 1000
+        });
+
+      if (error) throw new Error(error.message);
+
+      const users = data?.users || [];
+
+      totalAccounts += users.length;
+
+      users.forEach(one => {
+        const key = dayKey(one.created_at);
+        if (series[key]) series[key].signups += 1;
+      });
+
+      if (users.length < 1000) break;
+
+    }
+
+    /* messages and who was active, counted not read */
+
+    const active = {};
+
+    for (let from = 0; from < 200000; from += 1000) {
+
+      const { data, error } =
+        await supabaseAdmin
+          .from('messages')
+          .select('user_id, created_at')
+          .gte('created_at', since.toISOString())
+          .order('created_at', { ascending: true })
+          .range(from, from + 999);
+
+      if (error) throw new Error(error.message);
+
+      (data || []).forEach(row => {
+
+        const key = dayKey(row.created_at);
+
+        if (!series[key]) return;
+
+        series[key].messages += 1;
+
+        (active[key] ||= new Set()).add(row.user_id);
+
+      });
+
+      if (!data || data.length < 1000) break;
+
+    }
+
+    Object.entries(active).forEach(([key, people]) => {
+      series[key].activeUsers = people.size;
+    });
+
+    /* images made, and packs sold */
+
+    const settings = await getSettings();
+
+    for (let from = 0; from < 200000; from += 1000) {
+
+      const { data, error } =
+        await supabaseAdmin
+          .from('credit_events')
+          .select('reason, pence, created_at')
+          .gte('created_at', since.toISOString())
+          .in('reason', ['image', 'stripe'])
+          .order('created_at', { ascending: true })
+          .range(from, from + 999);
+
+      if (error) throw new Error(error.message);
+
+      (data || []).forEach(row => {
+
+        const key = dayKey(row.created_at);
+
+        if (!series[key]) return;
+
+        if (row.reason === 'image') {
+
+          series[key].images += 1;
+
+        } else {
+
+          series[key].packs += 1;
+
+          /* older sales predate recording the price paid */
+          series[key].pence +=
+            Number(row.pence) || settings.pack_price_pence || 0;
+
+        }
+
+      });
+
+      if (!data || data.length < 1000) break;
+
+    }
+
+    const list = Object.values(series);
+
+    const sum =
+      field => list.reduce((total, day) => total + day[field], 0);
+
+    res.json({
+
+      days,
+
+      totals: {
+        accounts: totalAccounts,
+        signups: sum('signups'),
+        messages: sum('messages'),
+        images: sum('images'),
+        packs: sum('packs'),
+        pence: sum('pence'),
+        peakActive: Math.max(0, ...list.map(day => day.activeUsers))
+      },
+
+      series: list
+
+    });
+
+  } catch (error) {
+
+    console.error('STATS ERROR:', error);
+
+    res.status(500).json({
+      error: 'Could not build the numbers: ' + error.message
     });
 
   }
@@ -2021,6 +2482,13 @@ ${JSON.stringify(memory, null, 2)}
 
         console.error('CHAT STREAM ERROR:', error);
 
+        raiseAlert(
+          'chat failing',
+          'medium',
+          'Replies are failing part way through.',
+          error?.message
+        );
+
         res.write(
           `data: ${JSON.stringify({
             error: error?.message || 'Chat request failed'
@@ -2052,6 +2520,13 @@ ${JSON.stringify(memory, null, 2)}
     console.error(
       'CHAT ERROR:',
       error
+    );
+
+    raiseAlert(
+      'chat failing',
+      'medium',
+      'Chat replies are failing.',
+      error?.message
     );
 
     res.status(500).json({
@@ -2169,6 +2644,13 @@ app.post('/api/image', async (req, res) => {
     console.error(
       'IMAGE GENERATION ERROR:',
       error
+    );
+
+    raiseAlert(
+      'images failing',
+      'medium',
+      'Image generation is failing. Credits are being refunded.',
+      error?.message
     );
 
     await refundCredit(user, 'generate failed');
@@ -2587,6 +3069,13 @@ style was requested.
       error
     );
 
+    raiseAlert(
+      'image edits failing',
+      'medium',
+      'Image edits and Improve are failing. Credits are being refunded.',
+      error?.message
+    );
+
     await refundCredit(user, 'edit failed');
 
     res.status(500).json({
@@ -2621,6 +3110,39 @@ app.get('/', (req, res) => {
 // =====================================================
 // START SERVER
 // =====================================================
+
+/*
+  Anything nobody caught. A promise that rejected is
+  recorded and the server carries on. A thrown exception
+  leaves the process in an unknown state, so it is recorded
+  and the server exits, and Render starts a clean one.
+*/
+process.on('unhandledRejection', reason => {
+
+  raiseAlert(
+    'server error',
+    'medium',
+    'Something failed that nothing was waiting for.',
+    reason?.message || String(reason)
+  );
+
+});
+
+process.on('uncaughtException', error => {
+
+  console.error('UNCAUGHT EXCEPTION:', error);
+
+  raiseAlert(
+    'server crashed',
+    'high',
+    'The server hit an error it could not recover from and restarted.',
+    error?.message
+  ).finally(() => {
+    setTimeout(() => process.exit(1), 500);
+  });
+
+});
+
 
 app.listen(PORT, () => {
 

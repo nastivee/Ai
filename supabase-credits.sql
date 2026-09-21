@@ -261,3 +261,36 @@ create policy "images read own" on storage.objects for select to authenticated
 -- public URL route now answers "Bucket not found".
 drop policy if exists "images read" on storage.objects;
 update storage.buckets set public = false where id = 'images';
+
+
+-- =========================================================
+-- ALERTS AND THE DASHBOARD (run 21 September 2026)
+-- =========================================================
+
+-- Written by the server only. No policies, so the browser
+-- cannot read or write a row.
+create table if not exists public.app_alerts (
+  id          bigserial primary key,
+  kind        text not null,
+  severity    text not null default 'medium',
+  message     text not null,
+  detail      text,
+  count       integer not null default 1,
+  first_at    timestamptz not null default now(),
+  last_at     timestamptz not null default now(),
+  resolved_at timestamptz
+);
+
+alter table public.app_alerts enable row level security;
+revoke all on public.app_alerts from anon, authenticated;
+
+create index if not exists app_alerts_open_idx
+  on public.app_alerts (resolved_at, last_at desc);
+
+-- What each purchase actually paid, so revenue is exact
+-- even after the pack price changes.
+alter table public.credit_events add column if not exists pence integer;
+
+-- The dashboard counts by date.
+create index if not exists messages_created_idx on public.messages (created_at);
+create index if not exists credit_events_created_idx on public.credit_events (created_at);

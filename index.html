@@ -189,7 +189,7 @@ button {
 }
 
 /* ----- SIGN UP MODE -----
-   The whole screen turns teal, so nobody is left wondering
+   The whole screen turns the same deep red as Smart, so nobody is left wondering
    whether they are logging in or making a new account.
    The glow is a layer that fades in, because gradients
    themselves cannot be animated. */
@@ -200,7 +200,7 @@ button {
   inset: 0;
   z-index: 0;
   background:
-    radial-gradient(circle at 50% 20%, #0f4a47 0%, #0f1f24 35%, #0a1114 75%);
+    radial-gradient(circle at 50% 20%, #5c1222 0%, #210a11 35%, #12060a 75%);
   opacity: 0;
   transition: opacity .45s var(--ease);
   pointer-events: none;
@@ -225,37 +225,37 @@ button {
 }
 
 .authScreen.signup .authCard {
-  border-color: rgba(45, 212, 191, .28);
-  background: rgba(14, 30, 34, .92);
+  border-color: rgba(220, 38, 38, .30);
+  background: rgba(34, 10, 16, .92);
   box-shadow: 0 25px 80px rgba(0, 0, 0, .45),
-              0 0 0 1px rgba(45, 212, 191, .06);
+              0 0 0 1px rgba(220, 38, 38, .06);
 }
 
 .authScreen.signup .logoLarge span {
-  color: #2dd4bf;
+  color: #fb7185;
 }
 
 .authScreen.signup .authInput {
-  border-color: #1f4a4a;
-  background: #0b1a1d;
+  border-color: #4a1c28;
+  background: #1a080d;
 }
 
 .authScreen.signup .authInput:focus {
-  border-color: #2dd4bf;
+  border-color: #dc2626;
 }
 
 .authScreen.signup .authButton {
-  background: linear-gradient(135deg, #0d9488, #14b8a6);
+  background: linear-gradient(135deg, #9f1239, #dc2626);
 }
 
 .authScreen.signup .authSwitch button,
 .authScreen.signup .authForgot button,
 .authScreen.signup .authLegal a {
-  color: #5eead4;
+  color: #fda4af;
 }
 
 .authScreen.signup .passwordToggle:hover {
-  color: #ccfbf1;
+  color: #ffe4e6;
 }
 
 /* PASSWORD FIELD WITH VIEW/HIDE TOGGLE */
@@ -1609,6 +1609,306 @@ body.smartMode .messageRow.assistant .messageBubble {
 .adminButton:hover {
   border-color: #6d4fb8;
   color: #e2d7f0;
+}
+
+.adminButton {
+  position: relative;
+}
+
+.adminAlertDot {
+  display: none;
+  width: 8px;
+  height: 8px;
+  margin-left: 2px;
+  border-radius: 50%;
+  background: #ef4444;
+  /* room for the halo, the button has padding either side */
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, .18);
+}
+
+.adminButton.hasAlerts .adminAlertDot {
+  display: inline-block;
+}
+
+.alertList {
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.alertItem {
+  padding: 12px 0;
+  border-top: 1px solid #241b38;
+}
+
+.alertItem:first-child {
+  border-top: 0;
+}
+
+.alertTop {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.alertKind {
+  flex: 1 1 auto;
+  min-width: 0;
+  color: #ded3ec;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.alertKind::first-letter {
+  text-transform: uppercase;
+}
+
+/* a card with nothing to report is neutral, green means done */
+.adminSection:not(.good):not(.warn):not(.bad) .adminDot {
+  background: #6f6580;
+  box-shadow: 0 0 0 4px rgba(111, 101, 128, .14);
+}
+
+.alertItem.high .alertKind {
+  color: #ff9d9d;
+}
+
+.alertCount {
+  flex-shrink: 0;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #2a1f3e;
+  color: #cbbde0;
+  font-size: 11px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.alertMessage {
+  margin-top: 4px;
+  color: #b9adc8;
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+.alertMeta {
+  margin-top: 4px;
+  color: #6f6580;
+  font-size: 11px;
+}
+
+.alertDetail {
+  margin-top: 6px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  background: #110c1d;
+  color: #9b90ab;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+
+.alertResolve {
+  margin-top: 8px;
+  padding: 5px 12px;
+  border: 1px solid #3a2f52;
+  border-radius: 8px;
+  background: none;
+  color: #b9adc8;
+  font-size: 11.5px;
+  font-weight: 700;
+}
+
+.alertResolve:hover {
+  border-color: #6d4fb8;
+  color: #e2d7f0;
+}
+
+.alertEmpty {
+  padding: 14px 0 4px;
+  color: #8fb9a0;
+  font-size: 13px;
+}
+
+/* ---- activity ---- */
+
+.rangeRow {
+  display: flex;
+  gap: 4px;
+  margin-top: 14px;
+  padding: 3px;
+  border: 1px solid #2c2340;
+  border-radius: 999px;
+  background: #110c1d;
+}
+
+.rangeButton {
+  flex: 1 1 0;
+  min-height: 32px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #9b90ab;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.rangeButton.active {
+  background: linear-gradient(135deg, #7c3aed, #9333ea);
+  color: white;
+}
+
+.statGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.statTile {
+  padding: 11px 12px;
+  border: 1px solid #241b38;
+  border-radius: 12px;
+  background: #110c1d;
+  min-width: 0;
+}
+
+.statLabel {
+  color: #8a7e99;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.statValue {
+  margin-top: 4px;
+  color: #f2ecff;
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -.4px;
+  font-variant-numeric: tabular-nums;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.statChart {
+  margin-top: 16px;
+}
+
+.statChartHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.statChartTitle {
+  color: #ded3ec;
+  font-size: 12.5px;
+  font-weight: 800;
+}
+
+.statChartMax {
+  color: #6f6580;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.statChart svg {
+  display: block;
+  width: 100%;
+  height: 72px;
+  margin-top: 6px;
+  overflow: visible;
+}
+
+.statAxis {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 4px;
+  color: #6f6580;
+  font-size: 10.5px;
+}
+
+.statTable {
+  margin-top: 18px;
+}
+
+.statTable summary {
+  padding: 6px 0;
+  color: #a78bfa;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.statTableWrap {
+  max-height: 260px;
+  overflow: auto;
+  margin-top: 8px;
+  border: 1px solid #241b38;
+  border-radius: 10px;
+}
+
+.statTableWrap table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.statTableWrap th,
+.statTableWrap td {
+  padding: 7px 9px;
+  border-bottom: 1px solid #241b38;
+  color: #b9adc8;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.statTableWrap th:first-child,
+.statTableWrap td:first-child {
+  text-align: left;
+}
+
+.statTableWrap th {
+  position: sticky;
+  top: 0;
+  background: #1b1430;
+  color: #ded3ec;
+  font-weight: 800;
+}
+
+.chartTip {
+  display: none;
+  position: fixed;
+  z-index: 999;
+  padding: 7px 10px;
+  border: 1px solid #3a2f52;
+  border-radius: 9px;
+  background: #1b1430;
+  color: #f2ecff;
+  font-size: 12px;
+  line-height: 1.4;
+  pointer-events: none;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, .45);
+  white-space: nowrap;
+}
+
+.chartTip.show {
+  display: block;
+}
+
+.chartTip span {
+  color: #9b90ab;
+}
+
+@media (max-width: 480px) {
+  .statGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 .adminOverlay {
@@ -3881,6 +4181,65 @@ body.smartMode .messageRow.assistant .messageBubble {
 
     </div>
 
+
+    <div class="adminSection" id="adminAlerts">
+
+      <button class="adminSummary" type="button" data-section="adminAlerts">
+        <span class="adminDot" aria-hidden="true"></span>
+        <span class="adminSummaryText">
+          Alerts
+          <span class="adminSummaryNote" id="adminAlertsNote">Checking...</span>
+        </span>
+        <svg class="adminChevron" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
+      </button>
+
+      <div class="adminBody">
+
+        <ul class="alertList" id="alertList"></ul>
+
+        <div class="adminHint" id="alertPushHint"></div>
+
+        <button class="adminAction adminQuiet" id="alertsResolveAll" type="button">
+          Mark all as dealt with
+        </button>
+
+      </div>
+
+    </div>
+
+    <div class="adminSection" id="adminActivity">
+
+      <button class="adminSummary" type="button" data-section="adminActivity">
+        <span class="adminDot" aria-hidden="true"></span>
+        <span class="adminSummaryText">
+          Activity
+          <span class="adminSummaryNote" id="adminActivityNote">Loading...</span>
+        </span>
+        <svg class="adminChevron" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
+      </button>
+
+      <div class="adminBody">
+
+        <div class="rangeRow" id="rangeRow" role="group" aria-label="Period">
+          <button class="rangeButton" type="button" data-days="7">7 days</button>
+          <button class="rangeButton active" type="button" data-days="30">30 days</button>
+          <button class="rangeButton" type="button" data-days="90">90 days</button>
+        </div>
+
+        <div class="statGrid" id="statGrid"></div>
+
+        <div id="statCharts"></div>
+
+        <details class="statTable">
+          <summary>See the numbers day by day</summary>
+          <div class="statTableWrap" id="statTable"></div>
+        </details>
+
+        <div class="chartTip" id="chartTip" role="status"></div>
+
+      </div>
+
+    </div>
     <div class="adminSection" id="adminStatus">
 
       <button class="adminSummary" type="button" data-section="adminStatus">
@@ -4618,6 +4977,7 @@ body.smartMode .messageRow.assistant .messageBubble {
           <polyline points="9 12 11 14 15 10"></polyline>
         </svg>
         Admin
+        <span class="adminAlertDot" id="adminAlertDot" aria-hidden="true"></span>
       </button>
 
       <div class="accountRow">
@@ -12184,6 +12544,11 @@ async function refreshAccount() {
     account.admin === true
   );
 
+  adminButton?.classList.toggle(
+    'hasAlerts',
+    account.admin === true && (account.alerts || 0) > 0
+  );
+
 }
 
 
@@ -12552,6 +12917,10 @@ function toggleAdminSection(id) {
 
   section.classList.toggle('open', opening);
 
+  if (opening && id === 'adminActivity' && statData) {
+    requestAnimationFrame(paintStats);
+  }
+
   if (opening) {
 
     requestAnimationFrame(() => {
@@ -12600,7 +12969,7 @@ function setSectionState(id, state, note) {
 
   section.classList.remove('good', 'warn', 'bad');
 
-  section.classList.add(state);
+  if (state) section.classList.add(state);
 
   const noteEl =
     document.getElementById(`${id}Note`);
@@ -12716,6 +13085,13 @@ function paintAdmin() {
   document.getElementById('adminWebhookUrl').textContent =
     adminData.webhookUrl || '';
 
+  document.getElementById('alertPushHint').textContent =
+    adminData.alertPushConfigured
+      ? 'New alerts are also sent to your alert channel.'
+      : 'Tip: put a Discord or Slack webhook address in ' +
+        'ALERT_WEBHOOK_URL on Render and new alerts reach your ' +
+        'phone too.';
+
   const missing =
     checks.filter(one => !one[1]).length +
     (adminData.lastWebhook && !adminData.lastWebhook.ok ? 1 : 0);
@@ -12820,11 +13196,12 @@ adminButton?.addEventListener('click', async () => {
 
   adminOverlay.classList.add('show');
 
+  loadAlerts();
+
+  loadStats(statDays);
+
   await loadAdmin();
 
-  if (!adminCard.querySelector('.adminSection.open')) {
-    toggleAdminSection('adminStatus');
-  }
 
 });
 
@@ -13127,6 +13504,449 @@ document
     );
 
   });
+
+
+/* =====================================================
+   ADMIN, ALERTS
+===================================================== */
+
+const escapeText =
+  value => String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+
+
+function ago(value) {
+
+  const seconds =
+    Math.max(0, (Date.now() - new Date(value).getTime()) / 1000);
+
+  if (seconds < 60) return 'just now';
+  if (seconds < 3600) return `${Math.round(seconds / 60)} min ago`;
+  if (seconds < 86400) return `${Math.round(seconds / 3600)} h ago`;
+
+  return new Date(value).toLocaleDateString('en-GB', {
+    day: 'numeric', month: 'short'
+  });
+
+}
+
+
+async function loadAlerts() {
+
+  const list =
+    document.getElementById('alertList');
+
+  try {
+
+    const response =
+      await fetch(`${API_BASE}/api/admin/alerts`, {
+        headers: await apiHeaders()
+      });
+
+    const data =
+      await response.json();
+
+    if (!response.ok) throw new Error(data?.error);
+
+    paintAlerts(data.alerts || []);
+
+  } catch (error) {
+
+    list.innerHTML =
+      '<li class="alertEmpty">Could not load alerts just now.</li>';
+
+    setSectionState('adminAlerts', 'warn', 'Could not load alerts');
+
+  }
+
+}
+
+
+function paintAlerts(alerts) {
+
+  const list =
+    document.getElementById('alertList');
+
+  const high =
+    alerts.filter(one => one.severity === 'high').length;
+
+  adminButton?.classList.toggle('hasAlerts', alerts.length > 0);
+
+  document.getElementById('alertsResolveAll').style.display =
+    alerts.length ? '' : 'none';
+
+  if (!alerts.length) {
+
+    list.innerHTML =
+      '<li class="alertEmpty">Nothing has gone wrong. ' +
+      'Anything that does will show up here.</li>';
+
+    setSectionState('adminAlerts', 'good', 'Nothing needs your attention');
+
+    return;
+
+  }
+
+  setSectionState(
+    'adminAlerts',
+    'bad',
+    `${alerts.length} open` +
+      (high ? `, ${high} urgent` : '')
+  );
+
+  list.innerHTML =
+    alerts.map(one =>
+      `<li class="alertItem ${one.severity === 'high' ? 'high' : ''}"` +
+      ` id="alert-${Number(one.id)}">` +
+      '<div class="alertTop">' +
+        `<span class="alertKind">${escapeText(one.kind)}</span>` +
+        (one.count > 1
+          ? `<span class="alertCount">x ${Number(one.count)}</span>`
+          : '') +
+      '</div>' +
+      `<div class="alertMessage">${escapeText(one.message)}</div>` +
+      '<div class="alertMeta">' +
+        (one.count > 1
+          ? `First ${ago(one.first_at)}, latest ${ago(one.last_at)}`
+          : ago(one.last_at)) +
+      '</div>' +
+      (one.detail
+        ? `<div class="alertDetail">${escapeText(one.detail)}</div>`
+        : '') +
+      `<button class="alertResolve" type="button" data-alert="${Number(one.id)}">` +
+        'Dealt with' +
+      '</button>' +
+      '</li>'
+    ).join('');
+
+}
+
+
+async function resolveAlerts(body) {
+
+  try {
+
+    await fetch(`${API_BASE}/api/admin/alerts/resolve`, {
+      method: 'POST',
+      headers: await apiHeaders(),
+      body: JSON.stringify(body)
+    });
+
+  } catch {}
+
+  await loadAlerts();
+
+  /* keep the card you were working in at the top */
+  toggleAdminSection('adminAlerts');
+  toggleAdminSection('adminAlerts');
+
+}
+
+document
+  .getElementById('alertList')
+  ?.addEventListener('click', event => {
+
+    const button =
+      event.target.closest?.('[data-alert]');
+
+    if (button) {
+      button.disabled = true;
+      resolveAlerts({ id: Number(button.dataset.alert) });
+    }
+
+  });
+
+document
+  .getElementById('alertsResolveAll')
+  ?.addEventListener('click', () => {
+    resolveAlerts({ all: true });
+  });
+
+
+/* =====================================================
+   ADMIN, ACTIVITY
+
+   Four small charts, one measure each, never two on one
+   axis. Bars grow from a shared baseline with a 4px
+   rounded top and a 2px gap between them. Every bar has a
+   hover and tap target the full height of its column, and
+   the same numbers sit in a table underneath.
+===================================================== */
+
+let statDays = 30;
+
+let statData = null;
+
+const CHART_HUE = '#8b5cf6';
+
+
+function shortDay(key) {
+
+  return new Date(`${key}T12:00:00Z`)
+    .toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+
+}
+
+
+function compact(value) {
+
+  return value >= 10000
+    ? `${(value / 1000).toFixed(value >= 100000 ? 0 : 1)}K`
+    : value.toLocaleString('en-GB');
+
+}
+
+
+async function loadStats(days) {
+
+  statDays = days;
+
+  document
+    .querySelectorAll('#rangeRow .rangeButton')
+    .forEach(button => {
+      button.classList.toggle(
+        'active',
+        Number(button.dataset.days) === days
+      );
+    });
+
+  try {
+
+    const response =
+      await fetch(`${API_BASE}/api/admin/stats?days=${days}`, {
+        headers: await apiHeaders()
+      });
+
+    const data =
+      await response.json();
+
+    if (!response.ok) throw new Error(data?.error);
+
+    statData = data;
+
+    paintStats();
+
+  } catch (error) {
+
+    document.getElementById('statGrid').innerHTML = '';
+    document.getElementById('statCharts').innerHTML =
+      `<p class="adminHint">${escapeText(error.message || 'Could not load the numbers.')}</p>`;
+
+    setSectionState('adminActivity', 'warn', 'Could not load the numbers');
+
+  }
+
+}
+
+
+function paintStats() {
+
+  const t = statData.totals;
+
+  setSectionState(
+    'adminActivity',
+    null,
+    `Last ${statData.days} days: ${t.signups} signups, ` +
+    `${t.images} images, ${money(t.pence)}`
+  );
+
+  const tiles = [
+    ['Accounts in total', compact(t.accounts)],
+    ['New signups', compact(t.signups)],
+    ['Busiest day, people', compact(t.peakActive)],
+    ['Messages sent', compact(t.messages)],
+    ['Images made', compact(t.images)],
+    ['Revenue', money(t.pence)]
+  ];
+
+  document.getElementById('statGrid').innerHTML =
+    tiles.map(([label, value]) =>
+      '<div class="statTile">' +
+      `<div class="statLabel">${label}</div>` +
+      `<div class="statValue">${value}</div>` +
+      '</div>'
+    ).join('');
+
+  const charts = [
+    ['signups', 'Signups', value => `${value} ${value === 1 ? 'signup' : 'signups'}`],
+    ['activeUsers', 'People active', value => `${value} ${value === 1 ? 'person' : 'people'}`],
+    ['images', 'Images made', value => `${value} ${value === 1 ? 'image' : 'images'}`],
+    ['pence', 'Revenue', value => money(value)]
+  ];
+
+  const holder =
+    document.getElementById('statCharts');
+
+  holder.innerHTML =
+    charts.map(([field, title], index) =>
+      `<div class="statChart" id="statChart-${field}">` +
+      '<div class="statChartHead">' +
+        `<span class="statChartTitle">${title}</span>` +
+        `<span class="statChartMax" id="statMax-${field}"></span>` +
+      '</div>' +
+      `<svg role="img" aria-label="${title} per day" data-field="${field}" data-index="${index}"></svg>` +
+      '<div class="statAxis">' +
+        `<span>${shortDay(statData.series[0].day)}</span>` +
+        `<span>${shortDay(statData.series[statData.series.length - 1].day)}</span>` +
+      '</div>' +
+      '</div>'
+    ).join('');
+
+  charts.forEach(([field, , say]) => drawBars(field, say));
+
+  /* the same numbers, as a table */
+  const rows =
+    [...statData.series].reverse();
+
+  document.getElementById('statTable').innerHTML =
+    '<table><thead><tr>' +
+    '<th>Day</th><th>Signups</th><th>Active</th><th>Messages</th>' +
+    '<th>Images</th><th>Revenue</th>' +
+    '</tr></thead><tbody>' +
+    rows.map(day =>
+      '<tr>' +
+      `<td>${shortDay(day.day)}</td>` +
+      `<td>${day.signups}</td>` +
+      `<td>${day.activeUsers}</td>` +
+      `<td>${day.messages}</td>` +
+      `<td>${day.images}</td>` +
+      `<td>${money(day.pence)}</td>` +
+      '</tr>'
+    ).join('') +
+    '</tbody></table>';
+
+}
+
+
+function drawBars(field, say) {
+
+  const svg =
+    document.querySelector(`#statChart-${field} svg`);
+
+  if (!svg) return;
+
+  const series = statData.series;
+
+  const width =
+    Math.max(200, svg.getBoundingClientRect().width || 440);
+
+  const height = 72;
+
+  const max =
+    Math.max(1, ...series.map(day => day[field]));
+
+  document.getElementById(`statMax-${field}`).textContent =
+    field === 'pence'
+      ? `peak ${money(max)}`
+      : `peak ${compact(max)}`;
+
+  const slot = width / series.length;
+
+  /* 2px of surface between neighbours, never wider than 24 */
+  const barWidth =
+    Math.max(1, Math.min(24, slot - 2));
+
+  const radius =
+    Math.min(4, barWidth / 2);
+
+  const bars = [];
+  const hits = [];
+
+  series.forEach((day, i) => {
+
+    const value = day[field];
+
+    const x = i * slot + (slot - barWidth) / 2;
+
+    if (value > 0) {
+
+      const h = Math.max(2, (value / max) * (height - 2));
+
+      const y = height - h;
+
+      const r = Math.min(radius, h);
+
+      /* rounded at the data end, square at the baseline */
+      bars.push(
+        `<path d="M${x},${height} V${y + r} ` +
+        `Q${x},${y} ${x + r},${y} H${x + barWidth - r} ` +
+        `Q${x + barWidth},${y} ${x + barWidth},${y + r} V${height} Z" ` +
+        `fill="${CHART_HUE}"></path>`
+      );
+
+    }
+
+    /* the target is the whole column, bigger than the bar */
+    hits.push(
+      `<rect x="${i * slot}" y="0" width="${slot}" height="${height}" ` +
+      `fill="transparent" data-i="${i}"></rect>`
+    );
+
+  });
+
+  svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+
+  svg.innerHTML =
+    `<line x1="0" y1="${height - .5}" x2="${width}" y2="${height - .5}" ` +
+    'stroke="#2c2244" stroke-width="1"></line>' +
+    bars.join('') +
+    hits.join('');
+
+  const tip =
+    document.getElementById('chartTip');
+
+  const show = event => {
+
+    const target =
+      event.target.closest?.('rect[data-i]');
+
+    if (!target) return;
+
+    const day = series[Number(target.dataset.i)];
+
+    tip.innerHTML =
+      `${say(day[field])} <span>${shortDay(day.day)}</span>`;
+
+    const point =
+      event.touches?.[0] || event;
+
+    tip.style.left = `${Math.min(window.innerWidth - 150, point.clientX + 12)}px`;
+    tip.style.top = `${point.clientY - 38}px`;
+
+    tip.classList.add('show');
+
+  };
+
+  svg.onpointermove = show;
+  svg.onpointerdown = show;
+  svg.onpointerleave = () => tip.classList.remove('show');
+
+}
+
+
+document
+  .getElementById('rangeRow')
+  ?.addEventListener('click', event => {
+
+    const button =
+      event.target.closest?.('.rangeButton');
+
+    if (button) {
+      loadStats(Number(button.dataset.days));
+    }
+
+  });
+
+window.addEventListener('resize', () => {
+
+  if (statData && adminOverlay?.classList.contains('show')) {
+    paintStats();
+  }
+
+});
 
 
 /* =====================================================
@@ -15193,7 +16013,7 @@ window.addEventListener('online', () => {
    clearing anything by hand.
 ===================================================== */
 
-const APP_VERSION = '2026-09-21-09';
+const APP_VERSION = '2026-09-21-10';
 
 const RELOAD_FLAG = 'nastivee_reloaded_for';
 
