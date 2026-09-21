@@ -406,9 +406,18 @@ button {
 }
 
 .logo {
-  font-size: 24px;
-  font-weight: 800;
-  letter-spacing: -.8px;
+  display: flex;
+  align-items: center;
+  /* a little room so the glow is never clipped by the header */
+  padding: 4px 2px;
+}
+
+.logoMark {
+  display: block;
+  width: 52px;
+  height: 52px;
+  object-fit: contain;
+  filter: drop-shadow(0 6px 14px rgba(139, 92, 246, .35));
 }
 
 .logo span {
@@ -4892,7 +4901,13 @@ body.smartMode .messageRow.assistant .messageBubble {
     <div class="sidebarHeader">
 
       <div class="logo">
-        Nastivee<span>AI</span>
+        <img
+          class="logoMark"
+          src="./NAI-Logo.webp"
+          alt="Nastivee AI"
+          width="52"
+          height="52"
+        >
       </div>
 
       <div class="newChatRow">
@@ -5162,12 +5177,6 @@ body.smartMode .messageRow.assistant .messageBubble {
       >
 
         <div class="emptyInner">
-
-          <img
-            class="emptyIcon"
-            src="./NAI-Logo.webp"
-            alt="Nastivee AI"
-          >
 
           <div class="emptyText">
             Ask me anything, upload an image to edit,
@@ -7685,8 +7694,6 @@ function clearChatUI() {
 
   emptyState.innerHTML = `
     <div class="emptyInner">
-      <img class="emptyIcon" src="./NAI-Logo.webp" alt="Nastivee AI">
-
       <div class="emptyText">
         Ask me anything, upload an image to edit,
         or create something new, and I will remember
@@ -16013,7 +16020,7 @@ window.addEventListener('online', () => {
    clearing anything by hand.
 ===================================================== */
 
-const APP_VERSION = '2026-09-21-10';
+const APP_VERSION = '2026-09-21-11';
 
 const RELOAD_FLAG = 'nastivee_reloaded_for';
 
