@@ -5093,6 +5093,77 @@ body .sidebarBottom {
     linear-gradient(#7f1d2d, #7f1d2d) border-box;
   color: #ffb4b4;
 }
+
+/* =====================================================
+   ADMIN: RULES
+===================================================== */
+
+.ruleCard {
+  margin-top: 12px;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid transparent;
+  background:
+    linear-gradient(var(--mute-fill), var(--mute-fill)) padding-box,
+    linear-gradient(var(--mute-line), var(--mute-line)) border-box;
+}
+
+.ruleCard.off {
+  opacity: .6;
+}
+
+.ruleTop {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.ruleTitle {
+  flex: 1;
+  min-width: 0;
+  color: var(--mute-text);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .6px;
+  text-transform: uppercase;
+}
+
+.ruleRemove {
+  width: 34px;
+  height: 34px;
+  padding: 0 9px;
+  border: 0;
+  border-radius: 10px;
+  background: none;
+  color: var(--mute-text);
+  cursor: pointer;
+}
+
+.ruleRemove:hover {
+  color: #ff7a7a;
+  background: rgba(255, 90, 90, .1);
+}
+
+.ruleCard label {
+  display: block;
+  margin: 8px 0 5px;
+  color: #9b90ab;
+  font-size: 11.5px;
+  font-weight: 700;
+}
+
+.ruleCard textarea.adminInput {
+  min-height: 64px;
+  padding: 10px 13px;
+  resize: vertical;
+  font-family: inherit;
+  line-height: 1.45;
+}
+
+.ruleCard .accessSwitch {
+  margin-top: 2px;
+}
 </style>
 </head>
 
@@ -5580,6 +5651,43 @@ body .sidebarBottom {
         </button>
 
         <div class="adminResult" id="adminPeekResult"></div>
+
+      </div>
+
+    </div>
+
+
+    <div class="adminSection" id="adminRules">
+
+      <button class="adminSummary" type="button" data-section="adminRules">
+        <span class="adminDot" aria-hidden="true"></span>
+        <span class="adminSummaryText">
+          Rules
+          <span class="adminSummaryNote" id="adminRulesNote"></span>
+        </span>
+        <svg class="adminChevron" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
+      </button>
+
+      <div class="adminBody">
+
+        <div class="adminHint">
+          Swap words people type for your own wording before
+          anything is processed. Whole words only, any case.
+          Their message still shows as they typed it; only what
+          the AI receives changes. Applies to every account.
+        </div>
+
+        <div id="rulesList"></div>
+
+        <button class="adminAction adminQuiet" id="addRule" type="button">
+          Add a rule
+        </button>
+
+        <button class="adminAction" id="saveRules" type="button">
+          Save rules
+        </button>
+
+        <div class="adminResult" id="rulesResult"></div>
 
       </div>
 
@@ -12154,7 +12262,9 @@ const ICONS = {
   check:
     '<polyline points="20 6 9 17 4 12"></polyline>',
   bookmark:
-    '<path d="M19 21l-7-4.5L5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>'
+    '<path d="M19 21l-7-4.5L5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>',
+  trash:
+    '<path d="M3 6h18"></path><path d="M8 6V4.5A1.5 1.5 0 0 1 9.5 3h5A1.5 1.5 0 0 1 16 4.5V6"></path><path d="M5.5 6l1 13.2A2 2 0 0 0 8.5 21h7a2 2 0 0 0 2-1.8L18.5 6"></path><path d="M10 11v6M14 11v6"></path>'
 };
 
 function icon(name, size = 15) {
@@ -15187,6 +15297,8 @@ function setSectionState(id, state, note) {
 function paintAdmin() {
 
   if (!adminData) return;
+
+  loadRulesFromAdmin(adminData.settings);
 
   const c =
     adminData.configured || {};
@@ -18993,6 +19105,168 @@ paintSaved();
 
 
 /* =====================================================
+   ADMIN: RULES
+
+   Word swaps the server applies before anything reaches
+   the AI. Edited here as a list, saved in one go.
+===================================================== */
+
+const STARTER_RULE = {
+  words: ['sexy', 'sexier', 'sexiest'],
+  replace: 'visually striking and magnetic with an alluring, sophisticated aesthetic',
+  target: 'all',
+  enabled: true
+};
+
+let rulesDraft = [];
+let rulesLoaded = false;
+
+const rulesList = document.getElementById('rulesList');
+
+function paintRulesNote() {
+  const on = rulesDraft.filter(rule => rule.enabled !== false).length;
+  const note = document.getElementById('adminRulesNote');
+  if (note) note.textContent = rulesDraft.length ? `${on} of ${rulesDraft.length} on` : 'None yet';
+}
+
+function paintRules() {
+
+  rulesList.innerHTML = '';
+
+  rulesDraft.forEach((rule, index) => {
+
+    const card = document.createElement('div');
+    card.className = `ruleCard${rule.enabled === false ? ' off' : ''}`;
+
+    card.innerHTML = `
+      <div class="ruleTop">
+        <span class="ruleTitle">Rule ${index + 1}</span>
+        <button type="button" class="adminSwitch ${rule.enabled === false ? '' : 'on'}" data-role="toggle">${rule.enabled === false ? 'Off' : 'On'}</button>
+        <button type="button" class="ruleRemove" data-role="remove" title="Remove this rule" aria-label="Remove this rule">${icon('trash', 16)}</button>
+      </div>
+      <label>When someone types any of these (separate with commas)</label>
+      <input class="adminInput" data-role="words" type="text" autocomplete="off" spellcheck="false">
+      <label>Swap it for</label>
+      <textarea class="adminInput" data-role="replace" rows="2"></textarea>
+      <label>Applies to</label>
+      <div class="accessSwitch" data-role="target">
+        <button type="button" data-target="images">Images and video</button>
+        <button type="button" data-target="chat">Chat</button>
+        <button type="button" data-target="all">Both</button>
+      </div>`;
+
+    card.querySelector('[data-role="words"]').value = (rule.words || []).join(', ');
+    card.querySelector('[data-role="replace"]').value = rule.replace || '';
+
+    card.querySelectorAll('[data-target]').forEach(button => {
+      button.classList.toggle('on', button.dataset.target === (rule.target || 'all'));
+    });
+
+    card.querySelector('[data-role="words"]').addEventListener('input', event => {
+      rule.words = event.target.value.split(',').map(word => word.trim()).filter(Boolean);
+    });
+
+    card.querySelector('[data-role="replace"]').addEventListener('input', event => {
+      rule.replace = event.target.value;
+    });
+
+    card.querySelector('[data-role="target"]').addEventListener('click', event => {
+      const button = event.target.closest('[data-target]');
+      if (!button) return;
+      rule.target = button.dataset.target;
+      paintRules();
+    });
+
+    card.querySelector('[data-role="toggle"]').addEventListener('click', () => {
+      rule.enabled = rule.enabled === false;
+      paintRules();
+    });
+
+    card.querySelector('[data-role="remove"]').addEventListener('click', () => {
+      rulesDraft.splice(index, 1);
+      paintRules();
+    });
+
+    rulesList.appendChild(card);
+
+  });
+
+  paintRulesNote();
+
+}
+
+function loadRulesFromAdmin(settings) {
+
+  if (rulesLoaded) return;
+
+  rulesLoaded = true;
+
+  const saved = Array.isArray(settings?.rules) ? settings.rules : [];
+
+  rulesDraft = saved.length
+    ? saved.map(rule => ({ ...rule, words: [...(rule.words || [])] }))
+    : [{ ...STARTER_RULE, words: [...STARTER_RULE.words] }];
+
+  paintRules();
+
+  if (!saved.length) {
+    adminSay('rulesResult', 'Here is your example rule, ready to go. It is not live until you press Save rules.', true);
+  }
+
+}
+
+document.getElementById('addRule')?.addEventListener('click', () => {
+  rulesDraft.push({ words: [], replace: '', target: 'all', enabled: true });
+  paintRules();
+  rulesList.querySelector('.ruleCard:last-child [data-role="words"]')?.focus();
+});
+
+document.getElementById('saveRules')?.addEventListener('click', async () => {
+
+  const button = document.getElementById('saveRules');
+
+  const cleaned = rulesDraft.filter(rule => (rule.words || []).length);
+
+  button.disabled = true;
+
+  try {
+
+    const response =
+      await fetch(`${API_BASE}/api/admin/settings`, {
+        method: 'POST',
+        headers: await apiHeaders(),
+        body: JSON.stringify({ rules: cleaned })
+      });
+
+    const data = await response.json();
+
+    if (!response.ok) throw new Error(data?.error || 'Could not save.');
+
+    rulesDraft = cleaned;
+
+    paintRules();
+
+    adminSay(
+      'rulesResult',
+      data.volatile
+        ? 'Rules are live, but only until the server restarts. Run the rules SQL in Supabase to make them stick.'
+        : `Saved. ${cleaned.filter(rule => rule.enabled !== false).length} rule(s) are live for everyone.`,
+      !data.volatile
+    );
+
+  } catch (error) {
+
+    adminSay('rulesResult', error.message, false);
+
+  } finally {
+
+    button.disabled = false;
+
+  }
+
+});
+
+/* =====================================================
    SEND BUTTON
 ===================================================== */
 
@@ -19784,7 +20058,7 @@ window.addEventListener('online', () => {
    clearing anything by hand.
 ===================================================== */
 
-const APP_VERSION = '2026-09-22-12';
+const APP_VERSION = '2026-09-22-13';
 
 const RELOAD_FLAG = 'nastivee_reloaded_for';
 

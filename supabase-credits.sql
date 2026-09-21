@@ -352,3 +352,13 @@ create policy "saved own remove" on public.saved_comments
   for delete using (auth.uid() = user_id);
 
 grant select, insert, delete on public.saved_comments to authenticated;
+
+
+-- =========================================================
+-- RULES
+-- Word swaps applied before a request is processed. Set
+-- from the admin panel (Rules).
+-- =========================================================
+
+alter table public.app_settings
+  add column if not exists rules jsonb not null default '[]'::jsonb;

@@ -192,8 +192,94 @@ const SETTINGS_FALLBACK = {
   peek_seconds: 30,
   /* who gets New Video and voice chat: off, admins or everyone */
   video_access: 'admins',
-  voice_access: 'admins'
+  voice_access: 'admins',
+  /* word swaps applied to what users type, set in the admin panel */
+  rules: []
 };
+
+/*
+  RULES
+
+  Each rule swaps listed words or phrases for set wording
+  before a request is processed. Whole words only, any
+  case. 'images' covers pictures and video, 'chat' covers
+  chat messages, 'all' covers both. The user's own message
+  is saved as they typed it; only what the models see
+  changes.
+*/
+const RULE_TARGETS = ['images', 'chat', 'all'];
+
+function escapeRegex(text) {
+  return String(text).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function cleanRules(input) {
+
+  if (!Array.isArray(input)) return null;
+
+  const rules = [];
+
+  for (const raw of input.slice(0, 50)) {
+
+    const words =
+      (Array.isArray(raw?.words) ? raw.words : String(raw?.words || '').split(','))
+        .map(word => String(word).trim())
+        .filter(word => word.length > 0 && word.length <= 60)
+        .slice(0, 30);
+
+    const replace = String(raw?.replace ?? '').slice(0, 400);
+
+    if (!words.length) continue;
+
+    rules.push({
+      words,
+      replace,
+      target: RULE_TARGETS.includes(raw?.target) ? raw.target : 'all',
+      enabled: raw?.enabled !== false
+    });
+
+  }
+
+  return rules;
+
+}
+
+async function applyRules(text, target) {
+
+  if (typeof text !== 'string' || !text) return typeof text === 'string' ? text : '';
+
+  let rules = [];
+
+  try {
+    rules = cleanRules((await getSettings()).rules) || [];
+  } catch {
+    return text;
+  }
+
+  let out = text;
+
+  for (const rule of rules) {
+
+    if (!rule.enabled) continue;
+    if (rule.target !== 'all' && rule.target !== target) continue;
+
+    const pattern =
+      new RegExp(
+        `(?<![\\p{L}\\p{N}])(?:${rule.words.map(escapeRegex).join('|')})(?![\\p{L}\\p{N}])`,
+        'giu'
+      );
+
+    out = out.replace(pattern, () => rule.replace);
+
+  }
+
+  if (out !== text) {
+    console.log(`RULES APPLIED (${target})`);
+  }
+
+  return out;
+
+}
 
 const ACCESS_LEVELS = ['off', 'admins', 'everyone'];
 
@@ -1855,6 +1941,18 @@ app.post('/api/admin/settings', async (req, res) => {
 
   }
 
+  if (body.rules !== undefined) {
+
+    const rules = cleanRules(body.rules);
+
+    if (!rules) {
+      return res.status(400).json({ error: 'Rules must be a list.' });
+    }
+
+    patch.rules = rules;
+
+  }
+
   for (const name of ['video', 'voice']) {
 
     const key = `${name}_access`;
@@ -2678,8 +2776,16 @@ ${typeof memory === 'string' ? (memory.trim() || '(nothing saved yet)') : JSON.s
 
     const cleanMessages =
       Array.isArray(messages)
-        ? messages.slice(-30)
+        ? messages.slice(-30).map(message => ({ ...message }))
         : [];
+
+    /* rules reach the newest thing they typed */
+    for (let i = cleanMessages.length - 1; i >= 0; i -= 1) {
+      if (cleanMessages[i]?.role === 'user' && typeof cleanMessages[i].content === 'string') {
+        cleanMessages[i].content = await applyRules(cleanMessages[i].content, 'chat');
+        break;
+      }
+    }
 
 
     /*
@@ -3242,7 +3348,7 @@ app.post('/api/video', async (req, res) => {
       return res.status(429).json({ error: 'That is a lot of videos for one hour. Give it a little while.' });
     }
 
-    const prompt = String(req.body?.prompt || '').trim().slice(0, 2000);
+    const prompt = (await applyRules(String(req.body?.prompt || ''), 'images')).trim().slice(0, 2000);
     const shape = req.body?.shape === 'portrait' ? 'portrait' : 'landscape';
     const image = typeof req.body?.image === 'string' ? req.body.image : null;
 
@@ -3461,11 +3567,13 @@ app.post('/api/image', async (req, res) => {
     }
 
     const {
-      prompt,
+      prompt: typedPrompt,
 
       /* 'square', 'portrait' or 'landscape' */
       shape = 'square'
     } = req.body;
+
+    const prompt = await applyRules(typedPrompt, 'images');
 
     if (!prompt || !prompt.trim()) {
 
@@ -3591,7 +3699,7 @@ app.post('/api/image/edit', async (req, res) => {
     }
 
     const {
-      prompt,
+      prompt: typedPrompt,
       image,
       regenerate = false,
 
@@ -3604,6 +3712,8 @@ app.post('/api/image/edit', async (req, res) => {
       */
       fromUpload = false
     } = req.body;
+
+    const prompt = await applyRules(typedPrompt, 'images');
 
 
     if (!prompt || !prompt.trim()) {
