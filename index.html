@@ -4645,6 +4645,63 @@ body.smartMode .titleButton.open {
     padding: 0 8px 0 10px;
   }
 }
+
+/* =====================================================
+   CHAT LIST ROWS
+   In step with the quiet buttons: the open chat gets a
+   hairline and the gradient bar, and delete is a small
+   bin that only turns red when you point at it.
+===================================================== */
+
+body .chatHistoryItem.active,
+body.smartMode .chatHistoryItem.active {
+  border: 1px solid transparent;
+  background:
+    linear-gradient(var(--mute-fill), var(--mute-fill)) padding-box,
+    linear-gradient(var(--mute-line), var(--mute-line)) border-box;
+  color: #fff;
+}
+
+body .chatHistoryItem.active::before {
+  background: var(--edge);
+}
+
+body .deleteChatButton {
+  align-self: center;
+  min-width: 0;
+  width: 34px;
+  height: 34px;
+  padding: 0 9px;
+  margin-left: 2px;
+  border: 0;
+  border-left: 0;
+  border-radius: 10px;
+  background: none;
+  color: var(--mute-text);
+  opacity: .55;
+  font-size: inherit;
+  transition: color .15s ease, opacity .15s ease, background .15s ease;
+}
+
+@media (hover: hover) {
+  body .deleteChatButton {
+    opacity: 0;
+  }
+
+  body .chatHistoryItem:hover .deleteChatButton,
+  body .chatHistoryItem.active .deleteChatButton,
+  body .deleteChatButton:focus-visible {
+    opacity: .75;
+  }
+}
+
+body .deleteChatButton:hover,
+body .deleteChatButton:active {
+  opacity: 1;
+  color: #ff7a7a;
+  background: rgba(255, 90, 90, .1);
+  transform: none;
+}
 </style>
 </head>
 
@@ -6092,7 +6149,7 @@ body.smartMode .titleButton.open {
 
               <button
                 type="button"
-                class="photoChoiceButton active"
+                class="photoChoiceButton"
                 data-action="edit"
               >
                 Edit it
@@ -6282,6 +6339,39 @@ let imageMode = false;
 
 /* what to do with an attached photo: 'edit' or 'ask' */
 let photoAction = 'edit';
+
+/* true once the user taps Edit it or Ask about it themselves */
+let photoActionChosen = false;
+
+/*
+  When nobody has picked, the words decide. A question about
+  the photo ("what does it say on the can?") is answered in
+  words, and the photo is never redrawn. Anything that asks
+  for a change is an edit.
+*/
+function guessPhotoAction(text) {
+
+  const t = String(text || '').trim().toLowerCase();
+
+  if (!t) return 'edit';
+
+  const editWords =
+    /\b(make|turn|change|replace|remove|erase|add|put|edit|convert|recolou?r|colou?r in|restyle|style it|swap|brighten|darken|blur|crop|fix|retouch|enhance|upscale|cartoon|anime|draw|redraw|paint|give (it|him|her|them)|in the style of|background)\b/;
+
+  const askWords =
+    /^(what|what's|whats|who|who's|where|when|why|how|which|is|are|was|were|does|do|did|can you (read|tell|see|describe|explain|identify|translate)|could you (read|tell|describe|explain)|read|tell me|describe|explain|identify|translate|transcribe|count|name)\b|\b(what does it say|what it says|what is (this|that|it)|what's written|the (text|writing|wording|words|label|brand)|read (it|this|the))\b/;
+
+  if (askWords.test(t) && !/^(make|turn|change|replace|remove|add|put|edit)\b/.test(t)) {
+    return 'ask';
+  }
+
+  if (/\?\s*$/.test(t) && !editWords.test(t)) {
+    return 'ask';
+  }
+
+  return 'edit';
+
+}
 
 /* the shape of the next generated image */
 let imageShape = 'square';
@@ -8153,8 +8243,8 @@ function renderChatHistory() {
       deleteButton.className =
         'deleteChatButton';
 
-      deleteButton.textContent =
-        '\u00d7';
+      deleteButton.innerHTML =
+        '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4.5A1.5 1.5 0 0 1 9.5 3h5A1.5 1.5 0 0 1 16 4.5V6"/><path d="M5.5 6l1 13.2A2 2 0 0 0 8.5 21h7a2 2 0 0 0 2-1.8L18.5 6"/><path d="M10 11v6M14 11v6"/></svg>';
 
       deleteButton.title =
         'Delete chat';
@@ -9379,6 +9469,8 @@ photoChoice.addEventListener('click', event => {
   photoAction =
     button.dataset.action;
 
+  photoActionChosen = true;
+
   [...photoChoice.children].forEach(item => {
     item.classList.toggle(
       'active',
@@ -10427,6 +10519,8 @@ function addImageMessage(
 
     photoAction = 'edit';
 
+    photoActionChosen = true;
+
     uploadThumb.src = selectedImageData;
 
     uploadName.textContent = 'This picture';
@@ -11004,7 +11098,7 @@ function setVideoMode(enabled) {
       ? (selectedImageData
           ? 'Describe how this photo should come to life...'
           : 'Describe the video you want me to create...')
-      : (selectedImageData ? 'Describe what you want me to change...' : 'Message Nastivee...');
+      : (selectedImageData ? 'Ask about it, or say what to change...' : 'Message Nastivee...');
 
 }
 
@@ -17080,7 +17174,8 @@ async function sendMessage() {
     const image =
       selectedImageData;
 
-    const action = photoAction;
+    const action =
+      photoActionChosen ? photoAction : guessPhotoAction(userText);
 
 
     clearUpload();
@@ -18186,7 +18281,7 @@ function setImageMode(
 
     messageInput.placeholder =
       selectedImageData
-        ? 'Describe what you want me to change...'
+        ? 'Ask about it, or say what to change...'
         : 'Message Nastivee...';
 
 
@@ -18338,7 +18433,7 @@ fileInput.addEventListener(
 
 
         messageInput.placeholder =
-          'Describe what you want me to change...';
+          'Ask about it, or say what to change...';
 
 
         messageInput.focus();
@@ -18368,8 +18463,11 @@ function clearUpload() {
 
   photoAction = 'edit';
 
-  [...photoChoice.children].forEach((item, index) => {
-    item.classList.toggle('active', index === 0);
+  photoActionChosen = false;
+
+  /* neither is picked: the words decide, unless they tap one */
+  [...photoChoice.children].forEach(item => {
+    item.classList.remove('active');
   });
 
 
@@ -18806,7 +18904,7 @@ window.addEventListener('online', () => {
    clearing anything by hand.
 ===================================================== */
 
-const APP_VERSION = '2026-09-22-02';
+const APP_VERSION = '2026-09-22-03';
 
 const RELOAD_FLAG = 'nastivee_reloaded_for';
 
