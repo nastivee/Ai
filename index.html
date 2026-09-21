@@ -4333,7 +4333,7 @@ body.smartMode .voiceOrb {
   bottom: 100%;
   left: 0;
   width: 80px;
-  height: 58px;
+  height: 72px;
   margin-bottom: 1px;
   overflow: hidden;
   pointer-events: none;
@@ -17448,6 +17448,124 @@ const peekRoutines = [
     bot.eyes('happy');
     await bot.wait(250);
     await bot.move([peekPose(PEEK_HIGH), peekPose(PEEK_HIDDEN)], 420, 'ease-in');
+  },
+
+  /* 11. walks down a flight of stairs, a step at a time */
+  async bot => {
+    bot.place('left');
+    await bot.move([peekPose(PEEK_HIDDEN), peekPose(PEEK_HIGH)], 380, 'cubic-bezier(.2,.8,.3,1)');
+    await bot.wait(250);
+    let y = PEEK_HIGH;
+    let x = 0;
+    for (let step = 0; step < 7; step += 1) {
+      const nextY = y + 15;
+      const tilt = step % 2 ? 6 : -6;
+      await Promise.all([
+        bot.travel(x, x + 22, 300, 'linear'),
+        bot.move([peekPose(y, 'rotate(0deg)'), peekPose(y - 3, `rotate(${tilt}deg)`), peekPose(nextY, 'rotate(0deg)')], 300, 'ease-in')
+      ]);
+      x += 22;
+      y = nextY;
+    }
+    await bot.move([peekPose(y), peekPose(PEEK_HIDDEN)], 150, 'ease-in');
+  },
+
+  /* 12. climbs up the stairs, has a look, slides back down */
+  async bot => {
+    bot.place('left');
+    let y = PEEK_HIDDEN;
+    let x = 0;
+    for (let step = 0; step < 7; step += 1) {
+      const nextY = Math.max(PEEK_HIGH, y - 15);
+      const tilt = step % 2 ? 7 : -7;
+      await Promise.all([
+        bot.travel(x, x + 20, 320, 'linear'),
+        bot.move([peekPose(y, 'rotate(0deg)'), peekPose(nextY - 4, `rotate(${tilt}deg)`), peekPose(nextY, 'rotate(0deg)')], 320, 'ease-out')
+      ]);
+      x += 20;
+      y = nextY;
+    }
+    await bot.wait(250);
+    await bot.look(-3.5);
+    await bot.wait(400);
+    await bot.look(0);
+    await bot.blink();
+    bot.eyes('open');
+    await Promise.all([
+      bot.travel(x, x - 60, 420, 'ease-in'),
+      bot.move([peekPose(y), peekPose(PEEK_HIDDEN)], 420, 'ease-in')
+    ]);
+  },
+
+  /* 13. takes the lift: dead straight up, ding, doors, straight down */
+  async bot => {
+    bot.place('middle');
+    await bot.move([peekPose(PEEK_HIDDEN), peekPose(PEEK_HIGH)], 1500, 'linear');
+    await bot.move([peekPose(PEEK_HIGH), peekPose(PEEK_HIGH + 3), peekPose(PEEK_HIGH)], 220, 'ease-out');
+    await bot.ding();
+    await bot.wait(300);
+    await bot.look(3.5);
+    await bot.wait(450);
+    await bot.look(-3.5);
+    await bot.wait(450);
+    await bot.look(0);
+    await bot.ding();
+    await bot.move([peekPose(PEEK_HIGH), peekPose(PEEK_HIDDEN)], 1400, 'linear');
+  },
+
+  /* 14. rides an escalator, perfectly still, up and across, then down the other side */
+  async bot => {
+    bot.place('left');
+    await Promise.all([
+      bot.travel(0, 110, 1600, 'linear'),
+      bot.move([peekPose(PEEK_HIDDEN), peekPose(PEEK_HIGH)], 1600, 'linear')
+    ]);
+    await bot.wait(300);
+    await bot.blink();
+    await bot.wait(250);
+    await Promise.all([
+      bot.travel(110, 220, 1600, 'linear'),
+      bot.move([peekPose(PEEK_HIGH), peekPose(PEEK_HIDDEN)], 1600, 'linear')
+    ]);
+  },
+
+  /* 15. on a trampoline: boing, boing, flip */
+  async bot => {
+    bot.place('middle');
+    const bounce = async (top, ms) => {
+      await bot.move([peekPose(PEEK_HIDDEN), peekPose(top)], ms, 'cubic-bezier(.2,.9,.4,1)');
+      await bot.move([peekPose(top), peekPose(PEEK_HIDDEN)], ms, 'cubic-bezier(.6,0,.8,.1)');
+    };
+    await bounce(60, 260);
+    await bounce(30, 300);
+    bot.eyes('open');
+    await bot.move([
+      { transform: `translateY(${PEEK_HIDDEN}%) rotate(0deg)`, transformOrigin: '50% 50%' },
+      { transform: 'translateY(-4%) rotate(180deg)', transformOrigin: '50% 50%' },
+      { transform: `translateY(${PEEK_HIDDEN}%) rotate(360deg)`, transformOrigin: '50% 50%' }
+    ], 820, 'ease-in-out');
+    bot.eyes('happy');
+    await bot.wait(200);
+    await bot.move([peekPose(PEEK_HIDDEN), peekPose(PEEK_EYES)], 300, 'cubic-bezier(.2,.8,.3,1)');
+    await bot.wait(350);
+    await bot.move([peekPose(PEEK_EYES), peekPose(PEEK_HIDDEN)], 300, 'ease-in');
+  },
+
+  /* 16. periscope: only the antenna glides along, then he pops up at the end */
+  async bot => {
+    bot.place('left');
+    await bot.move([peekPose(PEEK_HIDDEN), peekPose(76)], 400, 'ease-out');
+    await Promise.all([
+      bot.travel(0, 200, 2200, 'ease-in-out'),
+      bot.wiggle(),
+      bot.move([peekPose(76), peekPose(72), peekPose(77), peekPose(72), peekPose(76)], 2200, 'ease-in-out')
+    ]);
+    await bot.move([peekPose(76), peekPose(PEEK_EYES)], 200, 'cubic-bezier(.3,1.4,.5,1)');
+    bot.eyes('open');
+    await bot.wait(450);
+    bot.eyes('happy');
+    await bot.wave(1);
+    await bot.move([peekPose(PEEK_EYES), peekPose(PEEK_HIDDEN)], 300, 'ease-in');
   }
 
 ];
@@ -17474,6 +17592,7 @@ function createPeekBot(card) {
 
   const eyes = bot.querySelector('.eyes');
   const antenna = bot.querySelector('.antenna');
+  const ball = antenna.querySelector('circle');
 
   const api = {
 
@@ -17512,6 +17631,24 @@ function createPeekBot(card) {
     async look(x) {
       eyes.style.transform = `translateX(${x}px)`;
       await api.wait(180);
+    },
+
+    /* walks the whole stage sideways along the edge */
+    travel(fromX, toX, duration, easing = 'linear') {
+      const limit = Math.max(0, (card.clientWidth || 300) - 100 - (parseFloat(stage.style.left) || 0));
+      const clamp = value => Math.max(-(parseFloat(stage.style.left) || 0), Math.min(limit, value));
+      return stage.animate(
+        [{ transform: `translateX(${clamp(fromX)}px)` }, { transform: `translateX(${clamp(toX)}px)` }],
+        { duration, easing, fill: 'forwards' }
+      ).finished.catch(() => {});
+    },
+
+    /* the antenna lights up, like a lift arriving */
+    async ding() {
+      await ball.animate(
+        [{ fill: '#8fdcff' }, { fill: '#fff6b0' }, { fill: '#ffe066' }, { fill: '#8fdcff' }],
+        { duration: 520, easing: 'ease-in-out' }
+      ).finished.catch(() => {});
     },
 
     /* a little mitten pops up beside him and waves */
@@ -17595,6 +17732,8 @@ function createPeekBot(card) {
       } finally {
         bot.getAnimations().forEach(animation => animation.cancel());
         hand.getAnimations().forEach(animation => animation.cancel());
+        stage.getAnimations().forEach(animation => animation.cancel());
+        ball.getAnimations().forEach(animation => animation.cancel());
         api.eyes('happy');
         eyes.style.transform = '';
         api.busy = false;
@@ -18425,7 +18564,7 @@ window.addEventListener('online', () => {
    clearing anything by hand.
 ===================================================== */
 
-const APP_VERSION = '2026-09-21-27';
+const APP_VERSION = '2026-09-21-28';
 
 const RELOAD_FLAG = 'nastivee_reloaded_for';
 
