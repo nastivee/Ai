@@ -257,9 +257,7 @@ create policy "images read own" on storage.objects for select to authenticated
   using (bucket_id = 'images'
          and (storage.foldername(name))[1] = auth.uid()::text);
 
--- RUN THESE TWO ONLY AFTER the app version that reads pictures
--- through the signed in API is live, or older copies of the app
--- will show broken images:
---
---   drop policy if exists "images read" on storage.objects;
---   update storage.buckets set public = false where id = 'images';
+-- Run on 21 September 2026, once 2026-09-21-04 was live. The
+-- public URL route now answers "Bucket not found".
+drop policy if exists "images read" on storage.objects;
+update storage.buckets set public = false where id = 'images';
