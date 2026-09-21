@@ -4793,6 +4793,39 @@ body.smartMode .voiceOrb {
     </div>
 
 
+    <div class="adminSection good" id="adminFeatures">
+
+      <button class="adminSummary" type="button" data-section="adminFeatures">
+        <span class="adminDot" aria-hidden="true"></span>
+        <span class="adminSummaryText">
+          Test features
+          <span class="adminSummaryNote" id="adminFeaturesNote"></span>
+        </span>
+        <svg class="adminChevron" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
+      </button>
+
+      <div class="adminBody">
+
+        <div class="adminToggle">
+          <span>Show the New Video button</span>
+          <button class="adminSwitch" id="adminVideoSwitch" type="button">On</button>
+        </div>
+
+        <div class="adminToggle">
+          <span>Show the voice chat button</span>
+          <button class="adminSwitch" id="adminVoiceSwitch" type="button">On</button>
+        </div>
+
+        <div class="adminHint">
+          Only admins ever see these two. Hiding them is saved on
+          this device, so each admin chooses for themselves.
+        </div>
+
+      </div>
+
+    </div>
+
+
     <div class="adminSection" id="adminPack">
 
       <button class="adminSummary" type="button" data-section="adminPack">
@@ -13849,15 +13882,7 @@ async function refreshAccount() {
     account.admin === true
   );
 
-  document.getElementById('videoButton')?.classList.toggle(
-    'show',
-    account.admin === true
-  );
-
-  document.getElementById('voiceButton')?.classList.toggle(
-    'show',
-    account.admin === true
-  );
+  paintTestFeatures();
 
   if (account.admin !== true && videoMode) {
     setVideoMode(false);
@@ -17469,6 +17494,84 @@ function createPeekBot(card) {
 
 
 /* =====================================================
+   TEST FEATURES (admins only)
+
+   New Video and voice chat are admins only while they are
+   tested. Each admin can hide either button on their own
+   device from the admin panel.
+===================================================== */
+
+const FEATURE_KEYS = {
+  video: 'nastivee_hide_video',
+  voice: 'nastivee_hide_voice'
+};
+
+function featureHidden(name) {
+  try {
+    return localStorage.getItem(FEATURE_KEYS[name]) === '1';
+  } catch {
+    return false;
+  }
+}
+
+function setFeatureHidden(name, hidden) {
+  try {
+    if (hidden) localStorage.setItem(FEATURE_KEYS[name], '1');
+    else localStorage.removeItem(FEATURE_KEYS[name]);
+  } catch {}
+}
+
+function paintTestFeatures() {
+
+  const admin = account?.admin === true;
+
+  const showVideo = admin && !featureHidden('video');
+  const showVoice = admin && !featureHidden('voice');
+
+  document.getElementById('videoButton')?.classList.toggle('show', showVideo);
+  document.getElementById('voiceButton')?.classList.toggle('show', showVoice);
+
+  if (!showVideo && typeof videoMode !== 'undefined' && videoMode) {
+    setVideoMode(false);
+  }
+
+  const videoSwitch = document.getElementById('adminVideoSwitch');
+  const voiceSwitch = document.getElementById('adminVoiceSwitch');
+
+  if (videoSwitch) {
+    videoSwitch.classList.toggle('on', !featureHidden('video'));
+    videoSwitch.textContent = featureHidden('video') ? 'Hidden' : 'On';
+  }
+
+  if (voiceSwitch) {
+    voiceSwitch.classList.toggle('on', !featureHidden('voice'));
+    voiceSwitch.textContent = featureHidden('voice') ? 'Hidden' : 'On';
+  }
+
+  const note = document.getElementById('adminFeaturesNote');
+
+  if (note) {
+    note.textContent =
+      `Video ${featureHidden('video') ? 'hidden' : 'showing'}, ` +
+      `voice ${featureHidden('voice') ? 'hidden' : 'showing'}`;
+  }
+
+}
+
+document.getElementById('adminVideoSwitch')?.addEventListener('click', () => {
+  setFeatureHidden('video', !featureHidden('video'));
+  paintTestFeatures();
+});
+
+document.getElementById('adminVoiceSwitch')?.addEventListener('click', () => {
+  setFeatureHidden('voice', !featureHidden('voice'));
+  paintTestFeatures();
+});
+
+paintTestFeatures();
+
+
+/* =====================================================
    SEND BUTTON
 ===================================================== */
 
@@ -18143,7 +18246,7 @@ window.addEventListener('online', () => {
    clearing anything by hand.
 ===================================================== */
 
-const APP_VERSION = '2026-09-21-22';
+const APP_VERSION = '2026-09-21-23';
 
 const RELOAD_FLAG = 'nastivee_reloaded_for';
 
