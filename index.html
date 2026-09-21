@@ -3842,6 +3842,27 @@ body.smartMode .messageRow.assistant .messageBubble {
   background: #2f2145;
 }
 
+/* video is admins only while it is tested */
+#videoButton:not(.show) {
+  display: none;
+}
+
+/* videos come landscape or portrait, never square */
+.shapeRow.videoShapes .shapeButton[data-shape="square"] {
+  display: none;
+}
+
+.generatedVideo {
+  display: block;
+  width: 100%;
+  max-width: 760px;
+  max-height: 70vh;
+  border-radius: 18px;
+  border: 1px solid #352743;
+  background: #120d1c;
+  box-shadow: 0 14px 40px rgba(0,0,0,.35);
+}
+
 .toolButton.imageModeActive {
   background: linear-gradient(135deg, #7c3aed, #9333ea);
   border-color: transparent;
@@ -5508,6 +5529,17 @@ body.smartMode .messageRow.assistant .messageBubble {
             </button>
 
             <button
+              id="videoButton"
+              class="composerButton toolButton createVideoButton"
+              type="button"
+              title="Create a short video from your description"
+              aria-pressed="false"
+            >
+              <span class="toolIcon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="13" height="12" rx="2.5"></rect><path d="m15.5 10.5 6-3.5v10l-6-3.5"></path></svg></span>
+              <span class="toolLabel">Create video</span>
+            </button>
+
+            <button
               id="uploadButton"
               class="composerButton toolButton"
               type="button"
@@ -5623,6 +5655,9 @@ let photoAction = 'edit';
 
 /* the shape of the next generated image */
 let imageShape = 'square';
+
+/* Create video, admins only while it is tested */
+let videoMode = false;
 
 /* lets the user stop a reply part way through */
 let replyController = null;
@@ -8841,8 +8876,11 @@ async function resolveImage(ref) {
         new Uint8Array(await data.arrayBuffer())
       );
 
+    /* a video plays far better from a blob than a data URL */
     const url =
-      await blobToDataUrl(new Blob([plain], { type }));
+      type.startsWith('video/')
+        ? URL.createObjectURL(new Blob([plain], { type }))
+        : await blobToDataUrl(new Blob([plain], { type }));
 
     imageCache.set(ref, url);
 
@@ -9596,6 +9634,11 @@ function addImageMessage(
   fromUpload = false
 ) {
 
+  if (isVideoRef(imageData)) {
+    addVideoMessage(imageData, prompt);
+    return;
+  }
+
   emptyState?.remove();
 
 
@@ -10074,6 +10117,260 @@ function addImageMessageTo(
   );
 
 }
+
+
+/* =====================================================
+   VIDEO
+
+   Admins only while it is tested. The server starts a
+   clip with Google Veo, then we ask after it every few
+   seconds. The finished clip is sealed and stored exactly
+   like a picture, so the chat keeps only a reference.
+===================================================== */
+
+function isVideoRef(ref) {
+
+  return typeof ref === 'string' &&
+    (ref.startsWith('encimg:video/') || ref.startsWith('data:video/'));
+
+}
+
+
+function addVideoMessage(ref, prompt = '') {
+
+  emptyState?.remove();
+
+  const row = document.createElement('div');
+  row.className = 'messageRow assistant';
+
+  const wrap = document.createElement('div');
+  wrap.className = 'messageImageWrap';
+
+  const video = document.createElement('video');
+  video.className = 'generatedVideo';
+  video.controls = true;
+  video.playsInline = true;
+  video.loop = true;
+  video.preload = 'metadata';
+  video.setAttribute('playsinline', '');
+
+  if (ref.startsWith('data:') || imageCache.has(ref)) {
+
+    video.src = imageCache.get(ref) || ref;
+
+  } else {
+
+    resolveImage(ref)
+      .then(url => { video.src = url; })
+      .catch(error => {
+        console.error('VIDEO OPEN ERROR:', error);
+        const note = document.createElement('div');
+        note.className = 'imagePrompt';
+        note.textContent = error.message || 'This video could not be opened.';
+        wrap.appendChild(note);
+      });
+
+  }
+
+  wrap.appendChild(video);
+
+  if (prompt) {
+    const promptText = document.createElement('div');
+    promptText.className = 'imagePrompt';
+    promptText.textContent = prompt;
+    wrap.appendChild(promptText);
+  }
+
+  const actions = document.createElement('div');
+  actions.className = 'imageActions';
+
+  const saveButton = document.createElement('button');
+  saveButton.className = 'imageActionButton';
+  saveButton.type = 'button';
+  saveButton.innerHTML = iconLabel('download', 'Save');
+  saveButton.title = 'Download the video';
+
+  saveButton.addEventListener('click', async () => {
+
+    try {
+
+      const url = await resolveImage(ref);
+
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `nastivee-video-${Date.now()}.mp4`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+
+    } catch (error) {
+      console.error('VIDEO SAVE ERROR:', error);
+    }
+
+  });
+
+  actions.appendChild(saveButton);
+  wrap.appendChild(actions);
+
+  guardImageActions(actions);
+
+  row.appendChild(wrap);
+  chat.appendChild(row);
+
+  scrollToBottom();
+
+}
+
+
+const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+
+async function generateVideo(prompt, requestChatId, image = null) {
+
+  if (!prompt) return;
+
+  const jobId =
+    startJob(requestChatId, 'Creating your video, this can take a minute or two...');
+
+  try {
+
+    const started =
+      await fetch(`${API_BASE}/api/video`, {
+        method: 'POST',
+        headers: await apiHeaders(),
+        body: JSON.stringify({
+          prompt,
+          shape: imageShape === 'portrait' ? 'portrait' : 'landscape',
+          image
+        })
+      });
+
+    const job = await started.json().catch(() => ({}));
+
+    if (!started.ok || !job.id) {
+      throw new Error(job.error || 'The video could not be started.');
+    }
+
+    /* up to ten minutes, checking every five seconds */
+    let finished = null;
+
+    for (let tries = 0; tries < 120; tries += 1) {
+
+      await pause(5000);
+
+      let response;
+
+      try {
+        response =
+          await fetch(
+            `${API_BASE}/api/video/status?id=${encodeURIComponent(job.id)}`,
+            { headers: await apiHeaders() }
+          );
+      } catch {
+        continue; // a dropped connection, just ask again
+      }
+
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Could not check on the video.');
+      }
+
+      if (data.done) {
+        if (data.error) throw new Error(data.error);
+        finished = data.video;
+        break;
+      }
+
+    }
+
+    if (!finished) {
+      throw new Error('The video took too long. Try again in a moment.');
+    }
+
+    const storedRef = await storeImage(finished);
+
+    /* never keep a whole clip inside the chat history itself */
+    const kept =
+      typeof storedRef === 'string' && !storedRef.startsWith('data:')
+        ? storedRef
+        : null;
+
+    if (isCurrentChat(requestChatId)) {
+      addVideoMessage(kept || finished, prompt);
+    }
+
+    await saveMessage(
+      'assistant',
+      kept ? prompt : `${prompt}\n\n(This video could not be saved to your chat, so use Save to keep it.)`,
+      kept,
+      requestChatId
+    );
+
+  } catch (error) {
+
+    console.error('GENERATE VIDEO ERROR:', error);
+
+    const failure = `Video creation failed:\n${error.message}`;
+
+    addTextMessageTo(requestChatId, 'assistant', failure);
+
+    await saveMessage('assistant', failure, null, requestChatId);
+
+  } finally {
+
+    endJob(jobId);
+
+  }
+
+}
+
+
+
+
+function setVideoMode(enabled) {
+
+  videoMode = Boolean(enabled);
+
+  if (videoMode && imageMode) {
+    setImageMode(false);
+  }
+
+  shapeRow.classList.toggle('videoShapes', videoMode);
+  shapeRow.classList.toggle('show', videoMode || imageMode);
+
+  /* square is not a video shape */
+  if (videoMode && imageShape === 'square') {
+    shapeRow.querySelector('[data-shape="landscape"]')?.click();
+  }
+
+  videoButton?.classList.toggle('imageModeActive', videoMode);
+  videoButton?.setAttribute('aria-pressed', videoMode ? 'true' : 'false');
+
+  if (videoButton) {
+    videoButton.title =
+      videoMode ? 'Video mode on, press again to turn off' : 'Create a short video from your description';
+  }
+
+  messageInput.placeholder =
+    videoMode
+      ? (selectedImageData
+          ? 'Describe how this photo should come to life...'
+          : 'Describe the video you want me to create...')
+      : (selectedImageData ? 'Describe what you want me to change...' : 'Message Nastivee...');
+
+}
+
+
+const videoButton = document.getElementById('videoButton');
+
+videoButton?.addEventListener('click', () => {
+
+  setVideoMode(!videoMode);
+
+  messageInput.focus();
+
+});
 
 
 /* =====================================================
@@ -13238,6 +13535,15 @@ async function refreshAccount() {
     account.admin === true
   );
 
+  document.getElementById('videoButton')?.classList.toggle(
+    'show',
+    account.admin === true
+  );
+
+  if (account.admin !== true && videoMode) {
+    setVideoMode(false);
+  }
+
   adminButton?.classList.toggle(
     'hasAlerts',
     account.admin === true && (account.alerts || 0) > 0
@@ -15893,6 +16199,31 @@ async function sendMessage() {
 
   /*
     -----------------------------------------------------
+    VIDEO MODE (an attached photo becomes the first frame)
+    -----------------------------------------------------
+  */
+
+  if (videoMode) {
+
+    const firstFrame = selectedImageData || null;
+
+    if (firstFrame) clearUpload();
+
+    messageInput.value = '';
+
+    resizeTextarea();
+
+    setVideoMode(false);
+
+    generateVideo(userText, requestChatId, firstFrame);
+
+    return;
+
+  }
+
+
+  /*
+    -----------------------------------------------------
     UPLOADED IMAGE EDIT
     -----------------------------------------------------
   */
@@ -16069,8 +16400,13 @@ function setImageMode(
   imageMode =
     Boolean(enabled);
 
-  /* the shape picker belongs to Create image */
+  if (imageMode && videoMode) {
+    setVideoMode(false);
+  }
+
+  /* the shape picker belongs to Create image (and video) */
   shapeRow.classList.toggle('show', imageMode);
+  shapeRow.classList.remove('videoShapes');
 
 
   if (imageMode) {
@@ -16718,7 +17054,7 @@ window.addEventListener('online', () => {
    clearing anything by hand.
 ===================================================== */
 
-const APP_VERSION = '2026-09-21-17';
+const APP_VERSION = '2026-09-21-18';
 
 const RELOAD_FLAG = 'nastivee_reloaded_for';
 

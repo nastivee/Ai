@@ -2822,6 +2822,239 @@ ${JSON.stringify(memory, null, 2)}
 // IMAGE GENERATION
 // =====================================================
 
+// =====================================================
+// VIDEO (Google Veo)
+//
+// OpenAI's video API closes on 24 September 2026, so video
+// comes from Google's Veo through the Gemini API. Admins
+// only while it is tested. A clip takes anywhere from about
+// ten seconds to a few minutes, so the browser starts a job
+// and then asks after it until it is ready.
+// =====================================================
+
+const GEMINI_API_KEY = cleanKey(process.env.GEMINI_API_KEY);
+
+const VIDEO_MODEL =
+  process.env.VIDEO_MODEL || 'veo-3.1-lite-generate-preview';
+
+const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta';
+
+/* which job belongs to whom, and finished clips for a short while */
+const videoJobs = new Map();
+
+function tidyVideoJobs() {
+  const cutoff = Date.now() - 30 * 60 * 1000;
+  for (const [id, job] of videoJobs) {
+    if (job.created < cutoff) videoJobs.delete(id);
+  }
+}
+
+async function geminiFetch(path, options = {}) {
+
+  const response =
+    await fetch(`${GEMINI_BASE}/${path}`, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        'x-goog-api-key': GEMINI_API_KEY,
+        ...(options.headers || {})
+      }
+    });
+
+  const data = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    const error = new Error(data?.error?.message || `Video service error ${response.status}`);
+    error.status = response.status;
+    throw error;
+  }
+
+  return data;
+
+}
+
+
+app.post('/api/video', async (req, res) => {
+
+  try {
+
+    const user = await getUser(req);
+
+    if (!user) {
+      return res.status(401).json({ error: 'Sign in to create videos.' });
+    }
+
+    if (!isAdmin(user)) {
+      return res.status(403).json({ error: 'Video is being tested and is not open yet.' });
+    }
+
+    if (!GEMINI_API_KEY) {
+      return res.status(503).json({
+        error: 'Video is not switched on yet. Add GEMINI_API_KEY on Render.'
+      });
+    }
+
+    if (!withinLimit(`video:${user.id}`, 20)) {
+      return res.status(429).json({ error: 'That is a lot of videos for one hour. Give it a little while.' });
+    }
+
+    const prompt = String(req.body?.prompt || '').trim().slice(0, 2000);
+    const shape = req.body?.shape === 'portrait' ? 'portrait' : 'landscape';
+    const image = typeof req.body?.image === 'string' ? req.body.image : null;
+
+    if (!prompt) {
+      return res.status(400).json({ error: 'Describe the video you want.' });
+    }
+
+    const instance = { prompt };
+
+    /* a photo becomes the opening frame */
+    if (image) {
+
+      const match = /^data:(image\/(?:png|jpeg|webp));base64,(.+)$/.exec(image);
+
+      if (!match) {
+        return res.status(400).json({ error: 'That photo could not be read. Try a PNG or JPEG.' });
+      }
+
+      instance.image = { inlineData: { mimeType: match[1], data: match[2] } };
+
+    }
+
+    const parameters = {
+      aspectRatio: shape === 'portrait' ? '9:16' : '16:9',
+      resolution: '720p',
+      durationSeconds: '8',
+      /* the only setting Google allows for UK users */
+      personGeneration: 'allow_adult'
+    };
+
+    let operation;
+
+    try {
+
+      operation =
+        await geminiFetch(`models/${VIDEO_MODEL}:predictLongRunning`, {
+          method: 'POST',
+          body: JSON.stringify({ instances: [instance], parameters })
+        });
+
+    } catch (error) {
+
+      /* some regions and models refuse the people setting, so try once without it */
+      if (error.status === 400 && /person/i.test(error.message)) {
+        delete parameters.personGeneration;
+        operation =
+          await geminiFetch(`models/${VIDEO_MODEL}:predictLongRunning`, {
+            method: 'POST',
+            body: JSON.stringify({ instances: [instance], parameters })
+          });
+      } else {
+        throw error;
+      }
+
+    }
+
+    if (!operation?.name) {
+      throw new Error('The video service did not start a job.');
+    }
+
+    tidyVideoJobs();
+
+    videoJobs.set(operation.name, { userId: user.id, created: Date.now(), video: null });
+
+    console.log(`VIDEO STARTED: ${operation.name}`);
+
+    res.json({ id: operation.name });
+
+  } catch (error) {
+
+    console.error('VIDEO START ERROR:', error);
+
+    raiseAlert('video failing', 'medium', 'A video could not be started.', error?.message);
+
+    res.status(500).json({ error: error?.message || 'Could not start the video.' });
+
+  }
+
+});
+
+
+app.get('/api/video/status', async (req, res) => {
+
+  try {
+
+    const user = await getUser(req);
+
+    if (!user || !isAdmin(user)) {
+      return res.status(403).json({ error: 'Not allowed.' });
+    }
+
+    const id = String(req.query?.id || '');
+    const job = videoJobs.get(id);
+
+    /* only the person who started a job can see it */
+    if (!job || job.userId !== user.id) {
+      return res.status(404).json({ error: 'That video job has expired. Try again.' });
+    }
+
+    if (job.video) {
+      return res.json({ done: true, video: job.video });
+    }
+
+    const operation = await geminiFetch(id);
+
+    if (!operation.done) {
+      return res.json({ done: false });
+    }
+
+    if (operation.error) {
+      videoJobs.delete(id);
+      return res.json({ done: true, error: operation.error.message || 'The video could not be made.' });
+    }
+
+    const result = operation.response?.generateVideoResponse || {};
+
+    const uri = result.generatedSamples?.[0]?.video?.uri;
+
+    if (!uri) {
+
+      videoJobs.delete(id);
+
+      const reason =
+        (result.raiMediaFilteredReasons || []).join(' ') ||
+        'The video was blocked by the safety filter. Try describing it differently.';
+
+      return res.json({ done: true, error: reason });
+
+    }
+
+    const file =
+      await fetch(uri, { headers: { 'x-goog-api-key': GEMINI_API_KEY } });
+
+    if (!file.ok) {
+      throw new Error(`Could not download the video (${file.status}).`);
+    }
+
+    const bytes = Buffer.from(await file.arrayBuffer());
+
+    job.video = `data:video/mp4;base64,${bytes.toString('base64')}`;
+
+    console.log(`VIDEO READY: ${id} (${Math.round(bytes.length / 1024)} KB)`);
+
+    res.json({ done: true, video: job.video });
+
+  } catch (error) {
+
+    console.error('VIDEO STATUS ERROR:', error);
+
+    res.status(500).json({ error: error?.message || 'Could not check on the video.' });
+
+  }
+
+});
+
+
 app.post('/api/image', async (req, res) => {
 
   let user = null;
