@@ -4882,6 +4882,217 @@ body .sidebarHeader {
 body .sidebarBottom {
   padding-right: 10px;
 }
+
+/* =====================================================
+   SAVED COMMENTS
+===================================================== */
+
+.replyTool.saveTool.saved {
+  color: #fff;
+}
+
+.replyTool.saveTool.saved svg path {
+  fill: currentColor;
+}
+
+.savedSection {
+  margin-top: 14px;
+  border-top: 1px solid var(--mute-line);
+  padding-top: 6px;
+}
+
+.savedSummary {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 8px 2px 0;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--mute-text);
+  cursor: pointer;
+}
+
+.savedSummary:hover {
+  color: #fff;
+}
+
+.savedLabel {
+  flex: 1;
+  text-align: left;
+}
+
+.savedCount {
+  min-width: 20px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .06);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.savedChevron {
+  flex-shrink: 0;
+  transition: transform .2s var(--ease);
+}
+
+.savedSection.open .savedChevron {
+  transform: rotate(180deg);
+}
+
+.savedList {
+  display: none;
+}
+
+.savedSection.open .savedList {
+  display: block;
+}
+
+.savedItem {
+  width: 100%;
+  display: block;
+  margin-bottom: 4px;
+  padding: 9px 12px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  background: transparent;
+  color: #cfc5db;
+  text-align: left;
+  font-size: 13px;
+  line-height: 1.4;
+  cursor: pointer;
+}
+
+.savedItem span {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+@media (hover: hover) {
+  .savedItem:hover {
+    background:
+      linear-gradient(var(--mute-fill), var(--mute-fill)) padding-box,
+      linear-gradient(var(--mute-line), var(--mute-line)) border-box;
+    color: #fff;
+  }
+}
+
+.savedEmpty,
+.savedHint {
+  padding: 4px 8px 8px;
+  color: #756a83;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.savedHint:empty {
+  display: none;
+}
+
+.savedSection:not(.open) .savedHint {
+  display: none;
+}
+
+.savedViewer {
+  position: fixed;
+  inset: 0;
+  z-index: 950;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px 16px;
+  background: rgba(6, 4, 12, .72);
+  backdrop-filter: blur(4px);
+}
+
+.savedViewer.show {
+  display: flex;
+}
+
+.savedViewerCard {
+  position: relative;
+  width: min(640px, 100%);
+  max-height: min(80vh, 720px);
+  display: flex;
+  flex-direction: column;
+  padding: 22px 22px 18px;
+  border-radius: 18px;
+  border: 1px solid transparent;
+  background:
+    linear-gradient(var(--mute-fill), var(--mute-fill)) padding-box,
+    linear-gradient(var(--mute-line), var(--mute-line)) border-box;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, .5);
+}
+
+/* Close mark: large, no background, no border */
+.savedViewerClose {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  border: 0;
+  background: none;
+  color: #cfc3dd;
+  font-size: 34px;
+  line-height: 1;
+  padding: 0 8px;
+  cursor: pointer;
+}
+
+.savedViewerClose:hover {
+  color: #fff;
+}
+
+.savedViewerMeta {
+  padding-right: 40px;
+  margin-bottom: 12px;
+  color: var(--mute-text);
+  font-size: 12px;
+}
+
+.savedViewerBody {
+  overflow-y: auto;
+  color: var(--text);
+  font-size: 14.5px;
+  line-height: 1.6;
+}
+
+.savedViewerActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.savedAction {
+  min-height: 40px;
+  padding: 0 16px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  background:
+    linear-gradient(var(--mute-fill), var(--mute-fill)) padding-box,
+    linear-gradient(var(--mute-line), var(--mute-line)) border-box;
+  color: var(--mute-text);
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.savedAction:hover {
+  background:
+    linear-gradient(var(--mute-fill), var(--mute-fill)) padding-box,
+    var(--edge) border-box;
+  color: #fff;
+}
+
+.savedAction.danger:hover {
+  background:
+    linear-gradient(var(--mute-fill), var(--mute-fill)) padding-box,
+    linear-gradient(#7f1d2d, #7f1d2d) border-box;
+  color: #ffb4b4;
+}
 </style>
 </head>
 
@@ -6072,6 +6283,20 @@ body .sidebarBottom {
       </div>
 
       <div id="chatHistoryList"></div>
+
+      <div class="savedSection" id="savedSection">
+
+        <button class="savedSummary" id="savedSummary" type="button" aria-expanded="false">
+          <span class="historyLabel savedLabel">Saved comments</span>
+          <span class="savedCount" id="savedCount">0</span>
+          <svg class="savedChevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </button>
+
+        <div class="savedList" id="savedList"></div>
+
+        <div class="savedHint" id="savedHint"></div>
+
+      </div>
 
     </div>
 
@@ -7968,6 +8193,8 @@ async function initialiseAppInner() {
     memory || '';
 
   await loadChats();
+
+  loadSavedComments().catch(error => console.error('SAVED LOAD ERROR:', error));
 
   if (!currentChatId) {
 
@@ -10402,6 +10629,8 @@ function addTextMessage(
 
     bubble.classList.add('markdown');
 
+    bubble.dataset.raw = content || '';
+
     bubble.innerHTML =
       renderMarkdown(content);
 
@@ -10482,8 +10711,34 @@ function addTextMessage(
       () => retryReply(row)
     );
 
+    const keep =
+      document.createElement('button');
+
+    keep.type = 'button';
+    keep.className = 'replyTool saveTool';
+    keep.innerHTML = icon('bookmark', 14);
+
+    const paintKeep = () => {
+      const saved = isSavedComment(bubble.dataset.raw || bubble.textContent || '');
+      keep.classList.toggle('saved', saved);
+      keep.title = saved ? 'Saved, tap to remove' : 'Save this comment';
+      keep.setAttribute('aria-label', keep.title);
+      keep.setAttribute('aria-pressed', saved ? 'true' : 'false');
+    };
+
+    paintKeep();
+
+    keep.addEventListener('click', async () => {
+      keep.disabled = true;
+      await toggleSavedComment(bubble.dataset.raw || bubble.textContent || '', currentChatId);
+      keep.disabled = false;
+    });
+
+    bubble.paintKeep = paintKeep;
+
     tools.appendChild(copy);
     tools.appendChild(retry);
+    tools.appendChild(keep);
 
     wrap.appendChild(tools);
 
@@ -11897,7 +12152,9 @@ const ICONS = {
   copy:
     '<rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>',
   check:
-    '<polyline points="20 6 9 17 4 12"></polyline>'
+    '<polyline points="20 6 9 17 4 12"></polyline>',
+  bookmark:
+    '<path d="M19 21l-7-4.5L5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>'
 };
 
 function icon(name, size = 15) {
@@ -16843,6 +17100,7 @@ async function streamReply(response, requestChatId) {
 
     if (bubble) {
       bubble.classList.remove('streaming');
+      bubble.dataset.raw = reply;
       bubble.innerHTML = renderMarkdown(reply);
     }
 
@@ -16928,6 +17186,8 @@ async function streamReply(response, requestChatId) {
   if (bubble) {
 
     bubble.classList.remove('streaming');
+
+    bubble.dataset.raw = reply || '';
 
     bubble.innerHTML =
       renderMarkdown(
@@ -18456,6 +18716,283 @@ paintTestFeatures();
 
 
 /* =====================================================
+   SAVED COMMENTS
+
+   The bookmark on a reply keeps it in the "Saved comments"
+   list under your chats, on every device. Saved text is
+   sealed with your key like everything else. Until the
+   saved_comments table exists in Supabase, they are kept
+   on this device and moved across once it does.
+===================================================== */
+
+let savedComments = [];
+let savedOnDeviceOnly = false;
+
+const SAVED_LOCAL = () => `nastivee_saved_${currentUser?.id || 'guest'}`;
+
+function savedKey(text) {
+  return String(text || '').replace(/\s+/g, ' ').trim().slice(0, 4000);
+}
+
+function isSavedComment(text) {
+  const key = savedKey(text);
+  return Boolean(key) && savedComments.some(item => savedKey(item.content) === key);
+}
+
+function readLocalSaved() {
+  try { return JSON.parse(localStorage.getItem(SAVED_LOCAL()) || '[]'); } catch { return []; }
+}
+
+function writeLocalSaved(list) {
+  try { localStorage.setItem(SAVED_LOCAL(), JSON.stringify(list)); } catch {}
+}
+
+async function loadSavedComments() {
+
+  if (guestMode || !currentUser) {
+    savedOnDeviceOnly = true;
+    savedComments = readLocalSaved();
+    paintSaved();
+    return;
+  }
+
+  const { data, error } =
+    await supabaseClient
+      .from('saved_comments')
+      .select('id, chat_id, content, created_at')
+      .order('created_at', { ascending: false })
+      .limit(200);
+
+  if (error) {
+    /* no table yet: keep them on this device for now */
+    console.warn('SAVED COMMENTS ON THIS DEVICE ONLY:', error.message);
+    savedOnDeviceOnly = true;
+    savedComments = readLocalSaved();
+    paintSaved();
+    return;
+  }
+
+  savedOnDeviceOnly = false;
+
+  savedComments = (await decRows(data, ['content'])).filter(item => !item.__locked);
+
+  /* anything saved on this device before the table existed moves across */
+  const local = readLocalSaved();
+
+  if (local.length) {
+
+    for (const item of local.reverse()) {
+      if (isSavedComment(item.content)) continue;
+      const { data: row } =
+        await supabaseClient
+          .from('saved_comments')
+          .insert({ user_id: currentUser.id, chat_id: item.chat_id || null, content: await encField(item.content) })
+          .select('id, created_at')
+          .single();
+      if (row) savedComments.unshift({ ...item, id: row.id, created_at: row.created_at });
+    }
+
+    writeLocalSaved([]);
+
+  }
+
+  paintSaved();
+
+}
+
+async function toggleSavedComment(text, chatId) {
+
+  const content = String(text || '').trim();
+
+  if (!content) return;
+
+  const key = savedKey(content);
+  const existing = savedComments.find(item => savedKey(item.content) === key);
+
+  if (existing) {
+    await removeSavedComment(existing);
+    return;
+  }
+
+  const item = {
+    id: `local-${Date.now()}`,
+    chat_id: chatId ? String(chatId) : null,
+    content,
+    created_at: new Date().toISOString()
+  };
+
+  if (!savedOnDeviceOnly && currentUser && !guestMode) {
+
+    const { data: row, error } =
+      await supabaseClient
+        .from('saved_comments')
+        .insert({ user_id: currentUser.id, chat_id: item.chat_id, content: await encField(content) })
+        .select('id, created_at')
+        .single();
+
+    if (error) {
+      console.error('SAVE COMMENT ERROR:', error);
+      savedOnDeviceOnly = true;
+    } else {
+      item.id = row.id;
+      item.created_at = row.created_at;
+    }
+
+  }
+
+  savedComments.unshift(item);
+
+  if (savedOnDeviceOnly) {
+    writeLocalSaved(savedComments);
+  }
+
+  paintSaved();
+
+  /* show them it landed */
+  savedSection.classList.add('open');
+  savedSummary.setAttribute('aria-expanded', 'true');
+
+}
+
+async function removeSavedComment(item) {
+
+  savedComments = savedComments.filter(other => other !== item);
+
+  if (!savedOnDeviceOnly && !String(item.id).startsWith('local-')) {
+    await supabaseClient.from('saved_comments').delete().eq('id', item.id);
+  }
+
+  if (savedOnDeviceOnly) {
+    writeLocalSaved(savedComments);
+  }
+
+  paintSaved();
+
+}
+
+const savedSection = document.getElementById('savedSection');
+const savedSummary = document.getElementById('savedSummary');
+const savedList = document.getElementById('savedList');
+const savedViewer = document.getElementById('savedViewer');
+
+function plainPreview(text) {
+  return String(text || '')
+    .replace(/```[\s\S]*?```/g, ' [code] ')
+    .replace(/[#*_`>]+/g, '')
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function paintSaved() {
+
+  document.getElementById('savedCount').textContent = String(savedComments.length);
+
+  savedList.innerHTML = '';
+
+  if (!savedComments.length) {
+    const empty = document.createElement('div');
+    empty.className = 'savedEmpty';
+    empty.textContent = 'Tap the bookmark under any reply to keep it here.';
+    savedList.appendChild(empty);
+  }
+
+  savedComments.forEach(item => {
+
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'savedItem';
+
+    const text = document.createElement('span');
+    text.textContent = plainPreview(item.content).slice(0, 160);
+
+    button.appendChild(text);
+    button.addEventListener('click', () => openSavedViewer(item));
+
+    savedList.appendChild(button);
+
+  });
+
+  document.getElementById('savedHint').textContent =
+    savedOnDeviceOnly && currentUser && !guestMode
+      ? 'Kept on this device for now.'
+      : '';
+
+  /* bookmarks on screen follow along */
+  document.querySelectorAll('.messageBubble').forEach(bubble => bubble.paintKeep?.());
+
+}
+
+let viewing = null;
+
+function openSavedViewer(item) {
+
+  viewing = item;
+
+  const chatTitle = chats.find(chatRow => String(chatRow.id) === String(item.chat_id))?.title;
+
+  document.getElementById('savedViewerMeta').textContent =
+    [
+      chatTitle ? `From "${chatTitle}"` : 'Saved comment',
+      new Date(item.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+    ].join(' · ');
+
+  document.getElementById('savedViewerBody').innerHTML = renderMarkdown(item.content);
+
+  document.getElementById('savedViewerOpen').style.display = chatTitle ? '' : 'none';
+
+  savedViewer.classList.add('show');
+
+}
+
+function closeSavedViewer() {
+  savedViewer.classList.remove('show');
+  viewing = null;
+}
+
+savedSummary.addEventListener('click', () => {
+  const open = !savedSection.classList.contains('open');
+  savedSection.classList.toggle('open', open);
+  savedSummary.setAttribute('aria-expanded', open ? 'true' : 'false');
+});
+
+document.getElementById('savedViewerClose').addEventListener('click', closeSavedViewer);
+
+savedViewer.addEventListener('click', event => {
+  if (event.target === savedViewer) closeSavedViewer();
+});
+
+document.addEventListener('keydown', event => {
+  if (event.key === 'Escape' && savedViewer.classList.contains('show')) closeSavedViewer();
+});
+
+document.getElementById('savedViewerCopy').addEventListener('click', event => {
+  if (!viewing) return;
+  navigator.clipboard?.writeText(viewing.content).then(() => {
+    event.target.textContent = 'Copied';
+    setTimeout(() => { event.target.textContent = 'Copy'; }, 1200);
+  }).catch(() => {});
+});
+
+document.getElementById('savedViewerOpen').addEventListener('click', async () => {
+  if (!viewing?.chat_id) return;
+  const id = viewing.chat_id;
+  closeSavedViewer();
+  closeMobileSidebar?.();
+  await loadChat(id);
+});
+
+document.getElementById('savedViewerRemove').addEventListener('click', async () => {
+  if (!viewing) return;
+  const item = viewing;
+  closeSavedViewer();
+  await removeSavedComment(item);
+});
+
+paintSaved();
+
+
+/* =====================================================
    SEND BUTTON
 ===================================================== */
 
@@ -19247,7 +19784,7 @@ window.addEventListener('online', () => {
    clearing anything by hand.
 ===================================================== */
 
-const APP_VERSION = '2026-09-22-11';
+const APP_VERSION = '2026-09-22-12';
 
 const RELOAD_FLAG = 'nastivee_reloaded_for';
 
@@ -19368,6 +19905,19 @@ checkSession();
 
   </div>
 
+</div>
+
+<div class="savedViewer" id="savedViewer" role="dialog" aria-modal="true" aria-label="Saved comment">
+  <div class="savedViewerCard">
+    <button class="savedViewerClose" id="savedViewerClose" type="button" aria-label="Close">&times;</button>
+    <div class="savedViewerMeta" id="savedViewerMeta"></div>
+    <div class="savedViewerBody markdown" id="savedViewerBody"></div>
+    <div class="savedViewerActions">
+      <button type="button" class="savedAction" id="savedViewerCopy">Copy</button>
+      <button type="button" class="savedAction" id="savedViewerOpen">Open the chat</button>
+      <button type="button" class="savedAction danger" id="savedViewerRemove">Remove</button>
+    </div>
+  </div>
 </div>
 
 </body>

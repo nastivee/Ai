@@ -318,3 +318,37 @@ alter table public.app_settings
 
 alter table public.app_settings
   add column if not exists voice_access text not null default 'admins';
+
+
+-- =========================================================
+-- SAVED COMMENTS
+-- Replies a user bookmarks, listed under their chats. The
+-- content is sealed in the browser like messages are.
+-- =========================================================
+
+create table if not exists public.saved_comments (
+  id          uuid primary key default gen_random_uuid(),
+  user_id     uuid not null references auth.users(id) on delete cascade,
+  chat_id     text,
+  content     text not null,
+  created_at  timestamptz not null default now()
+);
+
+create index if not exists saved_comments_user_idx
+  on public.saved_comments (user_id, created_at desc);
+
+alter table public.saved_comments enable row level security;
+
+drop policy if exists "saved own read" on public.saved_comments;
+create policy "saved own read" on public.saved_comments
+  for select using (auth.uid() = user_id);
+
+drop policy if exists "saved own add" on public.saved_comments;
+create policy "saved own add" on public.saved_comments
+  for insert with check (auth.uid() = user_id);
+
+drop policy if exists "saved own remove" on public.saved_comments;
+create policy "saved own remove" on public.saved_comments
+  for delete using (auth.uid() = user_id);
+
+grant select, insert, delete on public.saved_comments to authenticated;

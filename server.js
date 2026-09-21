@@ -1473,6 +1473,19 @@ app.post('/api/account/delete', async (req, res) => {
 
     /* 2. the rows, children before parents */
 
+    /* saved comments, if that table has been made yet */
+    {
+      const { error: savedError } =
+        await supabaseAdmin
+          .from('saved_comments')
+          .delete()
+          .eq('user_id', uid);
+
+      if (savedError && !/does not exist|schema cache|not find/i.test(savedError.message)) {
+        throw new Error(`saved_comments: ${savedError.message}`);
+      }
+    }
+
     for (const [table, column] of [
       ['messages', 'user_id'],
       ['chats', 'user_id'],
