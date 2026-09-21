@@ -513,8 +513,8 @@ button {
 }
 
 .newChatButton {
-  --nc-edge: linear-gradient(135deg, #a78bfa, #7c3aed 45%, #38bdf8);
-  --nc-fill: #1b1330;
+  --nc-edge: var(--edge);
+  --nc-fill: var(--edge-fill);
   flex: 1 1 auto;
   min-width: 0;
   height: 46px;
@@ -1029,8 +1029,6 @@ body.smartMode .newChatButton:hover {
   --nc-fill: #172238;
 }
 
-body.smartMode .sendButton,
-body.smartMode .modeButton.active,
 body.smartMode .toolButton.imageModeActive {
   background: linear-gradient(135deg, #2c4f8f, #3d69b5);
   box-shadow: 0 8px 20px rgba(61, 105, 181, .20);
@@ -1216,29 +1214,60 @@ body.smartMode .messageRow.assistant .messageBubble {
   background: #241839;
 }
 
+:root {
+  --edge: linear-gradient(135deg, #a78bfa, #7c3aed 45%, #38bdf8);
+  --edge-fill: #1b1330;
+}
+
+body.smartMode {
+  --edge: linear-gradient(135deg, #93c5fd, #3d69b5 45%, #38bdf8);
+  --edge-fill: #121a2c;
+}
+
 .modeSwitch {
   margin-left: auto;
   display: flex;
   flex-shrink: 0;
   padding: 3px;
   gap: 3px;
-  border: 1px solid #2c2340;
+  border: 1.5px solid transparent;
   border-radius: 999px;
-  background: #16101f;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,0)) padding-box,
+    linear-gradient(var(--edge-fill), var(--edge-fill)) padding-box,
+    var(--edge) border-box;
 }
 
 .modeButton {
-  padding: 6px 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px 6px 11px;
   border: 0;
   border-radius: 999px;
   background: transparent;
-  color: #9b90ab;
+  color: #a79bb8;
   font-size: 12px;
   font-weight: 700;
+  cursor: pointer;
+  transition: color .2s var(--ease), background .3s var(--ease);
+}
+
+.modeButton:hover:not(.active) {
+  color: #efe7f9;
+}
+
+.modeIcon {
+  flex-shrink: 0;
+  transition: transform .25s var(--ease);
+}
+
+.modeButton:hover .modeIcon {
+  transform: scale(1.15) rotate(-8deg);
 }
 
 .modeButton.active {
-  background: linear-gradient(135deg, #7c3aed, #9333ea);
+  background: var(--edge);
   color: white;
 }
 
@@ -4006,13 +4035,45 @@ body.smartMode .messageRow.assistant .messageBubble {
 }
 
 .sendButton {
-  background: linear-gradient(135deg, #7c3aed, #9333ea);
+  padding: 0;
+  border: 1.5px solid transparent;
+  border-radius: 14px;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,0)) padding-box,
+    linear-gradient(var(--edge-fill), var(--edge-fill)) padding-box,
+    var(--edge) border-box;
   color: white;
-  box-shadow: 0 8px 22px rgba(124,58,237,.28);
+  cursor: pointer;
+  transition: transform .18s var(--ease);
 }
 
-.sendButton:hover {
-  filter: brightness(1.08);
+.sendIcon {
+  width: 30px;
+  height: 30px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--edge);
+  transition: transform .25s var(--ease);
+}
+
+.sendButton:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.sendButton:hover:not(:disabled) .sendIcon {
+  transform: translateY(-2px);
+}
+
+.sendButton:active:not(:disabled) {
+  transform: scale(.96);
+}
+
+.sendButton:focus-visible,
+.modeButton:focus-visible {
+  outline: 2px solid #a78bfa;
+  outline-offset: 2px;
 }
 
 /* voice is admins only while it is tested */
@@ -5744,6 +5805,7 @@ body.smartMode .voiceOrb {
           class="modeButton active"
           data-mode="fast"
         >
+          <svg class="modeIcon" width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M13.5 2 4 14h7l-1.5 8L20 10h-7z"/></svg>
           Fast
         </button>
 
@@ -5752,6 +5814,7 @@ body.smartMode .voiceOrb {
           class="modeButton"
           data-mode="smart"
         >
+          <svg class="modeIcon" width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l1.9 5.6L19.5 9.5l-5.6 1.9L12 17l-1.9-5.6L4.5 9.5l5.6-1.9zM19 15l.9 2.1L22 18l-2.1.9L19 21l-.9-2.1L16 18l2.1-.9z"/></svg>
           Smart
         </button>
 
@@ -5959,7 +6022,7 @@ body.smartMode .voiceOrb {
             type="button"
             title="Send"
           >
-            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
+            <span class="sendIcon" aria-hidden="true"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg></span>
           </button>
 
           <button
@@ -18564,7 +18627,7 @@ window.addEventListener('online', () => {
    clearing anything by hand.
 ===================================================== */
 
-const APP_VERSION = '2026-09-21-28';
+const APP_VERSION = '2026-09-21-29';
 
 const RELOAD_FLAG = 'nastivee_reloaded_for';
 
