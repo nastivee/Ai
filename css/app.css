@@ -7293,3 +7293,8 @@ body.theme-halloween .authScreen .authCard {
 @media (prefers-reduced-motion: reduce) {
   .wIcon * { animation: none !important; }
 }
+
+/* a reply carrying a card gets the room to show it */
+.messageBubble:has(.answerCard) {
+  width: min(620px, 100%);
+}
