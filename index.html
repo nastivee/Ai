@@ -10558,7 +10558,10 @@ async function resolveImage(ref) {
 
     if (!error && data) {
 
-      const url = await blobToDataUrl(data);
+      const url =
+        /\.mp4$/i.test(legacyPath) || (data.type || '').startsWith('video/')
+          ? URL.createObjectURL(data.type ? data : new Blob([data], { type: 'video/mp4' }))
+          : await blobToDataUrl(data);
 
       imageCache.set(ref, url);
 
@@ -10744,7 +10747,8 @@ async function encryptLegacy() {
           patch.content = await encField(row.content);
         }
 
-        if (row.image_url && !row.image_url.startsWith('encimg:')) {
+        /* pictures stay as they are: JPEG, PNG or WebP, never sealed */
+        if (false && row.image_url && !row.image_url.startsWith('encimg:')) {
 
           const moved =
             await sealLegacyImage(row.image_url);
@@ -10852,7 +10856,13 @@ async function storeImage(dataUrl) {
       it leaves the browser, and stored privately. What the
       chat keeps is a reference only this account can open.
     */
-    if (dataKey && cryptoReady()) {
+    /*
+      Pictures are no longer sealed. They are stored as plain
+      JPEG, PNG or WebP files in the private bucket, which only
+      this account can open. (Clips stay MP4.) Pictures sealed
+      before this change still open as before.
+    */
+    if (false && dataKey && cryptoReady()) {
 
       const sealed =
         await encBytes(
@@ -10891,8 +10901,35 @@ async function storeImage(dataUrl) {
 
     }
 
-    const extension =
-      blob.type === 'image/jpeg' ? 'jpg' : 'png';
+    const allowed = {
+      'image/jpeg': 'jpg',
+      'image/jpg': 'jpg',
+      'image/png': 'png',
+      'image/webp': 'webp',
+      'video/mp4': 'mp4'
+    };
+
+    let upload = blob;
+    let type = (blob.type || '').toLowerCase();
+
+    /* anything else is turned into a PNG first */
+    if (!allowed[type] && type.startsWith('image/')) {
+      try {
+        const bitmap = await createImageBitmap(blob);
+        const canvas = document.createElement('canvas');
+        canvas.width = bitmap.width;
+        canvas.height = bitmap.height;
+        canvas.getContext('2d').drawImage(bitmap, 0, 0);
+        upload = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+        type = 'image/png';
+      } catch {
+        return dataUrl;
+      }
+    }
+
+    if (!allowed[type]) return dataUrl;
+
+    const extension = allowed[type];
 
     const path =
       `${currentUser.id}/${Date.now()}-${Math.random()
@@ -10903,8 +10940,8 @@ async function storeImage(dataUrl) {
       await supabaseClient
         .storage
         .from(IMAGE_BUCKET)
-        .upload(path, blob, {
-          contentType: blob.type,
+        .upload(path, upload, {
+          contentType: type,
           upsert: false
         });
 
@@ -10915,6 +10952,9 @@ async function storeImage(dataUrl) {
         .storage
         .from(IMAGE_BUCKET)
         .getPublicUrl(path);
+
+    /* we already have it, no need to fetch it back to show it */
+    if (data?.publicUrl) imageCache.set(data.publicUrl, dataUrl);
 
     return data?.publicUrl || dataUrl;
 
@@ -11826,7 +11866,9 @@ function addImageMessageTo(
 function isVideoRef(ref) {
 
   return typeof ref === 'string' &&
-    (ref.startsWith('encimg:video/') || ref.startsWith('data:video/'));
+    (ref.startsWith('encimg:video/') ||
+     ref.startsWith('data:video/') ||
+     /\.mp4(\?|#|$)/i.test(ref));
 
 }
 
@@ -20781,7 +20823,7 @@ window.addEventListener('online', () => {
    clearing anything by hand.
 ===================================================== */
 
-const APP_VERSION = '2026-09-22-17';
+const APP_VERSION = '2026-09-22-18';
 
 const RELOAD_FLAG = 'nastivee_reloaded_for';
 

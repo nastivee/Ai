@@ -66,7 +66,7 @@
       <td>Performance of a contract</td>
     </tr>
     <tr>
-      <td>Images you generate or upload, <strong>encrypted</strong></td>
+      <td>Images and clips you generate or upload, in <strong>private storage</strong></td>
       <td>To show them to you and let you return to them later</td>
       <td>Performance of a contract</td>
     </tr>
@@ -116,16 +116,24 @@
 
 <p>
   From then on, your <strong>message text, chat titles, profile notes
-  and pictures</strong> are encrypted in your browser with AES-GCM before
-  they are stored. Pictures sit in private storage that only your
-  signed in account can fetch, and even then only as ciphertext.
-  Anything you wrote before encryption was switched on is sealed the
-  same way the next time you open the app. What sits in our database is ciphertext. Neither we, nor
+  and saved comments</strong> are encrypted in your browser with AES-GCM
+  before they are stored. Anything you wrote before encryption was
+  switched on is sealed the same way the next time you open the app. What sits in our database is ciphertext. Neither we, nor
   our hosting providers, nor anyone who obtained a copy of the database,
   can read it without your password.
 </p>
 
 <h3>What is not encrypted, and you should know it</h3>
+
+<ul>
+  <li>
+    <strong>Pictures and clips.</strong> These are kept as ordinary JPEG,
+    PNG, WebP or MP4 files in private storage that only your signed in
+    account can fetch. They are protected by that access control, not by
+    your password, so our team and our hosting provider could in principle
+    open them. Pictures saved before 22 September 2026 stay encrypted.
+  </li>
+</ul>
 
 <ul>
   <li>
