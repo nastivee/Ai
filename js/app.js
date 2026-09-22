@@ -4396,7 +4396,8 @@ function buildMusicCard(card, box) {
 
     svg.appendChild(musicClefGlyph(svg, card.clef === 'bass' ? 'bass' : 'treble', top, gap));
 
-    if (card.time) {
+    /* the time signature is written once, on the first line */
+    if (rowIndex === 0 && card.time) {
       const parts = String(card.time).split('/');
       add(`<text x="52" y="${top + gap * 1.95}" class="musicTime" fill="#1d1a17">${escapeHtml(parts[0] || '4')}</text>`);
       add(`<text x="52" y="${top + gap * 3.95}" class="musicTime" fill="#1d1a17">${escapeHtml(parts[1] || '4')}</text>`);
