@@ -24,6 +24,8 @@ const CACHE = `nastivee-${VERSION}`;
 const ASSETS = [
   './',
   './index.html',
+  './css/app.css',
+  './js/app.js',
   './manifest.webmanifest',
   './privacy.html',
   './terms.html',
