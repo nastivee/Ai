@@ -7295,6 +7295,10 @@ body.theme-halloween .authScreen .authCard {
 }
 
 /* a reply carrying a card gets the room to show it */
-.messageBubble:has(.answerCard) {
+.bubbleWrap:has(.answerCard) {
   width: min(620px, 100%);
+}
+
+.messageBubble:has(.answerCard) {
+  width: 100%;
 }
