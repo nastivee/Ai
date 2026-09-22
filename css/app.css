@@ -6177,8 +6177,9 @@ body.smartMode .sidebar::after {
 
 /* =====================================================
    FAST / SMART SHEEN
-   A band of light sweeps the screen, left to right, when
-   the mode changes. Purple for Fast, blue for Smart.
+   A band of light sweeps the screen when the mode changes:
+   left to right into Smart (blue), right to left back to
+   Fast (purple).
 ===================================================== */
 
 .modeShine {
@@ -6217,6 +6218,17 @@ body.smartMode .sidebar::after {
 
 @keyframes modeShine {
   to { transform: translateX(340%) skewX(-12deg); }
+}
+
+/* back to Fast: the light sweeps the other way, right to left */
+.modeShine.fast::before {
+  transform: translateX(340%) skewX(12deg);
+  animation-name: modeShineBack;
+}
+
+@keyframes modeShineBack {
+  from { transform: translateX(340%) skewX(12deg); }
+  to { transform: translateX(-120%) skewX(12deg); }
 }
 
 
