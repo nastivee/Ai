@@ -6133,29 +6133,9 @@ body.smartMode .sidebar::after {
 
 @media (max-width: 760px) {
 
-  /* a slim glowing edge stays on screen; tap it to open */
-  body .sidebar {
-    left: -274px;
-  }
-
-  body .sidebar.mobileOpen {
-    left: 0;
-  }
-
+  /* phones: no glowing edge, the burger menu opens it */
   body .sidebar::after {
-    opacity: 1;
-  }
-
-  body .sidebar.mobileOpen::after {
-    opacity: 0;
-  }
-
-  body .sidebar > * {
-    transition: opacity .2s var(--ease);
-  }
-
-  body .sidebar:not(.mobileOpen) > * {
-    opacity: 0;
+    display: none;
   }
 
 }

@@ -13804,12 +13804,6 @@ sidebar.addEventListener('click', event => {
     return;
   }
 
-  if (!sidebar.classList.contains('mobileOpen')) {
-    event.preventDefault();
-    event.stopPropagation();
-    openMobileSidebar();
-  }
-
 }, true);
 
 document.addEventListener('pointerdown', event => {
