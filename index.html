@@ -5164,6 +5164,208 @@ body .sidebarBottom {
 .ruleCard .accessSwitch {
   margin-top: 2px;
 }
+
+/* =====================================================
+   ADMIN AS A PAGE
+   Full screen, one section at a time, chosen from a
+   vertical menu in a drawer (on every screen size).
+===================================================== */
+
+body .adminOverlay {
+  padding: 0;
+  align-items: stretch;
+  justify-content: stretch;
+  background: var(--bg);
+  backdrop-filter: none;
+}
+
+body .adminCard {
+  max-width: none;
+  max-height: none;
+  height: 100%;
+  width: 100%;
+  padding: 0 16px 40px;
+  border: 0;
+  border-radius: 0;
+  background: var(--bg);
+  box-shadow: none;
+  overflow-y: auto;
+}
+
+body .adminHead {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  align-items: center;
+  max-width: 760px;
+  margin: 0 auto 6px;
+  padding: 14px 0 12px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--mute-line);
+}
+
+.adminHeadText {
+  flex: 1;
+  min-width: 0;
+}
+
+.adminPageName:not(:empty)::before {
+  content: '/';
+  margin: 0 8px;
+  color: var(--mute-text);
+  font-weight: 600;
+}
+
+.adminPageName {
+  font-weight: 700;
+  color: var(--mute-text);
+}
+
+.adminBurger {
+  flex-shrink: 0;
+  width: 42px;
+  height: 42px;
+  padding: 0 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  background:
+    linear-gradient(var(--mute-fill), var(--mute-fill)) padding-box,
+    linear-gradient(var(--mute-line), var(--mute-line)) border-box;
+  color: var(--mute-text);
+  cursor: pointer;
+}
+
+.adminBurger:hover {
+  background:
+    linear-gradient(var(--mute-fill), var(--mute-fill)) padding-box,
+    var(--edge) border-box;
+  color: #fff;
+}
+
+/* one section at a time, always open, full width */
+body .adminCard > .adminSection {
+  display: none;
+  max-width: 760px;
+  margin: 16px auto 0;
+}
+
+body .adminCard > .adminSection.current {
+  display: block;
+}
+
+body .adminCard > .adminSection.current .adminSummary {
+  pointer-events: none;
+}
+
+body .adminCard > .adminSection.current .adminChevron {
+  display: none;
+}
+
+body .adminCard > .adminSection.current .adminBody {
+  display: block;
+}
+
+.adminDrawerShade {
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  background: rgba(6, 4, 12, .6);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .2s var(--ease);
+}
+
+.adminDrawer {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 3;
+  width: min(300px, 86vw);
+  padding: 18px 14px;
+  overflow-y: auto;
+  background: var(--panel);
+  border-right: 1px solid var(--line);
+  transform: translateX(-102%);
+  transition: transform .25s var(--ease);
+}
+
+.adminOverlay.drawerOpen .adminDrawer {
+  transform: none;
+}
+
+.adminOverlay.drawerOpen .adminDrawerShade {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.adminDrawerTitle {
+  padding: 4px 10px 14px;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.adminNavItem {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 4px;
+  padding: 11px 12px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  background: transparent;
+  color: #cfc5db;
+  text-align: left;
+  cursor: pointer;
+}
+
+.adminNavItem:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, .04);
+}
+
+.adminNavItem.current {
+  color: #fff;
+  background:
+    linear-gradient(var(--mute-fill), var(--mute-fill)) padding-box,
+    var(--edge) border-box;
+}
+
+.adminNavDot {
+  flex-shrink: 0;
+  width: 8px;
+  height: 8px;
+  margin: 3px;
+  border-radius: 50%;
+  background: #4b4060;
+}
+
+.adminNavItem.good .adminNavDot { background: #4ade80; }
+.adminNavItem.warn .adminNavDot { background: #f59e0b; }
+.adminNavItem.bad .adminNavDot { background: #ef4444; }
+
+.adminNavText {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.adminNavNote {
+  color: var(--mute-text);
+  font-size: 11.5px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 </style>
 </head>
 
@@ -5475,12 +5677,23 @@ body .sidebarBottom {
 
 <div class="adminOverlay" id="adminOverlay">
 
+  <div class="adminDrawerShade" id="adminDrawerShade"></div>
+
+  <nav class="adminDrawer" id="adminDrawer" aria-label="Admin sections">
+    <div class="adminDrawerTitle">Admin</div>
+    <div class="adminDrawerList" id="adminDrawerList"></div>
+  </nav>
+
   <div class="adminCard" id="adminCard">
 
     <div class="adminHead">
 
-      <div>
-        <div class="adminTitle">Admin</div>
+      <button class="adminBurger" id="adminBurger" type="button" aria-label="Admin menu" aria-expanded="false">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+      </button>
+
+      <div class="adminHeadText">
+        <div class="adminTitle"><span>Admin</span><span class="adminPageName" id="adminPageName"></span></div>
         <div class="adminSub" id="adminSub"></div>
       </div>
 
@@ -11658,7 +11871,7 @@ async function generateVideo(prompt, requestChatId, image = null) {
 
     console.error('GENERATE VIDEO ERROR:', error);
 
-    const failure = `Video creation failed:\n${error.message}`;
+    const failure = `Video creation failed:\n${friendlyMediaError(error.message, 'video')}`;
 
     addTextMessageTo(requestChatId, 'assistant', failure);
 
@@ -11719,6 +11932,28 @@ videoButton?.addEventListener('click', () => {
   messageInput.focus();
 
 });
+
+
+/*
+  The image and video services turn some requests down.
+  Say so plainly instead of showing their raw error, with
+  its request numbers and codes.
+*/
+function friendlyMediaError(message, what) {
+
+  const text = String(message || '');
+
+  if (/safety system|safety_violations|content policy|moderation|blocked by the safety|raiMediaFiltered/i.test(text)) {
+    return `The ${what} service turned that one down under its safety rules, so nothing was made and nothing was charged. Try describing it a different way.`;
+  }
+
+  if (/rate limit|429|too many/i.test(text)) {
+    return `The ${what} service is busy right now. Give it a minute and try again.`;
+  }
+
+  return text;
+
+}
 
 
 /* =====================================================
@@ -11850,7 +12085,7 @@ async function generateImage(
 
 
     const failure =
-      `Image generation failed:\n${error.message}`;
+      `Image generation failed:\n${friendlyMediaError(error.message, 'image')}`;
 
     addTextMessageTo(
       requestChatId,
@@ -12252,7 +12487,7 @@ request specifically asked for a plain background.
     addTextMessageTo(
       requestChatId,
       'assistant',
-      `Could not improve the image:\n${error.message}`
+      `Could not improve the image:\n${friendlyMediaError(error.message, 'image')}`
     );
 
   } finally {
@@ -15255,6 +15490,10 @@ function adminSay(where, text, good) {
 */
 function toggleAdminSection(id) {
 
+  /* on the admin page a section is shown, never folded away */
+  showAdminPage(id);
+  return;
+
   const section =
     document.getElementById(id);
 
@@ -15554,6 +15793,10 @@ adminButton?.addEventListener('click', async () => {
 
   adminOverlay.classList.add('show');
 
+  let last = null;
+  try { last = localStorage.getItem(ADMIN_PAGE_KEY); } catch {}
+  showAdminPage(last || 'adminAlerts');
+
   loadAlerts();
 
   loadStats(statDays);
@@ -15567,13 +15810,8 @@ document
   .getElementById('adminClose')
   ?.addEventListener('click', () => {
     adminOverlay.classList.remove('show');
+    setAdminDrawer(false);
   });
-
-adminOverlay?.addEventListener('click', event => {
-  if (event.target === adminOverlay) {
-    adminOverlay.classList.remove('show');
-  }
-});
 
 document
   .getElementById('adminRefresh')
@@ -17855,7 +18093,7 @@ async function sendMessage() {
 
 
       const failure =
-        `Could not edit the image:\n${error.message}`;
+        `Could not edit the image:\n${friendlyMediaError(error.message, 'image')}`;
 
       addTextMessageTo(
         requestChatId,
@@ -19305,6 +19543,116 @@ document.getElementById('saveRules')?.addEventListener('click', async () => {
 });
 
 /* =====================================================
+   ADMIN PAGE: THE MENU
+
+   Builds the drawer from the sections themselves, so a new
+   section appears in the menu without extra work, with
+   its state colour and summary line kept up to date.
+===================================================== */
+
+const ADMIN_PAGE_KEY = 'nastivee_admin_page';
+
+function adminSections() {
+  return [...adminCard.querySelectorAll(':scope > .adminSection')];
+}
+
+function sectionName(section) {
+  const text = section.querySelector('.adminSummaryText');
+  return (text?.childNodes[0]?.textContent || section.id).trim();
+}
+
+function paintAdminMenu() {
+
+  const list = document.getElementById('adminDrawerList');
+
+  if (!list) return;
+
+  list.innerHTML = '';
+
+  adminSections().forEach(section => {
+
+    const item = document.createElement('button');
+    item.type = 'button';
+
+    const state =
+      ['bad', 'warn', 'good'].find(name => section.classList.contains(name)) || '';
+
+    item.className = `adminNavItem ${state}${section.classList.contains('current') ? ' current' : ''}`;
+    item.dataset.target = section.id;
+
+    const note = section.querySelector('.adminSummaryNote')?.textContent?.trim() || '';
+
+    item.innerHTML =
+      '<span class="adminNavDot" aria-hidden="true"></span>' +
+      '<span class="adminNavText"><span class="adminNavName"></span><span class="adminNavNote"></span></span>';
+
+    item.querySelector('.adminNavName').textContent = sectionName(section);
+    item.querySelector('.adminNavNote').textContent = note;
+
+    item.addEventListener('click', () => {
+      showAdminPage(section.id);
+      setAdminDrawer(false);
+    });
+
+    list.appendChild(item);
+
+  });
+
+}
+
+function showAdminPage(id) {
+
+  const sections = adminSections();
+
+  const target =
+    sections.find(section => section.id === id) || sections[0];
+
+  if (!target) return;
+
+  sections.forEach(section => {
+    const on = section === target;
+    section.classList.toggle('current', on);
+    section.classList.toggle('open', on);
+  });
+
+  document.getElementById('adminPageName').textContent = sectionName(target);
+
+  try { localStorage.setItem(ADMIN_PAGE_KEY, target.id); } catch {}
+
+  if (target.id === 'adminActivity' && typeof statData !== 'undefined' && statData) {
+    requestAnimationFrame(paintStats);
+  }
+
+  adminCard.scrollTop = 0;
+
+  paintAdminMenu();
+
+}
+
+function setAdminDrawer(open) {
+  adminOverlay.classList.toggle('drawerOpen', open);
+  document.getElementById('adminBurger')?.setAttribute('aria-expanded', open ? 'true' : 'false');
+  if (open) paintAdminMenu();
+}
+
+document.getElementById('adminBurger')?.addEventListener('click', () => {
+  setAdminDrawer(!adminOverlay.classList.contains('drawerOpen'));
+});
+
+document.getElementById('adminDrawerShade')?.addEventListener('click', () => setAdminDrawer(false));
+
+document.addEventListener('keydown', event => {
+  if (event.key === 'Escape' && adminOverlay.classList.contains('drawerOpen')) setAdminDrawer(false);
+});
+
+/* the menu's colours and notes follow the sections as they change */
+if (window.MutationObserver) {
+  new MutationObserver(() => {
+    if (adminOverlay.classList.contains('show')) paintAdminMenu();
+  }).observe(adminCard, { subtree: true, attributes: true, attributeFilter: ['class'], characterData: true, childList: true });
+}
+
+/* =====================================================
    SEND BUTTON
 ===================================================== */
 
@@ -20096,7 +20444,7 @@ window.addEventListener('online', () => {
    clearing anything by hand.
 ===================================================== */
 
-const APP_VERSION = '2026-09-22-14';
+const APP_VERSION = '2026-09-22-15';
 
 const RELOAD_FLAG = 'nastivee_reloaded_for';
 
