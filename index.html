@@ -5455,6 +5455,249 @@ textarea.adminInput.lessonText {
   color: #756a83;
   font-size: 12.5px;
 }
+
+/* =====================================================
+   MY ARTWORK
+   Every picture and clip you have made, newest first.
+===================================================== */
+
+.artworkButton {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 2px 0 6px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  background:
+    linear-gradient(var(--mute-fill), var(--mute-fill)) padding-box,
+    linear-gradient(var(--mute-line), var(--mute-line)) border-box;
+  color: var(--mute-text);
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.artworkButton:hover {
+  color: #fff;
+  background:
+    linear-gradient(var(--mute-fill), var(--mute-fill)) padding-box,
+    var(--edge) border-box;
+}
+
+.artworkPage {
+  position: fixed;
+  inset: 0;
+  z-index: 960;
+  display: none;
+  flex-direction: column;
+  overflow-y: auto;
+  padding: 0 16px 40px;
+  background: var(--bg);
+}
+
+.artworkPage.show {
+  display: flex;
+}
+
+.artworkHead {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 0 12px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--mute-line);
+}
+
+.artworkHeadText {
+  flex: 1;
+  min-width: 0;
+}
+
+.artworkTitle {
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.artworkSub {
+  margin-top: 2px;
+  color: var(--mute-text);
+  font-size: 12.5px;
+}
+
+/* Close mark: large, no background, no border */
+.artworkClose,
+.artworkViewerClose {
+  border: 0;
+  background: none;
+  color: #cfc3dd;
+  font-size: 36px;
+  line-height: 1;
+  padding: 0 8px;
+  cursor: pointer;
+}
+
+.artworkClose:hover,
+.artworkViewerClose:hover {
+  color: #fff;
+}
+
+.artworkGrid {
+  width: 100%;
+  max-width: 1100px;
+  margin: 16px auto 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 10px;
+}
+
+.artworkTile {
+  position: relative;
+  aspect-ratio: 1;
+  padding: 0;
+  overflow: hidden;
+  border-radius: 14px;
+  border: 1px solid var(--mute-line);
+  background: var(--mute-fill);
+  cursor: pointer;
+}
+
+.artworkTile img,
+.artworkTile video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  opacity: 0;
+  transition: opacity .3s var(--ease), transform .3s var(--ease);
+}
+
+.artworkTile.ready img,
+.artworkTile.ready video {
+  opacity: 1;
+}
+
+.artworkTile:hover img,
+.artworkTile:hover video {
+  transform: scale(1.04);
+}
+
+.artworkBadge {
+  position: absolute;
+  left: 8px;
+  bottom: 8px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(8, 5, 14, .72);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.artworkEmpty {
+  grid-column: 1 / -1;
+  padding: 40px 10px;
+  text-align: center;
+  color: var(--mute-text);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.artworkFoot {
+  display: flex;
+  justify-content: center;
+  margin-top: 18px;
+}
+
+.artworkMore {
+  min-height: 42px;
+  padding: 0 20px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  background:
+    linear-gradient(var(--mute-fill), var(--mute-fill)) padding-box,
+    linear-gradient(var(--mute-line), var(--mute-line)) border-box;
+  color: var(--mute-text);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.artworkMore:hover {
+  color: #fff;
+  background:
+    linear-gradient(var(--mute-fill), var(--mute-fill)) padding-box,
+    var(--edge) border-box;
+}
+
+.artworkViewer {
+  position: fixed;
+  inset: 0;
+  z-index: 5;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px 16px;
+  background: rgba(6, 4, 12, .82);
+  backdrop-filter: blur(4px);
+}
+
+.artworkViewer.show {
+  display: flex;
+}
+
+.artworkViewerCard {
+  position: relative;
+  width: min(820px, 100%);
+  max-height: 92vh;
+  overflow-y: auto;
+  padding: 44px 18px 18px;
+  border-radius: 18px;
+  border: 1px solid var(--mute-line);
+  background: var(--mute-fill);
+}
+
+.artworkViewerClose {
+  position: absolute;
+  top: 4px;
+  right: 8px;
+}
+
+.artworkViewerMedia img,
+.artworkViewerMedia video {
+  display: block;
+  width: 100%;
+  max-height: 64vh;
+  object-fit: contain;
+  border-radius: 12px;
+  background: #07050c;
+}
+
+.artworkViewerPrompt {
+  margin-top: 12px;
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.artworkViewerMeta {
+  margin-top: 4px;
+  color: var(--mute-text);
+  font-size: 12px;
+}
+
+.artworkViewerActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
 </style>
 </head>
 
@@ -6734,6 +6977,11 @@ textarea.adminInput.lessonText {
 
     <div class="chatHistory">
 
+      <button class="artworkButton" id="artworkButton" type="button">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3"></rect><circle cx="8.5" cy="8.5" r="1.8"></circle><path d="m21 15-5-5L5 21"></path></svg>
+        <span>My artwork</span>
+      </button>
+
       <div class="historyLabel">
         Chats
       </div>
@@ -7183,6 +7431,37 @@ textarea.adminInput.lessonText {
 
     <div class="voiceNote">What you both say is saved to this chat as text.</div>
 
+  </div>
+
+</div>
+
+<div class="artworkPage" id="artworkPage" role="dialog" aria-modal="true" aria-label="My artwork">
+
+  <div class="artworkHead">
+    <div class="artworkHeadText">
+      <div class="artworkTitle">My artwork</div>
+      <div class="artworkSub" id="artworkSub">Loading...</div>
+    </div>
+    <button class="artworkClose" id="artworkClose" type="button" aria-label="Close">&times;</button>
+  </div>
+
+  <div class="artworkGrid" id="artworkGrid"></div>
+
+  <div class="artworkFoot">
+    <button class="artworkMore" id="artworkMore" type="button">Show more</button>
+  </div>
+
+  <div class="artworkViewer" id="artworkViewer">
+    <div class="artworkViewerCard">
+      <button class="artworkViewerClose" id="artworkViewerClose" type="button" aria-label="Close">&times;</button>
+      <div class="artworkViewerMedia" id="artworkViewerMedia"></div>
+      <div class="artworkViewerPrompt" id="artworkViewerPrompt"></div>
+      <div class="artworkViewerMeta" id="artworkViewerMeta"></div>
+      <div class="artworkViewerActions">
+        <button type="button" class="savedAction" id="artworkDownload">Download</button>
+        <button type="button" class="savedAction" id="artworkOpenChat">Open the chat</button>
+      </div>
+    </div>
   </div>
 
 </div>
@@ -20032,6 +20311,295 @@ document.getElementById('lessonAdd')?.addEventListener('click', async event => {
 });
 
 /* =====================================================
+   MY ARTWORK
+
+   Every picture and clip Nastivee has made for you, from
+   all your chats, newest first. Thumbnails load as they
+   scroll into view, sixty at a time.
+===================================================== */
+
+const artworkPage = document.getElementById('artworkPage');
+const artworkGrid = document.getElementById('artworkGrid');
+const artworkViewer = document.getElementById('artworkViewer');
+
+const ARTWORK_PAGE_SIZE = 60;
+
+let artworkItems = [];
+let artworkOffset = 0;
+let artworkDone = false;
+let artworkViewing = null;
+
+const artworkWatcher =
+  window.IntersectionObserver
+    ? new IntersectionObserver(entries => {
+        entries.forEach(entry => {
+          if (!entry.isIntersecting) return;
+          artworkWatcher.unobserve(entry.target);
+          fillArtworkTile(entry.target);
+        });
+      }, { root: artworkPage, rootMargin: '300px' })
+    : null;
+
+async function fetchArtwork() {
+
+  if (guestMode) {
+
+    if (artworkOffset > 0) return [];
+
+    const rows = [];
+
+    guestChats().forEach(chatRow => {
+      guestMessages(chatRow.id)
+        .filter(item => item.role === 'assistant' && item.image_url)
+        .forEach(item => rows.push({ ...item, chat_id: chatRow.id }));
+    });
+
+    return rows.sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)));
+
+  }
+
+  const { data, error } =
+    await supabaseClient
+      .from('messages')
+      .select('id, chat_id, content, image_url, created_at')
+      .eq('user_id', currentUser.id)
+      .eq('role', 'assistant')
+      .not('image_url', 'is', null)
+      .order('created_at', { ascending: false })
+      .range(artworkOffset, artworkOffset + ARTWORK_PAGE_SIZE - 1);
+
+  if (error) throw error;
+
+  return decRows(data || [], ['content']);
+
+}
+
+async function loadMoreArtwork() {
+
+  const more = document.getElementById('artworkMore');
+
+  more.disabled = true;
+  more.textContent = 'Loading...';
+
+  try {
+
+    const rows = await fetchArtwork();
+
+    artworkOffset += rows.length;
+
+    if (guestMode || rows.length < ARTWORK_PAGE_SIZE) artworkDone = true;
+
+    rows.forEach(row => {
+      artworkItems.push(row);
+      artworkGrid.appendChild(makeArtworkTile(row));
+    });
+
+    paintArtworkHeader();
+
+  } catch (error) {
+
+    console.error('ARTWORK LOAD ERROR:', error);
+    document.getElementById('artworkSub').textContent = 'Could not load your artwork. Try again in a moment.';
+
+  } finally {
+
+    more.disabled = false;
+    more.textContent = 'Show more';
+    more.style.display = artworkDone ? 'none' : '';
+
+  }
+
+}
+
+function paintArtworkHeader() {
+
+  const count = artworkItems.length;
+
+  document.getElementById('artworkSub').textContent =
+    count
+      ? `${count}${artworkDone ? '' : '+'} piece${count === 1 ? '' : 's'}, newest first`
+      : 'Nothing yet';
+
+  if (!count && artworkDone && !artworkGrid.querySelector('.artworkEmpty')) {
+    const empty = document.createElement('div');
+    empty.className = 'artworkEmpty';
+    empty.textContent = 'Nothing here yet. Tap New Image in any chat and what you make will gather here.';
+    artworkGrid.appendChild(empty);
+  }
+
+}
+
+function makeArtworkTile(row) {
+
+  const tile = document.createElement('button');
+  tile.type = 'button';
+  tile.className = 'artworkTile';
+  tile.title = plainPreview(row.content || '').slice(0, 120) || 'Artwork';
+  tile.artwork = row;
+
+  if (isVideoRef(row.image_url)) {
+    const badge = document.createElement('span');
+    badge.className = 'artworkBadge';
+    badge.textContent = 'Video';
+    tile.appendChild(badge);
+  }
+
+  tile.addEventListener('click', () => openArtwork(row));
+
+  if (artworkWatcher) artworkWatcher.observe(tile);
+  else fillArtworkTile(tile);
+
+  return tile;
+
+}
+
+async function fillArtworkTile(tile) {
+
+  const row = tile.artwork;
+
+  try {
+
+    const url = await resolveImage(row.image_url);
+
+    const media = document.createElement(isVideoRef(row.image_url) ? 'video' : 'img');
+
+    if (media.tagName === 'VIDEO') {
+      media.muted = true;
+      media.playsInline = true;
+      media.preload = 'metadata';
+    } else {
+      media.alt = tile.title;
+      media.loading = 'lazy';
+    }
+
+    media.addEventListener(media.tagName === 'VIDEO' ? 'loadeddata' : 'load', () => tile.classList.add('ready'));
+
+    media.src = url;
+
+    tile.prepend(media);
+
+  } catch (error) {
+
+    console.warn('ARTWORK TILE ERROR:', error?.message);
+
+  }
+
+}
+
+async function openArtwork(row) {
+
+  artworkViewing = row;
+
+  const holder = document.getElementById('artworkViewerMedia');
+  holder.innerHTML = '';
+
+  const url = await resolveImage(row.image_url).catch(() => row.image_url);
+
+  const media = document.createElement(isVideoRef(row.image_url) ? 'video' : 'img');
+
+  if (media.tagName === 'VIDEO') {
+    media.controls = true;
+    media.playsInline = true;
+  } else {
+    media.alt = plainPreview(row.content || 'Artwork');
+  }
+
+  media.src = url;
+  holder.appendChild(media);
+
+  document.getElementById('artworkViewerPrompt').textContent = plainPreview(row.content || '');
+
+  const chatTitle = (guestMode ? guestChats() : chats).find(chatRow => String(chatRow.id) === String(row.chat_id))?.title;
+
+  document.getElementById('artworkViewerMeta').textContent =
+    [
+      row.created_at ? new Date(row.created_at).toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '',
+      chatTitle ? `in "${chatTitle}"` : ''
+    ].filter(Boolean).join(' ');
+
+  document.getElementById('artworkOpenChat').style.display = row.chat_id ? '' : 'none';
+
+  artworkViewer.classList.add('show');
+
+}
+
+function closeArtworkViewer() {
+  artworkViewer.classList.remove('show');
+  document.getElementById('artworkViewerMedia').innerHTML = '';
+  artworkViewing = null;
+}
+
+function openArtworkPage() {
+
+  if (!currentUser && !guestMode) return;
+
+  artworkItems = [];
+  artworkOffset = 0;
+  artworkDone = false;
+  artworkGrid.innerHTML = '';
+  document.getElementById('artworkSub').textContent = 'Loading...';
+
+  artworkPage.classList.add('show');
+  artworkPage.scrollTop = 0;
+
+  closeMobileSidebar?.();
+
+  loadMoreArtwork();
+
+}
+
+function closeArtworkPage() {
+  closeArtworkViewer();
+  artworkPage.classList.remove('show');
+}
+
+document.getElementById('artworkButton')?.addEventListener('click', openArtworkPage);
+document.getElementById('artworkClose')?.addEventListener('click', closeArtworkPage);
+document.getElementById('artworkMore')?.addEventListener('click', loadMoreArtwork);
+document.getElementById('artworkViewerClose')?.addEventListener('click', closeArtworkViewer);
+
+artworkViewer?.addEventListener('click', event => {
+  if (event.target === artworkViewer) closeArtworkViewer();
+});
+
+document.addEventListener('keydown', event => {
+  if (event.key !== 'Escape' || !artworkPage.classList.contains('show')) return;
+  if (artworkViewer.classList.contains('show')) closeArtworkViewer();
+  else closeArtworkPage();
+});
+
+document.getElementById('artworkDownload')?.addEventListener('click', async () => {
+
+  if (!artworkViewing) return;
+
+  try {
+
+    const url = await resolveImage(artworkViewing.image_url);
+    const video = isVideoRef(artworkViewing.image_url);
+    const type = (String(url).match(/^data:([^;]+)/) || [])[1] || '';
+    const ext = video ? 'mp4' : ({ 'image/jpeg': 'jpg', 'image/webp': 'webp' }[type] || 'png');
+
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `nastivee-${Date.now()}.${ext}`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+
+  } catch (error) {
+    console.error('ARTWORK DOWNLOAD ERROR:', error);
+  }
+
+});
+
+document.getElementById('artworkOpenChat')?.addEventListener('click', async () => {
+  if (!artworkViewing?.chat_id) return;
+  const id = artworkViewing.chat_id;
+  closeArtworkPage();
+  await loadChat(id);
+});
+
+/* =====================================================
    SEND BUTTON
 ===================================================== */
 
@@ -20823,7 +21391,7 @@ window.addEventListener('online', () => {
    clearing anything by hand.
 ===================================================== */
 
-const APP_VERSION = '2026-09-22-18';
+const APP_VERSION = '2026-09-22-19';
 
 const RELOAD_FLAG = 'nastivee_reloaded_for';
 
