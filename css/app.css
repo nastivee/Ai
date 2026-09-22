@@ -4348,7 +4348,8 @@ body.smartMode .voiceOrb {
   bottom: 100%;
   left: 0;
   width: 80px;
-  height: 72px;
+  /* tall enough for him to stand on the edge, body and all */
+  height: 140px;
   margin-bottom: 1px;
   overflow: hidden;
   pointer-events: none;
@@ -6813,3 +6814,28 @@ body.theme-halloween .authScreen .authCard {
 .bubbleWrap.noTools .replyTools {
   display: none !important;
 }
+
+
+/* his body: the arm he waves pivots at the shoulder */
+.peekBot .armR {
+  transform-box: view-box;
+  transform-origin: 51.5px 62px;
+}
+
+/* the body wears the skeleton and mummy looks too */
+.peekBot.skin-skeleton .torso,
+.peekBot.skin-skeleton .limb,
+.peekBot.skin-skeleton .leg,
+.peekBot.skin-skeleton .mitt { fill: #ece6d6; }
+.peekBot.skin-skeleton .neck,
+.peekBot.skin-skeleton .foot { fill: #d6cdb8; }
+.peekBot.skin-skeleton .light { fill: #ffb347; }
+
+.peekBot.skin-mummy .torso,
+.peekBot.skin-mummy .limb,
+.peekBot.skin-mummy .leg,
+.peekBot.skin-mummy .mitt { fill: #d9cfb6; }
+.peekBot.skin-mummy .neck,
+.peekBot.skin-mummy .foot { fill: #cfc4a8; }
+.peekBot.skin-mummy .chest { fill: #140f08; }
+.peekBot.skin-mummy .light { fill: #d6ff9a; }

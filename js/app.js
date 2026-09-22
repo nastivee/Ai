@@ -11677,6 +11677,24 @@ const PEEK_SVG = `
       <stop offset="1" stop-color="#2248c9"/>
     </linearGradient>
   </defs>
+  <g class="body">
+    <rect class="neck" x="27" y="52" width="10" height="8" rx="3" fill="#2248c9"/>
+    <g class="armL">
+      <rect class="limb" x="9" y="60" width="7" height="20" rx="3.5" fill="url(#peekEar)" transform="rotate(12 12.5 62)"/>
+      <circle class="mitt" cx="8.8" cy="81" r="4.6" fill="#58b6ff"/>
+    </g>
+    <g class="armR">
+      <rect class="limb" x="48" y="60" width="7" height="20" rx="3.5" fill="url(#peekEar)" transform="rotate(-12 51.5 62)"/>
+      <circle class="mitt" cx="55.2" cy="81" r="4.6" fill="#58b6ff"/>
+    </g>
+    <rect class="leg" x="20" y="84" width="9" height="15" rx="4" fill="url(#peekEar)"/>
+    <rect class="leg" x="35" y="84" width="9" height="15" rx="4" fill="url(#peekEar)"/>
+    <ellipse class="foot" cx="24" cy="100.5" rx="7" ry="3.5" fill="#2248c9"/>
+    <ellipse class="foot" cx="40" cy="100.5" rx="7" ry="3.5" fill="#2248c9"/>
+    <rect class="torso" x="15" y="57" width="34" height="30" rx="11" fill="url(#peekHead)"/>
+    <rect class="chest" x="23" y="63" width="18" height="12" rx="4" fill="#05060d"/>
+    <circle class="light" cx="32" cy="69" r="2.6" fill="#9fe6ff"/>
+  </g>
   <g class="antenna">
     <path class="stem" d="M38 16 L40.5 6" stroke="#5ab8ff" stroke-width="3" stroke-linecap="round"/>
     <circle class="ball" cx="41" cy="5" r="4.2" fill="#8fdcff"/>
@@ -11701,7 +11719,8 @@ const PEEK_SVG = `
 /* how far up he comes: hidden, eyes just over the edge, most of his face */
 const PEEK_HIDDEN = 110;
 const PEEK_EYES = 28;
-const PEEK_HIGH = 8;
+/* standing right up on the edge, body and all */
+const PEEK_HIGH = -73;
 
 const PEEK_HAND_SVG = `
 <svg viewBox="0 0 18 30" aria-hidden="true">
@@ -11835,8 +11854,8 @@ const peekRoutines = [
     await bot.wait(250);
     let y = PEEK_HIGH;
     let x = 0;
-    for (let step = 0; step < 7; step += 1) {
-      const nextY = y + 15;
+    for (let step = 0; step < 8; step += 1) {
+      const nextY = y + 23;
       const tilt = step % 2 ? 6 : -6;
       await Promise.all([
         bot.travel(x, x + 22, 300, 'linear'),
@@ -11853,8 +11872,8 @@ const peekRoutines = [
     bot.place('left');
     let y = PEEK_HIDDEN;
     let x = 0;
-    for (let step = 0; step < 7; step += 1) {
-      const nextY = Math.max(PEEK_HIGH, y - 15);
+    for (let step = 0; step < 8; step += 1) {
+      const nextY = Math.max(PEEK_HIGH, y - 23);
       const tilt = step % 2 ? 7 : -7;
       await Promise.all([
         bot.travel(x, x + 20, 320, 'linear'),
@@ -11919,7 +11938,7 @@ const peekRoutines = [
     bot.eyes('open');
     await bot.move([
       { transform: `translateY(${PEEK_HIDDEN}%) rotate(0deg)`, transformOrigin: '50% 50%' },
-      { transform: 'translateY(-4%) rotate(180deg)', transformOrigin: '50% 50%' },
+      { transform: `translateY(${PEEK_HIGH - 30}%) rotate(180deg)`, transformOrigin: '50% 50%' },
       { transform: `translateY(${PEEK_HIDDEN}%) rotate(360deg)`, transformOrigin: '50% 50%' }
     ], 820, 'ease-in-out');
     bot.eyes('happy');
@@ -12214,7 +12233,7 @@ const devilRoutines = [
       bot.eyes('open');
       const target = spot - 18;
       const mid = Math.round((x + target) / 2);
-      await bot.move([at(PEEK_EYES, x), at(-30, mid), at(PEEK_HIGH, target)], 520, 'ease-out');
+      await bot.move([at(PEEK_EYES, x), at(PEEK_HIGH - 38, mid), at(PEEK_HIGH, target)], 520, 'ease-out');
       await Promise.all([bot.move([at(PEEK_HIGH, target), at(PEEK_HIDDEN, target)], 150, 'ease-in'), hand.go(down, 150, 'ease-in')]);
       x = target;
       if (i < spots.length - 1) {
@@ -12253,7 +12272,7 @@ const devilRoutines = [
     bot.eyes('open');
     await bot.look(0);
     await bot.wait(250);
-    await bot.move([at(PEEK_EYES, bx), at(-18, bx, 'rotate(-8deg)'), at(PEEK_EYES, bx)], 520, 'ease-in-out');
+    await bot.move([at(PEEK_EYES, bx), at(PEEK_HIGH - 26, bx, 'rotate(-8deg)'), at(PEEK_EYES, bx)], 520, 'ease-in-out');
     await bot.look(-3.5);
     await fly;
     bot.eyes('happy');
@@ -12350,7 +12369,7 @@ const devilRoutines = [
     await bot.wait(Math.max(0, reach - 700));
     bot.eyes('open');
     await bot.wait(420);
-    await bot.move([at(PEEK_EYES, bx), at(-30, bx, 'rotate(-10deg)'), at(PEEK_EYES, bx, 'rotate(0deg)')], 560, 'ease-in-out');
+    await bot.move([at(PEEK_EYES, bx), at(PEEK_HIGH - 38, bx, 'rotate(-10deg)'), at(PEEK_EYES, bx, 'rotate(0deg)')], 560, 'ease-in-out');
     await bot.look(-3.5);
     await roll;
     await bot.wait(300);
@@ -12378,7 +12397,7 @@ const devilRoutines = [
     const land = slimeLeft - 60;
     await bot.move([
       { transform: `translateY(${PEEK_HIDDEN}%) translateX(${bx}px) rotate(0deg)`, transformOrigin: '50% 50%' },
-      { transform: `translateY(-50%) translateX(${Math.round((bx + land) / 2)}px) rotate(180deg)`, transformOrigin: '50% 50%' },
+      { transform: `translateY(${PEEK_HIGH - 45}%) translateX(${Math.round((bx + land) / 2)}px) rotate(180deg)`, transformOrigin: '50% 50%' },
       { transform: `translateY(${PEEK_EYES}%) translateX(${land}px) rotate(360deg)`, transformOrigin: '50% 50%' }
     ], 1200, 'ease-in-out');
     await slime.go([{ transform: 'translateY(110%)' }, { transform: 'translateY(8%)' }], 240, 'ease-out');
@@ -12406,7 +12425,7 @@ const devilRoutines = [
     await thief.go([{ transform: 'translateY(6%) translateX(0px)' }, { transform: 'translateY(6%) translateX(10px)' }], 200, 'ease-out');
     await bot.move([
       at(PEEK_EYES, start),
-      at(-45, Math.round(start + (land - start) * .5), 'rotate(20deg)'),
+      at(PEEK_HIGH - 60, Math.round(start + (land - start) * .5), 'rotate(20deg)'),
       at(PEEK_HIGH, land, 'rotate(0deg)')
     ], 1100, 'ease-in-out');
     await Promise.all([
@@ -12461,7 +12480,7 @@ async function peekDevil(bot) {
   bot.stage.style.left = '18px';
   bot.W = Math.max(240, (bot.card.clientWidth || 300) - 36);
   bot.stage.style.width = `${bot.W}px`;
-  bot.stage.style.height = '120px';
+  bot.stage.style.height = '170px';
   await devilRoutines[pick](bot);
 }
 
@@ -12511,7 +12530,11 @@ const PEEK_COSTUMES = [
     <rect x="19" y="47" width="26" height="6.5" rx="1.5" fill="#05060d"/>
     <path d="M22.5 47.6 v5.4 M26 47.6 v5.4 M29.5 47.6 v5.4 M33 47.6 v5.4 M36.5 47.6 v5.4 M40 47.6 v5.4" stroke="#ece6d6" stroke-width="2.2"/>
     <path d="M26 15.5 l2.5 3.5 l-2 2.5 l3 3" stroke="#8d8573" stroke-width=".9" fill="none" stroke-linecap="round"/>
-    <path d="M10.5 42 q2.5 3 6 3.5 M53.5 42 q-2.5 3 -6 3.5" stroke="#b9b09a" stroke-width=".9" fill="none"/>`, svg: `` },
+    <path d="M10.5 42 q2.5 3 6 3.5 M53.5 42 q-2.5 3 -6 3.5" stroke="#b9b09a" stroke-width=".9" fill="none"/>
+    <rect x="18" y="60" width="28" height="24" rx="8" fill="#05060d"/>
+    <path d="M32 60 V84" stroke="#ece6d6" stroke-width="2.4"/>
+    <path d="M20 65 Q26 62 31 65 M44 65 Q38 62 33 65 M20 70.5 Q26 67.5 31 70.5 M44 70.5 Q38 67.5 33 70.5 M21 76 Q26 73 31 76 M43 76 Q38 73 33 76" stroke="#ece6d6" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    <path d="M24 82 Q32 86 40 82" stroke="#ece6d6" stroke-width="2" fill="none"/>`, svg: `` },
 
   /* 5. a spider hangs from his antenna */
   { antenna: `
@@ -12589,6 +12612,9 @@ const PEEK_COSTUMES = [
       <path d="M57 47.5 q8 3 8.5 12" stroke="#e8dfc8" stroke-width="3.6"/>
       <path d="M8 19 L56 22.7 M7.2 46 L56.8 44.5 M8 51 L56 51.3" stroke="#a89c7e" stroke-width=".7"/>
       <path d="M20 17.5 l1.8 1.8 M35 19 l1.8 1.8 M24 42.5 l1.6 1.6 M44 47.5 l1.6 1.6" stroke="#b3a88c" stroke-width=".8"/>
+      <path d="M16 62 L48 60 M15.5 68 L48.5 66.5 M15.5 74 L48.5 73 M16 80 L48 79.5" stroke="#e8dfc8" stroke-width="3.6"/>
+      <path d="M20 88 L29 86 M20 93 L29 91.5 M35 86 L44 88 M35 91.5 L44 93" stroke="#ddd3ba" stroke-width="2.6"/>
+      <path d="M44 81 q6 2 5 10" stroke="#e8dfc8" stroke-width="2.6"/>
     </g>` },
 
   /* 12. a Frankenstein flat top, neck bolts and stitches */
@@ -12616,7 +12642,7 @@ const PEEK_COSTUMES = [
 
   /* 15. a ghost sheet with eye holes */
   { hideAntenna: true, svg: `
-    <path d="M3 64 L3 26 Q3 -4 32 -4 Q61 -4 61 26 L61 64 Z" fill="#f4f1ff" opacity=".96"/>
+    <path d="M1 106 L1 26 Q1 -4 32 -4 Q63 -4 63 26 L63 106 l-5.2 -6 l-5.2 6 l-5.2 -6 l-5.2 6 l-5.2 -6 l-5.2 6 l-5.2 -6 l-5.2 6 l-5.2 -6 l-5.2 6 l-5.2 -6 Z" fill="#f4f1ff" opacity=".96"/>
     <path d="M10 10 Q18 2 26 1" stroke="#ffffff" stroke-width="2" stroke-linecap="round" fill="none" opacity=".8"/>
     <ellipse cx="24.5" cy="33" rx="4" ry="5.2" fill="#05060d"/>
     <ellipse cx="39.5" cy="33" rx="4" ry="5.2" fill="#05060d"/>` },
@@ -12673,7 +12699,12 @@ function createPeekBot(card) {
 
     wait: ms => new Promise(resolve => setTimeout(resolve, ms * api.tempo)),
 
+    /* where he is now: below 0 his body is up above the edge */
+    y: PEEK_HIDDEN,
+
     move(frames, duration, easing) {
+      const last = /translateY\((-?[\d.]+)%\)/.exec(frames[frames.length - 1]?.transform || '');
+      if (last) api.y = Number(last[1]);
       return bot.animate(frames, { duration: duration * api.tempo, easing, fill: 'forwards' }).finished.catch(() => {});
     },
 
@@ -12724,6 +12755,15 @@ function createPeekBot(card) {
 
     /* a little mitten pops up beside him and waves */
     async wave(times = 2) {
+      /* standing up, he waves his own arm; peeking, the little mitten pops up */
+      if (api.y < 0) {
+        const arm = bot.querySelector('.armR');
+        const swing = [{ transform: 'rotate(0deg)' }, { transform: 'rotate(-150deg)' }];
+        for (let i = 0; i < times; i += 1) swing.push({ transform: 'rotate(-120deg)' }, { transform: 'rotate(-160deg)' });
+        swing.push({ transform: 'rotate(-150deg)' }, { transform: 'rotate(0deg)' });
+        await arm.animate(swing, { duration: (300 + 360 * times) * api.tempo, easing: 'ease-in-out' }).finished.catch(() => {});
+        return;
+      }
       await hand.animate(
         [{ transform: 'translateY(110%)' }, { transform: 'translateY(8%)' }],
         { duration: (260) * api.tempo, easing: 'cubic-bezier(.3,1.3,.5,1)', fill: 'forwards' }
@@ -12861,6 +12901,7 @@ function createPeekBot(card) {
       /* start from a clean, hidden spot on the left */
       api.eyes('happy');
       eyes.style.transform = '';
+      api.y = PEEK_HIDDEN;
       api.place('left');
 
       /* the devil is coming: thunder and lightning, then five seconds */
