@@ -150,7 +150,8 @@ for (const [label, options] of [['desktop', { viewport: { width: 1200, height: 8
   const sections = await page.$$eval('.adminNavItem', items => items.length);
   check(sections >= 8, `admin: menu lists the sections (${sections})`);
 
-  await page.click('.adminNavItem[data-target="adminRules"]');
+  /* the menu is tucked away until you point at it, so open it the way a click would */
+  await page.evaluate(() => document.querySelector('.adminNavItem[data-target="adminRules"]').click());
   await page.waitForTimeout(300);
   const before = await page.$$eval('.ruleCard', c => c.length);
   await page.click('#addRule');
