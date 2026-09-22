@@ -4606,7 +4606,8 @@ function renderMarkdown(text) {
         .map(line => line.replace(/^\s*[-*]\s+/, ''))
         .map(item => `<li>${item}</li>`)
         .join('');
-      return `\n<ul>${items}</ul>`;
+      /* blank lines around it, so it becomes a block of its own and not part of a paragraph */
+      return `\n\n<ul>${items}</ul>\n\n`;
     }
   );
 
@@ -4619,7 +4620,7 @@ function renderMarkdown(text) {
         .map(line => line.replace(/^\s*\d+\.\s+/, ''))
         .map(item => `<li>${item}</li>`)
         .join('');
-      return `\n<ol>${items}</ol>`;
+      return `\n\n<ol>${items}</ol>\n\n`;
     }
   );
 
