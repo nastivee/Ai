@@ -5366,6 +5366,95 @@ body .adminCard > .adminSection.current .adminBody {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+/* =====================================================
+   ADMIN: LESSONS
+===================================================== */
+
+.lessonGroupTitle {
+  margin: 18px 0 6px;
+  color: #9b90ab;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .6px;
+  text-transform: uppercase;
+}
+
+.lessonCard {
+  margin-top: 8px;
+  padding: 10px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  background:
+    linear-gradient(var(--mute-fill), var(--mute-fill)) padding-box,
+    linear-gradient(var(--mute-line), var(--mute-line)) border-box;
+}
+
+.lessonCard.pending {
+  background:
+    linear-gradient(var(--mute-fill), var(--mute-fill)) padding-box,
+    linear-gradient(#6b4a22, #6b4a22) border-box;
+}
+
+.lessonMeta {
+  margin-bottom: 6px;
+  color: var(--mute-text);
+  font-size: 11.5px;
+}
+
+textarea.adminInput.lessonText {
+  min-height: 56px;
+  padding: 9px 12px;
+  resize: vertical;
+  font-family: inherit;
+  line-height: 1.45;
+}
+
+.lessonButtons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.lessonButtons button {
+  min-height: 36px;
+  padding: 0 14px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background:
+    linear-gradient(var(--mute-fill), var(--mute-fill)) padding-box,
+    linear-gradient(var(--mute-line), var(--mute-line)) border-box;
+  color: var(--mute-text);
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.lessonButtons button:hover {
+  color: #fff;
+  background:
+    linear-gradient(var(--mute-fill), var(--mute-fill)) padding-box,
+    var(--edge) border-box;
+}
+
+.lessonButtons button.primary {
+  background: var(--edge);
+  color: #fff;
+}
+
+.lessonButtons button.danger:hover {
+  color: #ffb4b4;
+  background:
+    linear-gradient(var(--mute-fill), var(--mute-fill)) padding-box,
+    linear-gradient(#7f1d2d, #7f1d2d) border-box;
+}
+
+.lessonEmpty {
+  padding: 6px 2px;
+  color: #756a83;
+  font-size: 12.5px;
+}
 </style>
 </head>
 
@@ -5901,6 +5990,52 @@ body .adminCard > .adminSection.current .adminBody {
         </button>
 
         <div class="adminResult" id="rulesResult"></div>
+
+      </div>
+
+    </div>
+
+
+    <div class="adminSection" id="adminLessons">
+
+      <button class="adminSummary" type="button" data-section="adminLessons">
+        <span class="adminDot" aria-hidden="true"></span>
+        <span class="adminSummaryText">
+          Lessons
+          <span class="adminSummaryNote" id="adminLessonsNote"></span>
+        </span>
+        <svg class="adminChevron" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
+      </button>
+
+      <div class="adminBody">
+
+        <div class="adminHint">
+          House lessons teach Nastivee how to answer well, for
+          everyone. When someone asks for a reply again, or saves
+          one, it may suggest a general lesson. Nothing goes live
+          until you approve it here, and lessons never contain
+          anything about the person or their chat.
+        </div>
+
+        <div class="adminToggle">
+          <span>Suggest lessons automatically</span>
+          <button class="adminSwitch" id="lessonsAuto" type="button">On</button>
+        </div>
+
+        <div class="lessonGroupTitle">Waiting for you</div>
+        <div id="lessonsPending"></div>
+
+        <div class="lessonGroupTitle">Live for everyone</div>
+        <div id="lessonsLive"></div>
+
+        <div class="adminField">
+          <label class="adminLabel" for="lessonNew">Add your own lesson</label>
+          <textarea class="adminInput lessonText" id="lessonNew" rows="2" placeholder="e.g. Lead with the direct answer, then add detail only if it helps."></textarea>
+        </div>
+
+        <button class="adminAction" id="lessonAdd" type="button">Add lesson</button>
+
+        <div class="adminResult" id="lessonsResult"></div>
 
       </div>
 
@@ -11089,8 +11224,16 @@ function addTextMessage(
 
     keep.addEventListener('click', async () => {
       keep.disabled = true;
-      await toggleSavedComment(bubble.dataset.raw || bubble.textContent || '', currentChatId);
+      const answer = bubble.dataset.raw || bubble.textContent || '';
+      const wasSaved = isSavedComment(answer);
+      await toggleSavedComment(answer, currentChatId);
       keep.disabled = false;
+      /* a save means that answer hit the mark */
+      if (!wasSaved) {
+        let previous = row.previousElementSibling;
+        while (previous && !previous.classList.contains('user')) previous = previous.previousElementSibling;
+        suggestLesson('saved', (previous?.textContent || '').trim(), answer);
+      }
     });
 
     bubble.paintKeep = paintKeep;
@@ -15577,6 +15720,9 @@ function paintAdmin() {
 
   loadRulesFromAdmin(adminData.settings);
 
+  lessonsData = adminData.settings?.lessons || { auto: true, items: [] };
+  paintLessons();
+
   const c =
     adminData.configured || {};
 
@@ -17379,6 +17525,13 @@ async function retryReply(row) {
   }
 
   const chatId = currentChatId;
+
+  /* a retry means that answer missed: maybe there is a general lesson in it */
+  const missed =
+    row.querySelector('.messageBubble')?.dataset.raw ||
+    row.querySelector('.messageBubble')?.textContent || '';
+
+  suggestLesson('retry', question, missed);
 
   row.remove();
 
@@ -19653,6 +19806,190 @@ if (window.MutationObserver) {
 }
 
 /* =====================================================
+   HOUSE LESSONS
+
+   A retry or a save may prompt the server to suggest one
+   general lesson. Admins approve, edit or reject them in
+   the admin page; approved ones shape every reply.
+===================================================== */
+
+function suggestLesson(kind, question, answer) {
+
+  if (!currentUser || guestMode || !String(answer || '').trim()) return;
+
+  apiHeaders()
+    .then(headers =>
+      fetch(`${API_BASE}/api/lessons/suggest`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          kind,
+          question: String(question || '').slice(0, 1500),
+          answer: String(answer || '').slice(0, 2500)
+        })
+      })
+    )
+    .catch(() => {});
+
+}
+
+let lessonsData = { auto: true, items: [] };
+
+function paintLessons() {
+
+  const items = Array.isArray(lessonsData.items) ? lessonsData.items : [];
+  const pending = items.filter(item => item.status === 'pending');
+  const live = items.filter(item => item.status === 'approved');
+
+  const autoSwitch = document.getElementById('lessonsAuto');
+  if (autoSwitch) {
+    autoSwitch.classList.toggle('on', lessonsData.auto !== false);
+    autoSwitch.textContent = lessonsData.auto !== false ? 'On' : 'Off';
+  }
+
+  const note = document.getElementById('adminLessonsNote');
+  if (note) {
+    note.textContent =
+      pending.length
+        ? `${pending.length} waiting for you, ${live.length} live`
+        : `${live.length} live`;
+  }
+
+  const section = document.getElementById('adminLessons');
+  section?.classList.toggle('warn', pending.length > 0);
+
+  const build = (list, holder, isPending) => {
+
+    holder.innerHTML = '';
+
+    if (!list.length) {
+      const empty = document.createElement('div');
+      empty.className = 'lessonEmpty';
+      empty.textContent = isPending ? 'Nothing waiting.' : 'No lessons live yet.';
+      holder.appendChild(empty);
+      return;
+    }
+
+    list.forEach(item => {
+
+      const card = document.createElement('div');
+      card.className = `lessonCard${isPending ? ' pending' : ''}`;
+
+      const from = { retry: 'From a reply someone asked for again', saved: 'From a reply someone saved', admin: 'Added by an admin' }[item.from] || '';
+      const when = item.created_at ? new Date(item.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : '';
+
+      card.innerHTML = `
+        <div class="lessonMeta"></div>
+        <textarea class="adminInput lessonText" rows="2"></textarea>
+        <div class="lessonButtons"></div>`;
+
+      card.querySelector('.lessonMeta').textContent = [from, when].filter(Boolean).join(' · ');
+
+      const text = card.querySelector('textarea');
+      text.value = item.text;
+
+      const buttons = card.querySelector('.lessonButtons');
+
+      const add = (label, action, cls = '') => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.textContent = label;
+        if (cls) button.className = cls;
+        button.addEventListener('click', () => lessonAction(action, item.id, text.value, button));
+        buttons.appendChild(button);
+      };
+
+      if (isPending) {
+        add('Approve', 'approve', 'primary');
+        add('Reject', 'reject', 'danger');
+      } else {
+        add('Save changes', 'edit');
+        add('Remove', 'remove', 'danger');
+      }
+
+      holder.appendChild(card);
+
+    });
+
+  };
+
+  build(pending, document.getElementById('lessonsPending'), true);
+  build(live, document.getElementById('lessonsLive'), false);
+
+}
+
+async function lessonAction(action, id, text, button) {
+
+  if (button) button.disabled = true;
+
+  try {
+
+    const response =
+      await fetch(`${API_BASE}/api/admin/lessons`, {
+        method: 'POST',
+        headers: await apiHeaders(),
+        body: JSON.stringify({ action, id, text, auto: action === 'auto' ? text : undefined })
+      });
+
+    const data = await response.json();
+
+    if (!response.ok) throw new Error(data?.error || 'Could not save.');
+
+    lessonsData = data.lessons || lessonsData;
+
+    if (adminData?.settings) adminData.settings.lessons = lessonsData;
+
+    paintLessons();
+
+    const said = {
+      approve: 'Approved. It now shapes every reply.',
+      reject: 'Rejected and removed.',
+      remove: 'Removed.',
+      edit: 'Saved.',
+      add: 'Added and live for everyone.',
+      auto: lessonsData.auto ? 'Suggestions are on.' : 'Suggestions are off.'
+    }[action];
+
+    adminSay(
+      'lessonsResult',
+      data.volatile
+        ? `${said} It will not survive a server restart until the lessons SQL is run in Supabase.`
+        : said,
+      !data.volatile
+    );
+
+    return true;
+
+  } catch (error) {
+
+    adminSay('lessonsResult', error.message, false);
+
+    return false;
+
+  } finally {
+
+    if (button) button.disabled = false;
+
+  }
+
+}
+
+document.getElementById('lessonsAuto')?.addEventListener('click', event => {
+  lessonAction('auto', null, lessonsData.auto === false, event.currentTarget);
+});
+
+document.getElementById('lessonAdd')?.addEventListener('click', async event => {
+  const box = document.getElementById('lessonNew');
+  if (!box.value.trim()) {
+    adminSay('lessonsResult', 'Write the lesson first.', false);
+    return;
+  }
+  if (await lessonAction('add', null, box.value, event.currentTarget)) {
+    box.value = '';
+  }
+});
+
+/* =====================================================
    SEND BUTTON
 ===================================================== */
 
@@ -20444,7 +20781,7 @@ window.addEventListener('online', () => {
    clearing anything by hand.
 ===================================================== */
 
-const APP_VERSION = '2026-09-22-16';
+const APP_VERSION = '2026-09-22-17';
 
 const RELOAD_FLAG = 'nastivee_reloaded_for';
 

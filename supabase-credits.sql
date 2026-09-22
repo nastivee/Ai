@@ -362,3 +362,13 @@ grant select, insert, delete on public.saved_comments to authenticated;
 
 alter table public.app_settings
   add column if not exists rules jsonb not null default '[]'::jsonb;
+
+
+-- =========================================================
+-- HOUSE LESSONS
+-- General tips on answering well, suggested from retries and
+-- saves, live once an admin approves them (admin, Lessons).
+-- =========================================================
+
+alter table public.app_settings
+  add column if not exists lessons jsonb not null default '{"auto": true, "items": []}'::jsonb;

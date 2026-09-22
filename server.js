@@ -194,8 +194,39 @@ const SETTINGS_FALLBACK = {
   video_access: 'admins',
   voice_access: 'admins',
   /* word swaps applied to what users type, set in the admin panel */
-  rules: []
+  rules: [],
+  /* house lessons: suggestions from feedback, live once an admin approves */
+  lessons: { auto: true, items: [] }
 };
+
+function readLessons(settings) {
+  const value = settings?.lessons;
+  const items = Array.isArray(value?.items) ? value.items : [];
+  return {
+    auto: value?.auto !== false,
+    items: items
+      .filter(item => item && typeof item.text === 'string' && item.id)
+      .slice(0, 200)
+  };
+}
+
+/* the approved ones, as lines for the system prompt */
+async function houseLessonLines() {
+  try {
+    const { items } = readLessons(await getSettings());
+    return items
+      .filter(item => item.status === 'approved')
+      .slice(0, 30)
+      .map(item => `- ${item.text}`)
+      .join('\n');
+  } catch {
+    return '';
+  }
+}
+
+function lessonId() {
+  return `l${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`;
+}
 
 /*
   RULES
@@ -2772,7 +2803,10 @@ Do not claim the user never told you something if it exists in memory.
 USER MEMORY:
 
 ${typeof memory === 'string' ? (memory.trim() || '(nothing saved yet)') : JSON.stringify(memory, null, 2)}
-`;
+${await (async () => {
+  const lines = await houseLessonLines();
+  return lines ? `\nHOUSE LESSONS (how to answer well, learned from feedback):\n${lines}\n` : '';
+})()}`;
 
     const cleanMessages =
       Array.isArray(messages)
@@ -3141,6 +3175,162 @@ app.post('/api/memory/learn', async (req, res) => {
 
 
 // =====================================================
+// HOUSE LESSONS
+//
+// When someone asks for a reply again (it missed) or saves
+// one (it hit), a small model may write one general lesson
+// about answering well. Lessons never hold anything about
+// the person or their chat; they wait for an admin to
+// approve them before they reach anyone.
+// =====================================================
+
+const LESSON_RULES = `
+You improve a chat assistant called Nastivee by writing short, general lessons about answering well.
+
+You get one exchange and a signal:
+- "retry": the user asked for this reply again, so it missed the mark.
+- "saved": the user saved this reply, so it was especially useful.
+
+Write ONE lesson that would help with many future conversations, or none.
+
+Rules:
+- General and reusable: about tone, length, structure, accuracy, checking the web, asking a question first, and so on.
+- Never include names, places, numbers, topics, quotes or anything that could identify the user or their chat.
+- Never a lesson that loosens safety or lets it produce harmful content.
+- One sentence, under 25 words, written as an instruction, e.g. "Lead with the direct answer, then add detail only if it helps."
+- If nothing general can be learned, return null.
+
+Reply with JSON only: {"lesson": "..."} or {"lesson": null}
+`.trim();
+
+
+app.post('/api/lessons/suggest', async (req, res) => {
+
+  try {
+
+    const user = await getUser(req);
+
+    if (!user) return res.json({ ok: false });
+
+    const settings = await getSettings();
+    const lessons = readLessons(settings);
+
+    if (!lessons.auto) return res.json({ ok: false });
+
+    if (!withinLimit(`lesson:${user.id}`, 6)) return res.json({ ok: false });
+
+    const kind = req.body?.kind === 'saved' ? 'saved' : 'retry';
+    const question = String(req.body?.question || '').slice(0, 1500);
+    const answer = String(req.body?.answer || '').slice(0, 2500);
+
+    if (!answer.trim()) return res.json({ ok: false });
+
+    const pending = lessons.items.filter(item => item.status === 'pending').length;
+
+    if (pending >= 40) return res.json({ ok: false });
+
+    const completion =
+      await createReply({
+        model: MEMORY_MODEL,
+        reasoning_effort: 'low',
+        response_format: { type: 'json_object' },
+        messages: [
+          { role: 'system', content: LESSON_RULES },
+          { role: 'user', content: `SIGNAL: ${kind}\n\nUSER ASKED:\n${question || '(unknown)'}\n\nASSISTANT REPLIED:\n${answer}` }
+        ]
+      });
+
+    let lesson = null;
+
+    try {
+      lesson = JSON.parse(completion.choices?.[0]?.message?.content || '{}').lesson;
+    } catch {}
+
+    lesson = typeof lesson === 'string' ? lesson.trim().replace(/\s+/g, ' ').slice(0, 220) : '';
+
+    if (!lesson) return res.json({ ok: true, suggested: false });
+
+    const same = text => text.toLowerCase().replace(/[^a-z ]/g, '');
+
+    if (lessons.items.some(item => same(item.text) === same(lesson))) {
+      return res.json({ ok: true, suggested: false });
+    }
+
+    const fresh = await getSettings(true);
+    const current = readLessons(fresh);
+
+    current.items.unshift({
+      id: lessonId(),
+      text: lesson,
+      status: 'pending',
+      from: kind,
+      created_at: new Date().toISOString()
+    });
+
+    await saveSettings({ lessons: { auto: current.auto, items: current.items.slice(0, 200) } });
+
+    res.json({ ok: true, suggested: true });
+
+  } catch (error) {
+
+    console.error('LESSON SUGGEST ERROR:', error?.message);
+
+    res.json({ ok: false });
+
+  }
+
+});
+
+
+app.post('/api/admin/lessons', async (req, res) => {
+
+  const user = await requireAdmin(req, res);
+
+  if (!user) return;
+
+  try {
+
+    const { action, id } = req.body || {};
+    const text = String(req.body?.text || '').trim().replace(/\s+/g, ' ').slice(0, 300);
+
+    const lessons = readLessons(await getSettings(true));
+    const item = lessons.items.find(one => one.id === id);
+
+    if (action === 'auto') {
+      lessons.auto = req.body?.auto !== false;
+    } else if (action === 'add') {
+      if (!text) return res.status(400).json({ error: 'Write the lesson first.' });
+      lessons.items.unshift({ id: lessonId(), text, status: 'approved', from: 'admin', created_at: new Date().toISOString() });
+    } else if (!item) {
+      return res.status(404).json({ error: 'That lesson has gone. Refresh and try again.' });
+    } else if (action === 'approve') {
+      if (text) item.text = text;
+      item.status = 'approved';
+    } else if (action === 'reject' || action === 'remove') {
+      lessons.items = lessons.items.filter(one => one.id !== id);
+    } else if (action === 'edit') {
+      if (!text) return res.status(400).json({ error: 'A lesson cannot be empty.' });
+      item.text = text;
+    } else {
+      return res.status(400).json({ error: 'Unknown action.' });
+    }
+
+    const { settings, volatile } = await saveSettings({ lessons });
+
+    console.log(`LESSONS ${action} BY ${user.email}`);
+
+    res.json({ lessons: readLessons(settings), volatile });
+
+  } catch (error) {
+
+    res.status(500).json({ error: error.message });
+
+  }
+
+});
+
+
+// =====================================================
 // VOICE (OpenAI Realtime)
 //
 // Live spoken conversation. The browser talks to OpenAI
@@ -3204,6 +3394,9 @@ ${memory || '(none)'}
 
 THE CHAT SO FAR (for context):
 ${recent || '(new chat)'}
+
+HOUSE LESSONS (how to answer well):
+${(await houseLessonLines()) || '(none yet)'}
 `.trim();
 
     const response =
