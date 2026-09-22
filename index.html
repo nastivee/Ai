@@ -5718,6 +5718,43 @@ textarea.adminInput.lessonText {
   font-size: 14px;
   line-height: 1.6;
 }
+
+.artworkSwitch {
+  margin-left: 0;
+}
+
+.artworkCaption {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 18px 8px 6px;
+  background: linear-gradient(transparent, rgba(8, 5, 14, .85));
+  color: #e9e1f3;
+  font-size: 10.5px;
+  line-height: 1.35;
+  text-align: left;
+  pointer-events: none;
+}
+
+.adminUploadViewer {
+  position: fixed;
+  z-index: 990;
+}
+
+@media (max-width: 560px) {
+  .artworkHead {
+    flex-wrap: wrap;
+  }
+  .artworkSwitch {
+    order: 3;
+    width: 100%;
+  }
+  .artworkSwitch .modeButton {
+    flex: 1;
+    justify-content: center;
+  }
+}
 </style>
 </head>
 
@@ -6299,6 +6336,35 @@ textarea.adminInput.lessonText {
         <button class="adminAction" id="lessonAdd" type="button">Add lesson</button>
 
         <div class="adminResult" id="lessonsResult"></div>
+
+      </div>
+
+    </div>
+
+
+    <div class="adminSection" id="adminUploads">
+
+      <button class="adminSummary" type="button" data-section="adminUploads">
+        <span class="adminDot" aria-hidden="true"></span>
+        <span class="adminSummaryText">
+          Uploads
+          <span class="adminSummaryNote" id="adminUploadsNote">Every photo people upload</span>
+        </span>
+        <svg class="adminChevron" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
+      </button>
+
+      <div class="adminBody">
+
+        <div class="adminHint">
+          Every photo anyone uploads, newest first, including
+          guests. Tap one to see it large or remove it.
+        </div>
+
+        <div class="artworkGrid adminUploadGrid" id="adminUploadGrid"></div>
+
+        <button class="adminAction adminQuiet" id="adminUploadsMore" type="button">Show more</button>
+
+        <div class="adminResult" id="adminUploadsResult"></div>
 
       </div>
 
@@ -7462,6 +7528,10 @@ textarea.adminInput.lessonText {
       <div class="artworkTitle">My artwork</div>
       <div class="artworkSub" id="artworkSub">Loading...</div>
     </div>
+    <div class="modeSwitch artworkSwitch" id="artworkSwitch" role="group" aria-label="Show">
+      <button type="button" class="modeButton active" data-view="made">Made for me</button>
+      <button type="button" class="modeButton" data-view="uploads">My uploads</button>
+    </div>
     <button class="artworkClose" id="artworkClose" type="button" aria-label="Close">&times;</button>
   </div>
 
@@ -7484,6 +7554,17 @@ textarea.adminInput.lessonText {
     </div>
   </div>
 
+</div>
+
+<div class="artworkViewer adminUploadViewer" id="adminUploadViewer">
+  <div class="artworkViewerCard">
+    <button class="artworkViewerClose" id="adminUploadViewerClose" type="button" aria-label="Close">&times;</button>
+    <div class="artworkViewerMedia" id="adminUploadViewerMedia"></div>
+    <div class="artworkViewerMeta" id="adminUploadViewerMeta"></div>
+    <div class="artworkViewerActions">
+      <button type="button" class="savedAction danger" id="adminUploadDelete">Remove this upload</button>
+    </div>
+  </div>
 </div>
 
 <div class="savedViewer" id="savedViewer" role="dialog" aria-modal="true" aria-label="Saved comment">
@@ -18563,7 +18644,10 @@ async function sendMessage() {
 
     const firstFrame = selectedImageData || null;
 
-    if (firstFrame) clearUpload();
+    if (firstFrame) {
+      recordUpload(firstFrame, 'video');
+      clearUpload();
+    }
 
     messageInput.value = '';
 
@@ -18622,6 +18706,8 @@ async function sendMessage() {
       const storedUrl =
         await storeImage(image);
 
+      recordUpload(image, 'ask', storedUrl);
+
       addUserImage(
         requestChatId,
         image,
@@ -18645,6 +18731,8 @@ async function sendMessage() {
 
     }
 
+
+    recordUpload(image, 'edit');
 
     editImage(
       image,
@@ -20192,6 +20280,10 @@ function showAdminPage(id) {
     requestAnimationFrame(paintStats);
   }
 
+  if (target.id === 'adminUploads') {
+    loadAdminUploads(true);
+  }
+
   adminCard.scrollTop = 0;
 
   paintAdminMenu();
@@ -20437,6 +20529,30 @@ const artworkWatcher =
 
 async function fetchArtwork() {
 
+  if (artworkView === 'uploads') {
+
+    if (guestMode || !currentUser) return [];
+
+    const { data, error } =
+      await supabaseClient
+        .from('uploads')
+        .select('id, path, kind, created_at')
+        .eq('user_id', currentUser.id)
+        .order('created_at', { ascending: false })
+        .range(artworkOffset, artworkOffset + ARTWORK_PAGE_SIZE - 1);
+
+    if (error) throw error;
+
+    return (data || []).map(row => ({
+      id: row.id,
+      chat_id: null,
+      content: ({ ask: 'You asked about this photo', edit: 'You uploaded this to edit', video: 'Opening shot of a video' })[row.kind] || 'Uploaded photo',
+      image_url: supabaseClient.storage.from(IMAGE_BUCKET).getPublicUrl(row.path).data.publicUrl,
+      created_at: row.created_at
+    }));
+
+  }
+
   if (guestMode) {
 
     if (artworkOffset > 0) return [];
@@ -20518,7 +20634,10 @@ function paintArtworkHeader() {
   if (!count && artworkDone && !artworkGrid.querySelector('.artworkEmpty')) {
     const empty = document.createElement('div');
     empty.className = 'artworkEmpty';
-    empty.textContent = 'Nothing here yet. Tap New Image in any chat and what you make will gather here.';
+    empty.textContent =
+      artworkView === 'uploads'
+        ? (guestMode ? 'Create an account to keep your uploads here.' : 'Nothing uploaded yet. Photos you add with Edit Photo will gather here.')
+        : 'Nothing here yet. Tap New Image in any chat and what you make will gather here.';
     artworkGrid.appendChild(empty);
   }
 
@@ -20705,6 +20824,194 @@ document.getElementById('artworkOpenChat')?.addEventListener('click', async () =
   const id = artworkViewing.chat_id;
   closeArtworkPage();
   await loadChat(id);
+});
+
+/* =====================================================
+   UPLOADS
+
+   Every photo someone uploads is kept: signed in users
+   save the file to their own folder with a record of it;
+   guests hand theirs to the server. People see their own
+   under My artwork; admins can browse everyone's.
+===================================================== */
+
+async function recordUpload(dataUrl, kind, storedRef = null) {
+
+  try {
+
+    if (typeof dataUrl !== 'string' || !dataUrl.startsWith('data:image/')) return;
+
+    if (guestMode || !currentUser) {
+      fetch(`${API_BASE}/api/uploads/guest`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: dataUrl, kind })
+      }).catch(() => {});
+      return;
+    }
+
+    const ref = storedRef || (await storeImage(dataUrl));
+    const path = storagePathFromUrl(ref);
+
+    if (!path) return;
+
+    await supabaseClient.from('uploads').insert({ user_id: currentUser.id, path, kind });
+
+  } catch (error) {
+
+    console.warn('UPLOAD RECORD FAILED:', error?.message);
+
+  }
+
+}
+
+/* My artwork: made for me, or my uploads */
+let artworkView = 'made';
+
+document.getElementById('artworkSwitch')?.addEventListener('click', event => {
+
+  const button = event.target.closest('[data-view]');
+
+  if (!button || button.dataset.view === artworkView) return;
+
+  artworkView = button.dataset.view;
+
+  document.querySelectorAll('#artworkSwitch [data-view]').forEach(one => {
+    one.classList.toggle('active', one === button);
+  });
+
+  openArtworkPage();
+
+});
+
+/* the admin library */
+let adminUploadOffset = 0;
+let adminUploadViewing = null;
+
+async function loadAdminUploads(reset = false) {
+
+  const grid = document.getElementById('adminUploadGrid');
+  const more = document.getElementById('adminUploadsMore');
+
+  if (reset) {
+    adminUploadOffset = 0;
+    grid.innerHTML = '';
+  }
+
+  more.disabled = true;
+  more.textContent = 'Loading...';
+
+  try {
+
+    const response =
+      await fetch(`${API_BASE}/api/admin/uploads?offset=${adminUploadOffset}`, { headers: await apiHeaders() });
+
+    const data = await response.json();
+
+    if (!response.ok) throw new Error(data?.error || 'Could not load uploads.');
+
+    adminUploadOffset += data.items.length;
+
+    data.items.forEach(item => {
+
+      const tile = document.createElement('button');
+      tile.type = 'button';
+      tile.className = 'artworkTile ready';
+
+      if (item.url) {
+        const img = document.createElement('img');
+        img.loading = 'lazy';
+        img.alt = 'Upload';
+        img.src = item.url;
+        tile.appendChild(img);
+      }
+
+      const caption = document.createElement('span');
+      caption.className = 'artworkCaption';
+      caption.textContent =
+        `${item.who} · ${new Date(item.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })} · ${({ ask: 'asked about', edit: 'edited', video: 'video' })[item.kind] || item.kind}`;
+      tile.appendChild(caption);
+
+      tile.addEventListener('click', () => {
+        adminUploadViewing = { item, tile };
+        const media = document.getElementById('adminUploadViewerMedia');
+        media.innerHTML = '';
+        if (item.url) {
+          const img = document.createElement('img');
+          img.src = item.url;
+          img.alt = 'Upload';
+          media.appendChild(img);
+        }
+        document.getElementById('adminUploadViewerMeta').textContent = caption.textContent;
+        document.getElementById('adminUploadViewer').classList.add('show');
+      });
+
+      grid.appendChild(tile);
+
+    });
+
+    if (!grid.children.length) {
+      grid.innerHTML = '<div class="artworkEmpty">No uploads yet.</div>';
+    }
+
+    document.getElementById('adminUploadsNote').textContent =
+      data.total !== null && data.total !== undefined ? `${data.total} kept` : 'Every photo people upload';
+
+    more.style.display = data.done ? 'none' : '';
+
+  } catch (error) {
+
+    adminSay('adminUploadsResult', error.message, false);
+
+  } finally {
+
+    more.disabled = false;
+    more.textContent = 'Show more';
+
+  }
+
+}
+
+document.getElementById('adminUploadsMore')?.addEventListener('click', () => loadAdminUploads(false));
+
+document.getElementById('adminUploadViewerClose')?.addEventListener('click', () => {
+  document.getElementById('adminUploadViewer').classList.remove('show');
+});
+
+document.getElementById('adminUploadDelete')?.addEventListener('click', async event => {
+
+  if (!adminUploadViewing) return;
+
+  const button = event.currentTarget;
+  button.disabled = true;
+
+  try {
+
+    const response =
+      await fetch(`${API_BASE}/api/admin/uploads/delete`, {
+        method: 'POST',
+        headers: await apiHeaders(),
+        body: JSON.stringify({ id: adminUploadViewing.item.id })
+      });
+
+    const data = await response.json();
+
+    if (!response.ok) throw new Error(data?.error || 'Could not remove it.');
+
+    adminUploadViewing.tile.remove();
+    document.getElementById('adminUploadViewer').classList.remove('show');
+    adminSay('adminUploadsResult', 'Removed.', true);
+
+  } catch (error) {
+
+    adminSay('adminUploadsResult', error.message, false);
+
+  } finally {
+
+    button.disabled = false;
+
+  }
+
 });
 
 /* =====================================================
@@ -21499,7 +21806,7 @@ window.addEventListener('online', () => {
    clearing anything by hand.
 ===================================================== */
 
-const APP_VERSION = '2026-09-22-21';
+const APP_VERSION = '2026-09-22-22';
 
 const RELOAD_FLAG = 'nastivee_reloaded_for';
 

@@ -1590,6 +1590,16 @@ app.post('/api/account/delete', async (req, res) => {
 
     /* 2. the rows, children before parents */
 
+    /* upload records (the files themselves went with the folder above) */
+    {
+      const { error: uploadsError } =
+        await supabaseAdmin.from('uploads').delete().eq('user_id', uid);
+
+      if (uploadsError && !/does not exist|schema cache|not find/i.test(uploadsError.message)) {
+        throw new Error(`uploads: ${uploadsError.message}`);
+      }
+    }
+
     /* saved comments, if that table has been made yet */
     {
       const { error: savedError } =
@@ -3320,6 +3330,169 @@ app.post('/api/admin/lessons', async (req, res) => {
     console.log(`LESSONS ${action} BY ${user.email}`);
 
     res.json({ lessons: readLessons(settings), volatile });
+
+  } catch (error) {
+
+    res.status(500).json({ error: error.message });
+
+  }
+
+});
+
+
+// =====================================================
+// UPLOADS
+//
+// Every photo someone uploads is kept. Signed in users save
+// their own (the browser writes the file and the record);
+// guests have no account, so theirs come through here and
+// land in a guest folder. Admins can browse all of them.
+// =====================================================
+
+const UPLOAD_KINDS = ['ask', 'edit', 'video'];
+
+app.post('/api/uploads/guest', async (req, res) => {
+
+  try {
+
+    if (!supabaseAdmin) return res.json({ ok: false });
+
+    if (!withinLimit(`guestupload:${req.ip}`, 30)) {
+      return res.status(429).json({ ok: false });
+    }
+
+    const match =
+      /^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$/.exec(String(req.body?.image || ''));
+
+    if (!match) return res.status(400).json({ ok: false, error: 'Not a picture.' });
+
+    const bytes = Buffer.from(match[2], 'base64');
+
+    if (bytes.length > 8 * 1024 * 1024) {
+      return res.status(413).json({ ok: false, error: 'That picture is too large.' });
+    }
+
+    const ext = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' }[match[1]];
+    const day = new Date().toISOString().slice(0, 10);
+    const path = `guest/${day}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+
+    const { error: upError } =
+      await supabaseAdmin.storage.from('images')
+        .upload(path, bytes, { contentType: match[1], upsert: false });
+
+    if (upError) throw upError;
+
+    await supabaseAdmin.from('uploads').insert({
+      user_id: null,
+      path,
+      kind: UPLOAD_KINDS.includes(req.body?.kind) ? req.body.kind : 'ask'
+    });
+
+    res.json({ ok: true });
+
+  } catch (error) {
+
+    console.error('GUEST UPLOAD ERROR:', error?.message);
+
+    res.json({ ok: false });
+
+  }
+
+});
+
+
+const uploadEmailCache = new Map();
+
+async function emailFor(userId) {
+
+  if (!userId) return 'Guest';
+
+  if (uploadEmailCache.has(userId)) return uploadEmailCache.get(userId);
+
+  try {
+    const { data } = await supabaseAdmin.auth.admin.getUserById(userId);
+    const email = data?.user?.email || 'Deleted account';
+    uploadEmailCache.set(userId, email);
+    return email;
+  } catch {
+    return 'Unknown';
+  }
+
+}
+
+
+app.get('/api/admin/uploads', async (req, res) => {
+
+  const user = await requireAdmin(req, res);
+
+  if (!user) return;
+
+  try {
+
+    const offset = Math.max(0, Number(req.query?.offset) || 0);
+    const size = 48;
+
+    const { data, error } =
+      await supabaseAdmin
+        .from('uploads')
+        .select('id, user_id, path, kind, created_at')
+        .order('created_at', { ascending: false })
+        .range(offset, offset + size - 1);
+
+    if (error) throw error;
+
+    const rows = data || [];
+
+    const signed =
+      rows.length
+        ? (await supabaseAdmin.storage.from('images').createSignedUrls(rows.map(row => row.path), 3600)).data || []
+        : [];
+
+    const items = [];
+
+    for (const [index, row] of rows.entries()) {
+      items.push({
+        id: row.id,
+        kind: row.kind,
+        created_at: row.created_at,
+        who: await emailFor(row.user_id),
+        url: signed[index]?.signedUrl || null
+      });
+    }
+
+    const { count } =
+      await supabaseAdmin.from('uploads').select('id', { count: 'exact', head: true });
+
+    res.json({ items, total: count ?? null, done: rows.length < size });
+
+  } catch (error) {
+
+    res.status(500).json({ error: error.message });
+
+  }
+
+});
+
+
+app.post('/api/admin/uploads/delete', async (req, res) => {
+
+  const user = await requireAdmin(req, res);
+
+  if (!user) return;
+
+  try {
+
+    const { data: row } =
+      await supabaseAdmin.from('uploads').select('id, path').eq('id', String(req.body?.id || '')).maybeSingle();
+
+    if (!row) return res.status(404).json({ error: 'That upload has gone already.' });
+
+    await supabaseAdmin.storage.from('images').remove([row.path]);
+    await supabaseAdmin.from('uploads').delete().eq('id', row.id);
+
+    console.log(`UPLOAD REMOVED BY ${user.email}: ${row.path}`);
+
+    res.json({ ok: true });
 
   } catch (error) {
 
