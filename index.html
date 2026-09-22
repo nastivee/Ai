@@ -5904,6 +5904,118 @@ body .profilePanels > .foldCard.current > .foldBody {
   padding: 0;
   border: 0;
 }
+
+/* =====================================================
+   MY PROFILE AS A PAGE (same as Admin)
+   Full screen; sections chosen from the burger menu.
+===================================================== */
+
+body .profileOverlay {
+  padding: 0;
+  align-items: stretch;
+  justify-content: stretch;
+  background: var(--bg);
+  backdrop-filter: none;
+}
+
+body .profileCard {
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  max-height: none;
+  padding: 0 16px 30px;
+  border: 0;
+  border-radius: 0;
+  background: var(--bg);
+  box-shadow: none;
+  overflow: hidden;
+}
+
+body .profileCard > * {
+  width: 100%;
+  max-width: 640px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+body .profileHead {
+  flex-shrink: 0;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 0 12px;
+  margin-bottom: 10px;
+  border-bottom: 1px solid var(--mute-line);
+}
+
+body .profileHead .profileTitle {
+  flex: 1;
+  min-width: 0;
+}
+
+/* the picker button is replaced by the burger */
+body .profilePickerButton {
+  display: none;
+}
+
+body .profilePicker {
+  position: static;
+  margin: 0;
+}
+
+body .profilePickerList {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: auto;
+  z-index: 20;
+  display: block;
+  width: min(300px, 86vw);
+  padding: 18px 14px;
+  border-radius: 0;
+  border: 0;
+  border-right: 1px solid var(--line);
+  background: var(--panel);
+  box-shadow: none;
+  overflow-y: auto;
+  transform: translateX(-102%);
+  transition: transform .25s var(--ease);
+}
+
+body .profilePicker.open .profilePickerList {
+  transform: none;
+}
+
+body .profilePickerList::before {
+  content: 'My profile';
+  display: block;
+  padding: 4px 10px 14px;
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--text);
+}
+
+body .profilePickerItem {
+  margin-bottom: 4px;
+  padding: 11px 12px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+}
+
+body .profilePickerItem.current {
+  background:
+    linear-gradient(var(--mute-fill), var(--mute-fill)) padding-box,
+    var(--edge) border-box;
+}
+
+.profileShade {
+  z-index: 19;
+}
+
+.profileOverlay.drawerOpen .profileShade {
+  opacity: 1;
+  pointer-events: auto;
+}
 </style>
 </head>
 
@@ -6784,7 +6896,11 @@ body .profilePanels > .foldCard.current > .foldBody {
 
     <div class="profileHead">
 
-      <div class="profileTitle">My profile</div>
+      <button class="adminBurger profileBurger" id="profileBurger" type="button" aria-label="Profile menu" aria-expanded="false">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+      </button>
+
+      <div class="profileTitle"><span>My profile</span><span class="adminPageName" id="profilePageName"></span></div>
 
       <button
         class="profileClose"
@@ -6813,6 +6929,8 @@ body .profilePanels > .foldCard.current > .foldBody {
       </svg>
       Install Nastivee as an app
     </button>
+
+    <div class="adminDrawerShade profileShade" id="profileShade"></div>
 
     <div class="profilePicker" id="profilePicker">
 
@@ -21205,7 +21323,10 @@ function profilePanels() {
 function panelTitle(panel) {
   if (panel.dataset.title) return panel.dataset.title;
   const text = panel.querySelector('.foldSummary .foldText');
-  return (text?.childNodes[0]?.textContent || panel.id).trim();
+  if (!text) return panel.id;
+  const copy = text.cloneNode(true);
+  copy.querySelectorAll('.foldNote').forEach(note => note.remove());
+  return copy.textContent.replace(/\s+/g, ' ').trim() || panel.id;
 }
 
 function panelNote(panel) {
@@ -21232,6 +21353,9 @@ function paintProfilePicker() {
   if (!current) return;
 
   document.getElementById('profilePickerName').textContent = panelTitle(current);
+
+  const pageName = document.getElementById('profilePageName');
+  if (pageName) pageName.textContent = panelTitle(current);
   document.getElementById('profilePickerNote').textContent = panelNote(current);
 
   paintDot(document.getElementById('profilePickerDot'), panelState(current));
@@ -21290,9 +21414,18 @@ function showProfilePanel(id) {
 function setProfilePicker(open) {
   const picker = document.getElementById('profilePicker');
   picker.classList.toggle('open', open);
+  document.getElementById('profileOverlay')?.classList.toggle('drawerOpen', open);
   document.getElementById('profilePickerButton').setAttribute('aria-expanded', open ? 'true' : 'false');
+  document.getElementById('profileBurger')?.setAttribute('aria-expanded', open ? 'true' : 'false');
   if (open) paintProfilePicker();
 }
+
+document.getElementById('profileBurger')?.addEventListener('click', event => {
+  event.stopPropagation();
+  setProfilePicker(!document.getElementById('profilePicker').classList.contains('open'));
+});
+
+document.getElementById('profileShade')?.addEventListener('click', () => setProfilePicker(false));
 
 document.getElementById('profilePickerButton')?.addEventListener('click', event => {
   event.stopPropagation();
@@ -21300,7 +21433,7 @@ document.getElementById('profilePickerButton')?.addEventListener('click', event 
 });
 
 document.addEventListener('click', event => {
-  if (!event.target.closest?.('#profilePicker')) setProfilePicker(false);
+  if (!event.target.closest?.('#profilePicker, #profileBurger')) setProfilePicker(false);
 });
 
 document.addEventListener('keydown', event => {
@@ -22113,7 +22246,7 @@ window.addEventListener('online', () => {
    clearing anything by hand.
 ===================================================== */
 
-const APP_VERSION = '2026-09-22-23';
+const APP_VERSION = '2026-09-22-24';
 
 const RELOAD_FLAG = 'nastivee_reloaded_for';
 
