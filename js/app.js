@@ -12059,71 +12059,86 @@ function peekActor(bot, name, { left = 110, width = 34, height = 34, bottom = 0,
 /* the robot's spot inside the stage, sideways, for the routines that move him */
 const at = (y, x = 0, extra = '') => peekPose(y, `translateX(${x}px) ${extra}`.trim());
 
+/*
+  Every devil routine uses the whole width of the message
+  box. W is the stage width in px; X(f) is where the robot
+  stands at that fraction of the way along; L(f) is where a
+  bad guy stands.
+*/
 const devilRoutines = [
 
-  /* 1. the candy thief: a chase right along the top of the box */
+  /* 1. the candy thief: a chase the full length of the box */
   async bot => {
-    const { stage, card } = bot;
-    const thief = peekActor(bot, 'thief', { left: 104 });
-    const room = Math.max(40, (card.clientWidth || 300) - 200 - (parseFloat(stage.style.left) || 0));
-    await bot.move([at(PEEK_HIDDEN), at(PEEK_EYES)], 420, 'cubic-bezier(.2,.8,.3,1)');
+    const { W } = bot;
+    const X = f => Math.round((W - 70) * f);
+    const L = f => Math.round(W * f);
+    const start = X(0.02);
+    const end = X(0.86);
+    const thief = peekActor(bot, 'thief', { left: L(0.3) });
+    await bot.move([at(PEEK_HIDDEN, start), at(PEEK_EYES, start)], 420, 'cubic-bezier(.2,.8,.3,1)');
     await bot.look(3.5);
     await thief.go([{ transform: 'translateY(110%)' }, { transform: 'translateY(6%)' }], 320, 'cubic-bezier(.3,1.4,.5,1)');
     bot.eyes('open');
     await thief.go([{ transform: 'translateY(6%) rotate(-10deg)' }, { transform: 'translateY(6%) rotate(10deg)' }, { transform: 'translateY(6%) rotate(0deg)' }], 380, 'ease-in-out');
     await bot.flare();
-    const hops = [];
-    for (let i = 0; i <= 11; i += 1) hops.push({ transform: `translateX(${Math.round(i * 2.2)}px) translateY(${i % 2 ? -8 : 6}%)` });
+    const n = 16;
     const run = [];
-    for (let i = 0; i <= 11; i += 1) run.push(at(i % 2 ? PEEK_EYES - 12 : PEEK_EYES, 0, `rotate(${i % 2 ? 9 : 6}deg)`));
-    run.push(at(PEEK_EYES));
-    await Promise.all([
-      stage.animate([{ transform: 'translateX(0px)' }, { transform: `translateX(${room}px)` }], { duration: 2800 * bot.tempo, easing: 'ease-in-out', fill: 'forwards' }).finished.catch(() => {}),
-      bot.move(run, 2800, 'linear'),
-      thief.go(hops, 2800, 'linear')
-    ]);
-    await thief.go([{ transform: 'translateX(24px) translateY(6%)' }, { transform: 'translateX(120px) translateY(0%)' }], 360, 'ease-in');
+    const flee = [];
+    const thiefEnd = W - L(0.3) - 44;
+    for (let i = 0; i <= n; i += 1) {
+      run.push(at(i % 2 ? PEEK_EYES - 12 : PEEK_EYES, Math.round(start + (end - start) * i / n), `rotate(${i % 2 ? 9 : 6}deg)`));
+      flee.push({ transform: `translateX(${Math.round(thiefEnd * i / n)}px) translateY(${i % 2 ? -8 : 6}%)` });
+    }
+    await Promise.all([bot.move(run, 3400, 'ease-in-out'), thief.go(flee, 3400, 'ease-in-out')]);
+    await thief.go([{ transform: `translateX(${thiefEnd}px) translateY(6%)` }, { transform: `translateX(${thiefEnd + 90}px) translateY(0%)` }], 360, 'ease-in');
     bot.eyes('happy');
     await bot.look(3.5); await bot.wait(450); await bot.look(-3.5); await bot.wait(450); await bot.look(0);
-    await bot.move([at(PEEK_EYES), at(PEEK_HIDDEN)], 300, 'ease-in');
+    await bot.move([at(PEEK_EYES, end), at(PEEK_HIDDEN, end)], 300, 'ease-in');
     await bot.wait(400);
-    await bot.move([at(PEEK_HIDDEN), at(PEEK_HIGH)], 420, 'cubic-bezier(.3,1.4,.5,1)');
+    bot.handAt(end);
+    await bot.move([at(PEEK_HIDDEN, end), at(PEEK_HIGH, end)], 420, 'cubic-bezier(.3,1.4,.5,1)');
     bot.eyes('wink');
     await bot.wave(2);
     bot.eyes('happy');
-    await bot.move([at(PEEK_HIGH), at(PEEK_HIDDEN)], 400, 'ease-in');
+    await bot.move([at(PEEK_HIGH, end), at(PEEK_HIDDEN, end)], 400, 'ease-in');
   },
 
-  /* 2. a vampire bat dive bombs him; he ducks, then scorches it */
+  /* 2. a vampire bat swoops the whole length of the box at him */
   async bot => {
-    const bat = peekActor(bot, 'bat', { left: 120, width: 34, height: 17, bottom: 70, start: 'translate(110px, -30px)' });
-    const flap = bat.animate([{ transform: 'scaleY(1)' }, { transform: 'scaleY(.5)' }], { duration: 160, iterations: Infinity, direction: 'alternate' });
+    const { W } = bot;
+    const bx = Math.round((W - 70) * 0.45);
+    const batLeft = W - 40;
+    const over = bx + 10 - batLeft;
+    const bat = peekActor(bot, 'bat', { left: batLeft, width: 34, height: 17, bottom: 62, start: 'translate(80px, -30px)' });
     bat.firstElementChild.animate([{ transform: 'scaleY(1)' }, { transform: 'scaleY(.5)' }], { duration: 160, iterations: Infinity, direction: 'alternate' });
-    flap.cancel();
-    await bot.move([at(PEEK_HIDDEN), at(PEEK_EYES)], 420, 'cubic-bezier(.2,.8,.3,1)');
+    await bot.move([at(PEEK_HIDDEN, bx), at(PEEK_EYES, bx)], 420, 'cubic-bezier(.2,.8,.3,1)');
     await bot.look(3.5);
-    await bat.go([{ transform: 'translate(110px, -30px)' }, { transform: 'translate(0px, 0px)' }, { transform: 'translate(8px, -6px)' }], 900, 'ease-out');
+    await bat.go([{ transform: 'translate(80px, -30px)' }, { transform: `translate(${over + 60}px, -4px)` }, { transform: `translate(${over}px, -8px)` }], 1300, 'ease-out');
     bot.eyes('open');
+    await bot.look(0);
     await bot.wait(300);
     await Promise.all([
-      bat.go([{ transform: 'translate(8px, -6px)' }, { transform: 'translate(-90px, 42px)' }, { transform: 'translate(-170px, 10px)' }], 700, 'ease-in'),
-      (async () => { await bot.wait(120); await bot.move([at(PEEK_EYES), at(PEEK_HIDDEN)], 160, 'ease-in'); })()
+      bat.go([{ transform: `translate(${over}px, -8px)` }, { transform: `translate(${over - 40}px, 44px)` }, { transform: `translate(${-batLeft - 60}px, 10px)` }], 1100, 'ease-in'),
+      (async () => { await bot.wait(120); await bot.move([at(PEEK_EYES, bx), at(PEEK_HIDDEN, bx)], 160, 'ease-in'); })()
     ]);
-    await bot.wait(350);
-    await bat.go([{ transform: 'translate(-170px, 10px)' }, { transform: 'translate(-95px, 8px)' }], 600, 'ease-out');
-    await bot.move([at(PEEK_HIDDEN), at(PEEK_HIGH)], 260, 'cubic-bezier(.3,1.4,.5,1)');
+    await bot.wait(400);
+    await bat.go([{ transform: `translate(${-batLeft - 60}px, 10px)` }, { transform: `translate(${over - 30}px, 6px)` }, { transform: `translate(${over}px, 8px)` }], 1100, 'ease-out');
+    await bot.move([at(PEEK_HIDDEN, bx), at(PEEK_HIGH, bx)], 260, 'cubic-bezier(.3,1.4,.5,1)');
     await bot.flare();
-    await bat.go([{ transform: 'translate(-95px, 8px) rotate(0deg)' }, { transform: 'translate(-20px, -110px) rotate(900deg)' }], 800, 'ease-in');
+    await bat.go([{ transform: `translate(${over}px, 8px) rotate(0deg)` }, { transform: `translate(${over + 160}px, -120px) rotate(900deg)` }], 900, 'ease-in');
     bot.eyes('happy');
     await bot.blink();
     await bot.wait(300);
-    await bot.move([at(PEEK_HIGH), at(PEEK_HIDDEN)], 400, 'ease-in');
+    await bot.move([at(PEEK_HIGH, bx), at(PEEK_HIDDEN, bx)], 400, 'ease-in');
   },
 
-  /* 3. a ghost creeps up behind him; one roar and it is gone */
+  /* 3. a ghost creeps up behind him; one roar and it flees the length of the box */
   async bot => {
-    const ghost = peekActor(bot, 'ghost', { left: 62, width: 26, height: 32 });
-    await bot.move([at(PEEK_HIDDEN), at(PEEK_EYES)], 480, 'cubic-bezier(.2,.8,.3,1)');
+    const { W } = bot;
+    const bx = Math.round((W - 70) * 0.3);
+    const ghostLeft = bx + 58;
+    const ghost = peekActor(bot, 'ghost', { left: ghostLeft, width: 26, height: 32 });
+    await bot.move([at(PEEK_HIDDEN, bx), at(PEEK_EYES, bx)], 480, 'cubic-bezier(.2,.8,.3,1)');
     await bot.look(-3.5);
     await Promise.all([
       ghost.go([{ transform: 'translateY(110%)', opacity: 0 }, { transform: 'translateY(8%)', opacity: .95 }], 1100, 'ease-out'),
@@ -12132,137 +12147,177 @@ const devilRoutines = [
     await ghost.go([{ transform: 'translateY(8%) translateX(0px)', opacity: .95 }, { transform: 'translateY(8%) translateX(-9px)', opacity: .95 }], 500, 'ease-in-out');
     await bot.look(3.5);
     bot.eyes('open');
-    await bot.move([at(PEEK_EYES), at(PEEK_HIGH - 6)], 150, 'ease-out');
+    await bot.move([at(PEEK_EYES, bx), at(PEEK_HIGH - 6, bx)], 150, 'ease-out');
+    const away = W - ghostLeft + 40;
     await Promise.all([
       bot.flare(1.9),
-      ghost.go([{ transform: 'translateY(8%) translateX(-9px)', opacity: .95 }, { transform: 'translateY(-160%) translateX(20px)', opacity: 0 }], 600, 'ease-in')
+      ghost.go([
+        { transform: 'translateY(8%) translateX(-9px)', opacity: .95 },
+        { transform: `translateY(-20%) translateX(${Math.round(away * .5)}px)`, opacity: .95 },
+        { transform: `translateY(0%) translateX(${away}px)`, opacity: .8 }
+      ], 1600, 'ease-in')
     ]);
-    await bot.move([at(PEEK_HIGH - 6), at(PEEK_EYES)], 300, 'ease-out');
+    await bot.move([at(PEEK_HIGH - 6, bx), at(PEEK_EYES, bx)], 300, 'ease-out');
     bot.eyes('happy');
     await bot.look(0);
     await bot.blink();
     await bot.wait(300);
-    await bot.move([at(PEEK_EYES), at(PEEK_HIDDEN)], 380, 'ease-in');
+    await bot.move([at(PEEK_EYES, bx), at(PEEK_HIDDEN, bx)], 380, 'ease-in');
   },
 
-  /* 4. whack a zombie: hands pop up, he flattens them */
+  /* 4. whack a zombie: hands pop up all along the box, he flattens them */
   async bot => {
-    const hand = peekActor(bot, 'zombie', { left: 96, width: 20, height: 32 });
+    const { W } = bot;
+    const spots = [0.22, 0.62, 0.92].map(f => Math.round((W - 30) * f));
+    const hand = peekActor(bot, 'zombie', { left: spots[0], width: 20, height: 32 });
     const up = [{ transform: 'translateY(110%)' }, { transform: 'translateY(4%)' }];
     const down = [{ transform: 'translateY(4%)' }, { transform: 'translateY(110%)' }];
-    await bot.move([at(PEEK_HIDDEN), at(PEEK_EYES)], 420, 'cubic-bezier(.2,.8,.3,1)');
-    await hand.go(up, 260, 'cubic-bezier(.3,1.4,.5,1)');
-    await bot.look(3.5);
-    bot.eyes('open');
-    await bot.move([at(PEEK_EYES, 0), at(PEEK_HIGH - 10, 45), at(PEEK_HIGH, 80)], 380, 'ease-out');
-    await Promise.all([bot.move([at(PEEK_HIGH, 80), at(PEEK_HIDDEN, 80)], 150, 'ease-in'), hand.go(down, 150, 'ease-in')]);
-    hand.style.left = '10px';
-    await bot.wait(250);
-    await Promise.all([hand.go(up, 260, 'cubic-bezier(.3,1.4,.5,1)'), bot.move([at(PEEK_HIDDEN, 80), at(PEEK_EYES, 80)], 300, 'ease-out')]);
-    await bot.look(-3.5);
-    await bot.move([at(PEEK_EYES, 80), at(PEEK_HIGH - 10, 45), at(PEEK_HIGH, 0)], 380, 'ease-out');
-    await Promise.all([bot.move([at(PEEK_HIGH, 0), at(PEEK_HIDDEN, 0)], 150, 'ease-in'), hand.go(down, 150, 'ease-in')]);
-    hand.style.left = '140px';
-    await bot.wait(250);
-    await Promise.all([hand.go(up, 260, 'cubic-bezier(.3,1.4,.5,1)'), bot.move([at(PEEK_HIDDEN, 0), at(PEEK_EYES, 0)], 300, 'ease-out')]);
-    await bot.look(3.5);
-    await bot.flare(1.8);
-    await hand.go([{ transform: 'translateY(4%) rotate(0deg)' }, { transform: 'translateY(4%) rotate(-20deg)' }, { transform: 'translateY(110%) rotate(0deg)' }], 420, 'ease-in');
+    let x = 0;
+    await bot.move([at(PEEK_HIDDEN, x), at(PEEK_EYES, x)], 420, 'cubic-bezier(.2,.8,.3,1)');
+    for (const [i, spot] of spots.entries()) {
+      hand.style.left = `${spot}px`;
+      await hand.go(up, 260, 'cubic-bezier(.3,1.4,.5,1)');
+      await bot.look(spot > x ? 3.5 : -3.5);
+      bot.eyes('open');
+      const target = spot - 18;
+      const mid = Math.round((x + target) / 2);
+      await bot.move([at(PEEK_EYES, x), at(-30, mid), at(PEEK_HIGH, target)], 520, 'ease-out');
+      await Promise.all([bot.move([at(PEEK_HIGH, target), at(PEEK_HIDDEN, target)], 150, 'ease-in'), hand.go(down, 150, 'ease-in')]);
+      x = target;
+      if (i < spots.length - 1) {
+        await bot.wait(200);
+        await bot.move([at(PEEK_HIDDEN, x), at(PEEK_EYES, x)], 260, 'ease-out');
+      }
+    }
+    await bot.wait(300);
     bot.eyes('wink');
-    await bot.look(0);
-    await bot.move([at(PEEK_EYES), at(PEEK_HIGH)], 260, 'ease-out');
+    bot.handAt(x);
+    await bot.move([at(PEEK_HIDDEN, x), at(PEEK_HIGH, x)], 320, 'cubic-bezier(.3,1.4,.5,1)');
+    await bot.flare(1.6);
     await bot.wave(1);
     bot.eyes('happy');
-    await bot.move([at(PEEK_HIGH), at(PEEK_HIDDEN)], 380, 'ease-in');
+    await bot.move([at(PEEK_HIGH, x), at(PEEK_HIDDEN, x)], 380, 'ease-in');
   },
 
-  /* 5. a witch flies over; he jumps for her broom and misses */
+  /* 5. a witch flies the whole length of the box; he jumps for her broom and misses */
   async bot => {
-    const witch = peekActor(bot, 'witch', { left: 150, width: 52, height: 31, bottom: 62, start: 'translateX(90px)' });
-    await bot.move([at(PEEK_HIDDEN), at(PEEK_EYES)], 420, 'cubic-bezier(.2,.8,.3,1)');
+    const { W } = bot;
+    const bx = Math.round((W - 70) * 0.55);
+    const witch = peekActor(bot, 'witch', { left: W, width: 52, height: 31, bottom: 62, start: 'translateX(20px)' });
+    await bot.move([at(PEEK_HIDDEN, bx), at(PEEK_EYES, bx)], 420, 'cubic-bezier(.2,.8,.3,1)');
     await bot.look(3.5);
+    const trip = W + 90;
     const fly = witch.go([
-      { transform: 'translate(90px, 0px)' },
-      { transform: 'translate(20px, 8px)' },
-      { transform: 'translate(-60px, -4px)' },
-      { transform: 'translate(-140px, 6px)' },
-      { transform: 'translate(-230px, -10px)' }
-    ], 2200, 'linear');
-    await bot.wait(500);
+      { transform: 'translate(20px, 0px)' },
+      { transform: `translate(${-trip * .25}px, 8px)` },
+      { transform: `translate(${-trip * .5}px, -4px)` },
+      { transform: `translate(${-trip * .75}px, 6px)` },
+      { transform: `translate(${-trip}px, -10px)` }
+    ], 3400, 'linear');
+    /* when she is overhead: she covers the box at an even pace */
+    const overhead = ((W + 20 - (bx + 28)) / (trip + 20)) * 3400;
+    await bot.wait(Math.max(0, overhead - 700));
     bot.eyes('open');
     await bot.look(0);
-    await bot.wait(500);
-    await bot.move([at(PEEK_EYES), at(-18, 0, 'rotate(-8deg)'), at(PEEK_EYES)], 520, 'ease-in-out');
+    await bot.wait(250);
+    await bot.move([at(PEEK_EYES, bx), at(-18, bx, 'rotate(-8deg)'), at(PEEK_EYES, bx)], 520, 'ease-in-out');
     await bot.look(-3.5);
     await fly;
     bot.eyes('happy');
-    await bot.move([at(PEEK_EYES, 0, 'rotate(0deg)'), at(PEEK_EYES, 0, 'rotate(10deg)'), at(PEEK_EYES, 0, 'rotate(-10deg)'), at(PEEK_EYES, 0, 'rotate(0deg)')], 700, 'ease-in-out');
+    await bot.move([at(PEEK_EYES, bx, 'rotate(0deg)'), at(PEEK_EYES, bx, 'rotate(10deg)'), at(PEEK_EYES, bx, 'rotate(-10deg)'), at(PEEK_EYES, bx, 'rotate(0deg)')], 700, 'ease-in-out');
     await bot.flare(1.5);
     await bot.look(0);
-    await bot.move([at(PEEK_EYES), at(PEEK_HIDDEN)], 380, 'ease-in');
+    await bot.move([at(PEEK_EYES, bx), at(PEEK_HIDDEN, bx)], 380, 'ease-in');
   },
 
-  /* 6. a spider drops right in front of his face; he blows it away */
+  /* 6. spiders drop in front of him at both ends of the box; he blows each away */
   async bot => {
-    const spider = peekActor(bot, 'spider', { left: 18, width: 20, height: 60, bottom: 34, start: 'translateY(-140%)' });
-    await bot.move([at(PEEK_HIDDEN), at(PEEK_EYES)], 480, 'cubic-bezier(.2,.8,.3,1)');
-    await bot.wait(300);
-    await spider.go([{ transform: 'translateY(-140%)' }, { transform: 'translateY(-4%)' }, { transform: 'translateY(-10%)' }], 1000, 'ease-out');
-    bot.eyes('open');
-    await bot.look(-2);
-    await bot.wait(300);
-    await bot.look(2);
-    await bot.wait(300);
-    await bot.look(0);
-    await Promise.all([bot.flare(2), (async () => { await bot.wait(200); await spider.go([{ transform: 'translateY(-10%)' }, { transform: 'translateY(-150%)' }], 260, 'ease-in'); })()]);
-    bot.eyes('happy');
+    const { W } = bot;
+    const spots = [Math.round((W - 70) * 0.1), Math.round((W - 70) * 0.8)];
+    const spider = peekActor(bot, 'spider', { left: spots[0] + 18, width: 20, height: 60, bottom: 34, start: 'translateY(-140%)' });
+    for (const [i, bx] of spots.entries()) {
+      if (i === 0) {
+        await bot.move([at(PEEK_HIDDEN, bx), at(PEEK_EYES, bx)], 480, 'cubic-bezier(.2,.8,.3,1)');
+      } else {
+        spider.style.left = `${bx + 18}px`;
+        const n = 12;
+        const run = [];
+        for (let k = 0; k <= n; k += 1) run.push(at(k % 2 ? PEEK_EYES - 10 : PEEK_EYES, Math.round(spots[0] + (bx - spots[0]) * k / n)));
+        await bot.look(3.5);
+        await bot.move(run, 1800, 'ease-in-out');
+        await bot.look(0);
+      }
+      await bot.wait(250);
+      await spider.go([{ transform: 'translateY(-140%)' }, { transform: 'translateY(-4%)' }, { transform: 'translateY(-10%)' }], 1000, 'ease-out');
+      bot.eyes('open');
+      await bot.look(-2); await bot.wait(250); await bot.look(2); await bot.wait(250); await bot.look(0);
+      await Promise.all([bot.flare(2), (async () => { await bot.wait(200); await spider.go([{ transform: 'translateY(-10%)' }, { transform: 'translateY(-150%)' }], 260, 'ease-in'); })()]);
+      bot.eyes('happy');
+    }
     await bot.blink();
-    await bot.move([at(PEEK_EYES, 0, 'rotate(0deg)'), at(PEEK_EYES, 0, 'rotate(8deg)'), at(PEEK_EYES, 0, 'rotate(0deg)')], 400, 'ease-in-out');
-    await bot.move([at(PEEK_EYES), at(PEEK_HIDDEN)], 380, 'ease-in');
+    const last = spots[1];
+    await bot.move([at(PEEK_EYES, last, 'rotate(0deg)'), at(PEEK_EYES, last, 'rotate(8deg)'), at(PEEK_EYES, last, 'rotate(0deg)')], 400, 'ease-in-out');
+    await bot.move([at(PEEK_EYES, last), at(PEEK_HIDDEN, last)], 380, 'ease-in');
   },
 
-  /* 7. a staring contest with a skull, which falls to bits */
+  /* 7. a stare down across the box with a skull, which falls to bits */
   async bot => {
-    const skull = peekActor(bot, 'skull', { left: 88, width: 30, height: 34 });
+    const { W } = bot;
+    const skullLeft = Math.round(W * 0.8);
+    const skull = peekActor(bot, 'skull', { left: skullLeft, width: 30, height: 34 });
+    const start = Math.round((W - 70) * 0.05);
+    const close = skullLeft - 58;
     await Promise.all([
-      bot.move([at(PEEK_HIDDEN), at(PEEK_EYES)], 520, 'cubic-bezier(.2,.8,.3,1)'),
+      bot.move([at(PEEK_HIDDEN, start), at(PEEK_EYES, start)], 520, 'cubic-bezier(.2,.8,.3,1)'),
       skull.go([{ transform: 'translateY(110%)' }, { transform: 'translateY(10%)' }], 520, 'cubic-bezier(.2,.8,.3,1)')
     ]);
     await bot.look(3.5);
     bot.eyes('open');
+    /* a slow, menacing walk up to it, one step at a time */
+    const n = 10;
+    const walk = [];
+    for (let k = 0; k <= n; k += 1) walk.push(at(k % 2 ? PEEK_EYES - 5 : PEEK_EYES, Math.round(start + (close - start) * k / n), `rotate(${k % 2 ? 4 : -2}deg)`));
+    await bot.move(walk, 2400, 'linear');
     await Promise.all([
-      bot.move([at(PEEK_EYES, 0), at(PEEK_EYES, 10, 'rotate(6deg)')], 600, 'ease-in-out'),
-      skull.go([{ transform: 'translateY(10%) translateX(0px)' }, { transform: 'translateY(10%) translateX(-10px) rotate(-6deg)' }], 600, 'ease-in-out')
+      bot.move([at(PEEK_EYES, close, 'rotate(0deg)'), at(PEEK_EYES, close + 8, 'rotate(6deg)')], 500, 'ease-in-out'),
+      skull.go([{ transform: 'translateY(10%) translateX(0px)' }, { transform: 'translateY(10%) translateX(-8px) rotate(-6deg)' }], 500, 'ease-in-out')
     ]);
     await bot.wait(900);
     await skull.go([
-      { transform: 'translateY(10%) translateX(-10px) rotate(-6deg)' },
-      { transform: 'translateY(10%) translateX(-8px) rotate(4deg)' },
-      { transform: 'translateY(10%) translateX(-12px) rotate(-8deg)' },
-      { transform: 'translateY(10%) translateX(-10px) rotate(-6deg)' }
+      { transform: 'translateY(10%) translateX(-8px) rotate(-6deg)' },
+      { transform: 'translateY(10%) translateX(-6px) rotate(4deg)' },
+      { transform: 'translateY(10%) translateX(-10px) rotate(-8deg)' },
+      { transform: 'translateY(10%) translateX(-8px) rotate(-6deg)' }
     ], 300, 'linear');
     await bot.flare(1.8);
     await skull.go([
-      { transform: 'translateY(10%) translateX(-10px) rotate(-6deg)' },
-      { transform: 'translateY(-30%) translateX(4px) rotate(40deg)' },
-      { transform: 'translateY(120%) translateX(20px) rotate(160deg)' }
+      { transform: 'translateY(10%) translateX(-8px) rotate(-6deg)' },
+      { transform: 'translateY(-30%) translateX(6px) rotate(40deg)' },
+      { transform: 'translateY(120%) translateX(24px) rotate(160deg)' }
     ], 650, 'ease-in');
     bot.eyes('happy');
-    await bot.move([at(PEEK_EYES, 10, 'rotate(6deg)'), at(PEEK_HIGH, 0, 'rotate(0deg)')], 300, 'ease-out');
+    bot.handAt(close);
+    await bot.move([at(PEEK_EYES, close + 8, 'rotate(6deg)'), at(PEEK_HIGH, close, 'rotate(0deg)')], 300, 'ease-out');
     await bot.wave(1);
-    await bot.move([at(PEEK_HIGH), at(PEEK_HIDDEN)], 380, 'ease-in');
+    await bot.move([at(PEEK_HIGH, close), at(PEEK_HIDDEN, close)], 380, 'ease-in');
   },
 
-  /* 8. an evil pumpkin rolls in; he hops over it */
+  /* 8. an evil pumpkin rolls the whole length of the box; he hops over it */
   async bot => {
-    const pumpkin = peekActor(bot, 'pumpkin', { left: 200, width: 30, height: 26, start: 'translateX(40px)' });
-    await bot.move([at(PEEK_HIDDEN), at(PEEK_EYES)], 420, 'cubic-bezier(.2,.8,.3,1)');
+    const { W } = bot;
+    const bx = Math.round((W - 70) * 0.45);
+    const pumpkin = peekActor(bot, 'pumpkin', { left: W, width: 30, height: 26, start: 'translateX(10px)' });
+    await bot.move([at(PEEK_HIDDEN, bx), at(PEEK_EYES, bx)], 420, 'cubic-bezier(.2,.8,.3,1)');
     await bot.look(3.5);
-    const roll = pumpkin.go([{ transform: 'translateX(40px) rotate(0deg)' }, { transform: 'translateX(-260px) rotate(-900deg)' }], 1800, 'linear');
-    await bot.wait(300);
+    const trip = W + 50;
+    const ms = 2800;
+    const spins = Math.round(trip / 30);
+    const roll = pumpkin.go([{ transform: 'translateX(10px) rotate(0deg)' }, { transform: `translateX(${-trip}px) rotate(${-spins * 90}deg)` }], ms, 'linear');
+    const reach = ((W + 10 - (bx + 40)) / (trip + 10)) * ms;
+    await bot.wait(Math.max(0, reach - 700));
     bot.eyes('open');
-    await bot.wait(600);
-    await bot.move([at(PEEK_EYES), at(-30, 0, 'rotate(-10deg)'), at(PEEK_EYES, 0, 'rotate(0deg)')], 560, 'ease-in-out');
+    await bot.wait(420);
+    await bot.move([at(PEEK_EYES, bx), at(-30, bx, 'rotate(-10deg)'), at(PEEK_EYES, bx, 'rotate(0deg)')], 560, 'ease-in-out');
     await bot.look(-3.5);
     await roll;
     await bot.wait(300);
@@ -12270,49 +12325,62 @@ const devilRoutines = [
     await bot.flare(1.6);
     await bot.look(0);
     await bot.blink();
-    await bot.move([at(PEEK_EYES), at(PEEK_HIDDEN)], 380, 'ease-in');
+    await bot.move([at(PEEK_EYES, bx), at(PEEK_HIDDEN, bx)], 380, 'ease-in');
   },
 
-  /* 9. a bouncing duel with a slime, which goes splat */
+  /* 9. a bouncing duel with a slime across the box; he flips over and it goes splat */
   async bot => {
-    const slime = peekActor(bot, 'slime', { left: 96, width: 30, height: 24 });
+    const { W } = bot;
+    const bx = Math.round((W - 70) * 0.15);
+    const slimeLeft = Math.round(W * 0.75);
+    const slime = peekActor(bot, 'slime', { left: slimeLeft, width: 30, height: 24 });
     const boing = (el, top, ms) => el.go([{ transform: 'translateY(110%)' }, { transform: `translateY(${top}%)` }, { transform: 'translateY(110%)' }], ms, 'ease-in-out');
-    await bot.move([at(PEEK_HIDDEN), at(PEEK_EYES)], 420, 'cubic-bezier(.2,.8,.3,1)');
+    await bot.move([at(PEEK_HIDDEN, bx), at(PEEK_EYES, bx)], 420, 'cubic-bezier(.2,.8,.3,1)');
     await bot.look(3.5);
-    await bot.move([at(PEEK_EYES), at(PEEK_HIDDEN)], 200, 'ease-in');
+    await bot.move([at(PEEK_EYES, bx), at(PEEK_HIDDEN, bx)], 200, 'ease-in');
     await boing(slime, -40, 520);
-    await bot.move([at(PEEK_HIDDEN), at(PEEK_HIGH - 20), at(PEEK_HIDDEN)], 560, 'ease-in-out');
+    await bot.move([at(PEEK_HIDDEN, bx), at(PEEK_HIGH - 20, bx), at(PEEK_HIDDEN, bx)], 560, 'ease-in-out');
     await boing(slime, -90, 620);
     bot.eyes('open');
+    const land = slimeLeft - 60;
     await bot.move([
-      { transform: `translateY(${PEEK_HIDDEN}%) rotate(0deg)`, transformOrigin: '50% 50%' },
-      { transform: 'translateY(-40%) rotate(180deg)', transformOrigin: '50% 50%' },
-      { transform: `translateY(${PEEK_EYES}%) rotate(360deg)`, transformOrigin: '50% 50%' }
-    ], 800, 'ease-in-out');
+      { transform: `translateY(${PEEK_HIDDEN}%) translateX(${bx}px) rotate(0deg)`, transformOrigin: '50% 50%' },
+      { transform: `translateY(-50%) translateX(${Math.round((bx + land) / 2)}px) rotate(180deg)`, transformOrigin: '50% 50%' },
+      { transform: `translateY(${PEEK_EYES}%) translateX(${land}px) rotate(360deg)`, transformOrigin: '50% 50%' }
+    ], 1200, 'ease-in-out');
     await slime.go([{ transform: 'translateY(110%)' }, { transform: 'translateY(8%)' }], 240, 'ease-out');
     await bot.flare(1.6);
     await slime.go([{ transform: 'translateY(8%) scale(1, 1)', transformOrigin: '50% 100%' }, { transform: 'translateY(8%) scale(1.7, .25)', transformOrigin: '50% 100%' }, { transform: 'translateY(110%) scale(1.7, .25)', transformOrigin: '50% 100%' }], 520, 'ease-in');
     bot.eyes('happy');
-    await bot.move([at(PEEK_EYES), at(PEEK_HIGH)], 240, 'ease-out');
+    bot.handAt(land);
+    await bot.move([at(PEEK_EYES, land), at(PEEK_HIGH, land)], 240, 'ease-out');
     await bot.wave(1);
-    await bot.move([at(PEEK_HIGH), at(PEEK_HIDDEN)], 380, 'ease-in');
+    await bot.move([at(PEEK_HIGH, land), at(PEEK_HIDDEN, land)], 380, 'ease-in');
   },
 
-  /* 10. the thief again, and this time he gets him */
+  /* 10. the thief again, at the far end, and this time one huge leap gets him */
   async bot => {
-    const thief = peekActor(bot, 'thief', { left: 100 });
-    await bot.move([at(PEEK_HIDDEN), at(PEEK_EYES)], 420, 'cubic-bezier(.2,.8,.3,1)');
+    const { W } = bot;
+    const start = Math.round((W - 70) * 0.03);
+    const thiefLeft = Math.round(W * 0.82);
+    const land = thiefLeft - 4;
+    const thief = peekActor(bot, 'thief', { left: thiefLeft });
+    await bot.move([at(PEEK_HIDDEN, start), at(PEEK_EYES, start)], 420, 'cubic-bezier(.2,.8,.3,1)');
     await thief.go([{ transform: 'translateY(110%)' }, { transform: 'translateY(6%)' }], 320, 'cubic-bezier(.3,1.4,.5,1)');
     await bot.look(3.5);
     bot.eyes('open');
     await bot.flare(1.5);
-    await thief.go([{ transform: 'translateY(6%) translateX(0px)' }, { transform: 'translateY(6%) translateX(14px)' }], 200, 'ease-out');
-    await bot.move([at(PEEK_EYES, 0), at(-20, 50, 'rotate(20deg)'), at(PEEK_HIGH, 100, 'rotate(0deg)')], 460, 'ease-out');
+    await thief.go([{ transform: 'translateY(6%) translateX(0px)' }, { transform: 'translateY(6%) translateX(10px)' }], 200, 'ease-out');
+    await bot.move([
+      at(PEEK_EYES, start),
+      at(-45, Math.round(start + (land - start) * .5), 'rotate(20deg)'),
+      at(PEEK_HIGH, land, 'rotate(0deg)')
+    ], 1100, 'ease-in-out');
     await Promise.all([
-      bot.move([at(PEEK_HIGH, 100), at(PEEK_HIDDEN, 100)], 180, 'ease-in'),
-      thief.go([{ transform: 'translateY(6%) translateX(14px)' }, { transform: 'translateY(110%) translateX(14px)' }], 180, 'ease-in')
+      bot.move([at(PEEK_HIGH, land), at(PEEK_HIDDEN, land)], 180, 'ease-in'),
+      thief.go([{ transform: 'translateY(6%) translateX(10px)' }, { transform: 'translateY(110%) translateX(10px)' }], 180, 'ease-in')
     ]);
-    const puff = peekActor(bot, 'puff', { left: 92, width: 44, height: 33, start: 'scale(.2)' });
+    const puff = peekActor(bot, 'puff', { left: land - 6, width: 44, height: 33, start: 'scale(.2)' });
     await puff.go([
       { transform: 'scale(.2) rotate(0deg)', opacity: 1 },
       { transform: 'scale(1) rotate(8deg)', opacity: 1 },
@@ -12320,17 +12388,17 @@ const devilRoutines = [
       { transform: 'scale(1) translateX(-3px) rotate(6deg)', opacity: 1 },
       { transform: 'scale(1.3) rotate(0deg)', opacity: 0 }
     ], 1300, 'ease-in-out');
-    const bucket = peekActor(bot, 'bucket', { left: 150, width: 20, height: 20 });
-    bot.handAt(100);
+    const bucket = peekActor(bot, 'bucket', { left: land + 50, width: 20, height: 20 });
+    bot.handAt(land);
     await Promise.all([
-      bot.move([at(PEEK_HIDDEN, 100), at(PEEK_HIGH, 100)], 420, 'cubic-bezier(.3,1.4,.5,1)'),
+      bot.move([at(PEEK_HIDDEN, land), at(PEEK_HIGH, land)], 420, 'cubic-bezier(.3,1.4,.5,1)'),
       bucket.go([{ transform: 'translateY(110%)' }, { transform: 'translateY(-30%)' }], 420, 'cubic-bezier(.3,1.4,.5,1)')
     ]);
     bot.eyes('wink');
     await bot.wave(2);
     bot.eyes('happy');
     await Promise.all([
-      bot.move([at(PEEK_HIGH, 100), at(PEEK_HIDDEN, 100)], 400, 'ease-in'),
+      bot.move([at(PEEK_HIGH, land), at(PEEK_HIDDEN, land)], 400, 'ease-in'),
       bucket.go([{ transform: 'translateY(-30%)' }, { transform: 'translateY(110%)' }], 400, 'ease-in')
     ]);
   }
@@ -12351,9 +12419,15 @@ async function peekDevil(bot) {
   const pick = typeof bot.devilPick === 'number' ? bot.devilPick : devilDeck.shift();
   bot.devilPick = null;
   /* each measured at normal speed, stretched to last two seconds longer */
-  const lengths = [9651, 6345, 4796, 6561, 4863, 4712, 5614, 4227, 6545, 6062];
-  bot.tempo = (lengths[pick] + 2150) / lengths[pick];
-  bot.stage.style.width = '200px';
+  /* each routine's length at normal speed, and what it should last:
+     two seconds more than the version before this one */
+  const lengths = [10238, 7980, 5794, 7713, 6129, 9728, 7945, 5228, 6978, 6695];
+  const targets = [14020, 10700, 9180, 10910, 9090, 8910, 9760, 8500, 10710, 10240];
+  bot.tempo = Math.max(1, targets[pick] / lengths[pick]);
+  /* the whole width of the message box */
+  bot.stage.style.left = '18px';
+  bot.W = Math.max(240, (bot.card.clientWidth || 300) - 36);
+  bot.stage.style.width = `${bot.W}px`;
   bot.stage.style.height = '120px';
   await devilRoutines[pick](bot);
 }
