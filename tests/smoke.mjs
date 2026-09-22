@@ -100,7 +100,7 @@ for (const [label, options] of [['desktop', { viewport: { width: 1200, height: 8
   const guest = await page.$('#guestButton, .guestButton, [data-action="guest"]');
   if (guest) { await guest.click(); await page.waitForTimeout(1000); }
 
-  await page.fill('#messageInput', 'hello there');
+  await page.fill('#messageInput', 'what is the capital of France?');
   await page.waitForTimeout(100);
   check(await page.$eval('#wordButton', b => b.classList.contains('show')), `${label}: wand shows once there is text`);
 
@@ -109,6 +109,13 @@ for (const [label, options] of [['desktop', { viewport: { width: 1200, height: 8
   const reply = await page.evaluate(() => [...document.querySelectorAll('.messageRow.assistant')].map(r => r.innerText).join(' '));
   check(reply.includes('Hello from the smoke test'), `${label}: sending a message gets a reply`);
   check(await page.$$eval('.replyTools .replyTool', t => t.length) === 3, `${label}: reply has copy, try again and save`);
+  check(await page.$$eval('.bubbleWrap.noTools', w => w.length) === 0, `${label}: a real answer shows its tools`);
+
+  /* small talk: a "hey" gets no tools */
+  await page.fill('#messageInput', 'hey');
+  await page.click('#sendButton');
+  await page.waitForTimeout(1200);
+  check(await page.$$eval('.bubbleWrap', w => w[w.length - 1].classList.contains('noTools')), `${label}: small talk gets no tools`);
 
   /* My artwork opens and closes */
   await page.evaluate(() => document.getElementById('artworkButton').click());

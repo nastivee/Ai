@@ -6799,3 +6799,8 @@ body.theme-halloween .authScreen .authCard {
 @media (prefers-reduced-motion: reduce) {
   .themeDecor .clouds { animation: none; }
 }
+
+/* copy, try again and save wait for a real answer */
+.bubbleWrap.noTools .replyTools {
+  display: none !important;
+}

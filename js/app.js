@@ -4051,6 +4051,33 @@ chat.addEventListener('click', event => {
 });
 
 
+/*
+  Copy, try again and save only show on a real answer: not
+  on a "hey" or a "thanks", and not while a reply is still
+  being written.
+*/
+const SMALL_TALK =
+  /^(hi|hey|heya|hiya|hello|helo|yo|sup|howdy|morning|evening|afternoon|good (morning|afternoon|evening|night)|gm|thanks|thank you|thx|ty|cheers|ta|ok|okay|k|cool|nice|great|lol|haha|bye|goodbye|see ya|night|how are you|how r u|how's it going|hows it going|what's up|whats up|wassup|you there|are you there)\b/i;
+
+function lastUserText() {
+  const rows = chat.querySelectorAll('.messageRow.user .messageBubble');
+  return rows.length ? (rows[rows.length - 1].textContent || '').trim() : '';
+}
+
+function isSmallTalk(text) {
+  const words = text.split(/\s+/).filter(Boolean);
+  return words.length <= 6 && SMALL_TALK.test(text.replace(/[!.?,]+$/g, '').trim());
+}
+
+function settleReplyTools(bubble, reply) {
+  const wrap = bubble?.closest('.bubbleWrap');
+  if (!wrap) return;
+  const text = (reply || '').trim();
+  const streaming = bubble.classList.contains('streaming') || !text;
+  const quiet = streaming || (isSmallTalk(lastUserText()) && text.length < 280);
+  wrap.classList.toggle('noTools', quiet);
+}
+
 function addTextMessage(
   role,
   content
@@ -4200,6 +4227,9 @@ function addTextMessage(
     tools.appendChild(keep);
 
     wrap.appendChild(tools);
+
+    /* no tools on small talk, and none until a streamed reply has finished */
+    settleReplyTools(bubble, content);
 
   }
 
@@ -10622,6 +10652,7 @@ async function streamReply(response, requestChatId) {
       bubble.classList.remove('streaming');
       bubble.dataset.raw = reply;
       bubble.innerHTML = renderMarkdown(reply);
+      settleReplyTools(bubble, reply);
     }
 
     return reply;
@@ -10713,6 +10744,8 @@ async function streamReply(response, requestChatId) {
       renderMarkdown(
         reply || 'Sorry, I could not generate a response.'
       );
+
+    settleReplyTools(bubble, reply);
 
     scrollToBottom();
 
