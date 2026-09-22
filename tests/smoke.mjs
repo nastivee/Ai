@@ -145,7 +145,7 @@ for (const [label, options] of [['desktop', { viewport: { width: 1200, height: 8
   });
   await page.waitForTimeout(800);
 
-  await page.click('#adminBurger');
+  /* on a computer the menu is a sidebar, always there; the burger is for phones */
   await page.waitForTimeout(300);
   const sections = await page.$$eval('.adminNavItem', items => items.length);
   check(sections >= 8, `admin: menu lists the sections (${sections})`);
