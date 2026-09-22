@@ -6520,3 +6520,131 @@ body.theme-halloween .logoLarge::after {
   padding-top: 16px;
   border-top: 1px solid rgba(255, 255, 255, .06);
 }
+
+
+/* =====================================================
+   SIGN IN = FAST COLOURS, SIGN UP = SMART COLOURS
+
+   The two screens wear the same palettes as the two chat
+   modes: log in is Fast's purple, sign up is Smart's blue.
+   Every colour comes from these variables, so the switch
+   between them is one smooth fade.
+===================================================== */
+
+.authScreen {
+  --a-card: #15101f;
+  --a-card-line: #33264a;
+  --a-input: #0d0917;
+  --a-input-line: #33264a;
+  --a-focus: #563f7e;
+  --a-link: #a78bfa;
+  --a-edge: linear-gradient(135deg, #a78bfa, #7c3aed 45%, #38bdf8);
+  --a-glow: rgba(124, 58, 237, .18);
+  --mute-fill: #150f21;
+  --mute-line: #2c2340;
+  --mute-text: #b4a8c6;
+  background:
+    radial-gradient(ellipse 75% 55% at 50% 0%, rgba(106, 62, 160, .22), transparent 70%),
+    #0d0917;
+}
+
+.authScreen.signup {
+  --a-card: #0e1320;
+  --a-card-line: #243452;
+  --a-input: #080b14;
+  --a-input-line: #243452;
+  --a-focus: #3d5f9c;
+  --a-link: #8fb0ec;
+  --a-edge: linear-gradient(135deg, #93c5fd, #3d69b5 45%, #38bdf8);
+  --a-glow: rgba(61, 105, 181, .18);
+  --mute-fill: #0f1522;
+  --mute-line: #1f2a3d;
+  --mute-text: #a9b6cc;
+}
+
+/* Smart's backdrop, fading in over Fast's */
+.authScreen::before {
+  background:
+    radial-gradient(ellipse 75% 55% at 50% 0%, rgba(64, 118, 210, .15), transparent 70%),
+    radial-gradient(ellipse 90% 50% at 50% 100%, rgba(36, 86, 160, .08), transparent 70%),
+    #080b14;
+}
+
+.authScreen .authCard,
+.authScreen.signup .authCard {
+  border-color: var(--a-card-line);
+  background: var(--a-card);
+  box-shadow: 0 25px 80px rgba(0, 0, 0, .45), 0 0 60px -24px var(--a-glow);
+}
+
+.authScreen .logoLarge span,
+.authScreen.signup .logoLarge span {
+  color: var(--a-link);
+}
+
+.authScreen .authInput,
+.authScreen.signup .authInput {
+  border-color: var(--a-input-line);
+  background: var(--a-input);
+}
+
+.authScreen .authInput:focus,
+.authScreen.signup .authInput:focus {
+  border-color: var(--a-focus);
+}
+
+/* the main button wears the mode's gradient, like the Fast/Smart switch */
+.authScreen .authButton,
+.authScreen.signup .authButton {
+  padding: 15px 20px;
+  background: var(--a-edge);
+}
+
+.authScreen .authButton:hover {
+  filter: brightness(1.08);
+}
+
+.authScreen .guestButton {
+  padding: 14px 20px;
+  border-color: var(--mute-line);
+  background: var(--mute-fill);
+  color: var(--mute-text);
+}
+
+.authScreen .authSwitch,
+.authScreen.signup .authSwitch {
+  border-color: var(--mute-line);
+  background: var(--mute-fill);
+  color: var(--mute-text);
+}
+
+.authScreen .authSwitch:hover,
+.authScreen.signup .authSwitch:hover {
+  border-color: var(--a-focus);
+}
+
+.authScreen .authSwitch button,
+.authScreen .authForgot button,
+.authScreen .authLegal a,
+.authScreen.signup .authSwitch button,
+.authScreen.signup .authForgot button,
+.authScreen.signup .authLegal a {
+  color: var(--a-link);
+}
+
+.authScreen .guestButton,
+.authScreen .authSwitch,
+.authScreen .authButton {
+  transition:
+    border-color .35s var(--ease),
+    background .35s var(--ease),
+    color .35s var(--ease),
+    filter .2s var(--ease);
+}
+
+/* Halloween keeps its warm glow on top of either palette */
+body.theme-halloween .authScreen .authCard {
+  box-shadow:
+    0 25px 80px rgba(0, 0, 0, .45),
+    0 0 60px -20px rgba(255, 122, 26, .35);
+}
