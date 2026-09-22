@@ -51,7 +51,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-<link rel="stylesheet" href="./css/app.css?v=2026-09-22-76">
+<link rel="stylesheet" href="./css/app.css?v=2026-09-22-77">
 </head>
 
 <body>
@@ -678,6 +678,36 @@
         <button class="adminAction" id="lessonAdd" type="button">Add lesson</button>
 
         <div class="adminResult" id="lessonsResult"></div>
+
+      </div>
+
+    </div>
+
+
+    <div class="adminSection good" id="adminKnowledge">
+
+      <button class="adminSummary" type="button" data-section="adminKnowledge">
+        <span class="adminDot" aria-hidden="true"></span>
+        <span class="adminSummaryText">
+          What Natter knows
+          <span class="adminSummaryNote" id="adminKnowledgeNote">Checking...</span>
+        </span>
+        <svg class="adminChevron" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
+      </button>
+
+      <div class="adminBody">
+
+        <div class="adminHint">
+          Trade knowledge Natter carries with it: how the work is
+          actually done in each of these. The two or three that fit
+          a question are used for that answer, so replies come out
+          like somebody who does the job. Switch one off if you
+          would rather it stayed out of the way.
+        </div>
+
+        <div class="knowledgeList" id="knowledgeList"></div>
+
+        <div class="adminResult" id="adminKnowledgeResult"></div>
 
       </div>
 
@@ -2012,8 +2042,8 @@
   </div>
 </div>
 
-<script>window.NASTIVEE_VERSION = '2026-09-22-76';</script>
-<script src="./js/app.js?v=2026-09-22-76"></script>
+<script>window.NASTIVEE_VERSION = '2026-09-22-77';</script>
+<script src="./js/app.js?v=2026-09-22-77"></script>
 
 </body>
 </html>

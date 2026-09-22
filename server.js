@@ -197,6 +197,8 @@ const SETTINGS_FALLBACK = {
   site_theme: 'standard',
   /* word swaps applied to what users type, set in the admin panel */
   rules: [],
+  /* house expertise packs switched off in the admin page */
+  knowledge_off: [],
   /* house lessons: suggestions from feedback, live once an admin approves */
   lessons: { auto: true, items: [] }
 };
@@ -2046,6 +2048,17 @@ app.post('/api/admin/settings', async (req, res) => {
 
   }
 
+  if (body.knowledge_off !== undefined) {
+
+    if (!Array.isArray(body.knowledge_off)) {
+      return res.status(400).json({ error: 'Send a list of subjects to switch off.' });
+    }
+
+    patch.knowledge_off =
+      body.knowledge_off.filter(id => knowledgeIds().includes(id));
+
+  }
+
   if (body.site_theme !== undefined) {
 
     if (!SITE_THEMES.includes(body.site_theme)) {
@@ -2138,6 +2151,29 @@ app.get('/api/admin/alerts', async (req, res) => {
 /*
   Requests that were turned down, newest first.
 */
+/* the subjects Natter knows in depth, and which are on */
+app.get('/api/admin/knowledge', async (req, res) => {
+
+  const user = await requireAdmin(req, res);
+
+  if (!user) return;
+
+  const settings = await getSettings();
+  const off = knowledgeOff(settings);
+
+  res.json({
+    packs: KNOWLEDGE.map(pack => ({
+      id: pack.id,
+      name: pack.name,
+      note: pack.note,
+      on: !off.includes(pack.id),
+      lines: pack.text.trim().split('\n').filter(line => line.trim().startsWith('-')).length
+    }))
+  });
+
+});
+
+
 app.get('/api/admin/refusals', async (req, res) => {
 
   const user = await requireAdmin(req, res);
@@ -2924,6 +2960,249 @@ async function noteRefusal({ user, request, reply, kind = 'Declined', category, 
 }
 
 
+/* =====================================================
+   HOUSE EXPERTISE
+
+   Short, practical playbooks, one per discipline. The two
+   or three that fit what the person just asked are added
+   to the instructions for that reply, so Natter answers
+   like somebody who does the work rather than somebody
+   who has read about it. Switched on and off in the admin
+   page.
+===================================================== */
+
+const KNOWLEDGE = [
+
+  {
+    id: 'design',
+    name: 'Design',
+    note: 'Layout, type, colour, brand and interfaces',
+    words: ['design', 'logo', 'brand', 'branding', 'colour', 'color', 'palette', 'font', 'typeface', 'typography', 'layout', 'poster', 'flyer', 'leaflet', 'mockup', 'ui', 'ux', 'wireframe', 'icon', 'illustration', 'moodboard', 'packaging', 'signage', 'menu design'],
+    text: `
+DESIGN:
+
+- Decide the one thing the piece must do before choosing anything else, and let that set the hierarchy.
+- Hierarchy comes from size, weight, spacing and contrast, in that order. Colour is the weakest way to make something important.
+- Space is the cheapest luxury. When something looks wrong, it is usually crowded, not badly coloured.
+- Two typefaces at most: one for headings, one for reading. Different weights of one family beats two families badly matched.
+- Body text 16px or more on screen, 45 to 75 characters a line, line height about 1.5.
+- Pick one accent colour and use it only for the thing you want tapped. Everything else earns its colour.
+- Contrast: 4.5:1 for body text, 3:1 for large text. Check it rather than guess.
+- Align everything to a grid or a common edge. Optical alignment beats mathematical when the eye disagrees.
+- Photographs beat illustrations for trust; illustrations beat stock photography for personality.
+- For print: CMYK, 300dpi, 3mm bleed, keep text 5mm inside the trim.
+- Name the design decisions when you present them: what it does, why it is arranged that way, what to change if they disagree.
+`
+  },
+
+  {
+    id: 'marketing',
+    name: 'Marketing',
+    note: 'Positioning, copy, local marketing and campaigns',
+    words: ['marketing', 'advert', 'advertising', 'campaign', 'seo', 'social media', 'instagram', 'facebook', 'tiktok', 'customers', 'promotion', 'offer', 'discount', 'newsletter', 'email list', 'brand', 'audience', 'leads', 'funnel', 'conversion', 'google ads', 'flyer', 'loyalty', 'reviews', 'footfall'],
+    text: `
+MARKETING:
+
+- Start with the customer's problem in their words, not the product's features. The offer is the promise, not the price.
+- Positioning in one line: for WHO, we are the ONLY thing that DOES WHAT, because REASON TO BELIEVE.
+- Copy order that works: hook, problem, proof, offer, one clear action. One action per piece.
+- Headlines: specific beats clever. Numbers, places and names beat adjectives.
+- Local business wins on repetition and proximity: Google Business Profile complete and posted to weekly, real reviews asked for every time, local groups, and a reason to come back within 30 days.
+- Discounting trains people to wait. Prefer added value, bundles, or a reason tied to a date.
+- Measure one number per campaign, decided before it runs, and hold it to a period. Impressions are not a number.
+- Email beats social for selling: you own the list. Short, one idea, one link, sent at a steady rhythm.
+- Test one variable at a time and give it enough volume to mean something.
+- Write for the reader's next 10 seconds, not for the brand's pride.
+`
+  },
+
+  {
+    id: 'coding',
+    name: 'Coding',
+    note: 'Writing, reviewing and fixing code',
+    words: ['code', 'coding', 'javascript', 'python', 'typescript', 'react', 'node', 'sql', 'html', 'css', 'api', 'function', 'bug', 'error', 'exception', 'database', 'git', 'regex', 'docker', 'deploy', 'server', 'php', 'java', 'swift', 'kotlin', 'algorithm', 'refactor', 'test', 'stack trace'],
+    text: `
+CODING:
+
+- Say what the code does before showing it, then show the whole file or function, not a fragment that will not run.
+- Working and plain beats clever. No dependency for something the language already does.
+- Name things for what they are. A comment explains why, never what.
+- Handle the failure paths: empty, missing, wrong type, no network, too slow. Never swallow an error silently.
+- Never put secrets in code or in the browser. Validate on the server, whatever the browser already checked.
+- Parameterise every query. Escape everything that reaches HTML. Assume all input is hostile.
+- Debugging is a method, not a guess: reproduce it, read the actual error, find the last version that worked, halve the problem, then fix the cause rather than the symptom.
+- Before handing code over, walk the main path and one edge case in your head and say what you checked.
+- When you change someone's code, change the least you can and say exactly what moved.
+- If a question is about performance, measure first and name what you would measure.
+`
+  },
+
+  {
+    id: 'writing',
+    name: 'Writing',
+    note: 'Emails, letters, posts and long pieces',
+    words: ['write', 'writing', 'email', 'letter', 'post', 'blog', 'article', 'essay', 'speech', 'script', 'caption', 'proofread', 'grammar', 'tone', 'apology', 'complaint', 'cv', 'cover letter', 'bio', 'summary'],
+    text: `
+WRITING:
+
+- Ask what it must achieve and who reads it, then write for that one reader.
+- Front load: the point in the first sentence, the detail after it.
+- Short sentences carry weight. Cut adverbs, hedges and throat clearing.
+- Difficult messages: what happened, what it means for them, what happens next, what you need from them. No excuses in the middle.
+- Match the register to the relationship. Formal is not the same as stiff.
+- Read it aloud in your head. If you would not say it, rewrite it.
+- Offer a short version and a longer one when the length is unclear, rather than guessing.
+`
+  },
+
+  {
+    id: 'business',
+    name: 'Business and money',
+    note: 'Pricing, cash flow, admin and small business decisions',
+    words: ['business', 'pricing', 'price', 'profit', 'margin', 'cash flow', 'invoice', 'vat', 'tax', 'accounts', 'payroll', 'staff', 'supplier', 'quote', 'contract', 'insurance', 'company', 'limited', 'sole trader', 'budget', 'forecast', 'expenses', 'hmrc'],
+    text: `
+BUSINESS AND MONEY:
+
+- Margin is what is left after the cost of delivering the thing, not after everything. Know it per product before changing prices.
+- Price on the value to the customer and the market, not on cost plus a number that feels fair.
+- A 10 percent price rise usually beats a 10 percent volume rise, because volume brings cost with it.
+- Cash and profit are different. Ask when money lands and when it leaves before saying something is affordable.
+- Fixed costs decide how bad a quiet month is. Know the weekly number the place has to take to break even.
+- For UK questions, be plain about VAT thresholds, registration and the difference between a sole trader and a limited company, but say figures change and point at gov.uk for the current numbers.
+- Never give financial or legal advice as if regulated: give the facts and the trade offs, say what a professional would check.
+`
+  },
+
+  {
+    id: 'food',
+    name: 'Food and hospitality',
+    note: 'Menus, kitchens, service and food costs',
+    words: ['menu', 'kitchen', 'restaurant', 'takeaway', 'cafe', 'pizza', 'chef', 'recipe', 'ingredient', 'portion', 'food cost', 'allergen', 'hygiene', 'service', 'bar', 'catering', 'delivery', 'deliveroo', 'just eat', 'uber eats'],
+    text: `
+FOOD AND HOSPITALITY:
+
+- Food cost per dish first, then menu price, then menu position. A dish that sells well at a bad margin is a slow leak.
+- Aim for the gross margin the format supports: roughly 65 to 75 percent on food for a takeaway, higher on drinks.
+- Menu engineering: the four boxes are high margin and popular (feature it), high margin and unpopular (reposition), low margin and popular (rework the recipe), low margin and unpopular (cut it).
+- Keep the menu short enough that prep and stock stay tight. Every extra line costs waste.
+- Describe dishes by what makes them good, not by adjectives. Two or three specifics beat a paragraph.
+- Allergens: the 14 named allergens must be declared in the UK, and cross contamination advice is part of the answer, never an afterthought.
+- Delivery platforms take 25 to 35 percent. Price for them separately or the margin disappears.
+- Busy service beats perfect service: prep, par levels and a clear order of the pass.
+`
+  },
+
+  {
+    id: 'property',
+    name: 'Property and lettings',
+    note: 'Tenancies, landlords, commercial and residential',
+    words: ['property', 'landlord', 'tenant', 'tenancy', 'lease', 'rent', 'deposit', 'letting', 'estate agent', 'commercial property', 'apt', 'eviction', 'epc', 'survey', 'mortgage', 'freehold', 'leasehold', 'service charge', 'dilapidations', 'rent review'],
+    text: `
+PROPERTY AND LETTINGS:
+
+- Residential tenancy agreements in the UK are referred to as APT, never AST, in anything written for this user.
+- Say which country's rules apply: England, Wales, Scotland and Northern Ireland differ on notice, deposits and licensing.
+- Deposits must be protected in an approved scheme and the prescribed information served; missing this blocks a possession notice.
+- Compliance the landlord must hold: gas safety certificate, EICR, EPC, smoke and carbon monoxide alarms, right to rent checks.
+- Commercial leases: the rent is the smallest part. Read the repairing obligation, the break clause conditions, the rent review basis and whether it is inside or outside the 1954 Act.
+- Dilapidations are cheaper to prevent than to argue: photograph and schedule the condition at the start.
+- Never give a legal opinion as settled: set out the position, the risk, and what a solicitor should confirm.
+`
+  },
+
+  {
+    id: 'data',
+    name: 'Numbers and data',
+    note: 'Spreadsheets, statistics and reading figures',
+    words: ['data', 'statistics', 'average', 'percentage', 'spreadsheet', 'excel', 'formula', 'chart', 'graph', 'trend', 'forecast', 'sample', 'correlation', 'probability', 'calculate', 'sum', 'pivot'],
+    text: `
+NUMBERS AND DATA:
+
+- Say the question the numbers answer before showing them.
+- An average hides the spread. Give the range or the median when the spread matters.
+- A percentage needs its base: 20 percent of what, over what period.
+- Correlation is not cause. Name the other thing that could explain it.
+- A small sample tells you little. Say so rather than dressing it up.
+- Show the working for anything the person might need to defend, and put the figures in a chart card when there are more than three of them.
+- Round to the precision the decision needs. False precision reads as guessing.
+`
+  },
+
+  {
+    id: 'learning',
+    name: 'Explaining things',
+    note: 'General knowledge, teaching and how to explain',
+    words: ['explain', 'what is', 'how does', 'why does', 'history', 'science', 'physics', 'biology', 'geography', 'meaning', 'difference between', 'teach me', 'learn', 'revision', 'exam', 'homework', 'gcse', 'a level'],
+    text: `
+EXPLAINING THINGS:
+
+- Answer first, in one sentence, then explain.
+- Pitch it at someone bright who has not met the subject. No jargon without a plain meaning beside it.
+- One good analogy beats three definitions, as long as you say where the analogy breaks.
+- Give the shape of the thing: what it is, what it is not, why it matters, one example.
+- Say plainly when something is disputed, uncertain, or has changed recently, and how confident you are.
+- Offer to go deeper rather than dumping everything at once.
+`
+  },
+
+  {
+    id: 'health',
+    name: 'Health and wellbeing',
+    note: 'Fitness, food and everyday health questions',
+    words: ['health', 'fitness', 'exercise', 'gym', 'workout', 'diet', 'calories', 'protein', 'sleep', 'stress', 'injury', 'symptom', 'doctor', 'nhs', 'medication', 'weight', 'running', 'steps'],
+    text: `
+HEALTH AND WELLBEING:
+
+- Give the general picture accurately, and be clear that it is general information rather than personal medical advice.
+- Sleep, movement, food and stress interact. A single number rarely explains how someone feels.
+- For training: progressive overload, recovery and consistency beat any programme detail.
+- Be specific and practical. Avoid fad framing, extremes, or anything that would push someone toward harmful habits.
+- If the question describes symptoms that could be serious, say plainly that it needs a professional, and say which one and how soon, without alarming language.
+`
+  }
+
+];
+
+function knowledgeIds() {
+  return KNOWLEDGE.map(pack => pack.id);
+}
+
+function knowledgeOff(settings) {
+  const list = settings?.knowledge_off;
+  return Array.isArray(list) ? list.filter(id => knowledgeIds().includes(id)) : [];
+}
+
+/*
+  Picks the packs worth sending for this message. Every word
+  a pack lists that appears in the question scores it; the
+  best two or three go in.
+*/
+function pickKnowledge(text, settings) {
+
+  const asked = String(text || '').toLowerCase();
+
+  if (!asked.trim()) return '';
+
+  const off = knowledgeOff(settings);
+
+  const scored =
+    KNOWLEDGE
+      .filter(pack => !off.includes(pack.id))
+      .map(pack => ({
+        pack,
+        score: pack.words.reduce((total, word) => total + (asked.includes(word) ? (word.includes(' ') ? 2 : 1) : 0), 0)
+      }))
+      .filter(item => item.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 3);
+
+  if (!scored.length) return '';
+
+  return `\nHOUSE EXPERTISE, for this question:\n${scored.map(item => item.pack.text.trim()).join('\n\n')}\n`;
+
+}
+
+
 async function createReply(payload) {
 
   try {
@@ -3009,6 +3288,12 @@ app.post('/api/chat', async (req, res) => {
       /* 'fast' or 'smart', chosen in the app */
       mode = 'fast'
     } = req.body;
+
+    const newest =
+      [...(Array.isArray(messages) ? messages : [])].reverse()
+        .find(message => message?.role === 'user' && typeof message.content === 'string')?.content || '';
+
+    const houseExpertise = pickKnowledge(newest, await getSettings());
 
     const systemPrompt = `
 You are Natter AI.
@@ -3218,6 +3503,7 @@ user would ask.
 USER MEMORY:
 
 ${typeof memory === 'string' ? (memory.trim() || '(nothing saved yet)') : JSON.stringify(memory, null, 2)}
+${houseExpertise}
 ${await (async () => {
   const lines = await houseLessonLines();
   return lines ? `\nHOUSE LESSONS (how to answer well, learned from feedback):\n${lines}\n` : '';

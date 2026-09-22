@@ -9992,6 +9992,8 @@ adminButton?.addEventListener('click', async () => {
 
   loadRefusals();
 
+  loadKnowledge();
+
   loadStats(statDays);
 
   await loadAdmin();
@@ -14917,6 +14919,10 @@ function showAdminPage(id) {
     loadRefusals();
   }
 
+  if (target.id === 'adminKnowledge') {
+    loadKnowledge();
+  }
+
   adminCard.scrollTop = 0;
 
   paintAdminMenu();
@@ -15520,6 +15526,114 @@ document.getElementById('artworkSwitch')?.addEventListener('click', event => {
 /* the admin library */
 let adminUploadOffset = 0;
 let adminUploadViewing = null;
+
+/* =====================================================
+   WHAT NATTER KNOWS
+
+   The trade knowledge packs, and a switch for each.
+===================================================== */
+
+async function loadKnowledge() {
+
+  const list = document.getElementById('knowledgeList');
+  const note = document.getElementById('adminKnowledgeNote');
+
+  if (!list) return;
+
+  try {
+
+    const response =
+      await fetch(`${API_BASE}/api/admin/knowledge`, { headers: await apiHeaders() });
+
+    const data = await response.json();
+
+    if (!response.ok) throw new Error(data?.error || 'Could not load what Natter knows.');
+
+    const packs = data.packs || [];
+    const on = packs.filter(pack => pack.on);
+
+    if (note) note.textContent = `${on.length} of ${packs.length} subjects on`;
+
+    list.innerHTML = '';
+
+    packs.forEach(pack => {
+
+      const row = document.createElement('div');
+      row.className = `knowledgeRow${pack.on ? ' on' : ''}`;
+
+      const text = document.createElement('div');
+      text.className = 'knowledgeText';
+
+      const name = document.createElement('div');
+      name.className = 'knowledgeName';
+      name.textContent = pack.name;
+      text.appendChild(name);
+
+      const sub = document.createElement('div');
+      sub.className = 'knowledgeNote';
+      sub.textContent = `${pack.note} · ${pack.lines} rules of thumb`;
+      text.appendChild(sub);
+
+      row.appendChild(text);
+
+      const toggle = document.createElement('button');
+      toggle.type = 'button';
+      toggle.className = `knowledgeToggle${pack.on ? ' on' : ''}`;
+      toggle.textContent = pack.on ? 'On' : 'Off';
+      toggle.setAttribute('aria-pressed', pack.on ? 'true' : 'false');
+
+      toggle.addEventListener('click', async () => {
+
+        toggle.disabled = true;
+
+        const off =
+          packs
+            .filter(item => (item.id === pack.id ? pack.on : !item.on))
+            .map(item => item.id);
+
+        try {
+
+          const save =
+            await fetch(`${API_BASE}/api/admin/settings`, {
+              method: 'POST',
+              headers: await apiHeaders(),
+              body: JSON.stringify({ knowledge_off: off })
+            });
+
+          const saved = await save.json();
+
+          if (!save.ok) throw new Error(saved?.error || 'Could not save.');
+
+          await loadKnowledge();
+
+          adminSay(
+            'adminKnowledgeResult',
+            saved.volatile
+              ? `${pack.name} is ${pack.on ? 'off' : 'on'}, but only until the server restarts.`
+              : `${pack.name} is now ${pack.on ? 'off' : 'on'}.`,
+            !saved.volatile
+          );
+
+        } catch (error) {
+          toggle.disabled = false;
+          adminSay('adminKnowledgeResult', error.message, false);
+        }
+
+      });
+
+      row.appendChild(toggle);
+      list.appendChild(row);
+
+    });
+
+    paintAdminMenu();
+
+  } catch (error) {
+    adminSay('adminKnowledgeResult', error.message, false);
+  }
+
+}
+
 
 /* =====================================================
    BLOCKED REQUESTS
