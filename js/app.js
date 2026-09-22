@@ -4342,15 +4342,160 @@ function buildWeatherCard(card, box) {
 
 }
 
-function teamBadge(name) {
-  const badge = cardEl('div', 'cardBadge');
-  const initials = String(name || '?')
+/*
+  Clubs and countries, in their own colours. These are colours and
+  short names, not crests: a crest is a protected mark and is not
+  ours to draw.
+*/
+const CLUB_STYLES = {
+  'arsenal': { c: '#EF0107', t: '#ffffff', a: '#023474', s: 'ARS' },
+  'aston villa': { c: '#670E36', t: '#ffffff', a: '#95BFE5', s: 'AVL' },
+  'bournemouth': { c: '#DA291C', t: '#ffffff', a: '#000000', s: 'BOU' },
+  'brentford': { c: '#E30613', t: '#ffffff', a: '#ffffff', s: 'BRE' },
+  'brighton and hove albion': { c: '#0057B8', t: '#ffffff', a: '#FFCD00', s: 'BHA' },
+  'brighton': { c: '#0057B8', t: '#ffffff', a: '#FFCD00', s: 'BHA' },
+  'burnley': { c: '#6C1D45', t: '#ffffff', a: '#99D6EA', s: 'BUR' },
+  'chelsea': { c: '#034694', t: '#ffffff', a: '#DBA111', s: 'CHE' },
+  'crystal palace': { c: '#1B458F', t: '#ffffff', a: '#C4122E', s: 'CRY' },
+  'everton': { c: '#003399', t: '#ffffff', a: '#ffffff', s: 'EVE' },
+  'fulham': { c: '#111111', t: '#ffffff', a: '#CC0000', s: 'FUL' },
+  'ipswich town': { c: '#0044A9', t: '#ffffff', a: '#ffffff', s: 'IPS' },
+  'leeds united': { c: '#FFCD00', t: '#1D428A', a: '#1D428A', s: 'LEE' },
+  'leicester city': { c: '#003090', t: '#ffffff', a: '#FDBE11', s: 'LEI' },
+  'liverpool': { c: '#C8102E', t: '#ffffff', a: '#00B2A9', s: 'LIV' },
+  'manchester city': { c: '#6CABDD', t: '#08263f', a: '#1C2C5B', s: 'MCI' },
+  'man city': { c: '#6CABDD', t: '#08263f', a: '#1C2C5B', s: 'MCI' },
+  'manchester united': { c: '#DA291C', t: '#ffffff', a: '#FBE122', s: 'MUN' },
+  'man utd': { c: '#DA291C', t: '#ffffff', a: '#FBE122', s: 'MUN' },
+  'man united': { c: '#DA291C', t: '#ffffff', a: '#FBE122', s: 'MUN' },
+  'newcastle united': { c: '#241F20', t: '#ffffff', a: '#ffffff', s: 'NEW' },
+  'newcastle': { c: '#241F20', t: '#ffffff', a: '#ffffff', s: 'NEW' },
+  'nottingham forest': { c: '#DD0000', t: '#ffffff', a: '#ffffff', s: 'NFO' },
+  'southampton': { c: '#D71920', t: '#ffffff', a: '#130C0E', s: 'SOU' },
+  'sunderland': { c: '#EB172B', t: '#ffffff', a: '#211E1F', s: 'SUN' },
+  'tottenham hotspur': { c: '#132257', t: '#ffffff', a: '#ffffff', s: 'TOT' },
+  'tottenham': { c: '#132257', t: '#ffffff', a: '#ffffff', s: 'TOT' },
+  'spurs': { c: '#132257', t: '#ffffff', a: '#ffffff', s: 'TOT' },
+  'west ham united': { c: '#7A263A', t: '#ffffff', a: '#1BB1E7', s: 'WHU' },
+  'west ham': { c: '#7A263A', t: '#ffffff', a: '#1BB1E7', s: 'WHU' },
+  'wolverhampton wanderers': { c: '#FDB913', t: '#231F20', a: '#231F20', s: 'WOL' },
+  'wolves': { c: '#FDB913', t: '#231F20', a: '#231F20', s: 'WOL' },
+  'middlesbrough': { c: '#E21C38', t: '#ffffff', a: '#ffffff', s: 'MID' },
+  'sheffield united': { c: '#EE2737', t: '#ffffff', a: '#000000', s: 'SHU' },
+  'sheffield wednesday': { c: '#0066B3', t: '#ffffff', a: '#ffffff', s: 'SHW' },
+  'norwich city': { c: '#FFF200', t: '#00A650', a: '#00A650', s: 'NOR' },
+  'watford': { c: '#FBEE23', t: '#11210C', a: '#ED2127', s: 'WAT' },
+  'west bromwich albion': { c: '#122F67', t: '#ffffff', a: '#ffffff', s: 'WBA' },
+  'stoke city': { c: '#E03A3E', t: '#ffffff', a: '#1B1B1B', s: 'STK' },
+  'hull city': { c: '#F5971D', t: '#231F20', a: '#231F20', s: 'HUL' },
+  'coventry city': { c: '#78D0F3', t: '#0b2a3a', a: '#001F5B', s: 'COV' },
+  'derby county': { c: '#ffffff', t: '#111111', a: '#000000', s: 'DER' },
+  'preston north end': { c: '#ffffff', t: '#111111', a: '#0000FF', s: 'PNE' },
+  'blackburn rovers': { c: '#009EE0', t: '#ffffff', a: '#ffffff', s: 'BLB' },
+  'bristol city': { c: '#E21B22', t: '#ffffff', a: '#ffffff', s: 'BRC' },
+  'cardiff city': { c: '#0070B5', t: '#ffffff', a: '#ffffff', s: 'CAR' },
+  'swansea city': { c: '#ffffff', t: '#111111', a: '#111111', s: 'SWA' },
+  'millwall': { c: '#001D5E', t: '#ffffff', a: '#ffffff', s: 'MIL' },
+  'queens park rangers': { c: '#1D5BA4', t: '#ffffff', a: '#ffffff', s: 'QPR' },
+  'portsmouth': { c: '#001489', t: '#ffffff', a: '#ffffff', s: 'POR' },
+  'plymouth argyle': { c: '#007B5F', t: '#ffffff', a: '#ffffff', s: 'PLY' },
+  'oxford united': { c: '#FFE500', t: '#1a1a1a', a: '#1F2B5B', s: 'OXF' },
+  'luton town': { c: '#F78F1E', t: '#ffffff', a: '#002D62', s: 'LUT' },
+  'celtic': { c: '#018749', t: '#ffffff', a: '#ffffff', s: 'CEL' },
+  'rangers': { c: '#1B458F', t: '#ffffff', a: '#EE2222', s: 'RAN' },
+  'hearts': { c: '#7D2C38', t: '#ffffff', a: '#ffffff', s: 'HEA' },
+  'hibernian': { c: '#00683B', t: '#ffffff', a: '#ffffff', s: 'HIB' },
+  'aberdeen': { c: '#E2001A', t: '#ffffff', a: '#ffffff', s: 'ABE' },
+  'real madrid': { c: '#FEBE10', t: '#0a2240', a: '#00529F', s: 'RMA' },
+  'barcelona': { c: '#A50044', t: '#ffffff', a: '#004D98', s: 'BAR' },
+  'atletico madrid': { c: '#CB3524', t: '#ffffff', a: '#272E61', s: 'ATM' },
+  'bayern munich': { c: '#DC052D', t: '#ffffff', a: '#0066B2', s: 'BAY' },
+  'borussia dortmund': { c: '#FDE100', t: '#111111', a: '#111111', s: 'BVB' },
+  'paris saint germain': { c: '#004170', t: '#ffffff', a: '#DA291C', s: 'PSG' },
+  'psg': { c: '#004170', t: '#ffffff', a: '#DA291C', s: 'PSG' },
+  'juventus': { c: '#111111', t: '#ffffff', a: '#ffffff', s: 'JUV' },
+  'inter milan': { c: '#0068A8', t: '#ffffff', a: '#111111', s: 'INT' },
+  'milan': { c: '#FB090B', t: '#ffffff', a: '#111111', s: 'MIL' },
+  'napoli': { c: '#12A0D7', t: '#ffffff', a: '#ffffff', s: 'NAP' },
+  'ajax': { c: '#D2122E', t: '#ffffff', a: '#ffffff', s: 'AJA' },
+  'porto': { c: '#003876', t: '#ffffff', a: '#ffffff', s: 'POR' },
+  'benfica': { c: '#E31B23', t: '#ffffff', a: '#ffffff', s: 'BEN' },
+  'england': { c: '#ffffff', t: '#111111', a: '#CE1124', s: 'ENG' },
+  'scotland': { c: '#0065BF', t: '#ffffff', a: '#ffffff', s: 'SCO' },
+  'wales': { c: '#C8102E', t: '#ffffff', a: '#00B140', s: 'WAL' },
+  'northern ireland': { c: '#00843D', t: '#ffffff', a: '#ffffff', s: 'NIR' },
+  'republic of ireland': { c: '#169B62', t: '#ffffff', a: '#FF883E', s: 'IRL' },
+  'ireland': { c: '#169B62', t: '#ffffff', a: '#FF883E', s: 'IRL' },
+  'france': { c: '#002654', t: '#ffffff', a: '#ED2939', s: 'FRA' },
+  'spain': { c: '#AA151B', t: '#ffffff', a: '#F1BF00', s: 'ESP' },
+  'germany': { c: '#111111', t: '#ffffff', a: '#DD0000', s: 'GER' },
+  'italy': { c: '#0066A1', t: '#ffffff', a: '#ffffff', s: 'ITA' },
+  'portugal': { c: '#006600', t: '#ffffff', a: '#FF0000', s: 'POR' },
+  'brazil': { c: '#FEDF00', t: '#009739', a: '#009739', s: 'BRA' },
+  'argentina': { c: '#75AADB', t: '#0b2a3a', a: '#ffffff', s: 'ARG' }
+};
+
+/* small words that do not help tell two clubs apart */
+const CLUB_FILLER = /^(fc|afc|cf|sc|ac|as|ss|ssc|the|of|and|club|football)$/i;
+
+function clubKey(name) {
+  return String(name || '')
+    .toLowerCase()
+    .replace(/&/g, ' and ')
+    .replace(/[^a-z0-9 ]+/g, ' ')
     .split(/\s+/)
-    .slice(0, 2)
-    .map(word => word[0])
-    .join('')
-    .toUpperCase();
-  badge.textContent = initials;
+    .filter(word => word && !CLUB_FILLER.test(word))
+    .join(' ')
+    .trim();
+}
+
+function autoAbbr(name) {
+  const words = String(name || '')
+    .replace(/[^A-Za-z0-9 ]+/g, ' ')
+    .split(/\s+/)
+    .filter(Boolean);
+  const strong = words.filter(word =>
+    !CLUB_FILLER.test(word) &&
+    !/^(city|united|town|rovers|wanderers|albion|athletic|hotspur|county|utd)$/i.test(word));
+  const base = strong.length ? strong : words;
+  if (!base.length) return '?';
+  if (base.length >= 3) return base.slice(0, 3).map(word => word[0]).join('').toUpperCase();
+  if (base.length === 2) return (base[0].slice(0, 2) + base[1][0]).toUpperCase();
+  return base[0].slice(0, 3).toUpperCase();
+}
+
+function clubStyle(name) {
+
+  const key = clubKey(name);
+  if (!key) return { c: '#5b6478', t: '#ffffff', a: '#8b93a6', s: '?' };
+  if (CLUB_STYLES[key]) return CLUB_STYLES[key];
+
+  /* "Arsenal FC" and "Arsenal Women" should still find Arsenal */
+  const known = Object.keys(CLUB_STYLES);
+  for (let i = 0; i < known.length; i++) {
+    const other = known[i];
+    if (key.startsWith(other + ' ') || key.endsWith(' ' + other)) return CLUB_STYLES[other];
+  }
+
+  let hash = 0;
+  for (let i = 0; i < key.length; i++) hash = (hash * 31 + key.charCodeAt(i)) >>> 0;
+  const hue = hash % 360;
+  return {
+    c: 'hsl(' + hue + ' 55% 36%)',
+    t: '#ffffff',
+    a: 'hsl(' + ((hue + 42) % 360) + ' 72% 64%)',
+    s: autoAbbr(name)
+  };
+
+}
+
+function teamBadge(name) {
+  const style = clubStyle(name);
+  const badge = cardEl('div', 'cardBadge teamBadge', style.s || autoAbbr(name));
+  badge.style.setProperty('--clubBg', style.c);
+  badge.style.setProperty('--clubInk', style.t);
+  badge.style.setProperty('--clubTrim', style.a);
+  badge.title = String(name || '');
   return badge;
 }
 
@@ -4360,6 +4505,8 @@ function buildScoreCard(card, box) {
 
   const top = cardEl('div', 'cardLine');
   if (card.competition) top.appendChild(cardEl('span', 'cardTag', card.competition));
+  const runBy = card.governing || card.authority || card.organiser || card.body;
+  if (runBy) top.appendChild(cardEl('span', 'sportGov', runBy));
   if (card.status) {
     const live = /^\d+'|live|ht$/i.test(String(card.status));
     top.appendChild(cardEl('span', `cardStatus${live ? ' live' : ''}`, card.status));
@@ -4395,11 +4542,114 @@ function buildScoreCard(card, box) {
 
 }
 
-function buildTableCard(card, box) {
+/*
+  Sport, laid out the way the sport lays it out. Columns follow the
+  competition, form is a run of pills, and the zones down the side
+  say who goes up, who goes into Europe and who goes down.
+*/
+const SPORT_COLUMNS = {
+  football: [['pos', '#'], ['team', 'Team'], ['p', 'P'], ['w', 'W'], ['d', 'D'], ['l', 'L'], ['gf', 'GF'], ['ga', 'GA'], ['gd', 'GD'], ['pts', 'Pts'], ['form', 'Form']],
+  rugby: [['pos', '#'], ['team', 'Team'], ['p', 'P'], ['w', 'W'], ['d', 'D'], ['l', 'L'], ['pf', 'PF'], ['pa', 'PA'], ['pd', 'PD'], ['bp', 'BP'], ['pts', 'Pts']],
+  cricket: [['pos', '#'], ['team', 'Team'], ['p', 'P'], ['w', 'W'], ['l', 'L'], ['nr', 'NR'], ['nrr', 'NRR'], ['pts', 'Pts']],
+  basketball: [['pos', '#'], ['team', 'Team'], ['w', 'W'], ['l', 'L'], ['pct', 'PCT'], ['gb', 'GB'], ['form', 'Form']],
+  nfl: [['pos', '#'], ['team', 'Team'], ['w', 'W'], ['l', 'L'], ['t', 'T'], ['pct', 'PCT'], ['pf', 'PF'], ['pa', 'PA']],
+  hockey: [['pos', '#'], ['team', 'Team'], ['p', 'GP'], ['w', 'W'], ['l', 'L'], ['otl', 'OTL'], ['gf', 'GF'], ['ga', 'GA'], ['pts', 'Pts']],
+  f1: [['pos', '#'], ['team', 'Driver'], ['nat', 'Nat'], ['car', 'Car'], ['wins', 'Wins'], ['pts', 'Pts']],
+  golf: [['pos', '#'], ['team', 'Player'], ['nat', 'Nat'], ['r1', 'R1'], ['r2', 'R2'], ['r3', 'R3'], ['r4', 'R4'], ['total', 'Total']],
+  generic: [['pos', '#'], ['team', 'Team'], ['p', 'P'], ['w', 'W'], ['d', 'D'], ['l', 'L'], ['pts', 'Pts']]
+};
 
-  box.classList.add('tableCard');
+const ZONE_LABELS = {
+  title: 'Champions',
+  champions: 'Champions League',
+  ucl: 'Champions League',
+  europa: 'Europa League',
+  uel: 'Europa League',
+  conference: 'Conference League',
+  europe: 'European places',
+  promotion: 'Promoted',
+  playoff: 'Play-offs',
+  playoffs: 'Play-offs',
+  relegation: 'Relegation',
+  relegated: 'Relegated'
+};
 
-  if (card.title) box.appendChild(cardEl('div', 'cardTitle', card.title));
+const NARROW_SPORT = /^(pos|p|gp|w|d|l|t|otl|gf|ga|gd|pf|pa|pd|bp|nr|pts|wins|r1|r2|r3|r4)$/;
+
+function sportColumns(card) {
+  if (Array.isArray(card.columns) && card.columns.length && typeof card.columns[0] === 'object') {
+    return card.columns
+      .map(col => [String(col.key || '').toLowerCase(), col.label || col.key || ''])
+      .filter(pair => pair[0]);
+  }
+  const sport = String(card.sport || 'football').toLowerCase();
+  return SPORT_COLUMNS[sport] || SPORT_COLUMNS.football;
+}
+
+/* the last few results, W D L, as pills */
+function formPills(value) {
+  const wrap = cardEl('div', 'formRow');
+  const marks = Array.isArray(value)
+    ? value.map(mark => String(mark || '').trim().slice(0, 1).toUpperCase())
+    : String(value || '').toUpperCase().replace(/[^WDLT]/g, '').split('');
+  marks.filter(Boolean).slice(-6).forEach(mark => {
+    wrap.appendChild(cardEl('span', 'formPill f' + mark, mark));
+  });
+  return wrap;
+}
+
+function zoneFor(card, row, pos) {
+  if (row && row.zone) return String(row.zone).toLowerCase().replace(/[^a-z]/g, '');
+  const zones = Array.isArray(card.zones) ? card.zones : [];
+  for (let i = 0; i < zones.length; i++) {
+    const zone = zones[i] || {};
+    const from = Number(zone.from ?? zone.start ?? 0);
+    const to = Number(zone.to ?? zone.end ?? 0);
+    if (Number.isFinite(pos) && pos >= from && pos <= to) {
+      return String(zone.zone || zone.name || '').toLowerCase().replace(/[^a-z]/g, '');
+    }
+  }
+  return '';
+}
+
+function zoneLabel(card, key) {
+  const zones = Array.isArray(card.zones) ? card.zones : [];
+  for (let i = 0; i < zones.length; i++) {
+    const zone = zones[i] || {};
+    const name = String(zone.zone || zone.name || '').toLowerCase().replace(/[^a-z]/g, '');
+    if (name === key && zone.label) return zone.label;
+  }
+  return ZONE_LABELS[key] || key.charAt(0).toUpperCase() + key.slice(1);
+}
+
+/* competition name on the left, whoever runs it on the right */
+function sportHead(card, box) {
+  const head = cardEl('div', 'sportHead');
+  const text = cardEl('div', 'sportHeadText');
+  if (card.title) text.appendChild(cardEl('div', 'cardTitle', card.title));
+  if (card.subtitle) text.appendChild(cardEl('div', 'cardSub', card.subtitle));
+  head.appendChild(text);
+  const body = card.governing || card.authority || card.organiser || card.body;
+  if (body) head.appendChild(cardEl('span', 'sportGov', body));
+  box.appendChild(head);
+}
+
+function sportLegend(card, box, used) {
+  const keys = Object.keys(used);
+  if (!keys.length) return;
+  const legend = cardEl('div', 'sportLegend');
+  keys.forEach(key => {
+    const item = cardEl('span', 'sportKey');
+    const dot = cardEl('i', 'sportDot');
+    dot.dataset.zone = key;
+    item.appendChild(dot);
+    item.appendChild(cardEl('span', '', zoneLabel(card, key)));
+    legend.appendChild(item);
+  });
+  box.appendChild(legend);
+}
+
+function buildPlainTable(card, box) {
 
   const table = cardEl('table', 'cardTable');
 
@@ -4424,6 +4674,183 @@ function buildTableCard(card, box) {
 
   table.appendChild(body);
   box.appendChild(table);
+
+}
+
+function buildTableCard(card, box) {
+
+  box.classList.add('tableCard');
+
+  const rows = Array.isArray(card.rows) ? card.rows : [];
+  const sporty = !!card.sport || (rows.length && rows[0] && !Array.isArray(rows[0]) && typeof rows[0] === 'object');
+
+  if (!sporty) {
+    if (card.title) box.appendChild(cardEl('div', 'cardTitle', card.title));
+    buildPlainTable(card, box);
+    return;
+  }
+
+  box.classList.add('sportCard', 'sportTableCard');
+  sportHead(card, box);
+
+  const columns = sportColumns(card);
+  const scroller = cardEl('div', 'sportScroll');
+  const table = cardEl('table', 'sportTable');
+
+  const head = cardEl('thead');
+  const headRow = cardEl('tr');
+  columns.forEach(pair => {
+    const cell = cardEl('th', '', pair[1]);
+    cell.dataset.key = pair[0];
+    if (NARROW_SPORT.test(pair[0])) cell.className = 'num';
+    headRow.appendChild(cell);
+  });
+  head.appendChild(headRow);
+  table.appendChild(head);
+
+  const body = cardEl('tbody');
+  const used = {};
+
+  rows.slice(0, 30).forEach((entry, index) => {
+
+    const row = entry || {};
+    const pos = Number(row.pos ?? row.position ?? (index + 1));
+    const line = cardEl('tr');
+    const zone = zoneFor(card, row, pos);
+    if (zone) {
+      line.dataset.zone = zone;
+      used[zone] = true;
+    }
+
+    const name = row.team ?? row.name ?? row.player ?? row.driver ?? '';
+    if (card.highlight && clubKey(name) === clubKey(card.highlight)) line.classList.add('sportMine');
+
+    columns.forEach(pair => {
+
+      const key = pair[0];
+      const cell = cardEl('td');
+      if (NARROW_SPORT.test(key)) cell.className = 'num';
+
+      if (key === 'pos') {
+        cell.classList.add('sportPos');
+        cell.textContent = Number.isFinite(pos) ? String(pos) : String(row.pos ?? '');
+        const move = String(row.move || row.movement || '').toLowerCase();
+        if (move === 'up' || move === 'down') {
+          const arrow = cardEl('i', 'sportMove ' + move);
+          cell.appendChild(arrow);
+        }
+      } else if (key === 'team') {
+        cell.classList.add('sportTeam');
+        cell.appendChild(teamBadge(name));
+        const label = cardEl('span', 'sportTeamName', name);
+        cell.appendChild(label);
+      } else if (key === 'form') {
+        cell.classList.add('sportForm');
+        cell.appendChild(formPills(row.form || row.last || ''));
+      } else {
+        let value = row[key];
+        if (value === undefined && key === 'gd') {
+          const gf = Number(row.gf), ga = Number(row.ga);
+          if (Number.isFinite(gf) && Number.isFinite(ga)) value = gf - ga;
+        }
+        if (key === 'gd' || key === 'pd') {
+          const number = Number(value);
+          if (Number.isFinite(number) && number > 0) value = '+' + number;
+        }
+        if (key === 'pts') cell.classList.add('sportPts');
+        cell.textContent = value === undefined || value === null ? '' : String(value);
+      }
+
+      line.appendChild(cell);
+
+    });
+
+    body.appendChild(line);
+
+  });
+
+  table.appendChild(body);
+  scroller.appendChild(table);
+  box.appendChild(scroller);
+
+  sportLegend(card, box, used);
+
+  if (card.note) box.appendChild(cardEl('div', 'cardNote', card.note));
+  cardFacts(card.facts, box);
+
+}
+
+/*
+  Fixtures and results, the way a results page does it: day by day,
+  both sides in their colours, score where there is one and the
+  kick off time where there is not.
+*/
+function buildFixturesCard(card, box) {
+
+  box.classList.add('fixturesCard', 'sportCard');
+  sportHead(card, box);
+
+  const groups = Array.isArray(card.groups) && card.groups.length
+    ? card.groups
+    : [{ label: card.when || '', matches: card.matches || card.fixtures || card.games || card.rows || [] }];
+
+  groups.slice(0, 10).forEach(group => {
+
+    const label = group && (group.label || group.day || group.date);
+    if (label) box.appendChild(cardEl('div', 'fixtureDay', label));
+
+    const list = cardEl('div', 'fixtureList');
+
+    ((group && (group.matches || group.fixtures || group.games)) || []).slice(0, 20).forEach(match => {
+
+      const game = match || {};
+      const row = cardEl('div', 'fixtureRow');
+
+      const homeName = typeof game.home === 'object' ? game.home?.name : game.home;
+      const awayName = typeof game.away === 'object' ? game.away?.name : game.away;
+      const homeScore = typeof game.home === 'object' ? game.home?.score : (game.homeScore ?? game.hs);
+      const awayScore = typeof game.away === 'object' ? game.away?.score : (game.awayScore ?? game.as);
+
+      const home = cardEl('div', 'fixtureSide home');
+      home.appendChild(cardEl('span', 'fixtureName', homeName ?? ''));
+      home.appendChild(teamBadge(homeName));
+      row.appendChild(home);
+
+      const middle = cardEl('div', 'fixtureMiddle');
+      const played = homeScore !== undefined && homeScore !== null && homeScore !== '' &&
+                     awayScore !== undefined && awayScore !== null && awayScore !== '';
+      if (played) {
+        middle.appendChild(cardEl('span', 'fixtureScore', String(homeScore) + ' - ' + String(awayScore)));
+      } else {
+        middle.appendChild(cardEl('span', 'fixtureTime', game.when || game.time || game.kickoff || 'TBC'));
+      }
+      const status = game.status || (played ? 'FT' : '');
+      if (status) {
+        const live = /^\d+'|live|ht$/i.test(String(status));
+        middle.appendChild(cardEl('span', 'fixtureStatus' + (live ? ' live' : ''), status));
+      }
+      row.appendChild(middle);
+
+      const away = cardEl('div', 'fixtureSide away');
+      away.appendChild(teamBadge(awayName));
+      away.appendChild(cardEl('span', 'fixtureName', awayName ?? ''));
+      row.appendChild(away);
+
+      if (game.venue || game.note) {
+        const foot = cardEl('div', 'fixtureVenue', game.venue || game.note);
+        row.appendChild(foot);
+      }
+
+      list.appendChild(row);
+
+    });
+
+    box.appendChild(list);
+
+  });
+
+  if (card.note) box.appendChild(cardEl('div', 'cardNote', card.note));
+  cardFacts(card.facts, box);
 
 }
 
@@ -5088,7 +5515,9 @@ function buildGuideCard(card, box) {
 const CARD_BUILDERS = {
   weather: buildWeatherCard,
   score: buildScoreCard,
-  fixture: buildFactsCard,
+  fixture: buildFixturesCard,
+  fixtures: buildFixturesCard,
+  standings: buildTableCard,
   table: buildTableCard,
   stat: buildStatCard,
   facts: buildFactsCard,

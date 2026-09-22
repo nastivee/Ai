@@ -8566,3 +8566,336 @@ body.smartMode .guideKeys { border-left-color: #93c5fd; }
   text-transform: uppercase;
   color: #f7c168;
 }
+
+/* ============================================================
+   SPORT
+   League tables, fixtures and results in the shape the sport
+   itself uses. Badges are club colours and a short name, never
+   a crest: crests are protected marks.
+   ============================================================ */
+
+.teamBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  flex: 0 0 26px;
+  border-radius: 8px;
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: .3px;
+  line-height: 1;
+  background: var(--clubBg, #5b6478);
+  color: var(--clubInk, #fff);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, .16),
+    inset 0 -8px 12px -8px rgba(0, 0, 0, .55),
+    0 2px 6px -3px rgba(0, 0, 0, .8);
+  position: relative;
+  overflow: hidden;
+}
+
+.teamBadge::before {
+  content: '';
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 4px;
+  background: var(--clubTrim, rgba(255, 255, 255, .5));
+  opacity: .9;
+}
+
+.sportHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.sportHeadText { min-width: 0; }
+
+.sportHead .cardTitle { margin: 0; }
+
+.sportHead .cardSub {
+  font-size: 12px;
+  color: var(--muted, #98a1b3);
+  margin-top: 2px;
+}
+
+.sportGov {
+  flex-shrink: 0;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: .2px;
+  padding: 4px 9px;
+  border-radius: 999px;
+  color: var(--muted, #98a1b3);
+  background: rgba(255, 255, 255, .05);
+  border: 1px solid rgba(255, 255, 255, .08);
+  white-space: nowrap;
+}
+
+.sportScroll {
+  overflow-x: auto;
+  margin: 0 -4px;
+  padding: 0 4px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.sportTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+.sportTable th {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .5px;
+  text-transform: uppercase;
+  color: var(--muted, #98a1b3);
+  text-align: left;
+  padding: 0 6px 7px;
+  border-bottom: 1px solid rgba(255, 255, 255, .1);
+  white-space: nowrap;
+}
+
+.sportTable th.num,
+.sportTable td.num { text-align: center; }
+
+.sportTable td {
+  padding: 7px 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, .045);
+  white-space: nowrap;
+  color: var(--text, #e8ecf4);
+}
+
+.sportTable tbody tr:last-child td { border-bottom: 0; }
+
+.sportTable tbody tr { position: relative; }
+
+.sportTable tbody tr[data-zone] td:first-child { box-shadow: inset 3px 0 0 var(--zoneColour, transparent); }
+
+.sportTable tbody tr[data-zone="title"],
+.sportTable tbody tr[data-zone="champions"],
+.sportTable tbody tr[data-zone="ucl"],
+.sportTable tbody tr[data-zone="promotion"] { --zoneColour: #3ddc84; }
+
+.sportTable tbody tr[data-zone="europa"],
+.sportTable tbody tr[data-zone="uel"],
+.sportTable tbody tr[data-zone="europe"],
+.sportTable tbody tr[data-zone="playoff"],
+.sportTable tbody tr[data-zone="playoffs"] { --zoneColour: #4aa8ff; }
+
+.sportTable tbody tr[data-zone="conference"] { --zoneColour: #24c7b5; }
+
+.sportTable tbody tr[data-zone="relegation"],
+.sportTable tbody tr[data-zone="relegated"] { --zoneColour: #ff5c6c; }
+
+.sportTable tbody tr.sportMine td {
+  background: rgba(124, 58, 237, .14);
+}
+
+.sportTable tbody tr.sportMine td:first-child { border-top-left-radius: 8px; border-bottom-left-radius: 8px; }
+.sportTable tbody tr.sportMine td:last-child { border-top-right-radius: 8px; border-bottom-right-radius: 8px; }
+
+.sportPos {
+  width: 34px;
+  text-align: center;
+  color: var(--muted, #98a1b3);
+  font-weight: 700;
+  position: relative;
+  padding-left: 10px !important;
+}
+
+.sportMove {
+  display: inline-block;
+  width: 0;
+  height: 0;
+  margin-left: 4px;
+  vertical-align: 1px;
+  border-left: 3.5px solid transparent;
+  border-right: 3.5px solid transparent;
+}
+
+.sportMove.up { border-bottom: 5px solid #3ddc84; }
+.sportMove.down { border-top: 5px solid #ff5c6c; }
+
+.sportTeam {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 132px;
+}
+
+.sportTeamName {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sportPts { font-weight: 800; }
+
+.sportForm { padding-left: 12px !important; }
+
+.formRow { display: flex; gap: 3px; }
+
+.formPill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 17px;
+  height: 17px;
+  border-radius: 5px;
+  font-size: 9.5px;
+  font-weight: 800;
+  color: #071018;
+}
+
+.formPill.fW { background: #3ddc84; }
+.formPill.fD { background: #98a1b3; }
+.formPill.fL { background: #ff5c6c; color: #fff; }
+.formPill.fT { background: #f5b23d; }
+
+.sportLegend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 11px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, .06);
+  font-size: 11px;
+  color: var(--muted, #98a1b3);
+}
+
+.sportKey { display: inline-flex; align-items: center; gap: 6px; }
+
+.sportDot {
+  width: 9px;
+  height: 3px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, .3);
+}
+
+.sportDot[data-zone="title"],
+.sportDot[data-zone="champions"],
+.sportDot[data-zone="ucl"],
+.sportDot[data-zone="promotion"] { background: #3ddc84; }
+
+.sportDot[data-zone="europa"],
+.sportDot[data-zone="uel"],
+.sportDot[data-zone="europe"],
+.sportDot[data-zone="playoff"],
+.sportDot[data-zone="playoffs"] { background: #4aa8ff; }
+
+.sportDot[data-zone="conference"] { background: #24c7b5; }
+
+.sportDot[data-zone="relegation"],
+.sportDot[data-zone="relegated"] { background: #ff5c6c; }
+
+/* fixtures and results */
+
+.fixtureDay {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .4px;
+  text-transform: uppercase;
+  color: var(--muted, #98a1b3);
+  margin: 12px 0 7px;
+}
+
+.fixtureDay:first-of-type { margin-top: 2px; }
+
+.fixtureList { display: flex; flex-direction: column; gap: 5px; }
+
+.fixtureRow {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, .035);
+  border: 1px solid rgba(255, 255, 255, .05);
+}
+
+.fixtureSide {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+}
+
+.fixtureSide.home { justify-content: flex-end; }
+
+.fixtureName {
+  font-size: 13px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fixtureMiddle {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 62px;
+}
+
+.fixtureScore {
+  font-size: 15px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: .5px;
+}
+
+.fixtureTime {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text, #e8ecf4);
+  font-variant-numeric: tabular-nums;
+}
+
+.fixtureStatus {
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: .5px;
+  text-transform: uppercase;
+  color: var(--muted, #98a1b3);
+}
+
+.fixtureStatus.live {
+  color: #ff5c6c;
+}
+
+.fixtureStatus.live::before {
+  content: '';
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+  margin-right: 4px;
+  vertical-align: 1px;
+  animation: livePulse 1.4s ease-in-out infinite;
+}
+
+@keyframes livePulse { 0%, 100% { opacity: 1; } 50% { opacity: .25; } }
+
+.fixtureVenue {
+  grid-column: 1 / -1;
+  text-align: center;
+  font-size: 10.5px;
+  color: var(--muted, #98a1b3);
+  margin-top: 2px;
+}
+
+@media (max-width: 560px) {
+  .fixtureName { font-size: 12px; }
+  .sportTeam { min-width: 112px; }
+  .sportTable { font-size: 12px; }
+}

@@ -3425,19 +3425,67 @@ Weather:
 "days":[{"day":"Tue","icon":"partly","high":"13°","low":"7°"}]}
 \`\`\`
 
-Score or fixture:
+One match on its own:
 \`\`\`natter
-{"card":"score","competition":"Premier League","status":"FT","home":{"name":"Man Utd","score":2},
+{"card":"score","competition":"Premier League","governing":"Premier League","status":"FT","home":{"name":"Man Utd","score":2},
 "away":{"name":"Arsenal","score":1},"notes":["Rashford 12'","Saka 48'","Fernandes 81'"],
 "facts":[["Venue","Old Trafford"],["Kick off","3:00 pm"]]}
 \`\`\`
 For a game still to come, leave the scores out and put the time in status.
 
-Table or ranking:
+Table or ranking (anything that is not sport):
 \`\`\`natter
-{"card":"table","title":"Premier League","columns":["#","Team","P","GD","Pts"],
-"rows":[["1","Arsenal","28","+34","65"],["2","Man City","28","+30","63"]],"highlight":"Arsenal"}
+{"card":"table","title":"Best selling albums","columns":["#","Album","Year","Sales"],
+"rows":[["1","Thriller","1982","70m"],["2","Back in Black","1980","50m"]]}
 \`\`\`
+
+SPORT:
+
+Anything about sport goes in the shape that sport uses, never as
+a paragraph of positions or a plain list of results. Always name
+the competition and, where it has one, the body that runs it:
+the Premier League and the Football Association, UEFA, the EFL,
+the SFA, World Rugby, the ECB, the ICC, the FIA, the NFL, the
+NBA. Put that in "governing".
+
+On badges: give every team its real club colours, but the short
+name goes in the badge, not a crest. Club crests are protected
+marks and we do not draw them. The app knows the colours of the
+English, Scottish and major European clubs and the home nations;
+just send the club's usual name and it does the rest.
+
+A league table, with the competition's own columns:
+\`\`\`natter
+{"card":"table","sport":"football","title":"Premier League","subtitle":"After matchweek 5",
+"governing":"The Football Association",
+"rows":[{"pos":1,"team":"Arsenal","p":5,"w":4,"d":1,"l":0,"gf":12,"ga":3,"gd":9,"pts":13,"form":"WWDWW","move":"up"},
+{"pos":18,"team":"Wolves","p":5,"w":0,"d":1,"l":4,"gf":3,"ga":11,"gd":-8,"pts":1,"form":"LLDLL"}],
+"zones":[{"zone":"champions","from":1,"to":4},{"zone":"europa","from":5,"to":5},
+{"zone":"conference","from":6,"to":6},{"zone":"relegation","from":18,"to":20}],
+"highlight":"Arsenal","note":"Played 5 of 38."}
+\`\`\`
+Set "sport" to the sport and the columns follow it: football,
+rugby, cricket, basketball, nfl, hockey, f1, golf. Zones say who
+is in Europe, who goes up and who goes down: champions, europa,
+conference, promotion, playoff, relegation. "form" is the last
+results, newest last, as W D L. "move" is up or down if they
+moved this week. For a sport the list above does not cover, send
+your own columns as [{"key":"pts","label":"Pts"}] and match the
+keys in the rows.
+
+Fixtures or results, day by day:
+\`\`\`natter
+{"card":"fixtures","sport":"football","title":"Premier League","subtitle":"Matchweek 6",
+"governing":"Premier League",
+"groups":[{"label":"Saturday 27 September",
+"matches":[{"home":"Arsenal","away":"Chelsea","homeScore":2,"awayScore":1,"status":"FT","venue":"Emirates Stadium"},
+{"home":"Everton","away":"Newcastle","when":"17:30"}]},
+{"label":"Sunday 28 September","matches":[{"home":"Man Utd","away":"Liverpool","when":"16:30"}]}]}
+\`\`\`
+Leave the scores out for a game still to come and put the kick
+off in "when". For a game in progress put the minute in "status",
+like 67'.
+
 
 A number that moved:
 \`\`\`natter
