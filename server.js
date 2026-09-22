@@ -2973,10 +2973,12 @@ app.post('/api/chat', async (req, res) => {
       memory = {},
 
       /*
-        A photo the user is asking about, as a data URL.
-        Only the newest message gets it.
+        Photos the user is asking about, as data URLs.
+        Only the newest message gets them. One picture may
+        come as image, several come as images.
       */
       image = null,
+      images = null,
 
       /* the browser asks for a streamed reply */
       stream = false,
@@ -3102,7 +3104,13 @@ ${await (async () => {
       about what is in it.
     */
 
-    if (image && cleanMessages.length) {
+    const photos =
+      (Array.isArray(images) ? images : [])
+        .concat(image ? [image] : [])
+        .filter(Boolean)
+        .slice(0, 4);
+
+    if (photos.length && cleanMessages.length) {
 
       const last =
         cleanMessages[cleanMessages.length - 1];
@@ -3112,12 +3120,14 @@ ${await (async () => {
         content: [
           {
             type: 'text',
-            text: last.content || 'What is in this image?'
+            text:
+              last.content ||
+              (photos.length > 1 ? 'What is in these images?' : 'What is in this image?')
           },
-          {
+          ...photos.map(url => ({
             type: 'image_url',
-            image_url: { url: image }
-          }
+            image_url: { url }
+          }))
         ]
       };
 
@@ -4435,6 +4445,9 @@ app.post('/api/image/edit', async (req, res) => {
     const {
       prompt: typedPrompt,
       image,
+
+      /* several sources, when the user uploaded more than one */
+      images = null,
       regenerate = false,
 
       /* 'square', 'portrait' or 'landscape' */
@@ -4460,7 +4473,13 @@ app.post('/api/image/edit', async (req, res) => {
     }
 
 
-    if (!image) {
+    const sources =
+      (Array.isArray(images) ? images : [])
+        .concat(image ? [image] : [])
+        .filter(Boolean)
+        .slice(0, 4);
+
+    if (!sources.length) {
 
       return res.status(400).json({
         error:
@@ -4487,123 +4506,71 @@ app.post('/api/image/edit', async (req, res) => {
       picture has been saved there.
     */
 
-    let originalBuffer;
+    const imageFiles = [];
 
-    if (/^https?:\/\//i.test(image)) {
+    for (const [index, source] of sources.entries()) {
 
-      const fetched = await fetch(image);
+      let originalBuffer;
 
-      if (!fetched.ok) {
+      if (/^https?:\/\//i.test(source)) {
 
-        throw new Error(
-          `Could not fetch the source image (${fetched.status}).`
-        );
+        const fetched = await fetch(source);
+
+        if (!fetched.ok) {
+          throw new Error(`Could not fetch the source image (${fetched.status}).`);
+        }
+
+        originalBuffer = Buffer.from(await fetched.arrayBuffer());
+
+      } else {
+
+        const match = source.match(/^data:image\/[^;]+;base64,(.+)$/s);
+
+        originalBuffer = Buffer.from(match ? match[1] : source, 'base64');
 
       }
 
-      originalBuffer =
-        Buffer.from(await fetched.arrayBuffer());
+      if (!originalBuffer.length) {
+        throw new Error('The supplied image could not be decoded.');
+      }
 
-    } else {
+      const normalizedBuffer =
+        await sharp(originalBuffer)
+          .rotate()
+          .resize({ width: 1536, height: 1536, fit: 'inside', withoutEnlargement: true })
+          .flatten({ background: '#ffffff' })
+          .jpeg({ quality: 95, mozjpeg: true })
+          .toBuffer();
 
-      const match =
-        image.match(
-          /^data:image\/[^;]+;base64,(.+)$/s
-        );
+      console.log(
+        `SOURCE IMAGE ${index + 1} OF ${sources.length}: ${originalBuffer.length} bytes in, ${normalizedBuffer.length} out`
+      );
 
-      const base64Data =
-        match
-          ? match[1]
-          : image;
-
-      originalBuffer =
-        Buffer.from(
-          base64Data,
-          'base64'
-        );
-
-    }
-
-
-    console.log(
-      `SOURCE IMAGE: ${originalBuffer.length} bytes`
-    );
-
-
-    if (!originalBuffer.length) {
-
-      throw new Error(
-        'The supplied image could not be decoded.'
+      imageFiles.push(
+        await toFile(normalizedBuffer, `source-image-${index + 1}.jpg`, { type: 'image/jpeg' })
       );
 
     }
-
-
-    // =================================================
-    // NORMALISE IMAGE
-    // =================================================
-
-    const normalizedBuffer =
-      await sharp(originalBuffer)
-
-        .rotate()
-
-        .resize({
-
-          width: 1536,
-
-          height: 1536,
-
-          fit: 'inside',
-
-          withoutEnlargement: true
-
-        })
-
-        .flatten({
-          background: '#ffffff'
-        })
-
-        .jpeg({
-
-          quality: 95,
-
-          mozjpeg: true
-
-        })
-
-        .toBuffer();
-
-
-    console.log(
-      `IMAGE CONVERTED: ${normalizedBuffer.length} bytes`
-    );
-
-
-    // =================================================
-    // CREATE OPENAI FILE
-    // =================================================
-
-    const imageFile =
-      await toFile(
-
-        normalizedBuffer,
-
-        'source-image.jpg',
-
-        {
-          type: 'image/jpeg'
-        }
-
-      );
 
 
     // =================================================
     // NORMAL EDIT
     // =================================================
 
+    const manySources = imageFiles.length > 1;
+
     let finalPrompt = `
-${fromUpload
+${manySources
+  ? `SEVERAL SOURCE PHOTOGRAPHS ARE SUPPLIED (${imageFiles.length}).
+
+Build one picture that uses all of them, as the
+user asked. Every person who appears must keep the
+face they have in their own source photograph.
+Do not blend two people into one face, and do not
+swap their features around.
+
+`
+  : ''}${fromUpload
   ? `THIS IS A PHOTO EDIT, NOT A NEW IMAGE.
 
 The supplied photograph is a real photograph
@@ -4765,7 +4732,7 @@ style was requested.
 
         model: 'gpt-image-2',
 
-        image: imageFile,
+        image: imageFiles.length > 1 ? imageFiles : imageFiles[0],
 
         prompt: finalPrompt,
 

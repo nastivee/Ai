@@ -402,8 +402,69 @@ const fileInput =
 const uploadPreview =
   document.getElementById('uploadPreview');
 
-const uploadThumb =
-  document.getElementById('uploadThumb');
+const uploadThumbs =
+  document.getElementById('uploadThumbs');
+
+/* every photo waiting to be sent, newest last, up to four */
+let selectedImages = [];
+
+/*
+  Draws the little row of photos waiting to go, each with
+  its own X. selectedImageData stays as the first one, so
+  everything that only ever handled a single photo keeps
+  working.
+*/
+function paintUploads() {
+
+  selectedImageData = selectedImages[0]?.data || null;
+
+  if (!uploadThumbs) return;
+
+  uploadThumbs.innerHTML = '';
+
+  selectedImages.forEach((item, index) => {
+
+    const slot = document.createElement('div');
+    slot.className = 'uploadThumbSlot';
+
+    const img = document.createElement('img');
+    img.className = 'uploadThumb';
+    img.alt = item.name || `Photo ${index + 1}`;
+    img.src = item.data;
+    slot.appendChild(img);
+
+    const drop = document.createElement('button');
+    drop.type = 'button';
+    drop.className = 'uploadThumbDrop';
+    drop.title = 'Take this photo off';
+    drop.setAttribute('aria-label', 'Take this photo off');
+    drop.textContent = '\u00d7';
+
+    drop.addEventListener('click', event => {
+      event.stopPropagation();
+      selectedImages.splice(index, 1);
+      if (!selectedImages.length) {
+        clearUpload();
+      } else {
+        paintUploads();
+      }
+    });
+
+    slot.appendChild(drop);
+    uploadThumbs.appendChild(slot);
+
+  });
+
+  if (uploadName) {
+    uploadName.textContent =
+      selectedImages.length > 1
+        ? `${selectedImages.length} photos`
+        : (selectedImages[0]?.name || '');
+  }
+
+  uploadPreview.classList.toggle('show', selectedImages.length > 0);
+
+}
 
 const uploadName =
   document.getElementById('uploadName');
@@ -4820,11 +4881,11 @@ function addImageMessage(
 
     photoActionChosen = true;
 
-    uploadThumb.src = selectedImageData;
+    selectedImages = [{ data: selectedImageData, name: 'This picture' }];
+
+    paintUploads();
 
     uploadName.textContent = 'This picture';
-
-    uploadPreview.classList.add('show');
 
     [...photoChoice.children].forEach((item, index) => {
       item.classList.toggle('active', index === 0);
@@ -5613,7 +5674,10 @@ async function editImage(
   requestChatId,
   regenerate = false,
   caption = null,
-  fromUpload = false
+  fromUpload = false,
+
+  /* the other photos, when more than one was uploaded */
+  extraImages = null
 ) {
 
   if (!image) {
@@ -5643,6 +5707,10 @@ async function editImage(
     image =
       await resolveImage(image);
 
+    if (Array.isArray(extraImages) && extraImages.length) {
+      extraImages = await Promise.all(extraImages.map(one => resolveImage(one)));
+    }
+
     const response =
       await fetch(
         `${API_BASE}/api/image/edit`,
@@ -5660,6 +5728,8 @@ async function editImage(
               prompt,
 
               image,
+
+              images: extraImages,
 
               regenerate,
 
@@ -11127,7 +11197,8 @@ async function streamReply(response, requestChatId) {
 async function sendNormalMessage(
   text,
   requestChatId,
-  image = null
+  image = null,
+  images = null
 ) {
 
   const jobId =
@@ -11232,6 +11303,8 @@ async function sendNormalMessage(
               memory,
 
               image,
+
+              images,
 
               mode: chatMode,
 
@@ -11566,8 +11639,14 @@ async function sendMessage() {
 
     }
 
+    const photos =
+      selectedImages.map(item => item.data);
+
     const image =
-      selectedImageData;
+      photos[0];
+
+    const rest =
+      photos.slice(1);
 
     const action =
       photoActionChosen ? photoAction : guessPhotoAction(userText);
@@ -11591,28 +11670,33 @@ async function sendMessage() {
 
     if (action === 'ask') {
 
-      const storedUrl =
-        await storeImage(image);
+      for (const [index, photo] of photos.entries()) {
 
-      recordUpload(image, 'ask', storedUrl);
+        const storedUrl =
+          await storeImage(photo);
 
-      addUserImage(
-        requestChatId,
-        image,
-        userText
-      );
+        recordUpload(photo, 'ask', storedUrl);
 
-      await saveMessage(
-        'user',
-        userText,
-        storedUrl,
-        requestChatId
-      );
+        addUserImage(
+          requestChatId,
+          photo,
+          index === photos.length - 1 ? userText : ''
+        );
+
+        await saveMessage(
+          'user',
+          index === photos.length - 1 ? userText : '',
+          storedUrl,
+          requestChatId
+        );
+
+      }
 
       sendNormalMessage(
         userText,
         requestChatId,
-        image
+        image,
+        rest
       );
 
       return;
@@ -11620,7 +11704,7 @@ async function sendMessage() {
     }
 
 
-    recordUpload(image, 'edit');
+    photos.forEach(photo => recordUpload(photo, 'edit'));
 
     editImage(
       image,
@@ -11628,7 +11712,8 @@ async function sendMessage() {
       requestChatId,
       false,
       null,
-      true
+      true,
+      rest
     ).catch(async error => {
 
       console.error(
@@ -15798,22 +15883,20 @@ fileInput.addEventListener(
   'change',
   async event => {
 
-    const file =
-      event.target.files?.[0];
+    const picked =
+      [...(event.target.files || [])];
 
 
-    if (!file) {
+    if (!picked.length) {
       return;
     }
 
 
-    const looksLikeImage =
-      (file.type || '').startsWith('image/') ||
-      /\.(heic|heif|jpe?g|png|webp|gif|avif|bmp)$/i.test(file.name || '');
+    const room = Math.max(0, 4 - selectedImages.length);
 
-    if (!looksLikeImage) {
+    if (!room) {
 
-      addTextMessage('assistant', 'That file is not a photo. Upload a picture (JPEG, PNG, HEIC and the like).');
+      addTextMessage('assistant', 'That is four photos already, which is the most I can take at once.');
 
       fileInput.value = '';
 
@@ -15821,45 +15904,55 @@ fileInput.addEventListener(
 
     }
 
+    let added = 0;
 
-    let prepared;
+    for (const file of picked.slice(0, room)) {
 
-    try {
+      const looksLikeImage =
+        (file.type || '').startsWith('image/') ||
+        /\.(heic|heif|jpe?g|png|webp|gif|avif|bmp)$/i.test(file.name || '');
 
-      prepared = await prepareUpload(file);
+      if (!looksLikeImage) {
 
-    } catch (error) {
+        addTextMessage('assistant', `${file.name || 'That file'} is not a photo. Upload pictures (JPEG, PNG, HEIC and the like).`);
 
-      addTextMessage('assistant', error.message);
+        continue;
 
-      fileInput.value = '';
+      }
 
-      return;
+      let prepared;
+
+      try {
+
+        prepared = await prepareUpload(file);
+
+      } catch (error) {
+
+        addTextMessage('assistant', error.message);
+
+        continue;
+
+      }
+
+      selectedImageFile = file;
+
+      selectedImages.push({ data: prepared.dataUrl, name: file.name });
+
+      added += 1;
 
     }
 
+    fileInput.value = '';
 
-    selectedImageFile =
-      file;
+    if (!added) return;
 
+    if (picked.length > room) {
+      addTextMessage('assistant', 'I can take four photos at a time, so I have kept the first four.');
+    }
 
     {
 
-        selectedImageData =
-          prepared.dataUrl;
-
-
-        uploadThumb.src =
-          selectedImageData;
-
-
-        uploadName.textContent =
-          file.name;
-
-
-        uploadPreview.classList.add(
-          'show'
-        );
+        paintUploads();
 
 
         imageMode =
@@ -15876,7 +15969,9 @@ fileInput.addEventListener(
 
 
         messageInput.placeholder =
-          'Ask about it, or say what to change...';
+          selectedImages.length > 1
+            ? 'Ask about them, or say what to make from them...'
+            : 'Ask about it, or say what to change...';
 
 
         messageInput.focus();
@@ -15915,13 +16010,14 @@ function clearUpload() {
   selectedImageData =
     null;
 
+  selectedImages = [];
+
 
   fileInput.value =
     '';
 
 
-  uploadThumb.src =
-    '';
+  if (uploadThumbs) uploadThumbs.innerHTML = '';
 
   uploadName.textContent =
     '';

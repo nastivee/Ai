@@ -7434,3 +7434,45 @@ body.theme-halloween .authScreen .authCard {
 }
 
 .refusalTools .adminAction { width: auto; }
+
+/* several photos waiting to go, each with its own X */
+.uploadThumbs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.uploadThumbSlot {
+  position: relative;
+  /* room for the X, so nothing is clipped */
+  padding: 5px 5px 0 0;
+}
+
+.uploadThumbSlot .uploadThumb {
+  display: block;
+}
+
+.uploadThumbDrop {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 19px;
+  height: 19px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid #493758;
+  border-radius: 50%;
+  background: #150f22;
+  color: #cfc3dd;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.uploadThumbDrop:hover {
+  color: #fff;
+  border-color: #8b5cf6;
+}
