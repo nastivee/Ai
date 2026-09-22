@@ -13795,6 +13795,9 @@ sidebar.addEventListener('click', event => {
 
   const wide = window.matchMedia('(min-width: 761px)').matches;
 
+  /* only real taps and clicks; buttons pressed by the app itself go straight through */
+  if (!event.isTrusted || document.body.classList.contains('sidebarPinned')) return;
+
   if (wide) {
     if (!sidebar.classList.contains('peekOpen') && !sidebar.matches(':hover')) {
       event.preventDefault();
@@ -13813,6 +13816,30 @@ document.addEventListener('pointerdown', event => {
 });
 
 sidebar.addEventListener('mouseleave', () => sidebar.classList.remove('peekOpen'));
+
+/* each computer chooses: keep the sidebar open, or let it tuck away */
+const PIN_KEY = 'natter_sidebar_pinned';
+
+function paintPin() {
+  const pinned = document.body.classList.contains('sidebarPinned');
+  const button = document.getElementById('pinSidebar');
+  if (!button) return;
+  button.setAttribute('aria-pressed', pinned ? 'true' : 'false');
+  document.getElementById('pinSidebarLabel').textContent = pinned ? 'Auto hide' : 'Keep open';
+  button.title = pinned ? 'Let the sidebar tuck away when not in use' : 'Keep the sidebar open all the time';
+}
+
+try { document.body.classList.toggle('sidebarPinned', localStorage.getItem(PIN_KEY) === '1'); } catch {}
+
+paintPin();
+
+document.getElementById('pinSidebar')?.addEventListener('click', () => {
+  const pinned = !document.body.classList.contains('sidebarPinned');
+  document.body.classList.toggle('sidebarPinned', pinned);
+  sidebar.classList.remove('peekOpen');
+  try { localStorage.setItem(PIN_KEY, pinned ? '1' : '0'); } catch {}
+  paintPin();
+});
 
 /* =====================================================
    SEND BUTTON

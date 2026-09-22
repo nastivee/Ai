@@ -6083,7 +6083,7 @@ body.smartMode .sidebar::after {
 
 @media (min-width: 761px) {
 
-  body .sidebar {
+  body:not(.sidebarPinned) .sidebar {
     position: fixed;
     top: 0;
     bottom: 0;
@@ -6094,39 +6094,39 @@ body.smartMode .sidebar::after {
     cursor: pointer;
   }
 
-  body .sidebar > * {
+  body:not(.sidebarPinned) .sidebar > * {
     opacity: 0;
     transition: opacity .18s var(--ease) .2s;
   }
 
-  body .sidebar::after {
+  body:not(.sidebarPinned) .sidebar::after {
     opacity: 1;
   }
 
-  body .sidebar:hover,
-  body .sidebar.peekOpen,
-  body .sidebar:has(input:focus) {
+  body:not(.sidebarPinned) .sidebar:hover,
+  body:not(.sidebarPinned) .sidebar.peekOpen,
+  body:not(.sidebarPinned) .sidebar:has(input:focus) {
     transform: none;
     transition: transform .3s var(--ease), box-shadow .3s var(--ease);
     box-shadow: 20px 0 50px rgba(0, 0, 0, .35);
     cursor: auto;
   }
 
-  body .sidebar:hover > *,
-  body .sidebar.peekOpen > *,
-  body .sidebar:has(input:focus) > * {
+  body:not(.sidebarPinned) .sidebar:hover > *,
+  body:not(.sidebarPinned) .sidebar.peekOpen > *,
+  body:not(.sidebarPinned) .sidebar:has(input:focus) > * {
     opacity: 1;
     transition-delay: .05s;
   }
 
-  body .sidebar:hover::after,
-  body .sidebar.peekOpen::after,
-  body .sidebar:has(input:focus)::after {
+  body:not(.sidebarPinned) .sidebar:hover::after,
+  body:not(.sidebarPinned) .sidebar.peekOpen::after,
+  body:not(.sidebarPinned) .sidebar:has(input:focus)::after {
     opacity: 0;
   }
 
   /* the page keeps clear of the edge that stays showing */
-  body .main {
+  body:not(.sidebarPinned) .main {
     margin-left: 14px;
   }
 
@@ -6139,4 +6139,38 @@ body.smartMode .sidebar::after {
     display: none;
   }
 
+}
+
+/* the keep open / auto hide switch, computers only */
+.versionRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.pinSidebar {
+  display: none;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: var(--mute-text);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.pinSidebar:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, .05);
+}
+
+@media (min-width: 761px) {
+  .pinSidebar {
+    display: inline-flex;
+  }
 }
