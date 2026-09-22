@@ -11996,10 +11996,13 @@ const PEEK_COSTUMES = [
     <path class="flicker" d="M79 16 q3.5 4.5 2.4 7.5 q-1 2 -2.4 2 q-1.4 0 -2.4 -2 q-1.1 -3 2.4 -7.5 Z" fill="#ffb347"/>
     <path class="flicker" d="M79 20 q1.6 2.5 1 4 q-.4 1 -1 1 q-.6 0 -1 -1 q-.6 -1.5 1 -4 Z" fill="#fff3a0"/>` },
 
-  /* 9. little devil horns */
-  { svg: `
-    <path d="M14 17 Q5 8 9 -3 Q13 8 23 13 Z" fill="#e0243a" stroke="#8c0f22" stroke-width=".7"/>
-    <path d="M50 17 Q59 8 55 -3 Q51 8 41 13 Z" fill="#e0243a" stroke="#8c0f22" stroke-width=".7"/>` },
+  /* 9. huge devil horns on top of his head */
+  { hideAntenna: true, svg: `
+    <path d="M10 19 C-1 4 -3 -16 6 -31 C8 -15 14 -3 28 15 Z" fill="#c21d2e" stroke="#6e0b17" stroke-width="1"/>
+    <path d="M54 19 C65 4 67 -16 58 -31 C56 -15 50 -3 36 15 Z" fill="#c21d2e" stroke="#6e0b17" stroke-width="1"/>
+    <path d="M5 -20 q4 2 6 5 M3 -10 q5 2 8 6 M4 0 q5 2 9 6 M59 -20 q-4 2 -6 5 M61 -10 q-5 2 -8 6 M60 0 q-5 2 -9 6" stroke="#7d0f1c" stroke-width="1.1" stroke-linecap="round" fill="none"/>
+    <path d="M7 -26 C3 -14 4 -2 12 10" stroke="#ff6b7a" stroke-opacity=".55" stroke-width="1.3" stroke-linecap="round" fill="none"/>
+    <path d="M57 -26 C61 -14 60 -2 52 10" stroke="#ff6b7a" stroke-opacity=".55" stroke-width="1.3" stroke-linecap="round" fill="none"/>` },
 
   /* 10. skull face paint */
   { svg: `
