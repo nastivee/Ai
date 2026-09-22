@@ -39,9 +39,19 @@
 <meta name="twitter:image" content="https://nastivee.github.io/Ai/og-image.png">
 <meta name="twitter:image:alt" content="Nastivee AI">
 
+<!-- open the connections early, and wake the server while the page loads -->
+<link rel="preconnect" href="https://ai-8vlt.onrender.com" crossorigin>
+<link rel="preconnect" href="https://fzwqunpnohgwgwikumkt.supabase.co" crossorigin>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<script>
+  try {
+    fetch('https://ai-8vlt.onrender.com/api/health', { mode: 'no-cors', cache: 'no-store' }).catch(function () {});
+  } catch (e) {}
+</script>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-<link rel="stylesheet" href="./css/app.css?v=2026-09-22-26">
+<link rel="stylesheet" href="./css/app.css?v=2026-09-22-27">
 </head>
 
 <body>
@@ -1912,8 +1922,8 @@
   </div>
 </div>
 
-<script>window.NASTIVEE_VERSION = '2026-09-22-26';</script>
-<script src="./js/app.js?v=2026-09-22-26"></script>
+<script>window.NASTIVEE_VERSION = '2026-09-22-27';</script>
+<script src="./js/app.js?v=2026-09-22-27"></script>
 
 </body>
 </html>
