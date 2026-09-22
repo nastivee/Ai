@@ -12745,6 +12745,13 @@ function createPeekBot(card) {
       api.eyes('happy');
       eyes.style.transform = '';
       api.place('left');
+
+      /* the devil is coming: thunder and lightning, then five seconds */
+      if (halloweenOn() && PEEK_COSTUMES[pick]?.routine) {
+        strikeStorm();
+        await api.wait(5000);
+      }
+
       api.dress(pick);
 
       try {
@@ -12995,34 +13002,26 @@ function lightningSvg() {
 }
 
 /*
-  A storm now and then: about once a minute the clouds
-  shake with thunder and a bolt of lightning strikes.
+  The storm is the devil's warning: the clouds shake with
+  thunder and lightning strikes five seconds before he
+  turns up, and at no other time.
 */
-let stormTimer = null;
-
-function scheduleStorm() {
-  clearTimeout(stormTimer);
-  stormTimer = setTimeout(() => {
-    const decor = document.getElementById('themeDecor');
-    if (halloweenOn() && decor && !document.hidden &&
-        !window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
-      const bolt = decor.querySelector('.bolt');
-      if (bolt) {
-        /* a fresh fork every time, from the very top down to 60 to 90 percent of the screen */
-        bolt.style.left = `${10 + Math.random() * 75}%`;
-        bolt.style.height = `${60 + Math.random() * 30}vh`;
-        bolt.innerHTML = lightningSvg();
-      }
-      decor.classList.remove('storm');
-      void decor.offsetWidth;
-      decor.classList.add('storm');
-      setTimeout(() => decor.classList.remove('storm'), 1600);
-    }
-    scheduleStorm();
-  }, 52000 + Math.random() * 16000);
+function strikeStorm() {
+  const decor = document.getElementById('themeDecor');
+  if (!halloweenOn() || !decor ||
+      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
+  const bolt = decor.querySelector('.bolt');
+  if (bolt) {
+    /* a fresh fork every time, from the very top down to 60 to 90 percent of the screen */
+    bolt.style.left = `${10 + Math.random() * 75}%`;
+    bolt.style.height = `${60 + Math.random() * 30}vh`;
+    bolt.innerHTML = lightningSvg();
+  }
+  decor.classList.remove('storm');
+  void decor.offsetWidth;
+  decor.classList.add('storm');
+  setTimeout(() => decor.classList.remove('storm'), 1600);
 }
-
-scheduleStorm();
 
 function fillThemeDecor() {
 
