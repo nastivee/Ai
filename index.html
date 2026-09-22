@@ -5698,6 +5698,26 @@ textarea.adminInput.lessonText {
   gap: 8px;
   margin-top: 14px;
 }
+
+.artworkLocked {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px;
+  text-align: center;
+  color: var(--mute-text);
+  font-size: 12px;
+}
+
+.artworkLockedBig {
+  padding: 40px 16px;
+  text-align: center;
+  color: var(--mute-text);
+  font-size: 14px;
+  line-height: 1.6;
+}
 </style>
 </head>
 
@@ -10776,6 +10796,66 @@ function storagePathFromUrl(ref) {
   show and the API can send: always a data URL when it can
   be had, otherwise what came in.
 */
+/*
+  Pictures are kept as plain files now. Any sealed one that
+  opens on this device is re-saved as an ordinary file, the
+  chat is pointed at the new copy, and the sealed copy goes.
+  After that every device can open it, whatever key it has.
+*/
+const unsealing = new Set();
+
+async function unsealStoredImage(ref, type, sealedPath, plain) {
+
+  if (!currentUser || guestMode || unsealing.has(ref)) return;
+
+  unsealing.add(ref);
+
+  try {
+
+    const ext = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'video/mp4': 'mp4' }[type];
+
+    if (!ext) return;
+
+    const path =
+      `${currentUser.id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+
+    const { error: upError } =
+      await supabaseClient.storage.from(IMAGE_BUCKET)
+        .upload(path, new Blob([plain], { type }), { contentType: type, upsert: false });
+
+    if (upError) throw upError;
+
+    const { data } = supabaseClient.storage.from(IMAGE_BUCKET).getPublicUrl(path);
+
+    const newRef = data?.publicUrl;
+
+    if (!newRef) return;
+
+    const { error: rowError } =
+      await supabaseClient.from('messages')
+        .update({ image_url: newRef })
+        .eq('user_id', currentUser.id)
+        .eq('image_url', ref);
+
+    if (rowError) {
+      await supabaseClient.storage.from(IMAGE_BUCKET).remove([path]);
+      throw rowError;
+    }
+
+    if (imageCache.has(ref)) imageCache.set(newRef, imageCache.get(ref));
+
+    await supabaseClient.storage.from(IMAGE_BUCKET).remove([sealedPath]);
+
+  } catch (error) {
+
+    console.warn('UNSEAL IMAGE FAILED:', error?.message);
+    unsealing.delete(ref);
+
+  }
+
+}
+
+
 async function resolveImage(ref) {
 
   if (typeof ref !== 'string' || !ref) return ref;
@@ -10819,6 +10899,9 @@ async function resolveImage(ref) {
         : await blobToDataUrl(new Blob([plain], { type }));
 
     imageCache.set(ref, url);
+
+    /* sealed pictures are turned into ordinary files as they are opened */
+    unsealStoredImage(ref, type, path, plain);
 
     return url;
 
@@ -13405,17 +13488,29 @@ async function encBytes(plain) {
 
 async function decBytes(stored) {
 
-  const plain =
-    await crypto.subtle.decrypt(
-      {
-        name: 'AES-GCM',
-        iv: stored.slice(0, 12)
-      },
-      dataKey,
-      stored.slice(12)
-    );
+  /* the current key first, then any older key this device kept */
+  let lastError = null;
 
-  return new Uint8Array(plain);
+  for (const key of [dataKey, ...olderKeys].filter(Boolean)) {
+
+    try {
+
+      const plain =
+        await crypto.subtle.decrypt(
+          { name: 'AES-GCM', iv: stored.slice(0, 12) },
+          key,
+          stored.slice(12)
+        );
+
+      return new Uint8Array(plain);
+
+    } catch (error) {
+      lastError = error;
+    }
+
+  }
+
+  throw lastError || new Error('No key to open this picture.');
 
 }
 
@@ -20482,6 +20577,13 @@ async function fillArtworkTile(tile) {
 
     console.warn('ARTWORK TILE ERROR:', error?.message);
 
+    tile.classList.add('locked');
+
+    const note = document.createElement('span');
+    note.className = 'artworkLocked';
+    note.textContent = 'Locked on this device';
+    tile.prepend(note);
+
   }
 
 }
@@ -20493,7 +20595,11 @@ async function openArtwork(row) {
   const holder = document.getElementById('artworkViewerMedia');
   holder.innerHTML = '';
 
-  const url = await resolveImage(row.image_url).catch(() => row.image_url);
+  const url = await resolveImage(row.image_url).catch(() => null);
+
+  if (!url) {
+    holder.innerHTML = '<div class="artworkLockedBig">This one was sealed with a key this device does not have. Open it on the device you made it on, or sign in again with your password here.</div>';
+  }
 
   const media = document.createElement(isVideoRef(row.image_url) ? 'video' : 'img');
 
@@ -20504,8 +20610,10 @@ async function openArtwork(row) {
     media.alt = plainPreview(row.content || 'Artwork');
   }
 
-  media.src = url;
-  holder.appendChild(media);
+  if (url) {
+    media.src = url;
+    holder.appendChild(media);
+  }
 
   document.getElementById('artworkViewerPrompt').textContent = plainPreview(row.content || '');
 
@@ -21391,7 +21499,7 @@ window.addEventListener('online', () => {
    clearing anything by hand.
 ===================================================== */
 
-const APP_VERSION = '2026-09-22-19';
+const APP_VERSION = '2026-09-22-21';
 
 const RELOAD_FLAG = 'nastivee_reloaded_for';
 
