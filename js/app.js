@@ -12863,7 +12863,7 @@ function createPeekBot(card) {
       /* the devil is coming: thunder and lightning, then five seconds */
       if (halloweenOn() && PEEK_COSTUMES[pick]?.routine) {
         strikeStorm();
-        await api.wait(5000);
+        await api.wait(STORM_ROLL_IN + 5000);
       }
 
       api.dress(pick);
@@ -12969,7 +12969,7 @@ let restartPeeking = null;
     peekBot.play(devil).catch(() => {});
   };
 
-  setTimeout(firstDevil, 25000);
+  setTimeout(firstDevil, 25000 - STORM_ROLL_IN);
 
 })();
 
@@ -13140,6 +13140,9 @@ function lightningSvg() {
   thunder and lightning strikes five seconds before he
   turns up, and at no other time.
 */
+/* how long the clouds take to roll in before the lightning */
+const STORM_ROLL_IN = 1400;
+
 function strikeStorm() {
   const decor = document.getElementById('themeDecor');
   if (!halloweenOn() || !decor ||
@@ -13151,10 +13154,17 @@ function strikeStorm() {
     bolt.style.height = `${60 + Math.random() * 30}vh`;
     bolt.innerHTML = lightningSvg();
   }
+  /* the clouds roll in, then thunder and lightning, then they roll away */
   decor.classList.remove('storm');
-  void decor.offsetWidth;
-  decor.classList.add('storm');
-  setTimeout(() => decor.classList.remove('storm'), 1600);
+  decor.classList.add('clouding');
+  clearTimeout(strikeStorm.timers?.[0]);
+  clearTimeout(strikeStorm.timers?.[1]);
+  clearTimeout(strikeStorm.timers?.[2]);
+  strikeStorm.timers = [
+    setTimeout(() => { void decor.offsetWidth; decor.classList.add('storm'); }, STORM_ROLL_IN),
+    setTimeout(() => decor.classList.remove('storm'), STORM_ROLL_IN + 1600),
+    setTimeout(() => decor.classList.remove('clouding'), STORM_ROLL_IN + 3200)
+  ];
 }
 
 function fillThemeDecor() {
