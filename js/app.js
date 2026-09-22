@@ -2659,21 +2659,107 @@ function timeOfDay() {
   return 'evening';
 }
 
+/*
+  Common first names, so a run-together email like
+  jamiebutcher@ is greeted as Jamie, not Jamiebutcher.
+*/
+const FIRST_NAMES = (
+  'aaron abby abdul abigail adam adrian aidan aiden aimee alan albert alex alexander alexandra alfie alice alicia ' +
+  'alison amanda amber amelia amy ana andrea andrew angela angus anita ann anna anne annie anthony antony april ' +
+  'archie arthur ashley aston austin barbara barry beatrice becky belinda ben benjamin bernard beth bethany betty ' +
+  'bev beverley bill billy bob bobby bonnie brad bradley brandon brenda brendan brett brian bruce bryan caitlin ' +
+  'callum calvin cameron cara carl carla carmen carol caroline carrie casey catherine cathy cerys charles charlie ' +
+  'charlotte chelsea cheryl chloe chris christian christine christopher cindy claire clare clark claude clayton ' +
+  'clive colin connor conor corey craig curtis cyril daisy dale damian damien dan dana daniel danielle danny darcy ' +
+  'daria darren darryl dave david dawn dean debbie deborah declan dee denis denise dennis derek diana diane dominic ' +
+  'don donald donna dora doreen doris dorothy douglas duncan dylan eddie eden edith edward eileen elaine eleanor ' +
+  'elena eli elijah elizabeth ella ellen ellie elliot elliott eloise elsie emily emma eric erica erin ethan eugene ' +
+  'eva evan eve evelyn ewan faith farah fay felicity felix fiona florence frances francesca francis frank fred ' +
+  'freddie frederick freya gabriel gabrielle gail gareth garry gary gavin gemma gene geoff geoffrey george georgia ' +
+  'georgina gerald gerard gill gillian glen glenn gloria gordon grace graeme graham grant greg gregory gwen hannah ' +
+  'harriet harry harvey hayley hazel heather heidi helen henry hilary holly hope howard hugh hugo ian imogen india ' +
+  'irene iris isaac isabel isabella isabelle isla ivan ivy jack jackie jackson jacob jade jake james jamie jan jane ' +
+  'janet janice jared jasmine jason jay jayden jean jeff jeffrey jemma jenna jennifer jenny jeremy jerome jerry ' +
+  'jess jessica jill jim jimmy jo joan joanna joanne jodie joe joel john johnny jon jonathan jordan joseph josephine ' +
+  'josh joshua joyce juan judith judy julia julian julie june justin kai kane karen karl kate katherine kathleen ' +
+  'kathryn katie katy kay kayleigh keeley keith kelly kelvin ken kenneth kerry kevin kim kimberley kirsty kit kyle ' +
+  'lacey laura lauren laurence lawrence leah lee leigh leo leon leonard lesley leslie lewis liam libby lily linda ' +
+  'lindsay lisa liz lloyd logan lois lola lorna lorraine louis louise lucas lucy luke lydia lyndsey lynn lynne mabel ' +
+  'maddie madeline madison maisie malcolm mandy marc marcus margaret maria marian marie marilyn mario marion mark ' +
+  'marsha martha martin martyn mary mason matilda matt matthew maureen max maya megan mel melanie melissa mia michael ' +
+  'michelle mike miles millie milly miranda mitchell moira molly mona monica morgan muhammad murray nadia nancy naomi ' +
+  'natalie natasha nathan neil nell nelson nicholas nick nicola nicole nigel nina noah noel nora norman oliver olivia ' +
+  'ollie omar oscar owen paige pam pamela pat patricia patrick paul paula paulina pauline pearl peggy penelope penny ' +
+  'pete peter phil philip philippa phoebe pippa polly poppy rachael rachel raj ralph ramesh randall raymond rebecca ' +
+  'reece reuben rhys ricardo richard rick ricky rita rob robert robin robyn roger roland ron ronald rory rosa rose ' +
+  'rosemary ross rowan roy ruby russell ruth ryan sadie sally sam samantha samuel sandra sara sarah sasha saul scott ' +
+  'sean sebastian selina shane shannon sharon shaun sheila shelley shirley sian sidney simon sinead sofia sonia sonya ' +
+  'sophia sophie spencer stacey stan stanley stella stephanie stephen steve steven stewart stuart sue summer susan ' +
+  'suzanne sydney sylvia tamsin tanya tara ted teresa terry tess thea theo theresa thomas tia tim timothy tina toby ' +
+  'todd tom tommy tony tracey tracy travis trevor tristan troy tyler tyrone valerie vanessa vera verity vicky victor ' +
+  'victoria vincent violet vivian wade walter warren wayne wendy wesley will william willow yasmin yvonne zac zach ' +
+  'zachary zara zoe'
+).split(' ');
+
+/*
+  Just the first name. A hyphen the person wrote themselves
+  is kept (Mia-James stays Mia-James); a run-together email
+  is cut at the first name it recognises.
+*/
+function tidyName(raw) {
+
+  const text = String(raw || '').trim();
+
+  if (!text) return '';
+
+  const pretty = word =>
+    word
+      .split('-')
+      .map(part => part ? part[0].toUpperCase() + part.slice(1).toLowerCase() : part)
+      .join('-');
+
+  /* anything written with a space, dot, underscore or plus: take the first piece */
+  const first = text.split(/[\s._+]+/).filter(Boolean)[0] || '';
+
+  /* they wrote the hyphen themselves, so it is part of the name */
+  if (first.includes('-')) return pretty(first);
+
+  const plain = first.replace(/[^a-z]/gi, '').toLowerCase();
+
+  if (!plain) return '';
+
+  if (FIRST_NAMES.includes(plain)) return pretty(plain);
+
+  /* jamiebutcher: keep the longest first name it starts with */
+  let best = '';
+
+  for (const name of FIRST_NAMES) {
+    if (name.length > best.length && name.length >= 3 && plain.startsWith(name)) {
+      best = name;
+    }
+  }
+
+  if (best) return pretty(best);
+
+  /* not a name we know, so greet without one rather than guess */
+  return plain.length <= 9 ? pretty(plain) : '';
+
+}
+
 function knownName() {
 
-  const lines = String(memory || '').split('\n');
+  const said =
+    /(?:my name is|call me|i am|i'm)\s+([A-Za-z][A-Za-z'-]{1,24})/i.exec(String(memory || ''));
 
-  for (const line of lines) {
-    const found = /(?:^|\b)(?:name is|called|i am|i'm)\s+([A-Z][a-z]{1,20})/.exec(line);
-    if (found) return found[1];
-  }
+  if (said) return tidyName(said[1]);
+
+  const meta = currentUser?.user_metadata || {};
+
+  if (meta.full_name || meta.name) return tidyName(meta.full_name || meta.name);
 
   const email = account?.email || currentUser?.email || '';
 
-  if (email) {
-    const stem = email.split('@')[0].replace(/[._\d]+/g, ' ').trim().split(' ')[0];
-    if (stem && stem.length > 1) return stem[0].toUpperCase() + stem.slice(1);
-  }
+  if (email) return tidyName(email.split('@')[0]);
 
   return '';
 
