@@ -6839,3 +6839,118 @@ body.theme-halloween .authScreen .authCard {
 .peekBot.skin-mummy .foot { fill: #cfc4a8; }
 .peekBot.skin-mummy .chest { fill: #140f08; }
 .peekBot.skin-mummy .light { fill: #d6ff9a; }
+
+
+/* =====================================================
+   ADMIN AND MY PROFILE: THE SAME SIDE MENU AS HOME
+
+   On a computer the section menu is a sidebar that keeps
+   open or tucks away, exactly like the one on the chat
+   screen, and follows the same Keep open choice. On a
+   phone nothing changes: the burger opens it.
+===================================================== */
+
+@media (min-width: 761px) {
+
+  .adminOverlay .adminDrawer,
+  .profileOverlay .profileDrawer {
+    width: 260px;
+    transform: none;
+    box-shadow: none;
+  }
+
+  .adminOverlay .adminBurger,
+  .profileOverlay .profileBurger,
+  .profileOverlay .profilePicker {
+    display: none;
+  }
+
+  body.sidebarPinned .adminOverlay .adminCard,
+  body.sidebarPinned .profileOverlay .profileCard {
+    margin-left: 260px;
+    width: calc(100% - 260px);
+  }
+
+  /* tucked away, with the same glowing edge */
+  body:not(.sidebarPinned) .adminOverlay .adminDrawer,
+  body:not(.sidebarPinned) .profileOverlay .profileDrawer {
+    transform: translateX(calc(-100% + 14px));
+    transition: transform .55s cubic-bezier(.3, 1.55, .5, 1) .25s, box-shadow .28s var(--ease) .25s;
+    cursor: pointer;
+  }
+
+  body:not(.sidebarPinned) .adminOverlay .adminDrawer > *,
+  body:not(.sidebarPinned) .profileOverlay .profileDrawer > * {
+    opacity: 0;
+    transition: opacity .18s var(--ease) .2s;
+  }
+
+  body:not(.sidebarPinned) .adminOverlay .adminDrawer:hover,
+  body:not(.sidebarPinned) .profileOverlay .profileDrawer:hover {
+    transform: none;
+    transition: transform .3s var(--ease), box-shadow .3s var(--ease);
+    box-shadow: 20px 0 50px rgba(0, 0, 0, .35);
+  }
+
+  body:not(.sidebarPinned) .adminOverlay .adminDrawer:hover > *,
+  body:not(.sidebarPinned) .profileOverlay .profileDrawer:hover > * {
+    opacity: 1;
+    transition: opacity .2s var(--ease) .05s;
+  }
+
+  .adminOverlay .adminDrawer::after,
+  .profileOverlay .profileDrawer::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: -2px;
+    width: 3px;
+    border-radius: 3px;
+    background: linear-gradient(180deg, #a78bfa, #7c3aed 45%, #38bdf8);
+    /* the glow spills onto the page, never clipped */
+    box-shadow: 0 0 14px 2px rgba(139, 92, 246, .55);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .3s var(--ease);
+    animation: edgeGlow 2.8s ease-in-out infinite;
+  }
+
+  body.smartMode .adminOverlay .adminDrawer::after,
+  body.smartMode .profileOverlay .profileDrawer::after {
+    background: linear-gradient(180deg, #93c5fd, #3d69b5 45%, #38bdf8);
+    box-shadow: 0 0 14px 2px rgba(61, 105, 181, .6);
+  }
+
+  body:not(.sidebarPinned) .adminOverlay .adminDrawer::after,
+  body:not(.sidebarPinned) .profileOverlay .profileDrawer::after {
+    opacity: 1;
+  }
+
+  body:not(.sidebarPinned) .adminOverlay .adminDrawer:hover::after,
+  body:not(.sidebarPinned) .profileOverlay .profileDrawer:hover::after {
+    opacity: 0;
+  }
+
+  body:not(.sidebarPinned) .adminOverlay .adminCard,
+  body:not(.sidebarPinned) .profileOverlay .profileCard {
+    margin-left: 14px;
+    width: calc(100% - 14px);
+  }
+
+  /* the shade belongs to the phone drawer only */
+  .adminOverlay .adminDrawerShade,
+  .profileOverlay .adminDrawerShade {
+    display: none;
+  }
+
+}
+
+@media (max-width: 760px) {
+
+  .profileOverlay .profileDrawer,
+  #profileDrawerShade {
+    display: none;
+  }
+
+}

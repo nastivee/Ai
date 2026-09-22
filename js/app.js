@@ -14629,6 +14629,37 @@ function paintProfilePicker() {
 
   paintDot(document.getElementById('profilePickerDot'), panelState(current));
 
+  /* the side menu, the same as the admin page and the home sidebar */
+  const drawer = document.getElementById('profileDrawerList');
+
+  if (drawer) {
+
+    drawer.innerHTML = '';
+
+    panels.forEach(panel => {
+
+      const item = document.createElement('button');
+      item.type = 'button';
+      item.className = `adminNavItem ${panelState(panel)}${panel === current ? ' current' : ''}`;
+
+      item.innerHTML =
+        '<span class="adminNavDot" aria-hidden="true"></span>' +
+        '<span class="adminNavText"><span class="adminNavName"></span><span class="adminNavNote"></span></span>';
+
+      item.querySelector('.adminNavName').textContent = panelTitle(panel);
+      item.querySelector('.adminNavNote').textContent = panelNote(panel);
+
+      item.addEventListener('click', () => {
+        showProfilePanel(panel.id);
+        setProfilePicker(false);
+      });
+
+      drawer.appendChild(item);
+
+    });
+
+  }
+
   const list = document.getElementById('profilePickerList');
   list.innerHTML = '';
 
@@ -14695,6 +14726,8 @@ document.getElementById('profileBurger')?.addEventListener('click', event => {
 });
 
 document.getElementById('profileShade')?.addEventListener('click', () => setProfilePicker(false));
+
+document.getElementById('profileDrawerShade')?.addEventListener('click', () => setProfilePicker(false));
 
 document.getElementById('profilePickerButton')?.addEventListener('click', event => {
   event.stopPropagation();
