@@ -1455,6 +1455,10 @@ body.smartMode {
   min-width: 0;
 }
 
+.foldNote[hidden] {
+  display: none;
+}
+
 .foldNote {
   display: block;
   margin-top: 2px;
