@@ -12844,6 +12844,26 @@ let restartPeeking = null;
 
   schedule(5000 + Math.random() * 3000);
 
+  /*
+    Halloween: the devil's first visit is about 30 seconds
+    after the page opens. The lightning warning plays five
+    seconds before, so it starts at 25. If he cannot show
+    then (typing, another routine playing, another screen
+    open), he tries again a few seconds later.
+  */
+  const devil = PEEK_COSTUMES.findIndex(costume => costume?.routine);
+
+  const firstDevil = () => {
+    if (!halloweenOn() || devil < 0) return;
+    if (peekBot.busy || shouldSkip()) {
+      setTimeout(firstDevil, 3000);
+      return;
+    }
+    peekBot.play(devil).catch(() => {});
+  };
+
+  setTimeout(firstDevil, 25000);
+
 })();
 
 
