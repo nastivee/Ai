@@ -6461,3 +6461,50 @@ body.theme-halloween .logoLarge::after {
     display: none;
   }
 }
+
+
+/* =====================================================
+   SIGN IN CARD: the switch is a pill, the small print
+   sits at the very bottom under a hairline
+===================================================== */
+
+.authSwitch {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: fit-content;
+  max-width: 100%;
+  margin: 18px auto 0;
+  padding: 8px 18px;
+  border: 1px solid #3b3150;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .02);
+  cursor: pointer;
+  transition: border-color .25s var(--ease), background .25s var(--ease);
+}
+
+.authSwitch:hover {
+  border-color: #8b5cf6;
+  background: rgba(139, 92, 246, .08);
+}
+
+.authSwitch button {
+  padding: 0 2px;
+  cursor: pointer;
+}
+
+.authScreen.signup .authSwitch {
+  border-color: #26344f;
+}
+
+.authScreen.signup .authSwitch:hover {
+  border-color: #3d69b5;
+  background: rgba(61, 105, 181, .1);
+}
+
+.authCard .authLegal {
+  margin-top: 22px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, .06);
+}

@@ -939,6 +939,11 @@ function updateAuthMode() {
 
 }
 
+/* the whole pill works, not just the words in it */
+document.querySelector('.authSwitch')?.addEventListener('click', event => {
+  if (!event.target.closest('#authSwitchButton')) authSwitchButton.click();
+});
+
 authSwitchButton.addEventListener(
   'click',
   () => {
