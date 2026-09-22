@@ -12352,7 +12352,7 @@ async function peekDevil(bot) {
   bot.devilPick = null;
   /* each measured at normal speed, stretched to last two seconds longer */
   const lengths = [9651, 6345, 4796, 6561, 4863, 4712, 5614, 4227, 6545, 6062];
-  bot.tempo = (lengths[pick] + 2000) / lengths[pick];
+  bot.tempo = (lengths[pick] + 2150) / lengths[pick];
   bot.stage.style.width = '200px';
   bot.stage.style.height = '120px';
   await devilRoutines[pick](bot);
@@ -12377,7 +12377,7 @@ const PEEK_COSTUMES = [
 
   /* 2. vampire: slicked hair with a widow's peak, fangs and a cape collar round his chin */
   { hideAntenna: true, svg: `
-    <path d="M8.5 27 Q8 12 32 11.5 Q56 12 55.5 27 Q52 20 46 18.5 L32 27 L18 18.5 Q12 20 8.5 27 Z" fill="#120c1c"/>
+    <path d="M8.5 27 Q8 12 32 11.5 Q56 12 55.5 27 Q52 20 46 18.5 L32 27 L18 18.5 Q12 20 8.5 27 Z" fill="#1a1024" stroke="#8a5cf0" stroke-opacity=".75" stroke-width="1"/>
     <path d="M20 14.5 Q30 12.5 44 14.5" stroke="#4a3a66" stroke-width="1" fill="none" stroke-linecap="round"/>
     <path d="M1 60 Q-2 50 4 44 Q10 52 18 56 L46 56 Q54 52 60 44 Q66 50 63 60 Z" fill="#b3122e"/>
     <path d="M6 58 Q5 52 7 48 Q12 54 18 57 L46 57 Q52 54 57 48 Q59 52 58 58 Z" fill="#5a0a1a"/>
