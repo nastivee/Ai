@@ -7895,7 +7895,8 @@ body.smartMode .stepTime { color: #8fb0ec; }
 
 .compareSide.winner {
   background:
-    linear-gradient(rgba(167, 139, 250, .1), rgba(167, 139, 250, .04)) padding-box,
+    linear-gradient(rgba(167, 139, 250, .12), rgba(167, 139, 250, .05)) padding-box,
+    linear-gradient(var(--mute-fill), var(--mute-fill)) padding-box,
     var(--edge) border-box;
 }
 

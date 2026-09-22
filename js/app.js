@@ -2689,7 +2689,8 @@ function startIdeas() {
   const ideas = [];
 
   const place =
-    /(?:live|based|from|in)\s+([a-z][a-z' -]{2,22})(?:\.|,|$)/i.exec(String(memory || ''));
+    /(?:lives?|living|based|from)\s+(?:in|at|near)\s+([A-Z][A-Za-z'-]{2,20}(?:\s[A-Z][A-Za-z'-]{2,20})?)/.exec(String(memory || '')) ||
+    /(?:lives?|based)\s+([A-Z][A-Za-z'-]{2,20})/.exec(String(memory || ''));
 
   if (place) ideas.push(`Weather in ${place[1].trim()}`);
 
