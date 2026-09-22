@@ -6089,7 +6089,8 @@ body.smartMode .sidebar::after {
     bottom: 0;
     left: 0;
     transform: translateX(calc(-100% + 14px));
-    transition: transform .28s var(--ease) .25s, box-shadow .28s var(--ease) .25s;
+    /* tucks away with a little bounce as it settles against the edge */
+    transition: transform .55s cubic-bezier(.3, 1.55, .5, 1) .25s, box-shadow .28s var(--ease) .25s;
     cursor: pointer;
   }
 
@@ -6106,7 +6107,7 @@ body.smartMode .sidebar::after {
   body .sidebar.peekOpen,
   body .sidebar:has(input:focus) {
     transform: none;
-    transition-delay: 0s;
+    transition: transform .3s var(--ease), box-shadow .3s var(--ease);
     box-shadow: 20px 0 50px rgba(0, 0, 0, .35);
     cursor: auto;
   }
