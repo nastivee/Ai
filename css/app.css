@@ -6174,3 +6174,47 @@ body.smartMode .sidebar::after {
     display: inline-flex;
   }
 }
+
+/* =====================================================
+   FAST / SMART SHEEN
+   A band of light sweeps the screen, left to right, when
+   the mode changes. Purple for Fast, blue for Smart.
+===================================================== */
+
+.modeShine {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.modeShine::before {
+  content: '';
+  position: absolute;
+  top: -20%;
+  bottom: -20%;
+  left: 0;
+  width: 45%;
+  background: linear-gradient(100deg,
+    transparent 0%,
+    rgba(167, 139, 250, .10) 30%,
+    rgba(255, 255, 255, .22) 50%,
+    rgba(167, 139, 250, .10) 70%,
+    transparent 100%);
+  transform: translateX(-120%) skewX(-12deg);
+  animation: modeShine .9s cubic-bezier(.4, 0, .2, 1) forwards;
+}
+
+.modeShine.smart::before {
+  background: linear-gradient(100deg,
+    transparent 0%,
+    rgba(96, 165, 250, .12) 30%,
+    rgba(255, 255, 255, .24) 50%,
+    rgba(96, 165, 250, .12) 70%,
+    transparent 100%);
+}
+
+@keyframes modeShine {
+  to { transform: translateX(340%) skewX(-12deg); }
+}

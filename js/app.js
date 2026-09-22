@@ -2178,7 +2178,32 @@ chatSearch.addEventListener(
 const modeSwitchMenu =
   document.getElementById('modeSwitchMenu');
 
+let paintedMode = null;
+
+/* a sheen sweeps across the screen, left to right, when the mode changes */
+function shineAcross(mode) {
+
+  if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
+
+  document.querySelectorAll('.modeShine').forEach(old => old.remove());
+
+  const shine = document.createElement('div');
+  shine.className = `modeShine ${mode}`;
+  shine.setAttribute('aria-hidden', 'true');
+  document.body.appendChild(shine);
+
+  shine.addEventListener('animationend', () => shine.remove());
+  setTimeout(() => shine.remove(), 1500);
+
+}
+
 function paintMode() {
+
+  if (paintedMode && paintedMode !== chatMode) {
+    shineAcross(chatMode);
+  }
+
+  paintedMode = chatMode;
 
   document.body.classList.toggle(
     'smartMode',
