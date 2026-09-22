@@ -11640,15 +11640,15 @@ const PEEK_SVG = `
     </linearGradient>
   </defs>
   <g class="antenna">
-    <path d="M38 16 L40.5 6" stroke="#5ab8ff" stroke-width="3" stroke-linecap="round"/>
-    <circle cx="41" cy="5" r="4.2" fill="#8fdcff"/>
+    <path class="stem" d="M38 16 L40.5 6" stroke="#5ab8ff" stroke-width="3" stroke-linecap="round"/>
+    <circle class="ball" cx="41" cy="5" r="4.2" fill="#8fdcff"/>
     <circle cx="39.8" cy="3.8" r="1.3" fill="#e6f8ff"/>
   </g>
-  <rect x="2.5" y="26" width="8" height="18" rx="4" fill="url(#peekEar)"/>
-  <rect x="53.5" y="26" width="8" height="18" rx="4" fill="url(#peekEar)"/>
-  <rect x="7" y="14" width="50" height="42" rx="16" fill="url(#peekHead)"/>
-  <rect x="8.5" y="15.5" width="47" height="39" rx="14.5" fill="none" stroke="#bfe9ff" stroke-opacity=".45" stroke-width="1.2"/>
-  <rect x="12" y="19.5" width="40" height="31" rx="12" fill="#05060d"/>
+  <rect class="ear" x="2.5" y="26" width="8" height="18" rx="4" fill="url(#peekEar)"/>
+  <rect class="ear" x="53.5" y="26" width="8" height="18" rx="4" fill="url(#peekEar)"/>
+  <rect class="head" x="7" y="14" width="50" height="42" rx="16" fill="url(#peekHead)"/>
+  <rect class="rim" x="8.5" y="15.5" width="47" height="39" rx="14.5" fill="none" stroke="#bfe9ff" stroke-opacity=".45" stroke-width="1.2"/>
+  <rect class="visor" x="12" y="19.5" width="40" height="31" rx="12" fill="#05060d"/>
   <g class="eyes">
     <path class="eyeHappy left" d="M19.5 38 q5 -7 10 0" fill="none" stroke="#3fb8ff" stroke-opacity=".35" stroke-width="5.5" stroke-linecap="round"/>
     <path class="eyeHappy left" d="M19.5 38 q5 -7 10 0" fill="none" stroke="#9fe6ff" stroke-width="3" stroke-linecap="round"/>
@@ -11929,108 +11929,434 @@ const PEEK_SKELETON_HAND_SVG = `
   <path d="M5.8 5.2 h0.01 M8.4 4.2 h0.01 M11 4.6 h0.01" stroke="#8d8573" stroke-width="1.4" stroke-linecap="round"/>
 </svg>`;
 
-/* a little masked candy thief, for the devil to chase */
-const PEEK_BADDIE_SVG = `
+/* =====================================================
+   THE DEVIL'S TEN
+
+   The horned costume gets its own ten routines, each with a
+   different bad guy. They play in a shuffled order, all ten
+   before any repeat, and in Halloween the devil turns up
+   half as often again as any other routine.
+===================================================== */
+
+const PEEK_ACTORS = {
+
+  thief: `
 <svg viewBox="0 0 40 40" aria-hidden="true">
   <path d="M8 40 L8 22 Q8 7 20 7 Q32 7 32 22 L32 40 Z" fill="#2a1640" stroke="#7a4bd6" stroke-opacity=".7" stroke-width="1"/>
   <path d="M13 9 L11 1 L17 7 Z M27 9 L29 1 L23 7 Z" fill="#2a1640"/>
   <rect x="7" y="16" width="26" height="8" rx="4" fill="#05060d"/>
   <path d="M7 20 L2 17 M7 20 L2 23" stroke="#05060d" stroke-width="2" stroke-linecap="round"/>
-  <circle cx="15" cy="20" r="2.2" fill="#fff"/>
-  <circle cx="25" cy="20" r="2.2" fill="#fff"/>
-  <circle cx="15.6" cy="20.2" r="1" fill="#05060d"/>
-  <circle cx="25.6" cy="20.2" r="1" fill="#05060d"/>
+  <circle cx="15" cy="20" r="2.2" fill="#fff"/><circle cx="25" cy="20" r="2.2" fill="#fff"/>
+  <circle cx="15.6" cy="20.2" r="1" fill="#05060d"/><circle cx="25.6" cy="20.2" r="1" fill="#05060d"/>
   <path d="M16 29 q4 2.5 8 0" stroke="#e9e4f5" stroke-width="1.4" fill="none" stroke-linecap="round"/>
   <path d="M33 25 q5 -2 6 3" stroke="#6d5a3f" stroke-width="1.4" fill="none"/>
   <ellipse cx="36" cy="33" rx="4.2" ry="3.6" fill="#ff8a1f"/>
   <path d="M34.3 32.5 l.9 -1.1 l.9 1.1 Z M36.8 32.5 l.9 -1.1 l.9 1.1 Z" fill="#2a1640"/>
-</svg>`;
+</svg>`,
 
-/*
-  The devil's routine: a masked thief pops up with the candy,
-  sees him, and bolts. He gives chase right along the top of
-  the box, the thief gets away off the end, and he pops back
-  up to wave anyway. About seven seconds.
-*/
-async function peekChase(bot) {
+  bat: `
+<svg viewBox="0 0 40 20" aria-hidden="true">
+  <path d="M20 8 Q14 1 6 3 Q8 6 2 8 Q7 9 6 13 Q12 10 16 14 Q18 10 20 12 Q22 10 24 14 Q28 10 34 13 Q33 9 38 8 Q32 6 34 3 Q26 1 20 8 Z" fill="#140b20" stroke="#7a4bd6" stroke-opacity=".8" stroke-width=".7"/>
+  <circle cx="18.5" cy="8.5" r=".9" fill="#ff4d4d"/><circle cx="21.5" cy="8.5" r=".9" fill="#ff4d4d"/>
+</svg>`,
 
-  const { stage, card, baddie } = bot;
+  ghost: `
+<svg viewBox="0 0 24 30" aria-hidden="true">
+  <path d="M1 29 L1 12 Q1 1 12 1 Q23 1 23 12 L23 29 l-3.7 -4 l-3.7 4 l-3.6 -4 l-3.6 4 l-3.7 -4 Z" fill="#f4f1ff"/>
+  <ellipse cx="8" cy="12" rx="1.9" ry="2.6" fill="#1a1226"/><ellipse cx="16" cy="12" rx="1.9" ry="2.6" fill="#1a1226"/>
+  <ellipse cx="12" cy="19" rx="2.4" ry="3" fill="#1a1226"/>
+</svg>`,
 
-  const run = (from, to, ms) => {
-    const hops = Math.max(2, Math.round(ms / 240));
-    const frames = [];
-    for (let i = 0; i <= hops; i += 1) {
-      frames.push(peekPose(i % 2 ? from - 12 : from, `rotate(${i % 2 ? 9 : 6}deg)`));
-    }
-    frames.push(peekPose(to, 'rotate(0deg)'));
-    return bot.move(frames, ms, 'linear');
-  };
+  zombie: `
+<svg viewBox="0 0 18 30" aria-hidden="true">
+  <rect x="5.5" y="12" width="7" height="18" rx="2" fill="#5f8f3e"/>
+  <path d="M5.5 22 h7 M5.5 26 h7" stroke="#3e6327" stroke-width="1"/>
+  <rect x="3.5" y="7" width="11" height="7" rx="2.5" fill="#79ad4f"/>
+  <path d="M5 8 V2 M8 7.5 V.8 M11 7.5 V1.6 M13.5 8.6 V4 M4 11 L1 8" stroke="#79ad4f" stroke-width="2.2" stroke-linecap="round"/>
+  <path d="M8 3 h.01 M11 3.6 h.01" stroke="#3e6327" stroke-width="1.2" stroke-linecap="round"/>
+</svg>`,
 
-  const thief = (frames, ms, easing = 'ease-out') =>
-    baddie.animate(frames, { duration: ms, easing, fill: 'forwards' }).finished.catch(() => {});
+  witch: `
+<svg viewBox="0 0 50 30" aria-hidden="true">
+  <path d="M2 22 L40 20" stroke="#8a5a2b" stroke-width="2" stroke-linecap="round"/>
+  <path d="M40 18 L49 15 L49 26 L40 23 Z" fill="#d9a441"/>
+  <path d="M16 21 L22 8 L30 21 Z" fill="#1b1328"/>
+  <circle cx="20" cy="10" r="4" fill="#79ad4f"/>
+  <path d="M15 7 L27 6 L22 5 L25 -3 L18 4 Z" fill="#1b1328"/>
+  <circle cx="18.6" cy="9.6" r=".8" fill="#ffe066"/>
+  <path d="M16 11 l-3 1.5" stroke="#79ad4f" stroke-width="1.6" stroke-linecap="round"/>
+</svg>`,
 
-  bot.place('left');
-  stage.style.width = '180px';
+  spider: `
+<svg viewBox="0 0 20 60" aria-hidden="true">
+  <path d="M10 0 V44" stroke="#d9d4e6" stroke-opacity=".7" stroke-width=".7"/>
+  <path d="M7 46 l-5 -4 M7 49 l-6 0 M7 52 l-5 4 M13 46 l5 -4 M13 49 l6 0 M13 52 l5 4" stroke="#120c1c" stroke-width="1.3" stroke-linecap="round"/>
+  <ellipse cx="10" cy="50" rx="4.6" ry="5.4" fill="#120c1c" stroke="#7a4bd6" stroke-width=".7"/>
+  <circle cx="8.4" cy="48.5" r="1" fill="#ff4d4d"/><circle cx="11.6" cy="48.5" r="1" fill="#ff4d4d"/>
+</svg>`,
 
-  const room = Math.max(40, (card.clientWidth || 300) - 180 - (parseFloat(stage.style.left) || 0));
+  skull: `
+<svg viewBox="0 0 30 34" aria-hidden="true">
+  <path d="M3 17 Q3 2 15 2 Q27 2 27 17 Q27 22 23 24 L23 29 L7 29 L7 24 Q3 22 3 17 Z" fill="#ece6d6"/>
+  <ellipse cx="10" cy="16" rx="4" ry="4.4" fill="#05060d"/><ellipse cx="20" cy="16" rx="4" ry="4.4" fill="#05060d"/>
+  <circle cx="10" cy="16" r="1.3" fill="#ff8a1f"/><circle cx="20" cy="16" r="1.3" fill="#ff8a1f"/>
+  <path d="M15 20 l-1.6 3 h3.2 Z" fill="#05060d"/>
+  <path d="M9 29 v4 h12 v-4 M12 29 v4 M15 29 v4 M18 29 v4" stroke="#05060d" stroke-width=".8" fill="#ece6d6"/>
+</svg>`,
 
-  /* he rises, and something catches his eye */
-  await bot.move([peekPose(PEEK_HIDDEN), peekPose(PEEK_EYES)], 420, 'cubic-bezier(.2,.8,.3,1)');
-  await bot.look(3.5);
-  await bot.wait(250);
+  pumpkin: `
+<svg viewBox="0 0 30 26" aria-hidden="true">
+  <path d="M15 5 q1 -4 5 -5" stroke="#5a8a2e" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+  <ellipse cx="15" cy="15" rx="14" ry="10.5" fill="#e8680f"/>
+  <ellipse cx="15" cy="15" rx="7.5" ry="10.5" fill="#ff8a1f"/>
+  <path d="M6 10 L12 13 L6 14 Z M24 10 L18 13 L24 14 Z" fill="#2a0e00"/>
+  <path d="M7 18 L10 20 L12 18 L15 21 L18 18 L20 20 L23 18 L21 23 L9 23 Z" fill="#2a0e00"/>
+</svg>`,
 
-  /* the thief pops up with the candy, and freezes */
-  await thief([{ transform: 'translateY(110%)' }, { transform: 'translateY(6%)' }], 320, 'cubic-bezier(.3,1.4,.5,1)');
-  bot.eyes('open');
-  await thief([
-    { transform: 'translateY(6%) rotate(0deg)' },
-    { transform: 'translateY(6%) rotate(-10deg)' },
-    { transform: 'translateY(6%) rotate(10deg)' },
-    { transform: 'translateY(6%) rotate(0deg)' }
-  ], 380, 'ease-in-out');
-  await bot.wait(200);
+  slime: `
+<svg viewBox="0 0 30 24" aria-hidden="true">
+  <path d="M2 24 Q0 8 15 4 Q30 8 28 24 Z" fill="#6fdc4a" stroke="#3f9a2a" stroke-width="1"/>
+  <ellipse cx="11" cy="4.5" rx="2" ry="1" fill="#6fdc4a"/>
+  <circle cx="11" cy="14" r="2.6" fill="#fff"/><circle cx="19" cy="14" r="2.6" fill="#fff"/>
+  <circle cx="11.6" cy="14.4" r="1.2" fill="#05060d"/><circle cx="18.4" cy="14.4" r="1.2" fill="#05060d"/>
+  <path d="M8 10 l5 2 M22 10 l-5 2" stroke="#1f4d14" stroke-width="1.2" stroke-linecap="round"/>
+  <ellipse cx="9" cy="8" rx="2.5" ry="1.2" fill="#b9f5a3" opacity=".7"/>
+</svg>`,
 
-  /* the chase, all the way along */
-  const hops = 11;
-  const thiefHops = [];
-  for (let i = 0; i <= hops; i += 1) {
-    thiefHops.push({ transform: `translateX(${Math.round(i * 2.2)}px) translateY(${i % 2 ? -8 : 6}%)` });
+  puff: `
+<svg viewBox="0 0 40 30" aria-hidden="true">
+  <circle cx="12" cy="18" r="9" fill="#8f86a3"/><circle cx="24" cy="14" r="11" fill="#a59dba"/>
+  <circle cx="31" cy="21" r="7" fill="#8f86a3"/><circle cx="18" cy="23" r="7" fill="#b7b0c9"/>
+  <path d="M6 6 l3 3 M34 4 l-2 4 M20 1 v4" stroke="#ffd166" stroke-width="1.4" stroke-linecap="round"/>
+</svg>`,
+
+  bucket: `
+<svg viewBox="0 0 20 20" aria-hidden="true">
+  <path d="M4 7 Q10 -2 16 7" stroke="#3a2f22" stroke-width="1.4" fill="none"/>
+  <ellipse cx="10" cy="13" rx="8" ry="6.5" fill="#ff8a1f"/>
+  <path d="M6 11 l1.5 -2 l1.5 2 Z M11 11 l1.5 -2 l1.5 2 Z M6.5 15 q3.5 2.5 7 0" fill="#2a0e00" stroke="#2a0e00" stroke-width=".6"/>
+</svg>`
+
+};
+
+/* a bad guy, placed in the stage, px from its left edge */
+function peekActor(bot, name, { left = 110, width = 34, height = 34, bottom = 0, start = 'translateY(110%)' } = {}) {
+  const el = document.createElement('div');
+  el.className = 'peekBaddie';
+  el.style.cssText = `left:${left}px;width:${width}px;height:${height}px;bottom:${bottom}px;transform:${start}`;
+  el.innerHTML = PEEK_ACTORS[name];
+  bot.stage.appendChild(el);
+  el.go = (frames, ms, easing = 'ease-out') =>
+    el.animate(frames, { duration: ms, easing, fill: 'forwards' }).finished.catch(() => {});
+  return el;
+}
+
+/* the robot's spot inside the stage, sideways, for the routines that move him */
+const at = (y, x = 0, extra = '') => peekPose(y, `translateX(${x}px) ${extra}`.trim());
+
+const devilRoutines = [
+
+  /* 1. the candy thief: a chase right along the top of the box */
+  async bot => {
+    const { stage, card } = bot;
+    const thief = peekActor(bot, 'thief', { left: 104 });
+    const room = Math.max(40, (card.clientWidth || 300) - 200 - (parseFloat(stage.style.left) || 0));
+    await bot.move([at(PEEK_HIDDEN), at(PEEK_EYES)], 420, 'cubic-bezier(.2,.8,.3,1)');
+    await bot.look(3.5);
+    await thief.go([{ transform: 'translateY(110%)' }, { transform: 'translateY(6%)' }], 320, 'cubic-bezier(.3,1.4,.5,1)');
+    bot.eyes('open');
+    await thief.go([{ transform: 'translateY(6%) rotate(-10deg)' }, { transform: 'translateY(6%) rotate(10deg)' }, { transform: 'translateY(6%) rotate(0deg)' }], 380, 'ease-in-out');
+    await bot.flare();
+    const hops = [];
+    for (let i = 0; i <= 11; i += 1) hops.push({ transform: `translateX(${Math.round(i * 2.2)}px) translateY(${i % 2 ? -8 : 6}%)` });
+    const run = [];
+    for (let i = 0; i <= 11; i += 1) run.push(at(i % 2 ? PEEK_EYES - 12 : PEEK_EYES, 0, `rotate(${i % 2 ? 9 : 6}deg)`));
+    run.push(at(PEEK_EYES));
+    await Promise.all([
+      stage.animate([{ transform: 'translateX(0px)' }, { transform: `translateX(${room}px)` }], { duration: 2800, easing: 'ease-in-out', fill: 'forwards' }).finished.catch(() => {}),
+      bot.move(run, 2800, 'linear'),
+      thief.go(hops, 2800, 'linear')
+    ]);
+    await thief.go([{ transform: 'translateX(24px) translateY(6%)' }, { transform: 'translateX(120px) translateY(0%)' }], 360, 'ease-in');
+    bot.eyes('happy');
+    await bot.look(3.5); await bot.wait(450); await bot.look(-3.5); await bot.wait(450); await bot.look(0);
+    await bot.move([at(PEEK_EYES), at(PEEK_HIDDEN)], 300, 'ease-in');
+    await bot.wait(400);
+    await bot.move([at(PEEK_HIDDEN), at(PEEK_HIGH)], 420, 'cubic-bezier(.3,1.4,.5,1)');
+    bot.eyes('wink');
+    await bot.wave(2);
+    bot.eyes('happy');
+    await bot.move([at(PEEK_HIGH), at(PEEK_HIDDEN)], 400, 'ease-in');
+  },
+
+  /* 2. a vampire bat dive bombs him; he ducks, then scorches it */
+  async bot => {
+    const bat = peekActor(bot, 'bat', { left: 120, width: 34, height: 17, bottom: 70, start: 'translate(110px, -30px)' });
+    const flap = bat.animate([{ transform: 'scaleY(1)' }, { transform: 'scaleY(.5)' }], { duration: 160, iterations: Infinity, direction: 'alternate' });
+    bat.firstElementChild.animate([{ transform: 'scaleY(1)' }, { transform: 'scaleY(.5)' }], { duration: 160, iterations: Infinity, direction: 'alternate' });
+    flap.cancel();
+    await bot.move([at(PEEK_HIDDEN), at(PEEK_EYES)], 420, 'cubic-bezier(.2,.8,.3,1)');
+    await bot.look(3.5);
+    await bat.go([{ transform: 'translate(110px, -30px)' }, { transform: 'translate(0px, 0px)' }, { transform: 'translate(8px, -6px)' }], 900, 'ease-out');
+    bot.eyes('open');
+    await bot.wait(300);
+    await Promise.all([
+      bat.go([{ transform: 'translate(8px, -6px)' }, { transform: 'translate(-90px, 42px)' }, { transform: 'translate(-170px, 10px)' }], 700, 'ease-in'),
+      (async () => { await bot.wait(120); await bot.move([at(PEEK_EYES), at(PEEK_HIDDEN)], 160, 'ease-in'); })()
+    ]);
+    await bot.wait(350);
+    await bat.go([{ transform: 'translate(-170px, 10px)' }, { transform: 'translate(-95px, 8px)' }], 600, 'ease-out');
+    await bot.move([at(PEEK_HIDDEN), at(PEEK_HIGH)], 260, 'cubic-bezier(.3,1.4,.5,1)');
+    await bot.flare();
+    await bat.go([{ transform: 'translate(-95px, 8px) rotate(0deg)' }, { transform: 'translate(-20px, -110px) rotate(900deg)' }], 800, 'ease-in');
+    bot.eyes('happy');
+    await bot.blink();
+    await bot.wait(300);
+    await bot.move([at(PEEK_HIGH), at(PEEK_HIDDEN)], 400, 'ease-in');
+  },
+
+  /* 3. a ghost creeps up behind him; one roar and it is gone */
+  async bot => {
+    const ghost = peekActor(bot, 'ghost', { left: 62, width: 26, height: 32 });
+    await bot.move([at(PEEK_HIDDEN), at(PEEK_EYES)], 480, 'cubic-bezier(.2,.8,.3,1)');
+    await bot.look(-3.5);
+    await Promise.all([
+      ghost.go([{ transform: 'translateY(110%)', opacity: 0 }, { transform: 'translateY(8%)', opacity: .95 }], 1100, 'ease-out'),
+      (async () => { await bot.wait(500); await bot.blink(); })()
+    ]);
+    await ghost.go([{ transform: 'translateY(8%) translateX(0px)', opacity: .95 }, { transform: 'translateY(8%) translateX(-9px)', opacity: .95 }], 500, 'ease-in-out');
+    await bot.look(3.5);
+    bot.eyes('open');
+    await bot.move([at(PEEK_EYES), at(PEEK_HIGH - 6)], 150, 'ease-out');
+    await Promise.all([
+      bot.flare(1.9),
+      ghost.go([{ transform: 'translateY(8%) translateX(-9px)', opacity: .95 }, { transform: 'translateY(-160%) translateX(20px)', opacity: 0 }], 600, 'ease-in')
+    ]);
+    await bot.move([at(PEEK_HIGH - 6), at(PEEK_EYES)], 300, 'ease-out');
+    bot.eyes('happy');
+    await bot.look(0);
+    await bot.blink();
+    await bot.wait(300);
+    await bot.move([at(PEEK_EYES), at(PEEK_HIDDEN)], 380, 'ease-in');
+  },
+
+  /* 4. whack a zombie: hands pop up, he flattens them */
+  async bot => {
+    const hand = peekActor(bot, 'zombie', { left: 96, width: 20, height: 32 });
+    const up = [{ transform: 'translateY(110%)' }, { transform: 'translateY(4%)' }];
+    const down = [{ transform: 'translateY(4%)' }, { transform: 'translateY(110%)' }];
+    await bot.move([at(PEEK_HIDDEN), at(PEEK_EYES)], 420, 'cubic-bezier(.2,.8,.3,1)');
+    await hand.go(up, 260, 'cubic-bezier(.3,1.4,.5,1)');
+    await bot.look(3.5);
+    bot.eyes('open');
+    await bot.move([at(PEEK_EYES, 0), at(PEEK_HIGH - 10, 45), at(PEEK_HIGH, 80)], 380, 'ease-out');
+    await Promise.all([bot.move([at(PEEK_HIGH, 80), at(PEEK_HIDDEN, 80)], 150, 'ease-in'), hand.go(down, 150, 'ease-in')]);
+    hand.style.left = '10px';
+    await bot.wait(250);
+    await Promise.all([hand.go(up, 260, 'cubic-bezier(.3,1.4,.5,1)'), bot.move([at(PEEK_HIDDEN, 80), at(PEEK_EYES, 80)], 300, 'ease-out')]);
+    await bot.look(-3.5);
+    await bot.move([at(PEEK_EYES, 80), at(PEEK_HIGH - 10, 45), at(PEEK_HIGH, 0)], 380, 'ease-out');
+    await Promise.all([bot.move([at(PEEK_HIGH, 0), at(PEEK_HIDDEN, 0)], 150, 'ease-in'), hand.go(down, 150, 'ease-in')]);
+    hand.style.left = '140px';
+    await bot.wait(250);
+    await Promise.all([hand.go(up, 260, 'cubic-bezier(.3,1.4,.5,1)'), bot.move([at(PEEK_HIDDEN, 0), at(PEEK_EYES, 0)], 300, 'ease-out')]);
+    await bot.look(3.5);
+    await bot.flare(1.8);
+    await hand.go([{ transform: 'translateY(4%) rotate(0deg)' }, { transform: 'translateY(4%) rotate(-20deg)' }, { transform: 'translateY(110%) rotate(0deg)' }], 420, 'ease-in');
+    bot.eyes('wink');
+    await bot.look(0);
+    await bot.move([at(PEEK_EYES), at(PEEK_HIGH)], 260, 'ease-out');
+    await bot.wave(1);
+    bot.eyes('happy');
+    await bot.move([at(PEEK_HIGH), at(PEEK_HIDDEN)], 380, 'ease-in');
+  },
+
+  /* 5. a witch flies over; he jumps for her broom and misses */
+  async bot => {
+    const witch = peekActor(bot, 'witch', { left: 150, width: 52, height: 31, bottom: 62, start: 'translateX(90px)' });
+    await bot.move([at(PEEK_HIDDEN), at(PEEK_EYES)], 420, 'cubic-bezier(.2,.8,.3,1)');
+    await bot.look(3.5);
+    const fly = witch.go([
+      { transform: 'translate(90px, 0px)' },
+      { transform: 'translate(20px, 8px)' },
+      { transform: 'translate(-60px, -4px)' },
+      { transform: 'translate(-140px, 6px)' },
+      { transform: 'translate(-230px, -10px)' }
+    ], 2200, 'linear');
+    await bot.wait(500);
+    bot.eyes('open');
+    await bot.look(0);
+    await bot.wait(500);
+    await bot.move([at(PEEK_EYES), at(-18, 0, 'rotate(-8deg)'), at(PEEK_EYES)], 520, 'ease-in-out');
+    await bot.look(-3.5);
+    await fly;
+    bot.eyes('happy');
+    await bot.move([at(PEEK_EYES, 0, 'rotate(0deg)'), at(PEEK_EYES, 0, 'rotate(10deg)'), at(PEEK_EYES, 0, 'rotate(-10deg)'), at(PEEK_EYES, 0, 'rotate(0deg)')], 700, 'ease-in-out');
+    await bot.flare(1.5);
+    await bot.look(0);
+    await bot.move([at(PEEK_EYES), at(PEEK_HIDDEN)], 380, 'ease-in');
+  },
+
+  /* 6. a spider drops right in front of his face; he blows it away */
+  async bot => {
+    const spider = peekActor(bot, 'spider', { left: 18, width: 20, height: 60, bottom: 34, start: 'translateY(-140%)' });
+    await bot.move([at(PEEK_HIDDEN), at(PEEK_EYES)], 480, 'cubic-bezier(.2,.8,.3,1)');
+    await bot.wait(300);
+    await spider.go([{ transform: 'translateY(-140%)' }, { transform: 'translateY(-4%)' }, { transform: 'translateY(-10%)' }], 1000, 'ease-out');
+    bot.eyes('open');
+    await bot.look(-2);
+    await bot.wait(300);
+    await bot.look(2);
+    await bot.wait(300);
+    await bot.look(0);
+    await Promise.all([bot.flare(2), (async () => { await bot.wait(200); await spider.go([{ transform: 'translateY(-10%)' }, { transform: 'translateY(-150%)' }], 260, 'ease-in'); })()]);
+    bot.eyes('happy');
+    await bot.blink();
+    await bot.move([at(PEEK_EYES, 0, 'rotate(0deg)'), at(PEEK_EYES, 0, 'rotate(8deg)'), at(PEEK_EYES, 0, 'rotate(0deg)')], 400, 'ease-in-out');
+    await bot.move([at(PEEK_EYES), at(PEEK_HIDDEN)], 380, 'ease-in');
+  },
+
+  /* 7. a staring contest with a skull, which falls to bits */
+  async bot => {
+    const skull = peekActor(bot, 'skull', { left: 88, width: 30, height: 34 });
+    await Promise.all([
+      bot.move([at(PEEK_HIDDEN), at(PEEK_EYES)], 520, 'cubic-bezier(.2,.8,.3,1)'),
+      skull.go([{ transform: 'translateY(110%)' }, { transform: 'translateY(10%)' }], 520, 'cubic-bezier(.2,.8,.3,1)')
+    ]);
+    await bot.look(3.5);
+    bot.eyes('open');
+    await Promise.all([
+      bot.move([at(PEEK_EYES, 0), at(PEEK_EYES, 10, 'rotate(6deg)')], 600, 'ease-in-out'),
+      skull.go([{ transform: 'translateY(10%) translateX(0px)' }, { transform: 'translateY(10%) translateX(-10px) rotate(-6deg)' }], 600, 'ease-in-out')
+    ]);
+    await bot.wait(900);
+    await skull.go([
+      { transform: 'translateY(10%) translateX(-10px) rotate(-6deg)' },
+      { transform: 'translateY(10%) translateX(-8px) rotate(4deg)' },
+      { transform: 'translateY(10%) translateX(-12px) rotate(-8deg)' },
+      { transform: 'translateY(10%) translateX(-10px) rotate(-6deg)' }
+    ], 300, 'linear');
+    await bot.flare(1.8);
+    await skull.go([
+      { transform: 'translateY(10%) translateX(-10px) rotate(-6deg)' },
+      { transform: 'translateY(-30%) translateX(4px) rotate(40deg)' },
+      { transform: 'translateY(120%) translateX(20px) rotate(160deg)' }
+    ], 650, 'ease-in');
+    bot.eyes('happy');
+    await bot.move([at(PEEK_EYES, 10, 'rotate(6deg)'), at(PEEK_HIGH, 0, 'rotate(0deg)')], 300, 'ease-out');
+    await bot.wave(1);
+    await bot.move([at(PEEK_HIGH), at(PEEK_HIDDEN)], 380, 'ease-in');
+  },
+
+  /* 8. an evil pumpkin rolls in; he hops over it */
+  async bot => {
+    const pumpkin = peekActor(bot, 'pumpkin', { left: 200, width: 30, height: 26, start: 'translateX(40px)' });
+    await bot.move([at(PEEK_HIDDEN), at(PEEK_EYES)], 420, 'cubic-bezier(.2,.8,.3,1)');
+    await bot.look(3.5);
+    const roll = pumpkin.go([{ transform: 'translateX(40px) rotate(0deg)' }, { transform: 'translateX(-260px) rotate(-900deg)' }], 1800, 'linear');
+    await bot.wait(300);
+    bot.eyes('open');
+    await bot.wait(600);
+    await bot.move([at(PEEK_EYES), at(-30, 0, 'rotate(-10deg)'), at(PEEK_EYES, 0, 'rotate(0deg)')], 560, 'ease-in-out');
+    await bot.look(-3.5);
+    await roll;
+    await bot.wait(300);
+    bot.eyes('happy');
+    await bot.flare(1.6);
+    await bot.look(0);
+    await bot.blink();
+    await bot.move([at(PEEK_EYES), at(PEEK_HIDDEN)], 380, 'ease-in');
+  },
+
+  /* 9. a bouncing duel with a slime, which goes splat */
+  async bot => {
+    const slime = peekActor(bot, 'slime', { left: 96, width: 30, height: 24 });
+    const boing = (el, top, ms) => el.go([{ transform: 'translateY(110%)' }, { transform: `translateY(${top}%)` }, { transform: 'translateY(110%)' }], ms, 'ease-in-out');
+    await bot.move([at(PEEK_HIDDEN), at(PEEK_EYES)], 420, 'cubic-bezier(.2,.8,.3,1)');
+    await bot.look(3.5);
+    await bot.move([at(PEEK_EYES), at(PEEK_HIDDEN)], 200, 'ease-in');
+    await boing(slime, -40, 520);
+    await bot.move([at(PEEK_HIDDEN), at(PEEK_HIGH - 20), at(PEEK_HIDDEN)], 560, 'ease-in-out');
+    await boing(slime, -90, 620);
+    bot.eyes('open');
+    await bot.move([
+      { transform: `translateY(${PEEK_HIDDEN}%) rotate(0deg)`, transformOrigin: '50% 50%' },
+      { transform: 'translateY(-40%) rotate(180deg)', transformOrigin: '50% 50%' },
+      { transform: `translateY(${PEEK_EYES}%) rotate(360deg)`, transformOrigin: '50% 50%' }
+    ], 800, 'ease-in-out');
+    await slime.go([{ transform: 'translateY(110%)' }, { transform: 'translateY(8%)' }], 240, 'ease-out');
+    await bot.flare(1.6);
+    await slime.go([{ transform: 'translateY(8%) scale(1, 1)', transformOrigin: '50% 100%' }, { transform: 'translateY(8%) scale(1.7, .25)', transformOrigin: '50% 100%' }, { transform: 'translateY(110%) scale(1.7, .25)', transformOrigin: '50% 100%' }], 520, 'ease-in');
+    bot.eyes('happy');
+    await bot.move([at(PEEK_EYES), at(PEEK_HIGH)], 240, 'ease-out');
+    await bot.wave(1);
+    await bot.move([at(PEEK_HIGH), at(PEEK_HIDDEN)], 380, 'ease-in');
+  },
+
+  /* 10. the thief again, and this time he gets him */
+  async bot => {
+    const thief = peekActor(bot, 'thief', { left: 100 });
+    await bot.move([at(PEEK_HIDDEN), at(PEEK_EYES)], 420, 'cubic-bezier(.2,.8,.3,1)');
+    await thief.go([{ transform: 'translateY(110%)' }, { transform: 'translateY(6%)' }], 320, 'cubic-bezier(.3,1.4,.5,1)');
+    await bot.look(3.5);
+    bot.eyes('open');
+    await bot.flare(1.5);
+    await thief.go([{ transform: 'translateY(6%) translateX(0px)' }, { transform: 'translateY(6%) translateX(14px)' }], 200, 'ease-out');
+    await bot.move([at(PEEK_EYES, 0), at(-20, 50, 'rotate(20deg)'), at(PEEK_HIGH, 100, 'rotate(0deg)')], 460, 'ease-out');
+    await Promise.all([
+      bot.move([at(PEEK_HIGH, 100), at(PEEK_HIDDEN, 100)], 180, 'ease-in'),
+      thief.go([{ transform: 'translateY(6%) translateX(14px)' }, { transform: 'translateY(110%) translateX(14px)' }], 180, 'ease-in')
+    ]);
+    const puff = peekActor(bot, 'puff', { left: 92, width: 44, height: 33, start: 'scale(.2)' });
+    await puff.go([
+      { transform: 'scale(.2) rotate(0deg)', opacity: 1 },
+      { transform: 'scale(1) rotate(8deg)', opacity: 1 },
+      { transform: 'scale(1) translateX(3px) rotate(-6deg)', opacity: 1 },
+      { transform: 'scale(1) translateX(-3px) rotate(6deg)', opacity: 1 },
+      { transform: 'scale(1.3) rotate(0deg)', opacity: 0 }
+    ], 1300, 'ease-in-out');
+    const bucket = peekActor(bot, 'bucket', { left: 150, width: 20, height: 20 });
+    bot.handAt(100);
+    await Promise.all([
+      bot.move([at(PEEK_HIDDEN, 100), at(PEEK_HIGH, 100)], 420, 'cubic-bezier(.3,1.4,.5,1)'),
+      bucket.go([{ transform: 'translateY(110%)' }, { transform: 'translateY(-30%)' }], 420, 'cubic-bezier(.3,1.4,.5,1)')
+    ]);
+    bot.eyes('wink');
+    await bot.wave(2);
+    bot.eyes('happy');
+    await Promise.all([
+      bot.move([at(PEEK_HIGH, 100), at(PEEK_HIDDEN, 100)], 400, 'ease-in'),
+      bucket.go([{ transform: 'translateY(-30%)' }, { transform: 'translateY(110%)' }], 400, 'ease-in')
+    ]);
   }
 
-  await Promise.all([
-    stage.animate(
-      [{ transform: 'translateX(0px)' }, { transform: `translateX(${room}px)` }],
-      { duration: 2800, easing: 'ease-in-out', fill: 'forwards' }
-    ).finished.catch(() => {}),
-    run(PEEK_EYES, PEEK_EYES, 2800),
-    thief(thiefHops, 2800, 'linear')
-  ]);
+];
 
-  /* the thief is off the end and away */
-  await thief([
-    { transform: `translateX(${Math.round(hops * 2.2)}px) translateY(6%)` },
-    { transform: 'translateX(110px) translateY(0%)' }
-  ], 360, 'ease-in');
+/* picks the next of the ten, all ten before any repeat */
+let devilDeck = [];
 
-  /* where did he go? */
-  bot.eyes('happy');
-  await bot.look(3.5);
-  await bot.wait(450);
-  await bot.look(-3.5);
-  await bot.wait(450);
-  await bot.look(0);
-  await bot.blink();
-
-  /* ducks down, then pops up high with a wave: better luck next year */
-  await bot.move([peekPose(PEEK_EYES), peekPose(PEEK_HIDDEN)], 300, 'ease-in');
-  await bot.wait(450);
-  await bot.move([peekPose(PEEK_HIDDEN), peekPose(PEEK_HIGH)], 420, 'cubic-bezier(.3,1.4,.5,1)');
-  bot.eyes('wink');
-  await bot.wave(2);
-  bot.eyes('happy');
-  await bot.move([peekPose(PEEK_HIGH), peekPose(PEEK_HIDDEN)], 400, 'ease-in');
-
+async function peekDevil(bot) {
+  if (!devilDeck.length) {
+    devilDeck = devilRoutines.map((_, i) => i);
+    for (let i = devilDeck.length - 1; i > 0; i -= 1) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [devilDeck[i], devilDeck[j]] = [devilDeck[j], devilDeck[i]];
+    }
+  }
+  const pick = typeof bot.devilPick === 'number' ? bot.devilPick : devilDeck.shift();
+  bot.devilPick = null;
+  bot.stage.style.width = '200px';
+  bot.stage.style.height = '120px';
+  await devilRoutines[pick](bot);
 }
+
+const PEEK_MUMMY_HAND_SVG = `
+<svg viewBox="0 0 18 30" aria-hidden="true">
+  <rect x="6" y="11" width="6" height="19" rx="3" fill="#ddd3ba"/>
+  <circle cx="9" cy="8.5" r="7" fill="#e8dfc8"/>
+  <ellipse cx="3.2" cy="10.5" rx="2.4" ry="3.2" fill="#ddd3ba"/>
+  <path d="M3 5 L15 8 M2.5 10 L15.5 12 M6 15 L12 16.5 M6 20 L12 21.5 M6 25 L12 26.5" stroke="#a89c7e" stroke-width=".8"/>
+</svg>`;
 
 const PEEK_COSTUMES = [
 
@@ -12059,9 +12385,15 @@ const PEEK_COSTUMES = [
     <path d="M74 31 l2.5 -3 l2.5 3 Z M83 31 l2.5 -3 l2.5 3 Z" fill="#ffe07a"/>
     <path d="M74.5 36 q6.5 4.5 13 0 l-2 1 l-1 -1 l-2 1.4 l-2 -1.4 l-2 1.4 l-2 -1.4 l-1 1 Z" fill="#ffe07a"/>` },
 
-  /* 4. waves with a skeleton hand */
-  { hand: 'skeleton', svg: `
-    <path d="M20 47 h24" stroke="#f4f1ff" stroke-opacity=".55" stroke-width="1" stroke-linecap="round"/>` },
+  /* 4. all skeleton: a bone skull with glowing sockets, and a bony hand to wave */
+  { skin: 'skeleton', hand: 'skeleton', under: `
+    <path d="M12.5 27 Q13 20 20 21 Q24.5 21.5 29 25 Q31 30 30 37 Q29 43 24.5 43.5 Q18.5 44 15 40 Q12 35 12.5 27 Z" fill="#05060d"/>
+    <path d="M51.5 27 Q51 20 44 21 Q39.5 21.5 35 25 Q33 30 34 37 Q35 43 39.5 43.5 Q45.5 44 49 40 Q52 35 51.5 27 Z" fill="#05060d"/>
+    <path d="M32 40 l-2.6 5.5 q2.6 1.4 5.2 0 Z" fill="#05060d"/>
+    <rect x="19" y="47" width="26" height="6.5" rx="1.5" fill="#05060d"/>
+    <path d="M22.5 47.6 v5.4 M26 47.6 v5.4 M29.5 47.6 v5.4 M33 47.6 v5.4 M36.5 47.6 v5.4 M40 47.6 v5.4" stroke="#ece6d6" stroke-width="2.2"/>
+    <path d="M26 15.5 l2.5 3.5 l-2 2.5 l3 3" stroke="#8d8573" stroke-width=".9" fill="none" stroke-linecap="round"/>
+    <path d="M10.5 42 q2.5 3 6 3.5 M53.5 42 q-2.5 3 -6 3.5" stroke="#b9b09a" stroke-width=".9" fill="none"/>`, svg: `` },
 
   /* 5. a spider hangs from his antenna */
   { antenna: `
@@ -12096,23 +12428,25 @@ const PEEK_COSTUMES = [
     <rect x="74.5" y="28" width="9" height="20" rx="1.5" fill="#efe6d0"/>
     <path d="M74.5 30 q0 5 1.5 5 q1.5 0 1.5 -4 q0 7 1.8 7 q1.8 0 1.8 -6 q0 3 1.4 3 q1 0 1 -3 v-2 h-9 Z" fill="#fff8e8"/>
     <path d="M79 28 v-3" stroke="#3a2a1a" stroke-width="1"/>
-    <path class="flicker" d="M79 16 q3.5 4.5 2.4 7.5 q-1 2 -2.4 2 q-1.4 0 -2.4 -2 q-1.1 -3 2.4 -7.5 Z" fill="#ffb347"/>
-    <path class="flicker" d="M79 20 q1.6 2.5 1 4 q-.4 1 -1 1 q-.6 0 -1 -1 q-.6 -1.5 1 -4 Z" fill="#fff3a0"/>` },
+    <image href="img/flame-single.webp" x="74.5" y="11" width="9" height="16" preserveAspectRatio="none"/>` },
 
   /* 9. huge devil horns on top of his head, and he chases a
      candy thief right along the top of the box */
-  { hideAntenna: true, baddie: true, routine: peekChase, svg: `
-    <ellipse cx="32" cy="-12" rx="17" ry="16" fill="#ff7a1a" opacity=".2" class="glow"/>
-    <g class="fire">
-      <path d="M17 4 L16 -9 L20 -3 L21 -20 L25 -7 L27 -27 L30 -11 L32 -33 L35 -11 L37 -26 L39 -7 L43 -19 L44 -4 L48 -10 L47 4 Q32 8 17 4 Z" fill="#ff6a13"/>
-      <path d="M20.5 4 L20.5 -3 L24.5 -1 L26.5 -15 L29.5 -3 L32.5 -23 L35 -3 L38 -14 L40 -1 L43.5 -5 L43.5 4 Q32 7 20.5 4 Z" fill="#ffae3b"/>
-      <path d="M25 4 L26 -2 L29 -8 L31.5 1 L34.5 -11 L37 -1 L39 4 Q32 6 25 4 Z" fill="#fff0a0"/>
-    </g>
-    <path d="M15 18 C-4 9 -9 -16 7 -36 C1 -18 7 -3 28 14 Z" fill="#c21d2e" stroke="#6e0b17" stroke-width="1"/>
-    <path d="M49 18 C68 9 73 -16 57 -36 C63 -18 57 -3 36 14 Z" fill="#c21d2e" stroke="#6e0b17" stroke-width="1"/>
-    <path d="M2 -22 q4 1 6 4 M-1 -11 q5 1 8 5 M1 0 q5 2 9 6 M62 -22 q-4 1 -6 4 M65 -11 q-5 1 -8 5 M63 0 q-5 2 -9 6" stroke="#7d0f1c" stroke-width="1.1" stroke-linecap="round" fill="none"/>
-    <path d="M5 -30 C-1 -16 1 -2 12 11" stroke="#ff6b7a" stroke-opacity=".55" stroke-width="1.3" stroke-linecap="round" fill="none"/>
-    <path d="M59 -30 C65 -16 63 -2 52 11" stroke="#ff6b7a" stroke-opacity=".55" stroke-width="1.3" stroke-linecap="round" fill="none"/>` },
+  { hideAntenna: true, routine: peekDevil, svg: `
+    <defs>
+      <linearGradient id="hornL" gradientUnits="userSpaceOnUse" x1="19" y1="17" x2="-3" y2="-40">
+        <stop offset="0" stop-color="#8e1410"/><stop offset=".25" stop-color="#d42a1e"/><stop offset=".6" stop-color="#b3160f"/><stop offset=".78" stop-color="#3a0907"/><stop offset="1" stop-color="#0d0404"/>
+      </linearGradient>
+      <linearGradient id="hornR" gradientUnits="userSpaceOnUse" x1="45" y1="17" x2="67" y2="-40">
+        <stop offset="0" stop-color="#8e1410"/><stop offset=".25" stop-color="#d42a1e"/><stop offset=".6" stop-color="#b3160f"/><stop offset=".78" stop-color="#3a0907"/><stop offset="1" stop-color="#0d0404"/>
+      </linearGradient>
+    </defs>
+    <ellipse cx="32" cy="-10" rx="18" ry="15" fill="#ff7a1a" opacity=".22" class="glow"/>
+    <image class="fire" href="img/flame-crown.webp" x="10" y="-29" width="44" height="33" preserveAspectRatio="none"/>
+    <path d="M20.7 11.1 L19.0 10.8 L17.6 10.3 L16.1 9.6 L14.8 8.8 L13.4 7.8 L12.1 6.6 L10.9 5.2 L9.7 3.6 L8.5 1.8 L7.4 -0.1 L6.4 -2.3 L5.4 -4.6 L4.5 -7.1 L3.7 -9.7 L2.9 -12.4 L2.2 -15.2 L1.5 -18.1 L0.9 -21.1 L0.3 -24.1 L-0.3 -27.3 L-0.9 -30.4 L-1.4 -33.6 L-2.0 -36.8 L-2.7 -40.0 L-3.3 -40.0 L-3.5 -36.7 L-3.5 -33.4 L-3.6 -30.2 L-3.5 -26.9 L-3.5 -23.7 L-3.4 -20.6 L-3.2 -17.4 L-3.0 -14.4 L-2.7 -11.3 L-2.4 -8.4 L-1.9 -5.5 L-1.4 -2.6 L-0.8 0.1 L-0.1 2.8 L0.8 5.4 L1.8 7.9 L3.0 10.3 L4.4 12.6 L6.0 14.8 L7.8 16.9 L9.8 18.7 L12.1 20.4 L14.6 21.8 L17.3 22.9 Z" fill="url(#hornL)"/>
+    <path d="M46.7 22.9 L49.4 21.8 L51.9 20.4 L54.2 18.7 L56.2 16.9 L58.0 14.8 L59.6 12.6 L61.0 10.3 L62.2 7.9 L63.2 5.4 L64.1 2.8 L64.8 0.1 L65.4 -2.6 L65.9 -5.5 L66.4 -8.4 L66.7 -11.3 L67.0 -14.4 L67.2 -17.4 L67.4 -20.6 L67.5 -23.7 L67.5 -26.9 L67.6 -30.2 L67.5 -33.4 L67.5 -36.7 L67.3 -40.0 L66.7 -40.0 L66.0 -36.8 L65.4 -33.6 L64.9 -30.4 L64.3 -27.3 L63.7 -24.1 L63.1 -21.1 L62.5 -18.1 L61.8 -15.2 L61.1 -12.4 L60.3 -9.7 L59.5 -7.1 L58.6 -4.6 L57.6 -2.3 L56.6 -0.1 L55.5 1.8 L54.3 3.6 L53.1 5.2 L51.9 6.6 L50.6 7.8 L49.2 8.8 L47.9 9.6 L46.4 10.3 L45.0 10.8 L43.3 11.1 Z" fill="url(#hornR)"/>
+    <path d="M16.1 13.1 L14.4 12.1 L12.8 11.0 L11.4 9.8 L10.0 8.3 L8.7 6.6 L7.5 4.8 L6.4 2.8 L5.4 0.7 L4.4 -1.6 L3.5 -4.1 L2.7 -6.6 L2.0 -9.3 L1.4 -12.1" stroke="#ffd0c4" stroke-opacity=".45" stroke-width="1.3" stroke-linecap="round" fill="none"/>
+    <path d="M47.9 13.1 L49.6 12.1 L51.2 11.0 L52.6 9.8 L54.0 8.3 L55.3 6.6 L56.5 4.8 L57.6 2.8 L58.6 0.7 L59.6 -1.6 L60.5 -4.1 L61.3 -6.6 L62.0 -9.3 L62.6 -12.1" stroke="#ffd0c4" stroke-opacity=".45" stroke-width="1.3" stroke-linecap="round" fill="none"/>` },
 
   /* 10. skull face paint */
   { svg: `
@@ -12121,18 +12455,21 @@ const PEEK_COSTUMES = [
     <path d="M32 41 l-1.8 3 h3.6 Z" fill="#f4f1ff" fill-opacity=".8"/>
     <path d="M22 47 h20 M25 45.5 v3 M28.3 45.5 v3 M31.6 45.5 v3 M34.9 45.5 v3 M38.2 45.5 v3" stroke="#f4f1ff" stroke-opacity=".75" stroke-width="1" stroke-linecap="round"/>` },
 
-  /* 11. mummy bandages */
-  { svg: `
-    <g stroke="#e8e0cc" stroke-opacity=".93" stroke-width="4" stroke-linecap="round" fill="none">
-      <path d="M8 18 L56 22.5"/>
-      <path d="M8 52 L56 47"/>
-      <path d="M8 27 L14 26"/>
-      <path d="M50 27.5 L57 29"/>
-      <path d="M5 42 L10 40"/>
-      <path d="M56 47 q8 2 9 11"/>
-    </g>
-    <g stroke="#b8ad94" stroke-width=".6" fill="none">
-      <path d="M20 19.5 l2 -1.4 M36 21 l2 -1.4 M24 49 l2 1.4 M42 48 l2 1.4"/>
+  /* 11. all mummy: wrapped head to toe, just a slit for his eyes */
+  { skin: 'mummy', hand: 'mummy', antenna: `
+    <path d="M37.6 13.5 l3.4 -1.4 M38.2 10.5 l3.2 -1.4 M38.8 7.8 l3 -1.2" stroke="#b3a88c" stroke-width="1.1" stroke-linecap="round"/>`, svg: `
+    <g stroke-linecap="round" fill="none">
+      <path d="M8 16.5 L56 20" stroke="#e8dfc8" stroke-width="5"/>
+      <path d="M7 22 L57 25.5" stroke="#ddd3ba" stroke-width="5"/>
+      <path d="M7.5 28 L27 27" stroke="#e8dfc8" stroke-width="4.2"/>
+      <path d="M38 27.2 L56.5 28.6" stroke="#e8dfc8" stroke-width="4.2"/>
+      <path d="M7 43.5 L57 41.5" stroke="#e8dfc8" stroke-width="5"/>
+      <path d="M7 48.5 L57 47.5" stroke="#ddd3ba" stroke-width="5"/>
+      <path d="M9 53.5 L55 54.5" stroke="#e8dfc8" stroke-width="4.5"/>
+      <path d="M2.5 30 L10.5 27 M2.5 36 L10.5 33.5 M2.5 42 L10.5 39.5 M53.5 27 L61.5 30 M53.5 33.5 L61.5 36 M53.5 39.5 L61.5 42" stroke="#ddd3ba" stroke-width="3"/>
+      <path d="M57 47.5 q8 3 8.5 12" stroke="#e8dfc8" stroke-width="3.6"/>
+      <path d="M8 19 L56 22.7 M7.2 46 L56.8 44.5 M8 51 L56 51.3" stroke="#a89c7e" stroke-width=".7"/>
+      <path d="M20 17.5 l1.8 1.8 M35 19 l1.8 1.8 M24 42.5 l1.6 1.6 M44 47.5 l1.6 1.6" stroke="#b3a88c" stroke-width=".8"/>
     </g>` },
 
   /* 12. a Frankenstein flat top, neck bolts and stitches */
@@ -12204,7 +12541,9 @@ function createPeekBot(card) {
 
     stage,
     card,
-    baddie: null,
+    el: bot,
+    devilPick: null,
+    rounds: 0,
 
     busy: false,
     last: -1,
@@ -12311,19 +12650,35 @@ function createPeekBot(card) {
       }
       if (costume.hideAntenna) bot.classList.add('noAntenna');
       if (costume.hand === 'skeleton') hand.innerHTML = PEEK_SKELETON_HAND_SVG;
-      if (costume.baddie) {
-        api.baddie = document.createElement('div');
-        api.baddie.className = 'peekBaddie';
-        api.baddie.innerHTML = PEEK_BADDIE_SVG;
-        stage.appendChild(api.baddie);
+      if (costume.hand === 'mummy') hand.innerHTML = PEEK_MUMMY_HAND_SVG;
+      if (costume.skin) bot.classList.add(`skin-${costume.skin}`);
+      if (costume.under) {
+        eyes.insertAdjacentHTML('beforebegin', `<g class="costumeBit">${costume.under}</g>`);
       }
+    },
+
+    /* the fire between the horns roars up, then settles */
+    async flare(size = 1.6) {
+      const fire = bot.querySelector('.peekCostume .fire');
+      if (!fire) return;
+      await fire.animate(
+        [{ transform: 'scale(1)' }, { transform: `scale(${size})` }, { transform: `scale(${size * .92})` }, { transform: 'scale(1)' }],
+        { duration: 650, easing: 'ease-out' }
+      ).finished.catch(() => {});
+    },
+
+    /* moves the waving hand along with him, when a routine has moved him */
+    handAt(x) {
+      hand.style.left = `${54 + x}px`;
     },
 
     undress() {
       bot.querySelectorAll('.peekCostume, .costumeBit').forEach(node => node.remove());
       stage.querySelectorAll('.peekBaddie').forEach(node => node.remove());
-      api.baddie = null;
       stage.style.width = '';
+      stage.style.height = '';
+      hand.style.left = '';
+      bot.classList.remove('skin-skeleton', 'skin-mummy');
       bot.classList.remove('noAntenna');
       if (!hand.querySelector('rect[fill="#2f6fe8"]')) hand.innerHTML = PEEK_HAND_SVG;
     },
@@ -12350,6 +12705,22 @@ function createPeekBot(card) {
           for (let i = api.deck.length - 1; i > 0; i -= 1) {
             const j = Math.floor(Math.random() * (i + 1));
             [api.deck[i], api.deck[j]] = [api.deck[j], api.deck[i]];
+          }
+
+          /*
+            Halloween: the devil comes round half as often
+            again as the others, twice in every other deck,
+            never twice in a row.
+          */
+          api.rounds += 1;
+          const devil = PEEK_COSTUMES.findIndex(costume => costume?.routine);
+          if (halloweenOn() && devil >= 0 && api.rounds % 2 === 0) {
+            const first = api.deck.indexOf(devil);
+            let spot = Math.floor(Math.random() * (api.deck.length + 1));
+            while (Math.abs(spot - first) < 2 || Math.abs(spot - first - 1) < 1) {
+              spot = (spot + 3) % (api.deck.length + 1);
+            }
+            api.deck.splice(spot, 0, devil);
           }
 
           if (api.deck[0] === api.last && api.deck.length > 1) {
@@ -12590,13 +12961,50 @@ const THEME_BAT_SVG = `
   <path d="M20 8 Q14 1 6 3 Q8 6 2 8 Q7 9 6 13 Q12 10 16 14 Q18 10 20 12 Q22 10 24 14 Q28 10 34 13 Q33 9 38 8 Q32 6 34 3 Q26 1 20 8 Z" fill="#0b0712" stroke="#7a4bd6" stroke-opacity=".6" stroke-width=".6"/>
 </svg>`;
 
+const THEME_BOLT_SVG = `
+<svg viewBox="0 0 60 200" aria-hidden="true">
+  <path d="M34 0 L18 78 L32 80 L12 150 L26 152 L8 200 L46 118 L31 116 L50 58 L36 56 L48 0 Z" fill="#f4f0ff"/>
+  <path d="M40 0 L27 76 L38 78 L20 148" stroke="#ffffff" stroke-width="2" fill="none"/>
+</svg>`;
+
+/*
+  A storm now and then: about once a minute the clouds
+  shake with thunder and a bolt of lightning strikes.
+*/
+let stormTimer = null;
+
+function scheduleStorm() {
+  clearTimeout(stormTimer);
+  stormTimer = setTimeout(() => {
+    const decor = document.getElementById('themeDecor');
+    if (halloweenOn() && decor && !document.hidden &&
+        !window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+      const bolt = decor.querySelector('.bolt');
+      if (bolt) bolt.style.left = `${12 + Math.random() * 70}%`;
+      decor.classList.remove('storm');
+      void decor.offsetWidth;
+      decor.classList.add('storm');
+      setTimeout(() => decor.classList.remove('storm'), 1600);
+    }
+    scheduleStorm();
+  }, 52000 + Math.random() * 16000);
+}
+
+scheduleStorm();
+
 function fillThemeDecor() {
 
   const decor = document.getElementById('themeDecor');
 
   if (!decor || decor.childElementCount) return;
 
+  /* the moving flames, fetched early so they are ready when he needs them */
+  ['img/flame-crown.webp', 'img/flame-single.webp'].forEach(src => { const img = new Image(); img.src = src; });
+
   decor.innerHTML =
+    '<div class="flash"></div>' +
+    '<div class="clouds"></div>' +
+    `<div class="bolt">${THEME_BOLT_SVG}</div>` +
     `<div class="web left">${THEME_WEB_SVG}</div>` +
     `<div class="web right">${THEME_WEB_SVG}</div>` +
     `<div class="bat">${THEME_BAT_SVG}</div>` +
