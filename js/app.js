@@ -12435,10 +12435,10 @@ const PEEK_COSTUMES = [
   { hideAntenna: true, routine: peekDevil, svg: `
     <defs>
       <linearGradient id="hornL" gradientUnits="userSpaceOnUse" x1="19" y1="17" x2="-3" y2="-40">
-        <stop offset="0" stop-color="#8e1410"/><stop offset=".25" stop-color="#d42a1e"/><stop offset=".6" stop-color="#b3160f"/><stop offset=".78" stop-color="#3a0907"/><stop offset="1" stop-color="#0d0404"/>
+        <stop offset="0" stop-color="#8e1410"/><stop offset=".22" stop-color="#d42a1e"/><stop offset=".5" stop-color="#b3160f"/><stop offset=".66" stop-color="#4a0b08"/><stop offset=".8" stop-color="#140505"/><stop offset="1" stop-color="#050101"/>
       </linearGradient>
       <linearGradient id="hornR" gradientUnits="userSpaceOnUse" x1="45" y1="17" x2="67" y2="-40">
-        <stop offset="0" stop-color="#8e1410"/><stop offset=".25" stop-color="#d42a1e"/><stop offset=".6" stop-color="#b3160f"/><stop offset=".78" stop-color="#3a0907"/><stop offset="1" stop-color="#0d0404"/>
+        <stop offset="0" stop-color="#8e1410"/><stop offset=".22" stop-color="#d42a1e"/><stop offset=".5" stop-color="#b3160f"/><stop offset=".66" stop-color="#4a0b08"/><stop offset=".8" stop-color="#140505"/><stop offset="1" stop-color="#050101"/>
       </linearGradient>
     </defs>
     <ellipse cx="32" cy="-10" rx="18" ry="15" fill="#ff7a1a" opacity=".22" class="glow"/>
@@ -12962,7 +12962,7 @@ const THEME_BAT_SVG = `
 </svg>`;
 
 const THEME_BOLT_SVG = `
-<svg viewBox="0 0 60 200" aria-hidden="true">
+<svg viewBox="0 0 60 200" preserveAspectRatio="xMidYMin meet" aria-hidden="true">
   <path d="M34 0 L18 78 L32 80 L12 150 L26 152 L8 200 L46 118 L31 116 L50 58 L36 56 L48 0 Z" fill="#f4f0ff"/>
   <path d="M40 0 L27 76 L38 78 L20 148" stroke="#ffffff" stroke-width="2" fill="none"/>
 </svg>`;
