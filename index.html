@@ -5755,6 +5755,155 @@ textarea.adminInput.lessonText {
     justify-content: center;
   }
 }
+
+/* =====================================================
+   MY PROFILE: ONE SECTION AT A TIME
+   A drop down at the top picks the section; the box keeps
+   the same size and only the content beneath changes.
+===================================================== */
+
+body .profileCard {
+  display: flex;
+  flex-direction: column;
+  height: min(680px, 88vh);
+  overflow: hidden;
+}
+
+.profilePicker {
+  position: relative;
+  flex-shrink: 0;
+  margin-top: 6px;
+}
+
+.profilePickerButton {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 14px;
+  border-radius: 14px;
+  border: 1px solid transparent;
+  background:
+    linear-gradient(var(--mute-fill), var(--mute-fill)) padding-box,
+    linear-gradient(var(--mute-line), var(--mute-line)) border-box;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.profilePickerButton:hover,
+.profilePicker.open .profilePickerButton {
+  background:
+    linear-gradient(var(--mute-fill), var(--mute-fill)) padding-box,
+    var(--edge) border-box;
+}
+
+.profilePickerText {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.profilePickerName {
+  font-size: 14.5px;
+  font-weight: 700;
+}
+
+.profilePickerNote {
+  color: var(--mute-text);
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.profilePickerNote:empty {
+  display: none;
+}
+
+.profilePickerChevron {
+  flex-shrink: 0;
+  color: var(--mute-text);
+  transition: transform .2s var(--ease);
+}
+
+.profilePicker.open .profilePickerChevron {
+  transform: rotate(180deg);
+}
+
+.profilePickerDot {
+  margin: 4px;
+}
+
+.profilePickerList {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 5;
+  display: none;
+  padding: 6px;
+  border-radius: 14px;
+  border: 1px solid var(--mute-line);
+  background: #150f22;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, .5);
+}
+
+.profilePicker.open .profilePickerList {
+  display: block;
+}
+
+.profilePickerItem {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: #d9cfe6;
+  text-align: left;
+  cursor: pointer;
+}
+
+.profilePickerItem:hover,
+.profilePickerItem.current {
+  background: rgba(255, 255, 255, .06);
+  color: #fff;
+}
+
+.profilePanels {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  margin-top: 12px;
+  padding-right: 2px;
+}
+
+/* the sections become plain panels: no folding, no summary row */
+body .profilePanels > .foldCard {
+  display: none;
+  margin: 0;
+  border: 0;
+  background: none;
+}
+
+body .profilePanels > .foldCard.current {
+  display: block;
+}
+
+body .profilePanels > .foldCard > .foldSummary {
+  display: none;
+}
+
+body .profilePanels > .foldCard.current > .foldBody {
+  display: block;
+  padding: 0;
+  border: 0;
+}
 </style>
 </head>
 
@@ -6665,6 +6814,27 @@ textarea.adminInput.lessonText {
       Install Nastivee as an app
     </button>
 
+    <div class="profilePicker" id="profilePicker">
+
+      <button class="profilePickerButton" id="profilePickerButton" type="button" aria-haspopup="true" aria-expanded="false">
+        <span class="foldDot profilePickerDot" id="profilePickerDot" aria-hidden="true"></span>
+        <span class="profilePickerText">
+          <span class="profilePickerName" id="profilePickerName">About you</span>
+          <span class="profilePickerNote" id="profilePickerNote"></span>
+        </span>
+        <svg class="profilePickerChevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
+      </button>
+
+      <div class="profilePickerList" id="profilePickerList" role="menu"></div>
+
+    </div>
+
+    <div class="profilePanels" id="profilePanels">
+
+    <div class="foldCard profileAbout" id="foldAbout" data-title="About you">
+
+      <span class="foldNote" id="foldAboutNote" hidden>Who you are and what Nastivee remembers</span>
+
     <div class="profileRow">
       <div class="profileLabel">Signed in as</div>
       <div class="profileValue" id="profileEmail"></div>
@@ -6695,6 +6865,8 @@ textarea.adminInput.lessonText {
     >
       Save
     </button>
+
+    </div>
 
     <div class="foldCard" id="foldImages">
 
@@ -6843,6 +7015,8 @@ textarea.adminInput.lessonText {
         </div>
 
       </div>
+
+    </div>
 
     </div>
 
@@ -14733,6 +14907,10 @@ document.addEventListener('click', event => {
 
 function toggleFold(id) {
 
+  /* in My profile a section is picked, never folded */
+  showProfilePanel(id);
+  return;
+
   const card =
     document.getElementById(id);
 
@@ -21015,6 +21193,135 @@ document.getElementById('adminUploadDelete')?.addEventListener('click', async ev
 });
 
 /* =====================================================
+   MY PROFILE: THE PICKER
+===================================================== */
+
+const PROFILE_PANEL_KEY = 'nastivee_profile_panel';
+
+function profilePanels() {
+  return [...document.querySelectorAll('#profilePanels > .foldCard')];
+}
+
+function panelTitle(panel) {
+  if (panel.dataset.title) return panel.dataset.title;
+  const text = panel.querySelector('.foldSummary .foldText');
+  return (text?.childNodes[0]?.textContent || panel.id).trim();
+}
+
+function panelNote(panel) {
+  return (panel.querySelector('.foldNote')?.textContent || '').trim();
+}
+
+function panelState(panel) {
+  return ['bad', 'warn', 'good'].find(name => panel.classList.contains(name)) || '';
+}
+
+const PANEL_DOT = { good: '#4ade80', warn: '#f59e0b', bad: '#ef4444' };
+
+function paintDot(dot, state) {
+  dot.style.visibility = state ? '' : 'hidden';
+  dot.style.background = PANEL_DOT[state] || 'transparent';
+  dot.style.boxShadow = 'none';
+}
+
+function paintProfilePicker() {
+
+  const panels = profilePanels();
+  const current = panels.find(panel => panel.classList.contains('current')) || panels[0];
+
+  if (!current) return;
+
+  document.getElementById('profilePickerName').textContent = panelTitle(current);
+  document.getElementById('profilePickerNote').textContent = panelNote(current);
+
+  paintDot(document.getElementById('profilePickerDot'), panelState(current));
+
+  const list = document.getElementById('profilePickerList');
+  list.innerHTML = '';
+
+  panels.forEach(panel => {
+
+    const item = document.createElement('button');
+    item.type = 'button';
+    item.setAttribute('role', 'menuitem');
+    item.className = `profilePickerItem${panel === current ? ' current' : ''}`;
+
+    item.innerHTML =
+      '<span class="foldDot" aria-hidden="true"></span>' +
+      '<span class="profilePickerText"><span class="profilePickerName"></span><span class="profilePickerNote"></span></span>';
+
+    paintDot(item.querySelector('.foldDot'), panelState(panel));
+    item.querySelector('.profilePickerName').textContent = panelTitle(panel);
+    item.querySelector('.profilePickerNote').textContent = panelNote(panel);
+
+    item.addEventListener('click', event => {
+      event.stopPropagation();
+      showProfilePanel(panel.id);
+      setProfilePicker(false);
+    });
+
+    list.appendChild(item);
+
+  });
+
+}
+
+function showProfilePanel(id) {
+
+  const panels = profilePanels();
+  const target = panels.find(panel => panel.id === id) || panels[0];
+
+  if (!target) return;
+
+  panels.forEach(panel => {
+    const on = panel === target;
+    panel.classList.toggle('current', on);
+    panel.classList.toggle('open', on);
+  });
+
+  try { localStorage.setItem(PROFILE_PANEL_KEY, target.id); } catch {}
+
+  document.getElementById('profilePanels').scrollTop = 0;
+
+  paintProfilePicker();
+
+}
+
+function setProfilePicker(open) {
+  const picker = document.getElementById('profilePicker');
+  picker.classList.toggle('open', open);
+  document.getElementById('profilePickerButton').setAttribute('aria-expanded', open ? 'true' : 'false');
+  if (open) paintProfilePicker();
+}
+
+document.getElementById('profilePickerButton')?.addEventListener('click', event => {
+  event.stopPropagation();
+  setProfilePicker(!document.getElementById('profilePicker').classList.contains('open'));
+});
+
+document.addEventListener('click', event => {
+  if (!event.target.closest?.('#profilePicker')) setProfilePicker(false);
+});
+
+document.addEventListener('keydown', event => {
+  if (event.key === 'Escape' && document.getElementById('profilePicker').classList.contains('open')) {
+    setProfilePicker(false);
+  }
+});
+
+/* notes and colours change as things load: keep the picker in step */
+if (window.MutationObserver) {
+  new MutationObserver(() => paintProfilePicker())
+    .observe(document.getElementById('profilePanels'), { subtree: true, attributes: true, attributeFilter: ['class'], characterData: true, childList: true });
+}
+
+(() => {
+  let last = null;
+  try { last = localStorage.getItem(PROFILE_PANEL_KEY); } catch {}
+  showProfilePanel(last || 'foldAbout');
+})();
+
+/* =====================================================
    SEND BUTTON
 ===================================================== */
 
@@ -21806,7 +22113,7 @@ window.addEventListener('online', () => {
    clearing anything by hand.
 ===================================================== */
 
-const APP_VERSION = '2026-09-22-22';
+const APP_VERSION = '2026-09-22-23';
 
 const RELOAD_FLAG = 'nastivee_reloaded_for';
 
