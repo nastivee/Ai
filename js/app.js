@@ -2629,17 +2629,136 @@ function clearChatUI() {
 
   emptyState.innerHTML = `
     <div class="emptyInner">
-      <div class="emptyText">
-        Ask me anything, upload an image to edit,
-        or create something new, and I will remember
-        the chat as we go.
-      </div>
+      <div class="emptyText" id="emptyText"></div>
+      <div class="startChips" id="startChips"></div>
     </div>
   `;
 
   chat.appendChild(
     emptyState
   );
+
+  paintStart();
+
+}
+
+
+/* =====================================================
+   A PERSONAL START
+
+   The blank chat greets the person by name, knows what
+   time of day it is, and offers a few openers drawn from
+   what Natter remembers about them.
+===================================================== */
+
+function timeOfDay() {
+  const hour = new Date().getHours();
+  if (hour < 5) return 'late';
+  if (hour < 12) return 'morning';
+  if (hour < 18) return 'afternoon';
+  return 'evening';
+}
+
+function knownName() {
+
+  const lines = String(memory || '').split('\n');
+
+  for (const line of lines) {
+    const found = /(?:^|\b)(?:name is|called|i am|i'm)\s+([A-Z][a-z]{1,20})/.exec(line);
+    if (found) return found[1];
+  }
+
+  const email = account?.email || currentUser?.email || '';
+
+  if (email) {
+    const stem = email.split('@')[0].replace(/[._\d]+/g, ' ').trim().split(' ')[0];
+    if (stem && stem.length > 1) return stem[0].toUpperCase() + stem.slice(1);
+  }
+
+  return '';
+
+}
+
+/*
+  Openers built from what is remembered. Nothing is invented:
+  a line only becomes a chip when the memory mentions it.
+*/
+function startIdeas() {
+
+  const text = String(memory || '').toLowerCase();
+  const ideas = [];
+
+  const place =
+    /(?:live|based|from|in)\s+([a-z][a-z' -]{2,22})(?:\.|,|$)/i.exec(String(memory || ''));
+
+  if (place) ideas.push(`Weather in ${place[1].trim()}`);
+
+  if (/business|company|shop|takeaway|restaurant|agency|firm|venue/.test(text)) {
+    ideas.push('Ideas to bring in more customers this month');
+  }
+
+  if (/work|job|role|manager|director/.test(text)) {
+    ideas.push('Help me write a difficult email');
+  }
+
+  if (/photo|image|picture|design|art/.test(text)) {
+    ideas.push('Make me a picture for today');
+  }
+
+  const day = timeOfDay();
+
+  if (day === 'morning') ideas.push("What's in the news this morning?");
+  if (day === 'evening') ideas.push('Something easy to cook tonight');
+  if (day === 'late') ideas.push('Wind down: tell me something interesting');
+
+  ideas.push('What can you do?');
+
+  return [...new Set(ideas)].slice(0, 4);
+
+}
+
+function paintStart() {
+
+  const text = document.getElementById('emptyText');
+  const chips = document.getElementById('startChips');
+
+  if (!text) return;
+
+  const name = knownName();
+
+  const greeting = {
+    morning: 'Morning',
+    afternoon: 'Afternoon',
+    evening: 'Evening',
+    late: 'Still up'
+  }[timeOfDay()];
+
+  text.textContent =
+    name
+      ? `${greeting}, ${name}. What are we doing?`
+      : 'Ask me anything, upload a photo to edit, or create something new. I remember the chat as we go.';
+
+  if (!chips) return;
+
+  chips.innerHTML = '';
+
+  startIdeas().forEach(idea => {
+
+    const chip = document.createElement('button');
+    chip.type = 'button';
+    chip.className = 'startChip';
+    chip.textContent = idea;
+
+    chip.addEventListener('click', () => {
+      messageInput.value = idea;
+      messageInput.dispatchEvent(new Event('input', { bubbles: true }));
+      messageInput.focus();
+      document.getElementById('sendButton')?.click();
+    });
+
+    chips.appendChild(chip);
+
+  });
 
 }
 
@@ -4484,6 +4603,156 @@ function buildMusicCard(card, box) {
 
 }
 
+/* =====================================================
+   MORE CARDS: numbers, steps and a side by side
+===================================================== */
+
+function buildChartCard(card, box) {
+
+  box.classList.add('chartCard');
+
+  if (card.title) box.appendChild(cardEl('div', 'cardTitle', card.title));
+  if (card.subtitle) box.appendChild(cardEl('div', 'cardWhat', card.subtitle));
+
+  const points =
+    (Array.isArray(card.series) ? card.series : [])
+      .map(point => ({
+        label: String(point?.label ?? ''),
+        value: Number(point?.value),
+        note: point?.note ? String(point.note) : ''
+      }))
+      .filter(point => Number.isFinite(point.value))
+      .slice(0, 12);
+
+  if (!points.length) return;
+
+  const values = points.map(point => point.value);
+  const high = Math.max(...values, 0);
+  const low = Math.min(...values, 0);
+  const span = (high - low) || 1;
+  const unit = card.unit ? String(card.unit) : '';
+  const shown = value => `${card.prefix || ''}${value.toLocaleString()}${unit}`;
+
+  if (card.kind === 'line') {
+
+    const width = 100;
+    const height = 42;
+    const step = points.length > 1 ? width / (points.length - 1) : 0;
+    const spot = (value, i) => `${(i * step).toFixed(1)},${(height - ((value - low) / span) * (height - 6) - 3).toFixed(1)}`;
+    const line = points.map((point, i) => spot(point.value, i)).join(' ');
+
+    const wrap = cardEl('div', 'chartLine');
+    wrap.innerHTML =
+      `<svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" aria-hidden="true">` +
+      `<polyline points="${line}" fill="none" stroke="url(#chartStroke)" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>` +
+      `<polygon points="0,${height} ${line} ${width},${height}" fill="url(#chartFill)" opacity=".35"/>` +
+      `<defs>` +
+      `<linearGradient id="chartStroke" x1="0" x2="1"><stop offset="0" stop-color="#a78bfa"/><stop offset="1" stop-color="#38bdf8"/></linearGradient>` +
+      `<linearGradient id="chartFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#a78bfa"/><stop offset="1" stop-color="transparent"/></linearGradient>` +
+      `</defs></svg>`;
+    box.appendChild(wrap);
+
+    const marks = cardEl('div', 'chartMarks');
+    points.forEach(point => {
+      const mark = cardEl('div', 'chartMark');
+      mark.appendChild(cardEl('span', 'chartMarkLabel', point.label));
+      mark.appendChild(cardEl('span', 'chartMarkValue', shown(point.value)));
+      marks.appendChild(mark);
+    });
+    box.appendChild(marks);
+
+    return;
+
+  }
+
+  const bars = cardEl('div', 'chartBars');
+
+  points.forEach(point => {
+
+    const row = cardEl('div', 'chartRow');
+    row.appendChild(cardEl('span', 'chartLabel', point.label));
+
+    const track = cardEl('span', 'chartTrack');
+    const fill = cardEl('span', 'chartFill');
+    fill.style.width = `${Math.max(2, ((point.value - Math.min(0, low)) / (high - Math.min(0, low) || 1)) * 100)}%`;
+    if (point.value === high) fill.classList.add('best');
+    track.appendChild(fill);
+    row.appendChild(track);
+
+    row.appendChild(cardEl('span', 'chartValue', shown(point.value)));
+
+    bars.appendChild(row);
+
+    if (point.note) bars.appendChild(cardEl('div', 'chartNote', point.note));
+
+  });
+
+  box.appendChild(bars);
+
+}
+
+function buildStepsCard(card, box) {
+
+  box.classList.add('stepsCard');
+
+  if (card.title) box.appendChild(cardEl('div', 'cardTitle', card.title));
+  if (card.subtitle) box.appendChild(cardEl('div', 'cardWhat', card.subtitle));
+
+  const list = cardEl('ol', 'stepList');
+
+  (card.steps || []).slice(0, 12).forEach((step, index) => {
+    const item = cardEl('li', 'stepItem');
+    item.appendChild(cardEl('span', 'stepNumber', index + 1));
+    const text = cardEl('span', 'stepText');
+    text.appendChild(cardEl('span', 'stepTitle', typeof step === 'string' ? step : (step?.title ?? '')));
+    if (step?.detail) text.appendChild(cardEl('span', 'stepDetail', step.detail));
+    if (step?.time) text.appendChild(cardEl('span', 'stepTime', step.time));
+    item.appendChild(text);
+    list.appendChild(item);
+  });
+
+  box.appendChild(list);
+
+}
+
+function buildCompareCard(card, box) {
+
+  box.classList.add('compareCard');
+
+  if (card.title) box.appendChild(cardEl('div', 'cardTitle', card.title));
+
+  const grid = cardEl('div', 'compareGrid');
+
+  (card.sides || []).slice(0, 3).forEach(side => {
+
+    const column = cardEl('div', 'compareSide');
+
+    if (side?.winner) column.classList.add('winner');
+
+    column.appendChild(cardEl('div', 'compareName', side?.name ?? ''));
+
+    if (side?.headline) column.appendChild(cardEl('div', 'compareHeadline', side.headline));
+
+    (side?.points || []).slice(0, 8).forEach(point => {
+      const line = cardEl('div', 'comparePoint');
+      const mark = typeof point === 'object' && point?.good === false ? '−' : '✓';
+      const dot = cardEl('span', 'compareMark', mark);
+      if (typeof point === 'object' && point?.good === false) dot.classList.add('against');
+      line.appendChild(dot);
+      line.appendChild(cardEl('span', '', typeof point === 'string' ? point : (point?.text ?? '')));
+      column.appendChild(line);
+    });
+
+    grid.appendChild(column);
+
+  });
+
+  box.appendChild(grid);
+
+  if (card.verdict) box.appendChild(cardEl('div', 'compareVerdict', card.verdict));
+
+}
+
 const CARD_BUILDERS = {
   weather: buildWeatherCard,
   score: buildScoreCard,
@@ -4491,7 +4760,10 @@ const CARD_BUILDERS = {
   table: buildTableCard,
   stat: buildStatCard,
   facts: buildFactsCard,
-  music: buildMusicCard
+  music: buildMusicCard,
+  chart: buildChartCard,
+  steps: buildStepsCard,
+  compare: buildCompareCard
 };
 
 function buildCard(card) {
@@ -4511,6 +4783,45 @@ function buildCard(card) {
   }
 
   return box;
+
+}
+
+/*
+  Where a live answer came from, as small chips under the
+  reply. They only show when the web was actually used.
+*/
+function paintSources(bubble, sources) {
+
+  const wrap = bubble?.closest('.bubbleWrap') || bubble?.parentElement;
+
+  if (!wrap) return;
+
+  wrap.querySelector('.sourceRow')?.remove();
+
+  const row = cardEl('div', 'sourceRow');
+
+  row.appendChild(cardEl('span', 'sourceLabel', 'Checked live'));
+
+  sources.slice(0, 6).forEach(source => {
+
+    if (!source?.url) return;
+
+    const chip = document.createElement('a');
+    chip.className = 'sourceChip';
+    chip.href = source.url;
+    chip.target = '_blank';
+    chip.rel = 'noopener noreferrer';
+    chip.title = source.title || source.site || source.url;
+
+    const badge = cardEl('span', 'sourceBadge', (source.site || source.title || '?').trim()[0]?.toUpperCase() || '?');
+    chip.appendChild(badge);
+    chip.appendChild(cardEl('span', 'sourceName', source.site || source.title));
+
+    row.appendChild(chip);
+
+  });
+
+  if (row.childElementCount > 1) wrap.appendChild(row);
 
 }
 
@@ -11267,6 +11578,10 @@ async function streamReply(response, requestChatId) {
 
     bubble.classList.add('streaming');
 
+    /* three dots until the first words arrive */
+    bubble.innerHTML =
+      '<span class="thinking"><i></i><i></i><i></i></span>';
+
   }
 
 
@@ -11337,6 +11652,12 @@ async function streamReply(response, requestChatId) {
 
       if (parsed.error) {
         throw new Error(parsed.error);
+      }
+
+      /* where the live answer came from */
+      if (Array.isArray(parsed.sources) && bubble) {
+        paintSources(bubble, parsed.sources);
+        continue;
       }
 
       /* checking the live web before answering */
@@ -13684,6 +14005,7 @@ let restartPeeking = null;
 function paintTestFeatures() {
 
   if (account?.theme && typeof applySiteTheme === 'function') applySiteTheme(account.theme);
+  if (typeof paintStart === 'function') paintStart();
   if (typeof paintThemeSwitch === 'function') paintThemeSwitch();
 
   const showVideo = account?.canVideo === true;

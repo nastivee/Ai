@@ -7738,3 +7738,357 @@ body.smartMode .messageRow.user .messageBubble {
 .messageBubble.markdown p:has(> br:only-child) {
   display: none;
 }
+
+
+/* =====================================================
+   CHARTS, STEPS AND SIDE BY SIDE CARDS
+===================================================== */
+
+.chartBars {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  margin-top: 12px;
+}
+
+.chartRow {
+  display: grid;
+  grid-template-columns: minmax(64px, 26%) 1fr auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.chartLabel {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--mute-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chartTrack {
+  height: 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .06);
+  overflow: hidden;
+}
+
+.chartFill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #7c3aed, #a78bfa);
+  animation: chartGrow .6s var(--ease) both;
+}
+
+.chartFill.best {
+  background: linear-gradient(90deg, #7c3aed, #38bdf8);
+}
+
+body.smartMode .chartFill {
+  background: linear-gradient(90deg, #3d69b5, #93c5fd);
+}
+
+@keyframes chartGrow {
+  from { transform: scaleX(0); transform-origin: left; }
+  to { transform: scaleX(1); transform-origin: left; }
+}
+
+.chartValue {
+  font-size: 13.5px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.chartNote {
+  margin: -2px 0 2px calc(26% + 10px);
+  font-size: 11.5px;
+  color: var(--mute-text);
+}
+
+.chartLine {
+  margin-top: 14px;
+  height: 92px;
+  color: #a78bfa;
+}
+
+.chartLine svg { width: 100%; height: 100%; display: block; }
+
+.chartMarks {
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.chartMark {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  text-align: center;
+  min-width: 0;
+}
+
+.chartMarkLabel { font-size: 11px; color: var(--mute-text); font-weight: 700; }
+.chartMarkValue { font-size: 12.5px; font-weight: 800; }
+
+/* steps */
+.stepList {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.stepItem {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.stepNumber {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--edge);
+  color: #fff;
+  font-size: 12.5px;
+  font-weight: 800;
+}
+
+.stepText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-top: 2px;
+}
+
+.stepTitle { font-size: 14px; font-weight: 700; }
+.stepDetail { font-size: 13px; color: var(--mute-text); line-height: 1.5; }
+.stepTime { font-size: 11.5px; font-weight: 700; color: #a78bfa; }
+
+body.smartMode .stepTime { color: #8fb0ec; }
+
+/* side by side */
+.compareGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.compareSide {
+  padding: 12px 13px;
+  border: 1px solid transparent;
+  border-radius: 14px;
+  background:
+    linear-gradient(rgba(255, 255, 255, .035), rgba(255, 255, 255, .035)) padding-box,
+    linear-gradient(var(--mute-line), var(--mute-line)) border-box;
+}
+
+.compareSide.winner {
+  background:
+    linear-gradient(rgba(167, 139, 250, .1), rgba(167, 139, 250, .04)) padding-box,
+    var(--edge) border-box;
+}
+
+.compareName { font-size: 14.5px; font-weight: 800; margin-bottom: 2px; }
+
+.compareHeadline {
+  font-size: 12px;
+  color: var(--mute-text);
+  margin-bottom: 8px;
+}
+
+.comparePoint {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  margin-top: 6px;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.compareMark {
+  flex-shrink: 0;
+  color: #4ade80;
+  font-weight: 800;
+}
+
+.compareMark.against { color: #ff8585; }
+
+.compareVerdict {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, .04);
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+
+/* =====================================================
+   WHERE A LIVE ANSWER CAME FROM
+===================================================== */
+
+.sourceRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 9px;
+}
+
+.sourceLabel {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .4px;
+  text-transform: uppercase;
+  color: var(--mute-text);
+  margin-right: 2px;
+}
+
+.sourceChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  max-width: 220px;
+  padding: 5px 11px 5px 5px;
+  border: 1px solid var(--mute-line);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .03);
+  color: var(--mute-text);
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: border-color .2s var(--ease), color .2s var(--ease), background .2s var(--ease);
+}
+
+.sourceChip:hover {
+  border-color: #8b5cf6;
+  color: #fff;
+  background: rgba(139, 92, 246, .12);
+  text-decoration: none;
+}
+
+body.smartMode .sourceChip:hover {
+  border-color: #3d69b5;
+  background: rgba(61, 105, 181, .14);
+}
+
+.sourceBadge {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--edge);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.sourceName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* =====================================================
+   A PERSONAL START
+===================================================== */
+
+.emptyText {
+  font-size: 16px;
+  line-height: 1.55;
+}
+
+.startChips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.startChip {
+  padding: 9px 15px;
+  border: 1px solid var(--mute-line);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .03);
+  color: var(--mute-text);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  animation: chipIn .35s var(--ease) both;
+  transition: border-color .2s var(--ease), color .2s var(--ease), background .2s var(--ease), transform .2s var(--ease);
+}
+
+.startChip:nth-child(2) { animation-delay: .05s; }
+.startChip:nth-child(3) { animation-delay: .1s; }
+.startChip:nth-child(4) { animation-delay: .15s; }
+
+.startChip:hover {
+  color: #fff;
+  border-color: #8b5cf6;
+  background: rgba(139, 92, 246, .12);
+  transform: translateY(-1px);
+}
+
+body.smartMode .startChip:hover {
+  border-color: #3d69b5;
+  background: rgba(61, 105, 181, .14);
+}
+
+@keyframes chipIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .startChip { animation: none; }
+}
+
+/* three dots while a reply is on its way */
+.thinking {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 0;
+}
+
+.thinking i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #a78bfa;
+  opacity: .35;
+  animation: thinkingDot 1.2s ease-in-out infinite;
+}
+
+.thinking i:nth-child(2) { animation-delay: .16s; }
+.thinking i:nth-child(3) { animation-delay: .32s; }
+
+body.smartMode .thinking i { background: #93c5fd; }
+
+@keyframes thinkingDot {
+  0%, 100% { opacity: .3; transform: translateY(0); }
+  40% { opacity: 1; transform: translateY(-3px); }
+}
+
+/* the cursor should not show while the dots are */
+.streaming:has(.thinking) > *:last-child::after {
+  content: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .thinking i { animation: none; }
+}

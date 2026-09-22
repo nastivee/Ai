@@ -2771,16 +2771,13 @@ async function streamWithSearch({ model, effort, instructions, messages, send })
 
   if (cited.size) {
 
-    const list =
-      [...cited]
-        .slice(0, 6)
-        .map(([url, title]) => `- [${String(title).replace(/[\[\]]/g, '')}](${url})`)
-        .join('\n');
-
-    const tail = `\n\nSources:\n${list}`;
-
-    text += tail;
-    send({ text: tail });
+    send({
+      sources: [...cited].slice(0, 6).map(([url, title]) => ({
+        url,
+        title: String(title).slice(0, 80),
+        site: (() => { try { return new URL(url).hostname.replace(/^www\./, ''); } catch { return ''; } })()
+      }))
+    });
 
   }
 
@@ -3038,6 +3035,24 @@ If a fact exists in the supplied memory, treat it as something the user previous
 
 Do not claim the user never told you something if it exists in memory.
 
+LIVE INFORMATION:
+
+You can search the live web, so use it rather than answering
+from memory whenever the answer could have moved: prices,
+weather, sport, news, opening times, availability, timetables,
+who holds a job or a title, what something costs, what is on,
+what is in stock, what the law says now, anything with "today",
+"latest", "current", "now" or "this week" in it, and anything
+about a named business, product or person.
+
+Check first, answer second. Never say you cannot see live
+information: you can. If a search comes back thin, say what you
+found, when it was from, and what you could not confirm.
+
+Say how fresh a figure is when it matters ("as of this
+morning", "Friday's close"), and never present an old number as
+today's.
+
 SONGS, POEMS AND OTHER WRITING THAT BELONGS TO SOMEBODY:
 
 Never give the full words of a song, poem, book chapter or
@@ -3149,6 +3164,30 @@ Any other set of facts:
 \`\`\`natter
 {"card":"facts","icon":"🎬","title":"Dune: Part Two","subtitle":"Showing tonight",
 "rows":[["Starts","7:30 pm"],["Where","Cineworld Stockton"],["Runtime","2h 46m"]]}
+\`\`\`
+
+Numbers worth seeing:
+\`\`\`natter
+{"card":"chart","kind":"bar","title":"Rainfall this week","unit":"mm",
+"series":[{"label":"Mon","value":4},{"label":"Tue","value":11,"note":"heaviest"},{"label":"Wed","value":2}]}
+\`\`\`
+kind is "bar" for comparing things and "line" for something over
+time. Use it whenever an answer turns on a handful of numbers.
+
+Something done in order:
+\`\`\`natter
+{"card":"steps","title":"Changing a tyre","subtitle":"About 20 minutes",
+"steps":[{"title":"Loosen the nuts","detail":"Half a turn, while the wheel is still down","time":"2 min"},
+{"title":"Jack the car","detail":"Use the jacking point behind the front wheel"}]}
+\`\`\`
+
+Two or three things weighed against each other:
+\`\`\`natter
+{"card":"compare","title":"Gas or induction",
+"sides":[{"name":"Induction","winner":true,"headline":"Faster, cleaner",
+"points":["Boils water in half the time",{"text":"Needs the right pans","good":false}]},
+{"name":"Gas","headline":"Familiar","points":["Works in a power cut"]}],
+"verdict":"Induction, unless you cook with a wok."}
 \`\`\`
 
 Music on manuscript paper:
