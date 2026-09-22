@@ -4840,6 +4840,251 @@ function buildCompareCard(card, box) {
 
 }
 
+/* =====================================================
+   LONGER ANSWERS, LAID OUT PROPERLY
+
+   A recipe, a set of instructions or a written guide is
+   hard work as a wall of text. These lay them out: things
+   you need on one side, what to do on the other, ticks as
+   you go, and headings you can actually scan.
+===================================================== */
+
+function cardTicks(box, items, onCount) {
+
+  let done = 0;
+
+  const bar = cardEl('div', 'tickBar');
+  const fill = cardEl('span', 'tickFill');
+  bar.appendChild(fill);
+
+  const count = cardEl('span', 'tickCount', `0 of ${items.length}`);
+
+  const paint = () => {
+    fill.style.width = `${items.length ? (done / items.length) * 100 : 0}%`;
+    count.textContent = `${done} of ${items.length}`;
+    if (onCount) onCount(done);
+  };
+
+  items.forEach(item => {
+    item.addEventListener('click', () => {
+      const ticked = item.classList.toggle('ticked');
+      done += ticked ? 1 : -1;
+      paint();
+    });
+  });
+
+  const row = cardEl('div', 'tickRow');
+  row.appendChild(bar);
+  row.appendChild(count);
+  box.appendChild(row);
+
+  paint();
+
+}
+
+function buildRecipeCard(card, box) {
+
+  box.classList.add('recipeCard');
+
+  const head = cardEl('div', 'recipeHead');
+
+  const heading = cardEl('div', 'recipeTitleBlock');
+  heading.appendChild(cardEl('div', 'recipeTitle', card.title || 'Recipe'));
+  if (card.subtitle) heading.appendChild(cardEl('div', 'recipeSub', card.subtitle));
+  head.appendChild(heading);
+
+  box.appendChild(head);
+
+  const facts = [
+    ['Serves', card.serves],
+    ['Prep', card.prep],
+    ['Cook', card.cook],
+    ['Total', card.total],
+    ['Difficulty', card.difficulty]
+  ].filter(pair => pair[1]);
+
+  if (facts.length) {
+    const strip = cardEl('div', 'recipeFacts');
+    facts.forEach(([label, value]) => {
+      const fact = cardEl('div', 'recipeFact');
+      fact.appendChild(cardEl('span', 'recipeFactLabel', label));
+      fact.appendChild(cardEl('span', 'recipeFactValue', value));
+      strip.appendChild(fact);
+    });
+    box.appendChild(strip);
+  }
+
+  const body = cardEl('div', 'recipeBody');
+
+  /* what you need */
+  if (Array.isArray(card.ingredients) && card.ingredients.length) {
+
+    const column = cardEl('div', 'recipeColumn');
+    column.appendChild(cardEl('div', 'recipeHeading', 'You need'));
+
+    const list = cardEl('div', 'recipeList');
+    const ticks = [];
+
+    card.ingredients.slice(0, 40).forEach(entry => {
+
+      if (entry && typeof entry === 'object' && entry.group) {
+        list.appendChild(cardEl('div', 'recipeGroup', entry.group));
+        return;
+      }
+
+      const line = cardEl('button', 'recipeItem');
+      line.type = 'button';
+
+      const mark = cardEl('span', 'recipeTick');
+      mark.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+      line.appendChild(mark);
+
+      const text = typeof entry === 'string' ? entry : `${entry?.amount ? entry.amount + ' ' : ''}${entry?.item ?? ''}`;
+      line.appendChild(cardEl('span', 'recipeItemText', text.trim()));
+
+      list.appendChild(line);
+      ticks.push(line);
+
+    });
+
+    column.appendChild(list);
+
+    if (ticks.length) cardTicks(column, ticks);
+
+    body.appendChild(column);
+
+  }
+
+  /* what you do */
+  if (Array.isArray(card.method) && card.method.length) {
+
+    const column = cardEl('div', 'recipeColumn wide');
+    column.appendChild(cardEl('div', 'recipeHeading', 'Method'));
+
+    const list = cardEl('ol', 'methodList');
+
+    card.method.slice(0, 20).forEach((step, index) => {
+      const item = cardEl('li', 'methodStep');
+      item.appendChild(cardEl('span', 'methodNumber', index + 1));
+      const text = cardEl('span', 'methodText');
+      text.appendChild(cardEl('span', '', typeof step === 'string' ? step : (step?.text ?? step?.title ?? '')));
+      if (step?.time) text.appendChild(cardEl('span', 'methodTime', step.time));
+      item.appendChild(text);
+      list.appendChild(item);
+    });
+
+    column.appendChild(list);
+    body.appendChild(column);
+
+  }
+
+  box.appendChild(body);
+
+  if (Array.isArray(card.tips) && card.tips.length) {
+    const tips = cardEl('div', 'recipeTips');
+    tips.appendChild(cardEl('div', 'recipeHeading', 'Worth knowing'));
+    card.tips.slice(0, 5).forEach(tip => tips.appendChild(cardEl('div', 'recipeTip', tip)));
+    box.appendChild(tips);
+  }
+
+  if (Array.isArray(card.allergens) && card.allergens.length) {
+    const row = cardEl('div', 'allergenRow');
+    row.appendChild(cardEl('span', 'allergenLabel', 'Allergens'));
+    card.allergens.slice(0, 14).forEach(one => row.appendChild(cardEl('span', 'allergenChip', one)));
+    box.appendChild(row);
+  }
+
+}
+
+function buildChecklistCard(card, box) {
+
+  box.classList.add('checklistCard');
+
+  if (card.title) box.appendChild(cardEl('div', 'cardTitle', card.title));
+  if (card.subtitle) box.appendChild(cardEl('div', 'cardWhat', card.subtitle));
+
+  const list = cardEl('div', 'recipeList');
+  const ticks = [];
+
+  (card.items || []).slice(0, 30).forEach(entry => {
+
+    if (entry && typeof entry === 'object' && entry.group) {
+      list.appendChild(cardEl('div', 'recipeGroup', entry.group));
+      return;
+    }
+
+    const line = cardEl('button', 'recipeItem');
+    line.type = 'button';
+
+    const mark = cardEl('span', 'recipeTick');
+    mark.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+    line.appendChild(mark);
+
+    const text = cardEl('span', 'recipeItemText', typeof entry === 'string' ? entry : (entry?.text ?? ''));
+    line.appendChild(text);
+
+    if (entry?.note) {
+      const note = cardEl('span', 'recipeItemNote', entry.note);
+      text.appendChild(note);
+    }
+
+    list.appendChild(line);
+    ticks.push(line);
+
+  });
+
+  box.appendChild(list);
+
+  if (ticks.length) cardTicks(box, ticks);
+
+}
+
+function buildGuideCard(card, box) {
+
+  box.classList.add('guideCard');
+
+  if (card.title) box.appendChild(cardEl('div', 'guideTitle', card.title));
+  if (card.lead) box.appendChild(cardEl('div', 'guideLead', card.lead));
+
+  if (Array.isArray(card.keyPoints) && card.keyPoints.length) {
+    const key = cardEl('div', 'guideKeys');
+    key.appendChild(cardEl('div', 'guideKeysLabel', 'The short version'));
+    card.keyPoints.slice(0, 5).forEach(point => {
+      const line = cardEl('div', 'guideKey');
+      line.appendChild(cardEl('span', 'guideKeyDot', ''));
+      line.appendChild(cardEl('span', '', point));
+      key.appendChild(line);
+    });
+    box.appendChild(key);
+  }
+
+  (card.sections || []).slice(0, 10).forEach(section => {
+
+    const part = cardEl('div', 'guideSection');
+
+    if (section?.heading) part.appendChild(cardEl('div', 'guideHeading', section.heading));
+    if (section?.body) part.appendChild(cardEl('div', 'guideBody', section.body));
+
+    (section?.points || []).slice(0, 8).forEach(point => {
+      const line = cardEl('div', 'guidePoint');
+      line.appendChild(cardEl('span', 'guideBullet', ''));
+      line.appendChild(cardEl('span', '', typeof point === 'string' ? point : (point?.text ?? '')));
+      part.appendChild(line);
+    });
+
+    box.appendChild(part);
+
+  });
+
+  if (card.callout) {
+    const note = cardEl('div', 'guideCallout');
+    note.appendChild(cardEl('span', 'guideCalloutLabel', card.calloutLabel || 'Watch out'));
+    note.appendChild(cardEl('span', '', card.callout));
+    box.appendChild(note);
+  }
+
+}
+
 const CARD_BUILDERS = {
   weather: buildWeatherCard,
   score: buildScoreCard,
@@ -4850,7 +5095,10 @@ const CARD_BUILDERS = {
   music: buildMusicCard,
   chart: buildChartCard,
   steps: buildStepsCard,
-  compare: buildCompareCard
+  compare: buildCompareCard,
+  recipe: buildRecipeCard,
+  checklist: buildChecklistCard,
+  guide: buildGuideCard
 };
 
 function buildCard(card) {

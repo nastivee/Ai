@@ -3475,6 +3475,35 @@ Two or three things weighed against each other:
 "verdict":"Induction, unless you cook with a wok."}
 \`\`\`
 
+A recipe, laid out properly:
+\`\`\`natter
+{"card":"recipe","title":"Proper carbonara","subtitle":"Roman, no cream","serves":"2","prep":"10 min","cook":"15 min","difficulty":"Easy",
+"ingredients":[{"amount":"200g","item":"spaghetti"},{"amount":"100g","item":"guanciale"},{"group":"For the sauce"},{"amount":"2","item":"egg yolks"},{"amount":"50g","item":"pecorino, grated"}],
+"method":[{"text":"Salt the water lightly: the cheese and pork are already salty.","time":"2 min"},{"text":"Crisp the guanciale in a dry pan, then take the pan off the heat."}],
+"tips":["Off the heat before the eggs go in, or you get scrambled egg."],
+"allergens":["Egg","Milk","Gluten"]}
+\`\`\`
+Use it for any recipe. Amounts on the left, method on the right,
+and the person can tick things off as they go.
+
+Things to tick off:
+\`\`\`natter
+{"card":"checklist","title":"Before the inspection","subtitle":"Tick as you go",
+"items":[{"group":"Paperwork"},{"text":"Gas safety certificate","note":"Must be within 12 months"},"Fire risk assessment",{"group":"On the day"},"Prop the fire doors open"]}
+\`\`\`
+
+A written answer with more than a few paragraphs in it:
+\`\`\`natter
+{"card":"guide","title":"Registering for VAT","lead":"What it means, when you must, and what changes the day you do.",
+"keyPoints":["You must register once turnover passes the threshold in any rolling 12 months","Registration takes about a fortnight","You can reclaim VAT on some earlier purchases"],
+"sections":[{"heading":"When you have to","body":"It is a rolling 12 months, not your financial year.","points":["Check monthly, not yearly","Watch one off large jobs"]},
+{"heading":"What changes","body":"Every invoice needs the VAT number and a breakdown."}],
+"calloutLabel":"Watch out","callout":"Late registration is charged from the date you should have registered, not the date you noticed."}
+\`\`\`
+Use a guide card whenever the answer would otherwise be more
+than about four paragraphs. It gives the person the short
+version first, then the detail in sections they can scan.
+
 Music on manuscript paper:
 \`\`\`natter
 {"card":"music","title":"Ode to Joy","composer":"Beethoven","key":"C","time":"4/4","clef":"treble",

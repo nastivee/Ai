@@ -8206,3 +8206,363 @@ body.theme-halloween .logoLarge::after {
   background: var(--edge);
   color: #fff;
 }
+
+
+/* =====================================================
+   RECIPES, CHECKLISTS AND WRITTEN GUIDES
+===================================================== */
+
+.answerCard.recipeCard,
+.answerCard.guideCard {
+  padding: 18px 20px;
+}
+
+.recipeHead {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.recipeTitle {
+  font-size: 19px;
+  font-weight: 800;
+  letter-spacing: -.3px;
+  line-height: 1.2;
+}
+
+.recipeSub {
+  margin-top: 3px;
+  font-size: 13px;
+  color: var(--mute-text);
+}
+
+.recipeFacts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, .07);
+}
+
+.recipeFact {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 7px 12px;
+  border-radius: 11px;
+  background: rgba(255, 255, 255, .04);
+}
+
+.recipeFactLabel {
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: .4px;
+  text-transform: uppercase;
+  color: var(--mute-text);
+}
+
+.recipeFactValue { font-size: 13.5px; font-weight: 700; }
+
+.recipeBody {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) minmax(220px, 1.35fr);
+  gap: 20px;
+  margin-top: 14px;
+}
+
+@media (max-width: 620px) {
+  .recipeBody { grid-template-columns: 1fr; gap: 16px; }
+}
+
+.recipeHeading {
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: .6px;
+  text-transform: uppercase;
+  color: var(--mute-text);
+  margin-bottom: 8px;
+}
+
+.recipeList {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.recipeGroup {
+  margin: 10px 0 4px;
+  font-size: 12px;
+  font-weight: 800;
+  color: #a78bfa;
+}
+
+body.smartMode .recipeGroup { color: #8fb0ec; }
+
+.recipeItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  width: 100%;
+  padding: 7px 9px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text);
+  font-size: 13.5px;
+  line-height: 1.45;
+  text-align: left;
+  cursor: pointer;
+  transition: background .18s var(--ease), color .18s var(--ease);
+}
+
+.recipeItem:hover { background: rgba(255, 255, 255, .05); }
+
+.recipeTick {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid var(--mute-line);
+  border-radius: 6px;
+  color: transparent;
+}
+
+.recipeTick svg { width: 12px; height: 12px; }
+
+.recipeItem.ticked .recipeTick {
+  border-color: transparent;
+  background: var(--edge);
+  color: #fff;
+}
+
+.recipeItem.ticked .recipeItemText {
+  color: var(--mute-text);
+  text-decoration: line-through;
+  text-decoration-color: rgba(255, 255, 255, .3);
+}
+
+.recipeItemNote {
+  display: block;
+  font-size: 11.5px;
+  color: var(--mute-text);
+}
+
+.tickRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.tickBar {
+  flex: 1;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .07);
+  overflow: hidden;
+}
+
+.tickFill {
+  display: block;
+  height: 100%;
+  width: 0;
+  border-radius: 999px;
+  background: var(--edge);
+  transition: width .25s var(--ease);
+}
+
+.tickCount {
+  font-size: 11.5px;
+  font-weight: 800;
+  color: var(--mute-text);
+  white-space: nowrap;
+}
+
+/* method */
+.methodList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+}
+
+.methodStep {
+  display: flex;
+  gap: 11px;
+  align-items: flex-start;
+}
+
+.methodNumber {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, .06);
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.methodText {
+  font-size: 13.8px;
+  line-height: 1.55;
+}
+
+.methodTime {
+  display: block;
+  margin-top: 2px;
+  font-size: 11.5px;
+  font-weight: 800;
+  color: #a78bfa;
+}
+
+body.smartMode .methodTime { color: #8fb0ec; }
+
+.recipeTips {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, .07);
+}
+
+.recipeTip {
+  position: relative;
+  padding-left: 16px;
+  margin-top: 6px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text);
+}
+
+.recipeTip::before {
+  content: '';
+  position: absolute;
+  left: 2px;
+  top: 8px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--edge);
+}
+
+.allergenRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 14px;
+}
+
+.allergenLabel {
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: .5px;
+  text-transform: uppercase;
+  color: var(--mute-text);
+}
+
+.allergenChip {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(245, 158, 11, .14);
+  color: #f7c168;
+  font-size: 11.5px;
+  font-weight: 700;
+}
+
+/* a written guide */
+.guideTitle {
+  font-size: 19px;
+  font-weight: 800;
+  letter-spacing: -.3px;
+}
+
+.guideLead {
+  margin-top: 6px;
+  font-size: 14.5px;
+  line-height: 1.6;
+  color: #cfc5db;
+}
+
+body.smartMode .guideLead { color: #c2cede; }
+
+.guideKeys {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, .04);
+  border-left: 3px solid #a78bfa;
+}
+
+body.smartMode .guideKeys { border-left-color: #93c5fd; }
+
+.guideKeysLabel {
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: .5px;
+  text-transform: uppercase;
+  color: var(--mute-text);
+  margin-bottom: 6px;
+}
+
+.guideKey,
+.guidePoint {
+  display: flex;
+  gap: 9px;
+  align-items: flex-start;
+  margin-top: 5px;
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+
+.guideKeyDot,
+.guideBullet {
+  flex-shrink: 0;
+  width: 6px;
+  height: 6px;
+  margin-top: 8px;
+  border-radius: 50%;
+  background: var(--edge);
+}
+
+.guideSection { margin-top: 16px; }
+
+.guideHeading {
+  font-size: 15px;
+  font-weight: 800;
+  margin-bottom: 5px;
+}
+
+.guideBody {
+  font-size: 14px;
+  line-height: 1.62;
+}
+
+.guideCallout {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 16px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(245, 158, 11, .1);
+  border: 1px solid rgba(245, 158, 11, .25);
+  font-size: 13.5px;
+  line-height: 1.55;
+}
+
+.guideCalloutLabel {
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: .5px;
+  text-transform: uppercase;
+  color: #f7c168;
+}
