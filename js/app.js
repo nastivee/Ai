@@ -4277,13 +4277,217 @@ function buildFactsCard(card, box) {
 
 }
 
+/* =====================================================
+   MUSIC PAPER
+
+   A tune, a scale or a riff drawn on real manuscript
+   paper: staves, clef, key, time signature, notes with
+   stems and flags, bar lines, and words under the notes.
+===================================================== */
+
+const MUSIC_LETTERS = { C: 0, D: 1, E: 2, F: 3, G: 4, A: 5, B: 6 };
+
+const MUSIC_CLEFS = {
+  treble: { bottom: 30, label: 'treble' },   /* E4 on the bottom line */
+  bass: { bottom: 18, label: 'bass' }        /* G2 on the bottom line */
+};
+
+/* "F#4" or "Bb3" or "C4" into a step number and an accidental */
+function musicPitch(text) {
+  const match = /^([A-Ga-g])([#b]?)(-?\d)$/.exec(String(text || '').trim());
+  if (!match) return null;
+  const letter = MUSIC_LETTERS[match[1].toUpperCase()];
+  return {
+    step: Number(match[3]) * 7 + letter,
+    accidental: match[2] === '#' ? '♯' : match[2] === 'b' ? '♭' : ''
+  };
+}
+
+function musicLength(value) {
+  const text = String(value || 'q').toLowerCase();
+  const dotted = text.includes('.');
+  const base = text.replace('.', '');
+  const kinds = {
+    w: { beats: 4, hollow: true, stem: false, flags: 0 },
+    h: { beats: 2, hollow: true, stem: true, flags: 0 },
+    q: { beats: 1, hollow: false, stem: true, flags: 0 },
+    e: { beats: .5, hollow: false, stem: true, flags: 1 },
+    s: { beats: .25, hollow: false, stem: true, flags: 2 }
+  };
+  const kind = kinds[base] || kinds.q;
+  return { ...kind, dotted };
+}
+
+const TREBLE_CLEF = 'M8.2 37.4c-3.1-1.6-5-4.4-5-7.6 0-4 3-7.2 7.2-7.2 1 0 1.9.2 2.7.5l-.7-4.6C8.6 15.2 5 11.4 5 6.9 5 3.4 7.3.5 9.9.5c2.2 0 3.6 2.3 4 5.2.4 3-.6 5.9-2.6 8.6l.8 5.2c.6-.1 1.2-.2 1.8-.2 4.6 0 8.1 3.3 8.1 8 0 4.2-3 7.3-7 7.9l.6 4c.5 3.4-1.5 6.3-4.6 6.3-2.6 0-4.6-1.9-4.6-4.3 0-1.9 1.4-3.3 3.1-3.3 1.6 0 2.9 1.2 2.9 2.8 0 1.5-1.1 2.6-2.5 2.7.5.6 1.3 1 2.2 1 1.9 0 3.1-1.8 2.7-4.3l-.6-3.9c-.6.1-1.2.1-1.8.1-1.4 0-2.7-.2-3.9-.6zM10.4 3c-1.6 1.9-2.6 4.4-2.6 6.6 0 2.4 1.1 4.3 3 5.6 1.4-2 2.2-4.3 2.2-6.4 0-3.1-.9-5-2.6-5.8zm.3 21.4c-2.9 0-5.1 2.3-5.1 5.2 0 2.4 1.5 4.5 3.8 5.6l-1.6-10.6c.4-.1.6-.2.9-.2zm2.1.3l1.6 10.6c2.6-.5 4.4-2.7 4.4-5.4 0-3-2.4-5.3-5.5-5.3-.2 0-.3 0-.5.1z';
+
+function musicClefGlyph(box, clef, y, gap) {
+  if (clef === 'bass') {
+    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    g.innerHTML =
+      `<circle cx="9" cy="${y + gap}" r="2" fill="#1d1a17"/>` +
+      `<circle cx="17" cy="${y + gap * .6}" r="1.5" fill="#1d1a17"/>` +
+      `<circle cx="17" cy="${y + gap * 1.6}" r="1.5" fill="#1d1a17"/>` +
+      `<path d="M9 ${y + gap} a10 10 0 0 1 0 ${gap * 3.6}" fill="none" stroke="#1d1a17" stroke-width="3.4" stroke-linecap="round"/>`;
+    return g;
+  }
+  const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+  const scale = (gap * 4) / 34;
+  g.setAttribute('transform', `translate(6 ${y - gap * 1.1}) scale(${scale.toFixed(3)})`);
+  g.innerHTML = `<path d="${TREBLE_CLEF}" fill="#1d1a17"/>`;
+  return g;
+}
+
+function buildMusicCard(card, box) {
+
+  box.classList.add('musicCard');
+
+  if (card.title) {
+    const title = cardEl('div', 'musicTitle', card.title);
+    box.appendChild(title);
+  }
+
+  const under = [card.composer, card.key ? `Key of ${card.key}` : '', card.tempo]
+    .filter(Boolean)
+    .join(' · ');
+
+  if (under) box.appendChild(cardEl('div', 'musicSub', under));
+
+  const notes = Array.isArray(card.notes) ? card.notes.slice(0, 96) : [];
+
+  if (!notes.length) return;
+
+  const clef = MUSIC_CLEFS[card.clef === 'bass' ? 'bass' : 'treble'];
+
+  /* the paper */
+  const gap = 9;                       /* between stave lines */
+  const step = gap / 2;                /* one note step */
+  const startX = 62;                   /* after the clef and time signature */
+  const noteGap = 30;
+  const width = 560;
+  const perRow = Math.max(4, Math.floor((width - startX - 16) / noteGap));
+  const rows = [];
+
+  for (let i = 0; i < notes.length; i += perRow) {
+    rows.push(notes.slice(i, i + perRow));
+  }
+
+  const rowHeight = 86;
+  const height = rows.length * rowHeight + 16;
+
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+  svg.setAttribute('class', 'musicPaper');
+  svg.setAttribute('role', 'img');
+  svg.setAttribute('aria-label', `${card.title || 'Music'}, written on a stave`);
+
+  const add = (markup) => { svg.insertAdjacentHTML('beforeend', markup); };
+
+  rows.forEach((row, rowIndex) => {
+
+    const top = 20 + rowIndex * rowHeight;
+    const bottomLine = top + gap * 4;
+
+    /* five lines */
+    for (let line = 0; line < 5; line += 1) {
+      const y = top + line * gap;
+      add(`<line x1="8" y1="${y}" x2="${width - 10}" y2="${y}" stroke="#4a4038" stroke-width="1"/>`);
+    }
+
+    svg.appendChild(musicClefGlyph(svg, card.clef === 'bass' ? 'bass' : 'treble', top, gap));
+
+    if (rowIndex === 0 && card.time) {
+      const parts = String(card.time).split('/');
+      add(`<text x="38" y="${top + gap * 1.9}" class="musicTime">${escapeHtml(parts[0] || '4')}</text>`);
+      add(`<text x="38" y="${top + gap * 3.9}" class="musicTime">${escapeHtml(parts[1] || '4')}</text>`);
+    }
+
+    let x = startX;
+
+    row.forEach(item => {
+
+      if (item?.bar) {
+        add(`<line x1="${x - noteGap / 2}" y1="${top}" x2="${x - noteGap / 2}" y2="${bottomLine}" stroke="#4a4038" stroke-width="1.6"/>`);
+        return;
+      }
+
+      const pitch = musicPitch(item?.p ?? item?.pitch ?? item);
+      const length = musicLength(item?.d ?? item?.length);
+
+      if (!pitch) {
+        /* a rest: a small block on the middle line */
+        add(`<rect x="${x - 5}" y="${top + gap * 1.6}" width="10" height="4" fill="#1d1a17"/>`);
+        x += noteGap;
+        return;
+      }
+
+      const y = bottomLine - (pitch.step - clef.bottom) * step;
+
+      /* ledger lines above and below */
+      for (let ly = bottomLine + gap; ly <= y + 0.1; ly += gap) {
+        add(`<line x1="${x - 9}" y1="${ly}" x2="${x + 9}" y2="${ly}" stroke="#4a4038" stroke-width="1"/>`);
+      }
+      for (let ly = top - gap; ly >= y - 0.1; ly -= gap) {
+        add(`<line x1="${x - 9}" y1="${ly}" x2="${x + 9}" y2="${ly}" stroke="#4a4038" stroke-width="1"/>`);
+      }
+
+      if (pitch.accidental) {
+        add(`<text x="${x - 16}" y="${y + 4}" class="musicAccidental">${pitch.accidental}</text>`);
+      }
+
+      add(
+        `<ellipse cx="${x}" cy="${y}" rx="6.2" ry="4.6" transform="rotate(-20 ${x} ${y})" ` +
+        `fill="${length.hollow ? 'none' : '#1d1a17'}" stroke="#1d1a17" stroke-width="${length.hollow ? 2 : 1}"/>`
+      );
+
+      if (length.dotted) {
+        add(`<circle cx="${x + 11}" cy="${y - 2}" r="1.7" fill="#1d1a17"/>`);
+      }
+
+      if (length.stem) {
+        const up = y > top + gap * 2;
+        const stemX = up ? x + 5.8 : x - 5.8;
+        const stemY = up ? y - 26 : y + 26;
+        add(`<line x1="${stemX}" y1="${y}" x2="${stemX}" y2="${stemY}" stroke="#1d1a17" stroke-width="1.6"/>`);
+        for (let flag = 0; flag < length.flags; flag += 1) {
+          const fy = stemY + (up ? flag * 6 : -flag * 6);
+          add(
+            `<path d="M${stemX} ${fy} q7 4 6 11 q-2 -6 -6 -7 Z" fill="#1d1a17" ` +
+            `transform="${up ? '' : `scale(1 -1) translate(0 ${-2 * fy})`}"/>`
+          );
+        }
+      }
+
+      if (item?.l || item?.lyric) {
+        add(
+          `<text x="${x}" y="${top + gap * 4 + 30}" class="musicLyric">${escapeHtml(String(item.l || item.lyric))}</text>`
+        );
+      }
+
+      x += noteGap;
+
+    });
+
+    /* the line ends with a bar line */
+    add(`<line x1="${width - 10}" y1="${top}" x2="${width - 10}" y2="${bottomLine}" stroke="#4a4038" stroke-width="1.6"/>`);
+
+  });
+
+  const paper = cardEl('div', 'musicSheet');
+  paper.appendChild(svg);
+  box.appendChild(paper);
+
+  if (card.note) box.appendChild(cardEl('div', 'musicNote', card.note));
+
+}
+
 const CARD_BUILDERS = {
   weather: buildWeatherCard,
   score: buildScoreCard,
   fixture: buildFactsCard,
   table: buildTableCard,
   stat: buildStatCard,
-  facts: buildFactsCard
+  facts: buildFactsCard,
+  music: buildMusicCard
 };
 
 function buildCard(card) {
@@ -14986,10 +15190,21 @@ async function loadRefusals() {
       title.textContent = item.category || 'Turned down';
       text.appendChild(title);
 
+      if (item.kind) {
+        const tag = document.createElement('span');
+        tag.className = 'refusalKind';
+        tag.textContent = item.kind;
+        title.appendChild(tag);
+      }
+
       const sub = document.createElement('span');
       sub.className = 'refusalSub';
       sub.textContent =
-        [refusalWhen(item.created_at), item.email || 'guest'].filter(Boolean).join(' · ');
+        [
+          refusalWhen(item.created_at),
+          item.name || (item.email ? item.email.split('@')[0] : 'guest'),
+          item.email || ''
+        ].filter(Boolean).join(' · ');
       text.appendChild(sub);
 
       head.appendChild(text);
@@ -15021,6 +15236,7 @@ async function loadRefusals() {
       };
 
       row('They asked', item.request);
+      row('Who', [item.name, item.email].filter(Boolean).join(' · ') || 'A guest, not signed in');
       row('What crossed the line', item.rule, 'breach');
       row('What would be fine to ask instead', item.avoid, 'fix');
       row('Natter replied', item.reply);

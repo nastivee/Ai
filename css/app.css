@@ -7476,3 +7476,82 @@ body.theme-halloween .authScreen .authCard {
   color: #fff;
   border-color: #8b5cf6;
 }
+
+/* =====================================================
+   MUSIC PAPER
+   Notes are drawn on cream manuscript paper, so a tune
+   looks like a tune and not like a list of letters.
+===================================================== */
+
+.answerCard.musicCard {
+  background:
+    linear-gradient(var(--mute-fill), var(--mute-fill)) padding-box,
+    linear-gradient(140deg, rgba(212, 175, 110, .6), rgba(167, 139, 250, .35)) border-box;
+}
+
+.musicTitle {
+  font-size: 16px;
+  font-weight: 800;
+  margin-bottom: 2px;
+}
+
+.musicSub {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--mute-text);
+  margin-bottom: 12px;
+}
+
+.musicSheet {
+  padding: 10px 8px;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #fdf8ec, #f3ead6);
+  box-shadow: inset 0 0 40px rgba(140, 110, 60, .14);
+  overflow-x: auto;
+}
+
+.musicPaper {
+  display: block;
+  width: 100%;
+  min-width: 460px;
+  height: auto;
+}
+
+.musicPaper .musicTime {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 15px;
+  font-weight: 700;
+  fill: #1d1a17;
+  text-anchor: middle;
+}
+
+.musicPaper .musicAccidental {
+  font-size: 15px;
+  fill: #1d1a17;
+}
+
+.musicPaper .musicLyric {
+  font-size: 10.5px;
+  font-weight: 600;
+  fill: #3a322a;
+  text-anchor: middle;
+}
+
+.musicNote {
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--mute-text);
+}
+
+/* what kind of issue it was */
+.refusalKind {
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .07);
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: .3px;
+  color: var(--mute-text);
+  vertical-align: 1px;
+}

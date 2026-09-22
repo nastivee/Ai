@@ -549,7 +549,12 @@ async function pushAlert(severity, kind, message) {
   Raising an alert must never be the thing that breaks a
   request, so every failure in here is swallowed.
 */
-async function raiseAlert(kind, severity, message, detail) {
+async function raiseAlert(kind, severity, message, detail, user) {
+
+  if (user) {
+    detail = `${detail || ''}\n\nWho: ${whoIs(user)}${user.email ? ` (${user.email})` : ''}`.trim();
+  }
+
 
   try {
 
@@ -2142,7 +2147,7 @@ app.get('/api/admin/refusals', async (req, res) => {
   const { data, error } =
     await supabaseAdmin
       .from('refusals')
-      .select('id, created_at, email, request, reply, category, rule, avoid, severity, seen_at')
+      .select('id, created_at, email, name, kind, request, reply, category, rule, avoid, severity, seen_at')
       .order('created_at', { ascending: false })
       .limit(60);
 
@@ -2816,6 +2821,12 @@ const REFUSAL_SIGNS = [
   /\bagainst (?:my|the) (?:rules|guidelines|policy)\b/i
 ];
 
+/* did the picture service turn it down, or did something break */
+function imageDeclined(error) {
+  const text = `${error?.message || ''} ${error?.code || ''} ${error?.type || ''}`.toLowerCase();
+  return /safety|moderation|content policy|content_policy|rejected|not allowed|violat/.test(text);
+}
+
 function looksLikeRefusal(text) {
   const reply = String(text || '');
   if (reply.length > 1400) return false;
@@ -2848,7 +2859,18 @@ severity: how serious the request was.
 Write for the app owner, in plain English, no jargon.
 `;
 
-async function noteRefusal({ user, request, reply }) {
+/* the friendliest name we hold for someone */
+function whoIs(user) {
+  const meta = user?.user_metadata || {};
+  return (
+    meta.full_name ||
+    meta.name ||
+    (user?.email ? user.email.split('@')[0] : '') ||
+    'guest'
+  );
+}
+
+async function noteRefusal({ user, request, reply, kind = 'Declined', category, rule, avoid, severity }) {
 
   try {
 
@@ -2856,11 +2878,13 @@ async function noteRefusal({ user, request, reply }) {
 
     const asked = String(request || '').trim().slice(0, 2000);
 
-    if (!asked) return;
+    if (!asked && !rule) return;
 
-    let note = {};
+    let note = { category, rule, avoid, severity };
 
     try {
+
+      if (category && rule) throw new Error('already described');
 
       const completion =
         await createReply({
@@ -2882,6 +2906,8 @@ async function noteRefusal({ user, request, reply }) {
     const row = {
       user_id: user?.id || null,
       email: user?.email || null,
+      name: whoIs(user),
+      kind,
       request: asked,
       reply: String(reply || '').slice(0, 1200),
       category: String(note.category || 'Not sure').slice(0, 80),
@@ -3065,6 +3091,23 @@ Any other set of facts:
 {"card":"facts","icon":"🎬","title":"Dune: Part Two","subtitle":"Showing tonight",
 "rows":[["Starts","7:30 pm"],["Where","Cineworld Stockton"],["Runtime","2h 46m"]]}
 \`\`\`
+
+Music on manuscript paper:
+\`\`\`natter
+{"card":"music","title":"Ode to Joy","composer":"Beethoven","key":"C","time":"4/4","clef":"treble",
+"notes":[{"p":"E4","d":"q","l":"Freu"},{"p":"E4","d":"q","l":"de"},{"p":"F4","d":"q"},{"p":"G4","d":"q"},{"bar":true},
+{"p":"G4","d":"q"},{"p":"F4","d":"q"},{"p":"E4","d":"q"},{"p":"D4","d":"q"}],
+"note":"Public domain"}
+\`\`\`
+Use it whenever you write music out: a scale, an exercise, a riff,
+a tune you composed yourself, a traditional or out of copyright
+melody, or music the user gave you. It draws real staves with a
+clef, a time signature, notes and bar lines, so never write music
+as rows of letters when a card will do.
+Pitches are like C4, F#4, Bb3. "d" is the length: w, h, q, e or s,
+with a dot for dotted (q.). {"bar":true} draws a bar line. "l" is
+the word sung on that note, for music where the words are yours,
+the user's, traditional or out of copyright.
 
 Weather icons, use one of these words only: sun, moon, cloud,
 partly, rain, showers, storm, snow, fog, wind.
@@ -4201,7 +4244,7 @@ app.post('/api/video', async (req, res) => {
 
     tidyVideoJobs();
 
-    videoJobs.set(operation.name, { userId: user.id, created: Date.now(), video: null, charged });
+    videoJobs.set(operation.name, { userId: user.id, created: Date.now(), video: null, charged, prompt });
 
     console.log(`VIDEO STARTED: ${operation.name}`);
 
@@ -4211,7 +4254,18 @@ app.post('/api/video', async (req, res) => {
 
     console.error('VIDEO START ERROR:', error);
 
-    raiseAlert('video failing', 'medium', 'A video could not be started.', error?.message);
+    raiseAlert('video failing', 'medium', 'A video could not be started.', error?.message, user);
+
+    noteRefusal({
+      user,
+      kind: 'Video failed',
+      request: req.body?.prompt || '',
+      reply: error?.message || '',
+      category: 'Video problem',
+      rule: error?.message || 'The video could not be started.',
+      avoid: 'Nothing was wrong with the request itself. If it keeps happening, the video service is having trouble.',
+      severity: 'medium'
+    });
 
     res.status(500).json({ error: error?.message || 'Could not start the video.' });
 
@@ -4267,6 +4321,17 @@ app.get('/api/video/status', async (req, res) => {
       const reason =
         (result.raiMediaFilteredReasons || []).join(' ') ||
         'The video was blocked by the safety filter. Try describing it differently.';
+
+      noteRefusal({
+        user,
+        kind: 'Video declined',
+        request: job.prompt || '',
+        reply: reason,
+        category: 'Video safety check',
+        rule: reason,
+        avoid: 'The video service blocked this one. Try the same idea without real people, brands or anything violent, and describe the scene plainly.',
+        severity: 'medium'
+      });
 
       return res.json({ done: true, error: reason });
 
@@ -4405,8 +4470,22 @@ app.post('/api/image', async (req, res) => {
       'images failing',
       'medium',
       'Image generation is failing. Credits are being refunded.',
-      error?.message
+      error?.message,
+      user
     );
+
+    noteRefusal({
+      user,
+      kind: imageDeclined(error) ? 'Picture declined' : 'Picture failed',
+      request: typedPrompt,
+      reply: error?.message || '',
+      category: imageDeclined(error) ? 'Picture safety check' : 'Picture problem',
+      rule: error?.message || 'The picture service did not come back with an image.',
+      avoid: imageDeclined(error)
+        ? 'The picture service turned this description down. Ask for the same idea without the part it objected to, or describe an invented character or scene instead of a real, named or recognisable person.'
+        : 'Nothing was wrong with the request itself. If it keeps happening, the picture service is having trouble.',
+      severity: 'medium'
+    });
 
     await refundCredit(user, 'generate failed');
 
@@ -4787,8 +4866,22 @@ style was requested.
       'image edits failing',
       'medium',
       'Image edits and Improve are failing. Credits are being refunded.',
-      error?.message
+      error?.message,
+      user
     );
+
+    noteRefusal({
+      user,
+      kind: imageDeclined(error) ? 'Photo edit declined' : 'Photo edit failed',
+      request: typedPrompt,
+      reply: error?.message || '',
+      category: imageDeclined(error) ? 'Photo safety check' : 'Photo edit problem',
+      rule: error?.message || 'The picture service did not come back with an edited photo.',
+      avoid: imageDeclined(error)
+        ? 'Edits to photographs of real people are checked hardest. Ask for a change to the scene, clothing or background rather than anything about the person\'s body or identity.'
+        : 'Nothing was wrong with the request itself. If it keeps happening, the picture service is having trouble.',
+      severity: 'medium'
+    });
 
     await refundCredit(user, 'edit failed');
 
