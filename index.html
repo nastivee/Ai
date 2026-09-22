@@ -6016,6 +6016,75 @@ body .profilePickerItem.current {
   opacity: 1;
   pointer-events: auto;
 }
+
+/* =====================================================
+   HELP ME WORD THIS
+===================================================== */
+
+body .wordButton {
+  border: 1px solid transparent;
+  background:
+    linear-gradient(var(--mute-fill), var(--mute-fill)) padding-box,
+    linear-gradient(var(--mute-line), var(--mute-line)) border-box;
+  color: var(--mute-text);
+}
+
+body .wordButton:not(.show) {
+  display: none;
+}
+
+body .wordButton:hover {
+  color: #fff;
+  background:
+    linear-gradient(var(--mute-fill), var(--mute-fill)) padding-box,
+    var(--edge) border-box;
+}
+
+body .wordButton.busy svg {
+  animation: wordSpin 1s linear infinite;
+}
+
+@keyframes wordSpin {
+  to { transform: rotate(360deg); }
+}
+
+.wordNote {
+  display: none;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  margin: 0 4px 8px;
+  padding: 7px 8px 7px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--mute-line);
+  color: var(--mute-text);
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+
+.wordNote.show {
+  display: flex;
+}
+
+.wordNote span {
+  flex: 1;
+  min-width: 0;
+}
+
+.fitButton {
+  margin-top: 8px;
+  min-height: 36px;
+  padding: 0 14px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background:
+    linear-gradient(var(--mute-fill), var(--mute-fill)) padding-box,
+    var(--edge) border-box;
+  color: #fff;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
 </style>
 </head>
 
@@ -7684,6 +7753,11 @@ body .profilePickerItem.current {
         </div>
 
 
+        <div class="wordNote" id="wordNote">
+          <span id="wordNoteText"></span>
+          <button type="button" class="learnedUndo" id="wordUndo">Undo</button>
+        </div>
+
         <div class="shapeRow" id="shapeRow">
 
           <span class="shapeLabel">Shape</span>
@@ -7738,6 +7812,16 @@ body .profilePickerItem.current {
             rows="1"
             placeholder="Message Nastivee..."
           ></textarea>
+
+          <button
+            id="wordButton"
+            class="composerButton wordButton"
+            type="button"
+            title="Help me word this"
+            aria-label="Help me word this"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 4 5 5L9 20H4v-5z"></path><path d="M13 6l5 5"></path><path d="M5 3v4M3 5h4M19 15v4M17 17h4"></path></svg>
+          </button>
 
           <button
             id="voiceButton"
@@ -10659,6 +10743,22 @@ async function loadChat(
 
     resealStale('messages', rows, ['content']);
 
+    /* say once, plainly, why some messages cannot be read here */
+    const lockedCount = rows.filter(row => row.__locked).length;
+
+    if (lockedCount) {
+      setTimeout(() => {
+        if (!isCurrentChat(chatId) || chat.querySelector('.lockedNotice')) return;
+        const note = document.createElement('div');
+        note.className = 'messageRow assistant lockedNotice learnedRow';
+        note.innerHTML = '<div class="learnedNote problem"></div>';
+        note.firstChild.textContent =
+          `${lockedCount} message${lockedCount === 1 ? ' was' : 's were'} sealed on another device. ` +
+          'Open Nastivee once on that device and they will be moved across so you can read them here.';
+        chat.prepend(note);
+      }, 0);
+    }
+
 
     emptyState?.remove();
 
@@ -12797,6 +12897,8 @@ async function generateVideo(prompt, requestChatId, image = null) {
 
     await saveMessage('assistant', failure, null, requestChatId);
 
+    offerFittingVersion(requestChatId, prompt, 'video', error.message);
+
   } finally {
 
     endJob(jobId);
@@ -13019,6 +13121,8 @@ async function generateImage(
       null,
       requestChatId
     );
+
+    offerFittingVersion(requestChatId, prompt, 'image', error.message);
 
   } finally {
 
@@ -18916,18 +19020,31 @@ async function sendMessage() {
     );
 
 
-  addTextMessage(
-    'user',
-    userText
-  );
+  /*
+    A question about an attached photo is shown and saved
+    once, as the photo with the words under it, further
+    down. Everything else shows the words here.
+  */
+  const askingAboutPhoto =
+    Boolean(selectedImageData) &&
+    !videoMode &&
+    (photoActionChosen ? photoAction : guessPhotoAction(userText)) === 'ask';
 
+  if (!askingAboutPhoto) {
 
-  await saveMessage(
-    'user',
-    userText,
-    null,
-    requestChatId
-  );
+    addTextMessage(
+      'user',
+      userText
+    );
+
+    await saveMessage(
+      'user',
+      userText,
+      null,
+      requestChatId
+    );
+
+  }
 
 
   /*
@@ -19060,6 +19177,8 @@ async function sendMessage() {
         null,
         requestChatId
       );
+
+      offerFittingVersion(requestChatId, userText, 'edit', error.message);
 
     });
 
@@ -21455,6 +21574,170 @@ if (window.MutationObserver) {
 })();
 
 /* =====================================================
+   HELP ME WORD THIS
+
+   The wand turns a rough idea into a clear request. After
+   a refusal, one tap asks for a version that genuinely fits
+   the rules, which lands in the box for them to check.
+===================================================== */
+
+const wordButton = document.getElementById('wordButton');
+const wordNote = document.getElementById('wordNote');
+
+let wordBefore = null;
+
+function paintWordButton() {
+  wordButton?.classList.toggle('show', (messageInput.value || '').trim().length >= 4);
+}
+
+messageInput.addEventListener('input', () => {
+  paintWordButton();
+  if (wordNote.classList.contains('show') && !wordButton.classList.contains('busy')) {
+    wordNote.classList.remove('show');
+  }
+});
+
+function currentWordKind() {
+  if (typeof videoMode !== 'undefined' && videoMode) return 'video';
+  if (imageMode) return 'image';
+  if (selectedImageData) return 'edit';
+  return 'chat';
+}
+
+async function rewordRequest(text, kind, refused = false) {
+
+  const response =
+    await fetch(`${API_BASE}/api/prompt/improve`, {
+      method: 'POST',
+      headers: await apiHeaders(),
+      body: JSON.stringify({ text, kind, refused })
+    });
+
+  const data = await response.json().catch(() => ({}));
+
+  if (!response.ok) throw new Error(data.error || 'Could not reword that just now.');
+
+  return data;
+
+}
+
+function showWordNote(text) {
+  document.getElementById('wordNoteText').textContent = text;
+  wordNote.classList.add('show');
+}
+
+wordButton?.addEventListener('click', async () => {
+
+  const draft = messageInput.value.trim();
+
+  if (!draft || wordButton.classList.contains('busy')) return;
+
+  wordButton.classList.add('busy');
+
+  try {
+
+    const result = await rewordRequest(draft, currentWordKind());
+
+    if (!result.text) {
+      showWordNote(result.note || 'Nothing acceptable could be made of that one. Try a different idea.');
+      return;
+    }
+
+    wordBefore = draft;
+    messageInput.value = result.text;
+    resizeTextarea();
+    showWordNote(result.note ? `Reworded. ${result.note}` : 'Reworded. Check it over, then send.');
+    messageInput.focus();
+
+  } catch (error) {
+
+    showWordNote(error.message);
+
+  } finally {
+
+    wordButton.classList.remove('busy');
+    paintWordButton();
+
+  }
+
+});
+
+document.getElementById('wordUndo')?.addEventListener('click', () => {
+  if (wordBefore !== null) {
+    messageInput.value = wordBefore;
+    resizeTextarea();
+    wordBefore = null;
+  }
+  wordNote.classList.remove('show');
+  paintWordButton();
+});
+
+/* after a refusal: offer a version that actually fits */
+function offerFittingVersion(chatId, prompt, kind, errorText) {
+
+  if (!prompt || !/safety system|safety_violations|content policy|moderation|blocked by the safety|raiMediaFiltered|safety rules/i.test(String(errorText || ''))) return;
+
+  if (!isCurrentChat(chatId)) return;
+
+  const rows = chat.querySelectorAll('.messageRow.assistant');
+  const last = rows[rows.length - 1];
+  const holder = last?.querySelector('.bubbleWrap') || last;
+
+  if (!holder) return;
+
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'fitButton';
+  button.textContent = 'Suggest a version that works';
+
+  button.addEventListener('click', async () => {
+
+    button.disabled = true;
+    button.textContent = 'Thinking...';
+
+    try {
+
+      const result = await rewordRequest(prompt, kind, true);
+
+      if (!result.text) {
+        button.textContent = 'Nothing acceptable could be made of that one';
+        return;
+      }
+
+      if (kind === 'image') setImageMode(true);
+      if (kind === 'video' && typeof setVideoMode === 'function') setVideoMode(true);
+
+      messageInput.value = result.text;
+      resizeTextarea();
+      paintWordButton();
+
+      wordBefore = null;
+
+      showWordNote(
+        (result.note ? `${result.note} ` : '') +
+        (kind === 'edit' ? 'Attach the photo again with Edit Photo, then send.' : 'Check it over, then send.')
+      );
+
+      messageInput.focus();
+      button.remove();
+
+    } catch (error) {
+
+      button.disabled = false;
+      button.textContent = 'Suggest a version that works';
+      showWordNote(error.message);
+
+    }
+
+  });
+
+  holder.appendChild(button);
+
+}
+
+paintWordButton();
+
+/* =====================================================
    SEND BUTTON
 ===================================================== */
 
@@ -21870,6 +22153,9 @@ function resizeTextarea() {
       180
     ) + 'px';
 
+  /* the wand only shows when there is something to reword */
+  try { paintWordButton(); } catch {}
+
 }
 
 
@@ -22246,7 +22532,7 @@ window.addEventListener('online', () => {
    clearing anything by hand.
 ===================================================== */
 
-const APP_VERSION = '2026-09-22-24';
+const APP_VERSION = '2026-09-22-25';
 
 const RELOAD_FLAG = 'nastivee_reloaded_for';
 

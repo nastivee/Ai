@@ -3504,6 +3504,88 @@ app.post('/api/admin/uploads/delete', async (req, res) => {
 
 
 // =====================================================
+// HELP ME WORD THIS
+//
+// Turns a rough idea into a clear, detailed request. When a
+// request was refused, it suggests a version that genuinely
+// fits the rules (it changes what is asked for, it never
+// hides the same thing behind other words).
+// =====================================================
+
+const WORDING_RULES = `
+You help people write better requests for an AI app that chats, makes images and makes short videos.
+
+Rewrite the user's draft so it gets a great result:
+- Keep their intent, language and voice. British English.
+- For images and video: describe subject, setting, style, lighting, composition and mood in one flowing paragraph.
+- For chat: make the question clear and specific, adding any context that obviously helps.
+- Under 90 words. No preamble, no quotes around it.
+
+Safety, always:
+- The result must be something a mainstream AI image and chat service allows.
+- If the draft asks for something that is not allowed (for example sexual or nude content, sexualising a real or identifiable person, minors in any suggestive context, graphic violence, hate, or real people in deceptive situations), CHANGE what is asked for so it genuinely fits: e.g. make a person fully clothed and non-sexual, make it a fictional character, drop the harmful element.
+- Never keep the disallowed idea by disguising it with euphemisms or softer words. The point is a different, acceptable request, not a way past the filter.
+- If nothing acceptable is left of it, say so in the note and return an empty text.
+
+Reply with JSON only: {"text": "the rewritten request", "note": "one short sentence on what you changed, or empty"}
+`.trim();
+
+
+app.post('/api/prompt/improve', async (req, res) => {
+
+  try {
+
+    const user = await getUser(req);
+    const who = user ? `word:${user.id}` : `word:${req.ip}`;
+
+    if (!withinLimit(who, 60)) {
+      return res.status(429).json({ error: 'Lots of rewrites this hour. Give it a little while.' });
+    }
+
+    const text = String(req.body?.text || '').trim().slice(0, 2000);
+    const kind = ['image', 'video', 'edit', 'chat'].includes(req.body?.kind) ? req.body.kind : 'chat';
+    const refused = req.body?.refused === true;
+
+    if (!text) return res.status(400).json({ error: 'Type something first.' });
+
+    const completion =
+      await createReply({
+        model: MEMORY_MODEL,
+        reasoning_effort: 'low',
+        response_format: { type: 'json_object' },
+        messages: [
+          { role: 'system', content: WORDING_RULES },
+          {
+            role: 'user',
+            content:
+              `KIND: ${kind}${refused ? '\nTHIS WAS REFUSED by the image service\'s safety check, so the new version must genuinely change what is asked for.' : ''}\n\nDRAFT:\n${text}`
+          }
+        ]
+      });
+
+    let result = {};
+
+    try {
+      result = JSON.parse(completion.choices?.[0]?.message?.content || '{}');
+    } catch {}
+
+    res.json({
+      text: String(result.text || '').trim().slice(0, 1200),
+      note: String(result.note || '').trim().slice(0, 300)
+    });
+
+  } catch (error) {
+
+    console.error('WORDING ERROR:', error?.message);
+
+    res.status(500).json({ error: 'Could not reword that just now.' });
+
+  }
+
+});
+
+
+// =====================================================
 // VOICE (OpenAI Realtime)
 //
 // Live spoken conversation. The browser talks to OpenAI
