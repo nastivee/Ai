@@ -12052,7 +12052,7 @@ function peekActor(bot, name, { left = 110, width = 34, height = 34, bottom = 0,
   el.innerHTML = PEEK_ACTORS[name];
   bot.stage.appendChild(el);
   el.go = (frames, ms, easing = 'ease-out') =>
-    el.animate(frames, { duration: ms, easing, fill: 'forwards' }).finished.catch(() => {});
+    el.animate(frames, { duration: ms * bot.tempo, easing, fill: 'forwards' }).finished.catch(() => {});
   return el;
 }
 
@@ -12078,7 +12078,7 @@ const devilRoutines = [
     for (let i = 0; i <= 11; i += 1) run.push(at(i % 2 ? PEEK_EYES - 12 : PEEK_EYES, 0, `rotate(${i % 2 ? 9 : 6}deg)`));
     run.push(at(PEEK_EYES));
     await Promise.all([
-      stage.animate([{ transform: 'translateX(0px)' }, { transform: `translateX(${room}px)` }], { duration: 2800, easing: 'ease-in-out', fill: 'forwards' }).finished.catch(() => {}),
+      stage.animate([{ transform: 'translateX(0px)' }, { transform: `translateX(${room}px)` }], { duration: 2800 * bot.tempo, easing: 'ease-in-out', fill: 'forwards' }).finished.catch(() => {}),
       bot.move(run, 2800, 'linear'),
       thief.go(hops, 2800, 'linear')
     ]);
@@ -12350,6 +12350,9 @@ async function peekDevil(bot) {
   }
   const pick = typeof bot.devilPick === 'number' ? bot.devilPick : devilDeck.shift();
   bot.devilPick = null;
+  /* each measured at normal speed, stretched to last two seconds longer */
+  const lengths = [9651, 6345, 4796, 6561, 4863, 4712, 5614, 4227, 6545, 6062];
+  bot.tempo = (lengths[pick] + 2000) / lengths[pick];
   bot.stage.style.width = '200px';
   bot.stage.style.height = '120px';
   await devilRoutines[pick](bot);
@@ -12372,12 +12375,12 @@ const PEEK_COSTUMES = [
     <rect x="29" y="6" width="6" height="6" rx="1" fill="none" stroke="#ffd166" stroke-width="1.2"/>
     <ellipse cx="32" cy="14.5" rx="29" ry="4.5" fill="#1a1226" stroke="#6b3fc4" stroke-opacity=".6" stroke-width=".8"/>` },
 
-  /* 2. vampire: fangs and a tall red collar */
-  { svg: `
-    <path d="M9 56 L-3 18 L14 36 Z" fill="#b3122e"/>
-    <path d="M9 56 L0 25 L13 38 Z" fill="#5a0a1a"/>
-    <path d="M55 56 L67 18 L50 36 Z" fill="#b3122e"/>
-    <path d="M55 56 L64 25 L51 38 Z" fill="#5a0a1a"/>
+  /* 2. vampire: slicked hair with a widow's peak, fangs and a cape collar round his chin */
+  { hideAntenna: true, svg: `
+    <path d="M8.5 27 Q8 12 32 11.5 Q56 12 55.5 27 Q52 20 46 18.5 L32 27 L18 18.5 Q12 20 8.5 27 Z" fill="#120c1c"/>
+    <path d="M20 14.5 Q30 12.5 44 14.5" stroke="#4a3a66" stroke-width="1" fill="none" stroke-linecap="round"/>
+    <path d="M1 60 Q-2 50 4 44 Q10 52 18 56 L46 56 Q54 52 60 44 Q66 50 63 60 Z" fill="#b3122e"/>
+    <path d="M6 58 Q5 52 7 48 Q12 54 18 57 L46 57 Q52 54 57 48 Q59 52 58 58 Z" fill="#5a0a1a"/>
     <path d="M26 43 l2 5.5 l2 -5.5 Z M34 43 l2 5.5 l2 -5.5 Z" fill="#fff"/>` },
 
   /* 3. a jack-o'-lantern keeps him company */
@@ -12555,10 +12558,13 @@ function createPeekBot(card) {
     last: -1,
     deck: [],
 
-    wait: ms => new Promise(resolve => setTimeout(resolve, ms)),
+    /* 1 is normal speed; the devil's routines run a little slower, so each lasts two seconds more */
+    tempo: 1,
+
+    wait: ms => new Promise(resolve => setTimeout(resolve, ms * api.tempo)),
 
     move(frames, duration, easing) {
-      return bot.animate(frames, { duration, easing, fill: 'forwards' }).finished.catch(() => {});
+      return bot.animate(frames, { duration: duration * api.tempo, easing, fill: 'forwards' }).finished.catch(() => {});
     },
 
     place(where) {
@@ -12579,7 +12585,7 @@ function createPeekBot(card) {
     async blink() {
       await eyes.animate(
         [{ transform: 'scaleY(1)' }, { transform: 'scaleY(.1)' }, { transform: 'scaleY(1)' }],
-        { duration: 180, easing: 'ease-in-out' }
+        { duration: (180) * api.tempo, easing: 'ease-in-out' }
       ).finished.catch(() => {});
     },
 
@@ -12594,7 +12600,7 @@ function createPeekBot(card) {
       const clamp = value => Math.max(-(parseFloat(stage.style.left) || 0), Math.min(limit, value));
       return stage.animate(
         [{ transform: `translateX(${clamp(fromX)}px)` }, { transform: `translateX(${clamp(toX)}px)` }],
-        { duration, easing, fill: 'forwards' }
+        { duration: duration * api.tempo, easing, fill: 'forwards' }
       ).finished.catch(() => {});
     },
 
@@ -12602,7 +12608,7 @@ function createPeekBot(card) {
     async ding() {
       await ball.animate(
         [{ fill: '#8fdcff' }, { fill: '#fff6b0' }, { fill: '#ffe066' }, { fill: '#8fdcff' }],
-        { duration: 520, easing: 'ease-in-out' }
+        { duration: (520) * api.tempo, easing: 'ease-in-out' }
       ).finished.catch(() => {});
     },
 
@@ -12610,7 +12616,7 @@ function createPeekBot(card) {
     async wave(times = 2) {
       await hand.animate(
         [{ transform: 'translateY(110%)' }, { transform: 'translateY(8%)' }],
-        { duration: 260, easing: 'cubic-bezier(.3,1.3,.5,1)', fill: 'forwards' }
+        { duration: (260) * api.tempo, easing: 'cubic-bezier(.3,1.3,.5,1)', fill: 'forwards' }
       ).finished.catch(() => {});
       const swing = [];
       for (let i = 0; i < times; i += 1) {
@@ -12621,10 +12627,10 @@ function createPeekBot(card) {
         );
       }
       swing.push({ transform: 'translateY(8%) rotate(0deg)' });
-      await hand.animate(swing, { duration: 360 * times, easing: 'ease-in-out', fill: 'forwards' }).finished.catch(() => {});
+      await hand.animate(swing, { duration: (360 * times) * api.tempo, easing: 'ease-in-out', fill: 'forwards' }).finished.catch(() => {});
       await hand.animate(
         [{ transform: 'translateY(8%)' }, { transform: 'translateY(110%)' }],
-        { duration: 220, easing: 'ease-in', fill: 'forwards' }
+        { duration: (220) * api.tempo, easing: 'ease-in', fill: 'forwards' }
       ).finished.catch(() => {});
     },
 
@@ -12637,7 +12643,7 @@ function createPeekBot(card) {
           { transform: 'rotate(-8deg)' },
           { transform: 'rotate(0deg)' }
         ],
-        { duration: 650, easing: 'ease-in-out' }
+        { duration: (650) * api.tempo, easing: 'ease-in-out' }
       ).finished.catch(() => {});
     },
 
@@ -12669,7 +12675,7 @@ function createPeekBot(card) {
       if (!fire) return;
       await fire.animate(
         [{ transform: 'scale(1)' }, { transform: `scale(${size})` }, { transform: `scale(${size * .92})` }, { transform: 'scale(1)' }],
-        { duration: 650, easing: 'ease-out' }
+        { duration: (650) * api.tempo, easing: 'ease-out' }
       ).finished.catch(() => {});
     },
 
@@ -12683,6 +12689,7 @@ function createPeekBot(card) {
       stage.querySelectorAll('.peekBaddie').forEach(node => node.remove());
       stage.style.width = '';
       stage.style.height = '';
+      api.tempo = 1;
       hand.style.left = '';
       bot.classList.remove('skin-skeleton', 'skin-mummy');
       bot.classList.remove('noAntenna');
