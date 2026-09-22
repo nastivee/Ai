@@ -13785,6 +13785,42 @@ function offerFittingVersion(chatId, prompt, kind, errorText) {
 paintWordButton();
 
 /* =====================================================
+   SIDEBAR AUTO HIDE: taps
+   Pointing at the edge opens it on a computer; on touch
+   screens a tap on the glowing edge does, and a tap on the
+   page tucks it away again.
+===================================================== */
+
+sidebar.addEventListener('click', event => {
+
+  const wide = window.matchMedia('(min-width: 761px)').matches;
+
+  if (wide) {
+    if (!sidebar.classList.contains('peekOpen') && !sidebar.matches(':hover')) {
+      event.preventDefault();
+      event.stopPropagation();
+      sidebar.classList.add('peekOpen');
+    }
+    return;
+  }
+
+  if (!sidebar.classList.contains('mobileOpen')) {
+    event.preventDefault();
+    event.stopPropagation();
+    openMobileSidebar();
+  }
+
+}, true);
+
+document.addEventListener('pointerdown', event => {
+  if (sidebar.classList.contains('peekOpen') && !sidebar.contains(event.target)) {
+    sidebar.classList.remove('peekOpen');
+  }
+});
+
+sidebar.addEventListener('mouseleave', () => sidebar.classList.remove('peekOpen'));
+
+/* =====================================================
    SEND BUTTON
 ===================================================== */
 
