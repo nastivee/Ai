@@ -8109,19 +8109,20 @@ body.smartMode .thinking i { background: #93c5fd; }
   line-height: 1;
 }
 
+/* the picture wrapper has no size of its own, so the image
+   itself is the thing that gets sized and spaced */
 .logoMark {
-  display: inline-block;
-  height: 1.44em;
-  /* the robot sits on the right of the mark, so the rest of
-     the word starts clear of it */
-  margin: 0 .02em 0 -.12em;
-  flex-shrink: 0;
+  display: contents;
 }
 
 .logoMark img {
   display: block;
-  height: 100%;
+  height: 1.44em;
   width: auto;
+  flex-shrink: 0;
+  /* the robot sits on the right of the mark, so the rest of
+     the word starts clear of it */
+  margin: 0 .04em 0 -.1em;
   /* the drop shadow spills outwards and is never cut off */
   filter: drop-shadow(0 6px 18px rgba(124, 58, 237, .35));
 }
