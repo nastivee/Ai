@@ -11929,6 +11929,109 @@ const PEEK_SKELETON_HAND_SVG = `
   <path d="M5.8 5.2 h0.01 M8.4 4.2 h0.01 M11 4.6 h0.01" stroke="#8d8573" stroke-width="1.4" stroke-linecap="round"/>
 </svg>`;
 
+/* a little masked candy thief, for the devil to chase */
+const PEEK_BADDIE_SVG = `
+<svg viewBox="0 0 40 40" aria-hidden="true">
+  <path d="M8 40 L8 22 Q8 7 20 7 Q32 7 32 22 L32 40 Z" fill="#2a1640" stroke="#7a4bd6" stroke-opacity=".7" stroke-width="1"/>
+  <path d="M13 9 L11 1 L17 7 Z M27 9 L29 1 L23 7 Z" fill="#2a1640"/>
+  <rect x="7" y="16" width="26" height="8" rx="4" fill="#05060d"/>
+  <path d="M7 20 L2 17 M7 20 L2 23" stroke="#05060d" stroke-width="2" stroke-linecap="round"/>
+  <circle cx="15" cy="20" r="2.2" fill="#fff"/>
+  <circle cx="25" cy="20" r="2.2" fill="#fff"/>
+  <circle cx="15.6" cy="20.2" r="1" fill="#05060d"/>
+  <circle cx="25.6" cy="20.2" r="1" fill="#05060d"/>
+  <path d="M16 29 q4 2.5 8 0" stroke="#e9e4f5" stroke-width="1.4" fill="none" stroke-linecap="round"/>
+  <path d="M33 25 q5 -2 6 3" stroke="#6d5a3f" stroke-width="1.4" fill="none"/>
+  <ellipse cx="36" cy="33" rx="4.2" ry="3.6" fill="#ff8a1f"/>
+  <path d="M34.3 32.5 l.9 -1.1 l.9 1.1 Z M36.8 32.5 l.9 -1.1 l.9 1.1 Z" fill="#2a1640"/>
+</svg>`;
+
+/*
+  The devil's routine: a masked thief pops up with the candy,
+  sees him, and bolts. He gives chase right along the top of
+  the box, the thief gets away off the end, and he pops back
+  up to wave anyway. About seven seconds.
+*/
+async function peekChase(bot) {
+
+  const { stage, card, baddie } = bot;
+
+  const run = (from, to, ms) => {
+    const hops = Math.max(2, Math.round(ms / 240));
+    const frames = [];
+    for (let i = 0; i <= hops; i += 1) {
+      frames.push(peekPose(i % 2 ? from - 12 : from, `rotate(${i % 2 ? 9 : 6}deg)`));
+    }
+    frames.push(peekPose(to, 'rotate(0deg)'));
+    return bot.move(frames, ms, 'linear');
+  };
+
+  const thief = (frames, ms, easing = 'ease-out') =>
+    baddie.animate(frames, { duration: ms, easing, fill: 'forwards' }).finished.catch(() => {});
+
+  bot.place('left');
+  stage.style.width = '180px';
+
+  const room = Math.max(40, (card.clientWidth || 300) - 180 - (parseFloat(stage.style.left) || 0));
+
+  /* he rises, and something catches his eye */
+  await bot.move([peekPose(PEEK_HIDDEN), peekPose(PEEK_EYES)], 420, 'cubic-bezier(.2,.8,.3,1)');
+  await bot.look(3.5);
+  await bot.wait(250);
+
+  /* the thief pops up with the candy, and freezes */
+  await thief([{ transform: 'translateY(110%)' }, { transform: 'translateY(6%)' }], 320, 'cubic-bezier(.3,1.4,.5,1)');
+  bot.eyes('open');
+  await thief([
+    { transform: 'translateY(6%) rotate(0deg)' },
+    { transform: 'translateY(6%) rotate(-10deg)' },
+    { transform: 'translateY(6%) rotate(10deg)' },
+    { transform: 'translateY(6%) rotate(0deg)' }
+  ], 380, 'ease-in-out');
+  await bot.wait(200);
+
+  /* the chase, all the way along */
+  const hops = 11;
+  const thiefHops = [];
+  for (let i = 0; i <= hops; i += 1) {
+    thiefHops.push({ transform: `translateX(${Math.round(i * 2.2)}px) translateY(${i % 2 ? -8 : 6}%)` });
+  }
+
+  await Promise.all([
+    stage.animate(
+      [{ transform: 'translateX(0px)' }, { transform: `translateX(${room}px)` }],
+      { duration: 2800, easing: 'ease-in-out', fill: 'forwards' }
+    ).finished.catch(() => {}),
+    run(PEEK_EYES, PEEK_EYES, 2800),
+    thief(thiefHops, 2800, 'linear')
+  ]);
+
+  /* the thief is off the end and away */
+  await thief([
+    { transform: `translateX(${Math.round(hops * 2.2)}px) translateY(6%)` },
+    { transform: 'translateX(110px) translateY(0%)' }
+  ], 360, 'ease-in');
+
+  /* where did he go? */
+  bot.eyes('happy');
+  await bot.look(3.5);
+  await bot.wait(450);
+  await bot.look(-3.5);
+  await bot.wait(450);
+  await bot.look(0);
+  await bot.blink();
+
+  /* ducks down, then pops up high with a wave: better luck next year */
+  await bot.move([peekPose(PEEK_EYES), peekPose(PEEK_HIDDEN)], 300, 'ease-in');
+  await bot.wait(450);
+  await bot.move([peekPose(PEEK_HIDDEN), peekPose(PEEK_HIGH)], 420, 'cubic-bezier(.3,1.4,.5,1)');
+  bot.eyes('wink');
+  await bot.wave(2);
+  bot.eyes('happy');
+  await bot.move([peekPose(PEEK_HIGH), peekPose(PEEK_HIDDEN)], 400, 'ease-in');
+
+}
+
 const PEEK_COSTUMES = [
 
   /* 1. witch's hat */
@@ -11996,13 +12099,20 @@ const PEEK_COSTUMES = [
     <path class="flicker" d="M79 16 q3.5 4.5 2.4 7.5 q-1 2 -2.4 2 q-1.4 0 -2.4 -2 q-1.1 -3 2.4 -7.5 Z" fill="#ffb347"/>
     <path class="flicker" d="M79 20 q1.6 2.5 1 4 q-.4 1 -1 1 q-.6 0 -1 -1 q-.6 -1.5 1 -4 Z" fill="#fff3a0"/>` },
 
-  /* 9. huge devil horns on top of his head */
-  { hideAntenna: true, svg: `
-    <path d="M10 19 C-1 4 -3 -16 6 -31 C8 -15 14 -3 28 15 Z" fill="#c21d2e" stroke="#6e0b17" stroke-width="1"/>
-    <path d="M54 19 C65 4 67 -16 58 -31 C56 -15 50 -3 36 15 Z" fill="#c21d2e" stroke="#6e0b17" stroke-width="1"/>
-    <path d="M5 -20 q4 2 6 5 M3 -10 q5 2 8 6 M4 0 q5 2 9 6 M59 -20 q-4 2 -6 5 M61 -10 q-5 2 -8 6 M60 0 q-5 2 -9 6" stroke="#7d0f1c" stroke-width="1.1" stroke-linecap="round" fill="none"/>
-    <path d="M7 -26 C3 -14 4 -2 12 10" stroke="#ff6b7a" stroke-opacity=".55" stroke-width="1.3" stroke-linecap="round" fill="none"/>
-    <path d="M57 -26 C61 -14 60 -2 52 10" stroke="#ff6b7a" stroke-opacity=".55" stroke-width="1.3" stroke-linecap="round" fill="none"/>` },
+  /* 9. huge devil horns on top of his head, and he chases a
+     candy thief right along the top of the box */
+  { hideAntenna: true, baddie: true, routine: peekChase, svg: `
+    <ellipse cx="32" cy="-12" rx="17" ry="16" fill="#ff7a1a" opacity=".2" class="glow"/>
+    <g class="fire">
+      <path d="M17 4 L16 -9 L20 -3 L21 -20 L25 -7 L27 -27 L30 -11 L32 -33 L35 -11 L37 -26 L39 -7 L43 -19 L44 -4 L48 -10 L47 4 Q32 8 17 4 Z" fill="#ff6a13"/>
+      <path d="M20.5 4 L20.5 -3 L24.5 -1 L26.5 -15 L29.5 -3 L32.5 -23 L35 -3 L38 -14 L40 -1 L43.5 -5 L43.5 4 Q32 7 20.5 4 Z" fill="#ffae3b"/>
+      <path d="M25 4 L26 -2 L29 -8 L31.5 1 L34.5 -11 L37 -1 L39 4 Q32 6 25 4 Z" fill="#fff0a0"/>
+    </g>
+    <path d="M15 18 C-4 9 -9 -16 7 -36 C1 -18 7 -3 28 14 Z" fill="#c21d2e" stroke="#6e0b17" stroke-width="1"/>
+    <path d="M49 18 C68 9 73 -16 57 -36 C63 -18 57 -3 36 14 Z" fill="#c21d2e" stroke="#6e0b17" stroke-width="1"/>
+    <path d="M2 -22 q4 1 6 4 M-1 -11 q5 1 8 5 M1 0 q5 2 9 6 M62 -22 q-4 1 -6 4 M65 -11 q-5 1 -8 5 M63 0 q-5 2 -9 6" stroke="#7d0f1c" stroke-width="1.1" stroke-linecap="round" fill="none"/>
+    <path d="M5 -30 C-1 -16 1 -2 12 11" stroke="#ff6b7a" stroke-opacity=".55" stroke-width="1.3" stroke-linecap="round" fill="none"/>
+    <path d="M59 -30 C65 -16 63 -2 52 11" stroke="#ff6b7a" stroke-opacity=".55" stroke-width="1.3" stroke-linecap="round" fill="none"/>` },
 
   /* 10. skull face paint */
   { svg: `
@@ -12091,6 +12201,10 @@ function createPeekBot(card) {
   const ball = antenna.querySelector('circle');
 
   const api = {
+
+    stage,
+    card,
+    baddie: null,
 
     busy: false,
     last: -1,
@@ -12197,10 +12311,19 @@ function createPeekBot(card) {
       }
       if (costume.hideAntenna) bot.classList.add('noAntenna');
       if (costume.hand === 'skeleton') hand.innerHTML = PEEK_SKELETON_HAND_SVG;
+      if (costume.baddie) {
+        api.baddie = document.createElement('div');
+        api.baddie.className = 'peekBaddie';
+        api.baddie.innerHTML = PEEK_BADDIE_SVG;
+        stage.appendChild(api.baddie);
+      }
     },
 
     undress() {
       bot.querySelectorAll('.peekCostume, .costumeBit').forEach(node => node.remove());
+      stage.querySelectorAll('.peekBaddie').forEach(node => node.remove());
+      api.baddie = null;
+      stage.style.width = '';
       bot.classList.remove('noAntenna');
       if (!hand.querySelector('rect[fill="#2f6fe8"]')) hand.innerHTML = PEEK_HAND_SVG;
     },
@@ -12248,7 +12371,8 @@ function createPeekBot(card) {
       api.dress(pick);
 
       try {
-        await peekRoutines[pick](api);
+        const special = halloweenOn() && PEEK_COSTUMES[pick]?.routine;
+        await (special || peekRoutines[pick])(api);
       } finally {
         bot.getAnimations().forEach(animation => animation.cancel());
         hand.getAnimations().forEach(animation => animation.cancel());
