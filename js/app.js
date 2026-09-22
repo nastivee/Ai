@@ -12473,6 +12473,9 @@ const PEEK_MUMMY_HAND_SVG = `
   <path d="M3 5 L15 8 M2.5 10 L15.5 12 M6 15 L12 16.5 M6 20 L12 21.5 M6 25 L12 26.5" stroke="#a89c7e" stroke-width=".8"/>
 </svg>`;
 
+/* how long the storm clouds take to roll in before the lightning */
+const STORM_ROLL_IN = 1400;
+
 const PEEK_COSTUMES = [
 
   /* 1. witch's hat */
@@ -13140,9 +13143,6 @@ function lightningSvg() {
   thunder and lightning strikes five seconds before he
   turns up, and at no other time.
 */
-/* how long the clouds take to roll in before the lightning */
-const STORM_ROLL_IN = 1400;
-
 function strikeStorm() {
   const decor = document.getElementById('themeDecor');
   if (!halloweenOn() || !decor ||
