@@ -6199,9 +6199,9 @@ body.smartMode .sidebar::after {
   width: 45%;
   background: linear-gradient(100deg,
     transparent 0%,
-    rgba(167, 139, 250, .10) 30%,
-    rgba(255, 255, 255, .22) 50%,
-    rgba(167, 139, 250, .10) 70%,
+    rgba(167, 139, 250, .05) 30%,
+    rgba(255, 255, 255, .10) 50%,
+    rgba(167, 139, 250, .05) 70%,
     transparent 100%);
   transform: translateX(-120%) skewX(-12deg);
   animation: modeShine .9s cubic-bezier(.4, 0, .2, 1) forwards;
@@ -6210,9 +6210,9 @@ body.smartMode .sidebar::after {
 .modeShine.smart::before {
   background: linear-gradient(100deg,
     transparent 0%,
-    rgba(96, 165, 250, .12) 30%,
-    rgba(255, 255, 255, .24) 50%,
-    rgba(96, 165, 250, .12) 70%,
+    rgba(96, 165, 250, .06) 30%,
+    rgba(255, 255, 255, .11) 50%,
+    rgba(96, 165, 250, .06) 70%,
     transparent 100%);
 }
 
@@ -6725,11 +6725,13 @@ body.theme-halloween .authScreen .authCard {
 
 .themeDecor .bolt {
   position: absolute;
-  top: 26px;
+  top: 0;
   left: 40%;
-  width: 46px;
-  height: 42vh;
+  width: 70px;
+  height: 75vh;
+  margin-left: -35px;
   opacity: 0;
+  clip-path: inset(0 0 100% 0);
   filter: drop-shadow(0 0 8px #b9a8ff) drop-shadow(0 0 22px #7a4bd6);
 }
 
@@ -6750,8 +6752,16 @@ body.theme-halloween .authScreen .authCard {
   animation: cloudDrift 90s linear infinite, thunderShake .9s ease-in-out;
 }
 
+/* it grows from the top in a blink, flickers, and is gone */
 .themeDecor.storm .bolt {
-  animation: boltStrike 1.1s ease-out .15s;
+  animation:
+    boltGrow .12s cubic-bezier(.2, 0, .4, 1) .15s forwards,
+    boltStrike 1.1s ease-out .15s;
+}
+
+@keyframes boltGrow {
+  from { clip-path: inset(0 0 100% 0); }
+  to { clip-path: inset(0 0 0 0); }
 }
 
 .themeDecor.storm .flash {

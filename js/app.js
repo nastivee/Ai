@@ -952,6 +952,11 @@ authSwitchButton.addEventListener(
 
     updateAuthMode();
 
+    /* the same sweep as Fast and Smart: into sign up (Smart's
+       blue) left to right, back to log in (Fast's purple)
+       right to left */
+    shineAcross(signupMode ? 'smart' : 'fast');
+
   }
 );
 
@@ -12441,7 +12446,8 @@ const PEEK_COSTUMES = [
         <stop offset="0" stop-color="#8e1410"/><stop offset=".22" stop-color="#d42a1e"/><stop offset=".5" stop-color="#b3160f"/><stop offset=".66" stop-color="#4a0b08"/><stop offset=".8" stop-color="#140505"/><stop offset="1" stop-color="#050101"/>
       </linearGradient>
     </defs>
-    <ellipse cx="32" cy="-10" rx="18" ry="15" fill="#ff7a1a" opacity=".22" class="glow"/>
+    <radialGradient id="fireGlow"><stop offset="0" stop-color="#ff8a1f" stop-opacity=".45"/><stop offset=".6" stop-color="#ff6a13" stop-opacity=".14"/><stop offset="1" stop-color="#ff6a13" stop-opacity="0"/></radialGradient>
+    <ellipse cx="32" cy="-12" rx="24" ry="20" fill="url(#fireGlow)"/>
     <image class="fire" href="img/flame-crown.webp" x="10" y="-29" width="44" height="33" preserveAspectRatio="none"/>
     <path d="M20.7 11.1 L19.0 10.8 L17.6 10.3 L16.1 9.6 L14.8 8.8 L13.4 7.8 L12.1 6.6 L10.9 5.2 L9.7 3.6 L8.5 1.8 L7.4 -0.1 L6.4 -2.3 L5.4 -4.6 L4.5 -7.1 L3.7 -9.7 L2.9 -12.4 L2.2 -15.2 L1.5 -18.1 L0.9 -21.1 L0.3 -24.1 L-0.3 -27.3 L-0.9 -30.4 L-1.4 -33.6 L-2.0 -36.8 L-2.7 -40.0 L-3.3 -40.0 L-3.5 -36.7 L-3.5 -33.4 L-3.6 -30.2 L-3.5 -26.9 L-3.5 -23.7 L-3.4 -20.6 L-3.2 -17.4 L-3.0 -14.4 L-2.7 -11.3 L-2.4 -8.4 L-1.9 -5.5 L-1.4 -2.6 L-0.8 0.1 L-0.1 2.8 L0.8 5.4 L1.8 7.9 L3.0 10.3 L4.4 12.6 L6.0 14.8 L7.8 16.9 L9.8 18.7 L12.1 20.4 L14.6 21.8 L17.3 22.9 Z" fill="url(#hornL)"/>
     <path d="M46.7 22.9 L49.4 21.8 L51.9 20.4 L54.2 18.7 L56.2 16.9 L58.0 14.8 L59.6 12.6 L61.0 10.3 L62.2 7.9 L63.2 5.4 L64.1 2.8 L64.8 0.1 L65.4 -2.6 L65.9 -5.5 L66.4 -8.4 L66.7 -11.3 L67.0 -14.4 L67.2 -17.4 L67.4 -20.6 L67.5 -23.7 L67.5 -26.9 L67.6 -30.2 L67.5 -33.4 L67.5 -36.7 L67.3 -40.0 L66.7 -40.0 L66.0 -36.8 L65.4 -33.6 L64.9 -30.4 L64.3 -27.3 L63.7 -24.1 L63.1 -21.1 L62.5 -18.1 L61.8 -15.2 L61.1 -12.4 L60.3 -9.7 L59.5 -7.1 L58.6 -4.6 L57.6 -2.3 L56.6 -0.1 L55.5 1.8 L54.3 3.6 L53.1 5.2 L51.9 6.6 L50.6 7.8 L49.2 8.8 L47.9 9.6 L46.4 10.3 L45.0 10.8 L43.3 11.1 Z" fill="url(#hornR)"/>
@@ -12961,11 +12967,32 @@ const THEME_BAT_SVG = `
   <path d="M20 8 Q14 1 6 3 Q8 6 2 8 Q7 9 6 13 Q12 10 16 14 Q18 10 20 12 Q22 10 24 14 Q28 10 34 13 Q33 9 38 8 Q32 6 34 3 Q26 1 20 8 Z" fill="#0b0712" stroke="#7a4bd6" stroke-opacity=".6" stroke-width=".6"/>
 </svg>`;
 
-const THEME_BOLT_SVG = `
-<svg viewBox="0 0 60 200" preserveAspectRatio="xMidYMin meet" aria-hidden="true">
-  <path d="M34 0 L18 78 L32 80 L12 150 L26 152 L8 200 L46 118 L31 116 L50 58 L36 56 L48 0 Z" fill="#f4f0ff"/>
-  <path d="M40 0 L27 76 L38 78 L20 148" stroke="#ffffff" stroke-width="2" fill="none"/>
-</svg>`;
+/* a jagged bolt with a branch or two, drawn fresh each strike */
+function lightningSvg() {
+  const walk = (x, y, endY, spread) => {
+    const points = [[x, y]];
+    while (y < endY) {
+      y = Math.min(endY, y + 30 + Math.random() * 60);
+      x = Math.max(8, Math.min(92, x + (Math.random() - .5) * spread));
+      points.push([x, y]);
+    }
+    return points;
+  };
+  const main = walk(50, 0, 1000, 34);
+  const branches = [];
+  for (let i = 0; i < 2; i += 1) {
+    const from = main[2 + Math.floor(Math.random() * Math.max(1, main.length - 6))];
+    if (from) branches.push(walk(from[0], from[1], from[1] + 150 + Math.random() * 200, 40));
+  }
+  const d = points => 'M' + points.map(([x, y]) => `${x.toFixed(1)} ${y.toFixed(0)}`).join(' L');
+  const line = (points, width, colour, extra = '') =>
+    `<path d="${d(points)}" stroke="${colour}" stroke-width="${width}" fill="none" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"${extra}/>`;
+  return `<svg viewBox="0 0 100 1000" preserveAspectRatio="none" aria-hidden="true">` +
+    branches.map(b => line(b, 1.6, '#e6dcff', ' opacity=".8"')).join('') +
+    line(main, 4, '#cbb8ff', ' opacity=".6"') +
+    line(main, 2, '#ffffff') +
+    '</svg>';
+}
 
 /*
   A storm now and then: about once a minute the clouds
@@ -12980,7 +13007,12 @@ function scheduleStorm() {
     if (halloweenOn() && decor && !document.hidden &&
         !window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
       const bolt = decor.querySelector('.bolt');
-      if (bolt) bolt.style.left = `${12 + Math.random() * 70}%`;
+      if (bolt) {
+        /* a fresh fork every time, from the very top down to 60 to 90 percent of the screen */
+        bolt.style.left = `${10 + Math.random() * 75}%`;
+        bolt.style.height = `${60 + Math.random() * 30}vh`;
+        bolt.innerHTML = lightningSvg();
+      }
       decor.classList.remove('storm');
       void decor.offsetWidth;
       decor.classList.add('storm');
@@ -13004,7 +13036,7 @@ function fillThemeDecor() {
   decor.innerHTML =
     '<div class="flash"></div>' +
     '<div class="clouds"></div>' +
-    `<div class="bolt">${THEME_BOLT_SVG}</div>` +
+    '<div class="bolt"></div>' +
     `<div class="web left">${THEME_WEB_SVG}</div>` +
     `<div class="web right">${THEME_WEB_SVG}</div>` +
     `<div class="bat">${THEME_BAT_SVG}</div>` +
