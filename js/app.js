@@ -4331,8 +4331,9 @@ function musicClefGlyph(box, clef, y, gap) {
     return g;
   }
   const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-  const scale = (gap * 4) / 34;
-  g.setAttribute('transform', `translate(6 ${y - gap * 1.1}) scale(${scale.toFixed(3)})`);
+  /* the clef stands about six line gaps tall, sitting a gap above the top line */
+  const scale = (gap * 6.2) / 44;
+  g.setAttribute('transform', `translate(10 ${y - gap * 1.1}) scale(${scale.toFixed(3)})`);
   g.innerHTML = `<path d="${TREBLE_CLEF}" fill="#1d1a17"/>`;
   return g;
 }
@@ -4361,7 +4362,7 @@ function buildMusicCard(card, box) {
   /* the paper */
   const gap = 9;                       /* between stave lines */
   const step = gap / 2;                /* one note step */
-  const startX = 62;                   /* after the clef and time signature */
+  const startX = 74;                   /* after the clef and time signature */
   const noteGap = 30;
   const width = 560;
   const perRow = Math.max(4, Math.floor((width - startX - 16) / noteGap));
@@ -4371,7 +4372,7 @@ function buildMusicCard(card, box) {
     rows.push(notes.slice(i, i + perRow));
   }
 
-  const rowHeight = 86;
+  const rowHeight = 92;
   const height = rows.length * rowHeight + 16;
 
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -4395,10 +4396,10 @@ function buildMusicCard(card, box) {
 
     svg.appendChild(musicClefGlyph(svg, card.clef === 'bass' ? 'bass' : 'treble', top, gap));
 
-    if (rowIndex === 0 && card.time) {
+    if (card.time) {
       const parts = String(card.time).split('/');
-      add(`<text x="38" y="${top + gap * 1.9}" class="musicTime">${escapeHtml(parts[0] || '4')}</text>`);
-      add(`<text x="38" y="${top + gap * 3.9}" class="musicTime">${escapeHtml(parts[1] || '4')}</text>`);
+      add(`<text x="52" y="${top + gap * 1.95}" class="musicTime" fill="#1d1a17">${escapeHtml(parts[0] || '4')}</text>`);
+      add(`<text x="52" y="${top + gap * 3.95}" class="musicTime" fill="#1d1a17">${escapeHtml(parts[1] || '4')}</text>`);
     }
 
     let x = startX;
@@ -4406,7 +4407,8 @@ function buildMusicCard(card, box) {
     row.forEach(item => {
 
       if (item?.bar) {
-        add(`<line x1="${x - noteGap / 2}" y1="${top}" x2="${x - noteGap / 2}" y2="${bottomLine}" stroke="#4a4038" stroke-width="1.6"/>`);
+        add(`<line x1="${x - noteGap * .35}" y1="${top}" x2="${x - noteGap * .35}" y2="${bottomLine}" stroke="#4a4038" stroke-width="1.6"/>`);
+        x += noteGap * .35;
         return;
       }
 
@@ -4449,17 +4451,18 @@ function buildMusicCard(card, box) {
         const stemY = up ? y - 26 : y + 26;
         add(`<line x1="${stemX}" y1="${y}" x2="${stemX}" y2="${stemY}" stroke="#1d1a17" stroke-width="1.6"/>`);
         for (let flag = 0; flag < length.flags; flag += 1) {
-          const fy = stemY + (up ? flag * 6 : -flag * 6);
+          /* the flag curls away from the note, whichever way the stem points */
+          const way = up ? 1 : -1;
+          const fy = stemY + way * flag * 6;
           add(
-            `<path d="M${stemX} ${fy} q7 4 6 11 q-2 -6 -6 -7 Z" fill="#1d1a17" ` +
-            `transform="${up ? '' : `scale(1 -1) translate(0 ${-2 * fy})`}"/>`
+            `<path d="M${stemX} ${fy} q7 ${way * 4} 6 ${way * 11} q-2 ${way * -6} -6 ${way * -7} Z" fill="#1d1a17"/>`
           );
         }
       }
 
       if (item?.l || item?.lyric) {
         add(
-          `<text x="${x}" y="${top + gap * 4 + 30}" class="musicLyric">${escapeHtml(String(item.l || item.lyric))}</text>`
+          `<text x="${x}" y="${top + gap * 4 + 30}" class="musicLyric" fill="#3a322a">${escapeHtml(String(item.l || item.lyric))}</text>`
         );
       }
 
