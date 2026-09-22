@@ -3473,6 +3473,11 @@ moved this week. For a sport the list above does not cover, send
 your own columns as [{"key":"pts","label":"Pts"}] and match the
 keys in the rows.
 
+Always send the zones for a league that has them, European
+places as well as relegation, and send "form" for every club
+whenever the last few results are in what you found. A table
+without them is only half the story.
+
 Fixtures or results, day by day:
 \`\`\`natter
 {"card":"fixtures","sport":"football","title":"Premier League","subtitle":"Matchweek 6",
