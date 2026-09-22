@@ -8112,8 +8112,9 @@ body.smartMode .thinking i { background: #93c5fd; }
 .logoMark {
   display: inline-block;
   height: 1.44em;
-  /* the mark carries its own padding, so it tucks in close */
-  margin: 0 -.16em 0 -.1em;
+  /* the robot sits on the right of the mark, so the rest of
+     the word starts clear of it */
+  margin: 0 .02em 0 -.12em;
   flex-shrink: 0;
 }
 
