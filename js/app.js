@@ -4626,6 +4626,7 @@ function renderMarkdown(text) {
   // paragraphs and line breaks
   out = out
     .split(/\n{2,}/)
+    .filter(block => block.trim())
     .map(block =>
       /^\s*<(h3|h4|ul|ol|pre|\u0000)/.test(block)
         ? block
