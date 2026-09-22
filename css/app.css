@@ -7555,3 +7555,156 @@ body.theme-halloween .authScreen .authCard {
   color: var(--mute-text);
   vertical-align: 1px;
 }
+
+
+/* =====================================================
+   CHAT BUBBLES, SMARTENED UP
+
+   Replies sit on a soft glass panel with a hairline that
+   catches the light along the top. What you send keeps the
+   bright gradient, with a sheen across it. Both carry a
+   gentle shadow so the words lift off the page.
+===================================================== */
+
+.messageBubble {
+  font-size: 15.2px;
+  line-height: 1.62;
+  letter-spacing: .1px;
+  border-radius: 20px;
+  padding: 15px 18px;
+  transition:
+    border-color .35s var(--ease),
+    box-shadow .35s var(--ease),
+    transform .25s var(--ease);
+}
+
+body .messageRow.assistant .messageBubble {
+  position: relative;
+  border: 1px solid transparent;
+  border-bottom-left-radius: 7px;
+  background:
+    linear-gradient(168deg, rgba(255, 255, 255, .055), rgba(255, 255, 255, .012) 60%) padding-box,
+    linear-gradient(var(--panel-2), var(--panel-2)) padding-box,
+    linear-gradient(160deg, rgba(255, 255, 255, .16), rgba(255, 255, 255, .04) 45%, rgba(255, 255, 255, .02)) border-box;
+  box-shadow:
+    0 14px 34px -24px rgba(0, 0, 0, .95),
+    inset 0 1px 0 rgba(255, 255, 255, .05);
+}
+
+body.smartMode .messageRow.assistant .messageBubble {
+  background:
+    linear-gradient(168deg, rgba(147, 197, 253, .07), rgba(147, 197, 253, .015) 60%) padding-box,
+    linear-gradient(#0e1320, #0e1320) padding-box,
+    linear-gradient(160deg, rgba(147, 197, 253, .22), rgba(147, 197, 253, .05) 45%, rgba(255, 255, 255, .02)) border-box;
+}
+
+body .messageRow.assistant .messageBubble:hover {
+  box-shadow:
+    0 18px 40px -24px rgba(0, 0, 0, 1),
+    inset 0 1px 0 rgba(255, 255, 255, .07);
+}
+
+/* what you send: the gradient, with a sheen across the top */
+body .messageRow.user .messageBubble {
+  position: relative;
+  overflow: hidden;
+  border-bottom-right-radius: 7px;
+  background: linear-gradient(140deg, #7c3aed 0%, #8b5cf6 55%, #a855f7 100%);
+  box-shadow:
+    0 14px 30px -18px rgba(124, 58, 237, .75),
+    inset 0 1px 0 rgba(255, 255, 255, .18);
+}
+
+body.smartMode .messageRow.user .messageBubble {
+  background: linear-gradient(140deg, #2a4a86 0%, #3a62a8 55%, #4f7fd9 100%);
+  box-shadow:
+    0 14px 30px -18px rgba(58, 98, 168, .7),
+    inset 0 1px 0 rgba(255, 255, 255, .16);
+}
+
+body .messageRow.user .messageBubble::after {
+  content: '';
+  position: absolute;
+  top: -60%;
+  left: -20%;
+  width: 70%;
+  height: 200%;
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, .13), transparent);
+  transform: rotate(8deg);
+  pointer-events: none;
+}
+
+/* arriving */
+@keyframes bubbleIn {
+  from { opacity: 0; transform: translateY(8px) scale(.985); }
+  to { opacity: 1; transform: none; }
+}
+
+.messageBubble {
+  animation: bubbleIn .26s var(--ease) both;
+}
+
+/* headings, lists and quotes inside a reply, given room */
+.messageBubble.markdown h3,
+.messageBubble.markdown h4 {
+  margin: 14px 0 6px;
+  font-size: 15.5px;
+  letter-spacing: -.2px;
+}
+
+.messageBubble.markdown h3:first-child,
+.messageBubble.markdown h4:first-child {
+  margin-top: 0;
+}
+
+.messageBubble.markdown p {
+  margin: 0 0 10px;
+}
+
+.messageBubble.markdown p:last-child {
+  margin-bottom: 0;
+}
+
+.messageBubble.markdown ul,
+.messageBubble.markdown ol {
+  margin: 8px 0 10px;
+  padding-left: 20px;
+}
+
+.messageBubble.markdown li {
+  margin-bottom: 5px;
+}
+
+.messageBubble.markdown strong {
+  color: #fff;
+}
+
+body.smartMode .messageBubble.markdown strong {
+  color: #eaf1ff;
+}
+
+/* the cursor while a reply is still being written */
+.streaming::after {
+  width: 3px;
+  height: 17px;
+  margin-left: 4px;
+  border-radius: 3px;
+  background: linear-gradient(180deg, #c4a7ff, #7c3aed);
+  box-shadow: 0 0 10px rgba(167, 139, 250, .8);
+  animation: caretGlow 1.1s ease-in-out infinite;
+}
+
+body.smartMode .streaming::after {
+  background: linear-gradient(180deg, #a8c8ff, #3d69b5);
+  box-shadow: 0 0 10px rgba(96, 165, 250, .8);
+}
+
+@keyframes caretGlow {
+  0%, 100% { opacity: 1; transform: scaleY(1); }
+  50% { opacity: .35; transform: scaleY(.82); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .messageBubble { animation: none; }
+  .streaming::after { animation: none; }
+}
