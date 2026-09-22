@@ -6727,9 +6727,10 @@ body.theme-halloween .authScreen .authCard {
   position: absolute;
   top: 0;
   left: 40%;
-  width: 70px;
+  /* wide, so the glow round the bolt has room and is never cut off */
+  width: 180px;
   height: 75vh;
-  margin-left: -35px;
+  margin-left: -90px;
   opacity: 0;
   clip-path: inset(0 0 100% 0);
   filter: drop-shadow(0 0 8px #b9a8ff) drop-shadow(0 0 22px #7a4bd6);

@@ -12973,16 +12973,16 @@ function lightningSvg() {
     const points = [[x, y]];
     while (y < endY) {
       y = Math.min(endY, y + 30 + Math.random() * 60);
-      x = Math.max(8, Math.min(92, x + (Math.random() - .5) * spread));
+      x = Math.max(32, Math.min(68, x + (Math.random() - .5) * spread));
       points.push([x, y]);
     }
     return points;
   };
-  const main = walk(50, 0, 1000, 34);
+  const main = walk(50, 0, 1000, 15);
   const branches = [];
   for (let i = 0; i < 2; i += 1) {
     const from = main[2 + Math.floor(Math.random() * Math.max(1, main.length - 6))];
-    if (from) branches.push(walk(from[0], from[1], from[1] + 150 + Math.random() * 200, 40));
+    if (from) branches.push(walk(from[0], from[1], from[1] + 150 + Math.random() * 200, 18));
   }
   const d = points => 'M' + points.map(([x, y]) => `${x.toFixed(1)} ${y.toFixed(0)}`).join(' L');
   const line = (points, width, colour, extra = '') =>
