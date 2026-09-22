@@ -1,5 +1,5 @@
 /*
-  Nastivee AI app code. Moved out of index.html so the page is
+  Natter AI app code. Moved out of index.html so the page is
   easier to work on. It is one classic script on purpose: it
   runs after the page markup, exactly as it did inline.
 */
@@ -2801,7 +2801,7 @@ async function loadChat(
         note.innerHTML = '<div class="learnedNote problem"></div>';
         note.firstChild.textContent =
           `${lockedCount} message${lockedCount === 1 ? ' was' : 's were'} sealed on another device. ` +
-          'Open Nastivee once on that device and they will be moved across so you can read them here.';
+          'Open Natter once on that device and they will be moved across so you can read them here.';
         chat.prepend(note);
       }, 0);
     }
@@ -4286,7 +4286,7 @@ function addImageMessage(
   setImageSource(image, imageData);
 
   image.alt =
-    'Nastivee AI generated image';
+    'Natter AI generated image';
 
 
   wrap.appendChild(
@@ -4371,7 +4371,7 @@ function addImageMessage(
     iconLabel('pencil', 'Change this', 'Change');
 
   continueButton.title =
-    'Describe a change and Nastivee edits this picture';
+    'Describe a change and Natter edits this picture';
 
   continueButton.dataset.hint =
     'Attaches this picture so your next message edits it.';
@@ -4449,7 +4449,7 @@ function addImageMessage(
           : await (await fetch(source)).blob();
 
       const file =
-        new File([blob], 'nastivee.png', {
+        new File([blob], 'natter.png', {
           type: blob.type || 'image/png'
         });
 
@@ -4457,7 +4457,7 @@ function addImageMessage(
 
         await navigator.share({
           files: [file],
-          text: prompt || 'Made with Nastivee AI'
+          text: prompt || 'Made with Natter AI'
         });
 
         return;
@@ -4465,8 +4465,8 @@ function addImageMessage(
       }
 
       await navigator.share({
-        title: 'Nastivee AI',
-        text: prompt || 'Made with Nastivee AI',
+        title: 'Natter AI',
+        text: prompt || 'Made with Natter AI',
         url: source.startsWith('http') ? source : location.href
       });
 
@@ -4817,7 +4817,7 @@ function addVideoMessage(ref, prompt = '') {
 
       const link = document.createElement('a');
       link.href = url;
-      link.download = `nastivee-video-${Date.now()}.mp4`;
+      link.download = `natter-video-${Date.now()}.mp4`;
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -4987,7 +4987,7 @@ function setVideoMode(enabled) {
           ? 'Describe how this photo should come to life...'
           : 'Describe the video you want me to create...') +
         (account?.videoCost ? ` (uses ${account.videoCost} images)` : '')
-      : (selectedImageData ? 'Ask about it, or say what to change...' : 'Message Nastivee...');
+      : (selectedImageData ? 'Ask about it, or say what to change...' : 'Message Natter...');
 
 }
 
@@ -7454,7 +7454,7 @@ document
   ?.addEventListener('click', () => {
 
     const text =
-      'Nastivee AI recovery code\n\n' +
+      'Natter AI recovery code\n\n' +
       `${shownRecoveryCode}\n\n` +
       `Account: ${currentUser?.email || ''}\n` +
       `Made: ${new Date().toLocaleString('en-GB')}\n\n` +
@@ -7470,7 +7470,7 @@ document
         new Blob([text], { type: 'text/plain' })
       );
 
-    link.download = 'nastivee-recovery-code.txt';
+    link.download = 'natter-recovery-code.txt';
 
     document.body.appendChild(link);
     link.click();
@@ -7861,7 +7861,7 @@ async function exportAllChats(button) {
         : '';
 
     const lines = [
-      '# Nastivee AI, all chats',
+      '# Natter AI, all chats',
       '',
       `Exported ${when(new Date())}` +
         (currentUser?.email ? ` for ${currentUser.email}` : ''),
@@ -7885,7 +7885,7 @@ async function exportAllChats(button) {
         .forEach(message => {
 
           const who =
-            message.role === 'user' ? 'You' : 'Nastivee';
+            message.role === 'user' ? 'You' : 'Natter';
 
           const picture =
             message.image_url ? ' _[picture]_' : '';
@@ -7910,7 +7910,7 @@ async function exportAllChats(button) {
       );
 
     link.download =
-      `nastivee-all-chats-${new Date()
+      `natter-all-chats-${new Date()
         .toISOString()
         .slice(0, 10)}.md`;
 
@@ -9798,7 +9798,7 @@ const INSTALL_GUIDES = {
         'Safari, the square with the arrow coming out of it.',
       `Scroll down the list and tap ${PLUS_GLYPH} ` +
         '<strong>Add to Home Screen</strong>.',
-      'Tap <strong>Add</strong> in the top right, and Nastivee ' +
+      'Tap <strong>Add</strong> in the top right, and Natter ' +
         'lands on your home screen with its own icon.'
     ]
   },
@@ -9822,7 +9822,7 @@ const INSTALL_GUIDES = {
       `Click the Share button ${SHARE_GLYPH} in the toolbar, ` +
         'or open the <strong>File</strong> menu.',
       'Choose <strong>Add to Dock</strong>.',
-      'Click <strong>Add</strong>, and Nastivee sits in your ' +
+      'Click <strong>Add</strong>, and Natter sits in your ' +
         'Dock like any other app.'
     ]
   },
@@ -9833,7 +9833,7 @@ const INSTALL_GUIDES = {
       'route is a pinned tab or a desktop shortcut.',
     steps: [
       'Right click this tab and choose <strong>Pin Tab</strong> ' +
-        'so Nastivee is always open.',
+        'so Natter is always open.',
       'Or drag the padlock in the address bar onto your ' +
         'desktop to drop a shortcut there.',
       'Chrome, Edge and Safari can install it properly if ' +
@@ -9848,7 +9848,7 @@ const INSTALL_GUIDES = {
     steps: [
       `Open the browser menu ${DOTS_GLYPH} in the top right.`,
       'Look for <strong>Install app</strong>, <strong>Install ' +
-        'Nastivee AI</strong> or <strong>Add to Home ' +
+        'Natter AI</strong> or <strong>Add to Home ' +
         'screen</strong>.',
       'Confirm, and it opens in its own window from then on.'
     ]
@@ -10375,7 +10375,7 @@ async function exportCurrentChat() {
   const title =
     chats.find(
       item => String(item.id) === String(currentChatId)
-    )?.title || 'Nastivee chat';
+    )?.title || 'Natter chat';
 
   const lines = [
     `# ${title}`,
@@ -10387,7 +10387,7 @@ async function exportCurrentChat() {
   rows.forEach(row => {
 
     lines.push(
-      row.role === 'user' ? '## You' : '## Nastivee'
+      row.role === 'user' ? '## You' : '## Natter'
     );
 
     if (row.content) {
@@ -10418,7 +10418,7 @@ async function exportCurrentChat() {
   link.href = url;
 
   link.download =
-    `${title.replace(/[^\w\s-]/g, '').trim().slice(0, 40) || 'nastivee-chat'}.md`;
+    `${title.replace(/[^\w\s-]/g, '').trim().slice(0, 40) || 'natter-chat'}.md`;
 
   document.body.appendChild(link);
 
@@ -10705,7 +10705,7 @@ async function sendNormalMessage(
   const jobId =
     startJob(
       requestChatId,
-      'Nastivee is replying...'
+      'Natter is replying...'
     );
 
 
@@ -11157,7 +11157,7 @@ async function sendMessage() {
     /*
       ASK ABOUT IT
 
-      The photo goes with the question, so Nastivee can
+      The photo goes with the question, so Natter can
       answer about what is in it instead of editing it.
     */
 
@@ -11289,7 +11289,7 @@ async function sendMessage() {
 /* =====================================================
    VOICE CONVERSATION
 
-   A live call with Nastivee through OpenAI's Realtime API.
+   A live call with Natter through OpenAI's Realtime API.
    The server hands over a short lived key; the browser
    then talks to OpenAI directly over WebRTC, so audio
    never passes through our server. What each side says
@@ -11368,7 +11368,7 @@ function recentChatText() {
   return [...document.querySelectorAll('#chat .messageRow:not(.learnedRow)')]
     .slice(-12)
     .map(row => {
-      const who = row.classList.contains('user') ? 'User' : 'Nastivee';
+      const who = row.classList.contains('user') ? 'User' : 'Natter';
       const text = (row.querySelector('.messageBubble, .bubble')?.innerText || row.innerText || '').trim();
       return text ? `${who}: ${text.slice(0, 300)}` : '';
     })
@@ -11475,7 +11475,7 @@ async function startVoiceCall() {
         case 'response.audio.delta':
         case 'response.output_audio_transcript.delta':
         case 'response.audio_transcript.delta':
-          setVoiceState('speaking', 'Nastivee is talking');
+          setVoiceState('speaking', 'Natter is talking');
           break;
 
         case 'response.output_audio_transcript.done':
@@ -11527,7 +11527,7 @@ async function startVoiceCall() {
 
     const message =
       error?.name === 'NotAllowedError'
-        ? 'Nastivee needs permission to use your microphone. Allow it in your browser and try again.'
+        ? 'Natter needs permission to use your microphone. Allow it in your browser and try again.'
         : (error?.message || 'The call could not be started.');
 
     endVoiceCall();
@@ -12962,7 +12962,7 @@ document.getElementById('lessonAdd')?.addEventListener('click', async event => {
 /* =====================================================
    MY ARTWORK
 
-   Every picture and clip Nastivee has made for you, from
+   Every picture and clip Natter has made for you, from
    all your chats, newest first. Thumbnails load as they
    scroll into view, sixty at a time.
 ===================================================== */
@@ -13270,7 +13270,7 @@ document.getElementById('artworkDownload')?.addEventListener('click', async () =
 
     const link = document.createElement('a');
     link.href = url;
-    link.download = `nastivee-${Date.now()}.${ext}`;
+    link.download = `natter-${Date.now()}.${ext}`;
     document.body.appendChild(link);
     link.click();
     link.remove();
@@ -13840,7 +13840,7 @@ function setImageMode(
     messageInput.placeholder =
       selectedImageData
         ? 'Ask about it, or say what to change...'
-        : 'Message Nastivee...';
+        : 'Message Natter...';
 
 
     imageButton.classList.remove(
@@ -14316,7 +14316,7 @@ async function downloadImage(
     imageData;
 
   link.download =
-    `nastivee-image-${Date.now()}.png`;
+    `natter-image-${Date.now()}.png`;
 
 
   document.body.appendChild(

@@ -1,5 +1,5 @@
 /*
-  Nastivee AI service worker
+  Natter AI service worker
 
   The old version served index.html from the cache for ever,
   so people kept running an out of date app. This one asks

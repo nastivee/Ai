@@ -489,7 +489,7 @@ async function pushAlert(severity, kind, message) {
   if (!ALERT_WEBHOOK_URL) return;
 
   const text =
-    `[${severity === 'high' ? 'URGENT' : 'Problem'}] Nastivee AI, ${kind}: ${message}`;
+    `[${severity === 'high' ? 'URGENT' : 'Problem'}] Natter AI, ${kind}: ${message}`;
 
   const controller = new AbortController();
 
@@ -912,7 +912,7 @@ async function requireUser(req, res) {
 
     res.status(503).json({
       error:
-        'Nastivee is being prepared and is not open yet.'
+        'Natter is being prepared and is not open yet.'
     });
 
     return null;
@@ -1218,7 +1218,7 @@ app.use(
 app.get('/api/health', (req, res) => {
   res.json({
     ok: true,
-    service: 'Nastivee AI',
+    service: 'Natter AI',
     status: 'online'
   });
 });
@@ -1718,10 +1718,10 @@ app.post('/api/checkout', async (req, res) => {
               currency: 'gbp',
               unit_amount: settings.pack_price_pence,
               product_data: {
-                name: `${settings.pack_images} Nastivee images`,
+                name: `${settings.pack_images} Natter images`,
                 description:
                   `${settings.pack_images} image generations on ` +
-                  'your Nastivee AI account. They do not expire.'
+                  'your Natter AI account. They do not expire.'
               }
             }
           }
@@ -2750,7 +2750,7 @@ app.post('/api/chat', async (req, res) => {
 
       return res.status(503).json({
         error:
-          'Nastivee is being prepared and is not open yet.'
+          'Natter is being prepared and is not open yet.'
       });
 
     }
@@ -2786,7 +2786,7 @@ app.post('/api/chat', async (req, res) => {
     } = req.body;
 
     const systemPrompt = `
-You are Nastivee AI.
+You are Natter AI.
 
 You are a friendly, intelligent personal AI assistant.
 
@@ -2836,7 +2836,7 @@ ${await (async () => {
       VISION
 
       With a photo attached, the last message carries both
-      the question and the picture, so Nastivee can answer
+      the question and the picture, so Natter can answer
       about what is in it.
     */
 
@@ -3195,7 +3195,7 @@ app.post('/api/memory/learn', async (req, res) => {
 // =====================================================
 
 const LESSON_RULES = `
-You improve a chat assistant called Nastivee by writing short, general lessons about answering well.
+You improve a chat assistant called Natter by writing short, general lessons about answering well.
 
 You get one exchange and a signal:
 - "retry": the user asked for this reply again, so it missed the mark.
@@ -3608,7 +3608,7 @@ app.post('/api/voice/session', async (req, res) => {
     const user = await getUser(req);
 
     if (!user) {
-      return res.status(401).json({ error: 'Sign in to talk to Nastivee.' });
+      return res.status(401).json({ error: 'Sign in to talk to Natter.' });
     }
 
     if (!featureAllowed(await getSettings(), 'voice', user)) {
@@ -3616,7 +3616,7 @@ app.post('/api/voice/session', async (req, res) => {
     }
 
     if (await holdingBlocks(user)) {
-      return res.status(503).json({ error: 'Nastivee is being prepared and is not open yet.' });
+      return res.status(503).json({ error: 'Natter is being prepared and is not open yet.' });
     }
 
     if (!withinLimit(`voice:${user.id}`, 30)) {
@@ -3636,7 +3636,7 @@ app.post('/api/voice/session', async (req, res) => {
       });
 
     const instructions = `
-You are Nastivee AI, talking out loud with the user in a live voice call.
+You are Natter AI, talking out loud with the user in a live voice call.
 
 - Speak naturally and warmly, like a friend on the phone. British English.
 - Keep replies short: a sentence or two unless they ask for more. No lists, no markdown, no reading out links.
@@ -3783,7 +3783,7 @@ app.post('/api/video', async (req, res) => {
     }
 
     if (await holdingBlocks(user)) {
-      return res.status(503).json({ error: 'Nastivee is being prepared and is not open yet.' });
+      return res.status(503).json({ error: 'Natter is being prepared and is not open yet.' });
     }
 
     if (!GEMINI_API_KEY) {
@@ -4562,7 +4562,7 @@ style was requested.
 app.get('/', (req, res) => {
 
   res.send(
-    'Nastivee AI is running.'
+    'Natter AI is running.'
   );
 
 });
@@ -4608,7 +4608,7 @@ process.on('uncaughtException', error => {
 app.listen(PORT, () => {
 
   console.log(
-    `Nastivee AI server running on port ${PORT}`
+    `Natter AI server running on port ${PORT}`
   );
 
 });

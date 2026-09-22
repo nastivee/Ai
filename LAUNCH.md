@@ -1,4 +1,4 @@
-# Before opening Nastivee to the public
+# Before opening Natter to the public
 
 Checked 21 September 2026. In order of how badly each would hurt.
 

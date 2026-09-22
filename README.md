@@ -1,4 +1,4 @@
-# Nastivee AI Bot - Connected Frontend
+# Natter AI Bot - Connected Frontend
 
 This version is already configured to call the deployed backend:
 https://ai-8vlt.onrender.com
