@@ -407,3 +407,23 @@ grant select, insert on public.uploads to authenticated;
 -- Site theme chosen in the admin page: standard, halloween or auto
 alter table public.app_settings
   add column if not exists site_theme text not null default 'standard';
+
+-- Requests Natter turned down, shown in the admin page
+create table if not exists public.refusals (
+  id uuid primary key default gen_random_uuid(),
+  created_at timestamptz not null default now(),
+  user_id uuid,
+  email text,
+  request text,
+  reply text,
+  category text,
+  rule text,
+  avoid text,
+  severity text not null default 'medium',
+  seen_at timestamptz
+);
+
+alter table public.refusals enable row level security;
+
+create index if not exists refusals_created_idx
+  on public.refusals (created_at desc);

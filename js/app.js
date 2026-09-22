@@ -9312,6 +9312,8 @@ adminButton?.addEventListener('click', async () => {
 
   loadAlerts();
 
+  loadRefusals();
+
   loadStats(statDays);
 
   await loadAdmin();
@@ -14207,6 +14209,10 @@ function showAdminPage(id) {
     loadAdminUploads(true);
   }
 
+  if (target.id === 'adminRefusals') {
+    loadRefusals();
+  }
+
   adminCard.scrollTop = 0;
 
   paintAdminMenu();
@@ -14810,6 +14816,215 @@ document.getElementById('artworkSwitch')?.addEventListener('click', event => {
 /* the admin library */
 let adminUploadOffset = 0;
 let adminUploadViewing = null;
+
+/* =====================================================
+   BLOCKED REQUESTS
+
+   Everything Natter turned down, with the line it crossed
+   and what the person could have asked instead.
+===================================================== */
+
+function refusalWhen(value) {
+  const when = new Date(value);
+  if (Number.isNaN(when.getTime())) return '';
+  const mins = Math.round((Date.now() - when.getTime()) / 60000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins} min ago`;
+  if (mins < 1440) return `${Math.round(mins / 60)} hours ago`;
+  return when.toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+}
+
+async function loadRefusals() {
+
+  const list = document.getElementById('refusalList');
+  const note = document.getElementById('adminRefusalsNote');
+  const section = document.getElementById('adminRefusals');
+
+  if (!list) return;
+
+  try {
+
+    const response =
+      await fetch(`${API_BASE}/api/admin/refusals`, { headers: await apiHeaders() });
+
+    const data = await response.json();
+
+    if (!response.ok) throw new Error(data?.error || 'Could not load blocked requests.');
+
+    const items = data.refusals || [];
+    const fresh = items.filter(item => !item.seen_at);
+
+    list.innerHTML = '';
+
+    if (note) {
+      note.textContent =
+        items.length
+          ? `${items.length} in all, ${fresh.length} unread`
+          : 'Nothing turned down yet';
+    }
+
+    section?.classList.remove('bad', 'warn', 'good');
+    section?.classList.add(
+      fresh.some(item => item.severity === 'high')
+        ? 'bad'
+        : fresh.length ? 'warn' : 'good'
+    );
+
+    if (!items.length) {
+      const empty = document.createElement('div');
+      empty.className = 'adminHint';
+      empty.textContent = 'Natter has not turned anything down yet.';
+      list.appendChild(empty);
+      paintAdminMenu();
+      return;
+    }
+
+    items.forEach(item => {
+
+      const card = document.createElement('div');
+      card.className = `refusalCard ${item.seen_at ? 'read' : item.severity === 'high' ? 'bad' : 'warn'}`;
+      card.id = `refusal-${item.id}`;
+
+      const head = document.createElement('button');
+      head.type = 'button';
+      head.className = 'refusalSummary';
+
+      const dot = document.createElement('span');
+      dot.className = 'refusalDot';
+      head.appendChild(dot);
+
+      const text = document.createElement('span');
+      text.className = 'refusalSummaryText';
+
+      const title = document.createElement('span');
+      title.className = 'refusalTitle';
+      title.textContent = item.category || 'Turned down';
+      text.appendChild(title);
+
+      const sub = document.createElement('span');
+      sub.className = 'refusalSub';
+      sub.textContent =
+        [refusalWhen(item.created_at), item.email || 'guest'].filter(Boolean).join(' · ');
+      text.appendChild(sub);
+
+      head.appendChild(text);
+
+      const chevron = document.createElement('span');
+      chevron.className = 'refusalChevron';
+      chevron.innerHTML =
+        '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>';
+      head.appendChild(chevron);
+
+      card.appendChild(head);
+
+      const body = document.createElement('div');
+      body.className = 'refusalBody';
+
+      const row = (label, value, className = '') => {
+        if (!value) return;
+        const part = document.createElement('div');
+        part.className = `refusalRow ${className}`.trim();
+        const name = document.createElement('div');
+        name.className = 'refusalLabel';
+        name.textContent = label;
+        const words = document.createElement('div');
+        words.className = 'refusalText';
+        words.textContent = value;
+        part.appendChild(name);
+        part.appendChild(words);
+        body.appendChild(part);
+      };
+
+      row('They asked', item.request);
+      row('What crossed the line', item.rule, 'breach');
+      row('What would be fine to ask instead', item.avoid, 'fix');
+      row('Natter replied', item.reply);
+
+      const tools = document.createElement('div');
+      tools.className = 'refusalTools';
+
+      if (!item.seen_at) {
+        const seen = document.createElement('button');
+        seen.type = 'button';
+        seen.className = 'adminAction adminQuiet';
+        seen.textContent = 'Mark as read';
+        seen.addEventListener('click', async () => {
+          seen.disabled = true;
+          try {
+            await fetch(`${API_BASE}/api/admin/refusals/seen`, {
+              method: 'POST',
+              headers: await apiHeaders(),
+              body: JSON.stringify({ id: item.id })
+            });
+            loadRefusals();
+          } catch {
+            seen.disabled = false;
+          }
+        });
+        tools.appendChild(seen);
+      }
+
+      const lesson = document.createElement('button');
+      lesson.type = 'button';
+      lesson.className = 'adminAction adminQuiet';
+      lesson.textContent = 'Copy for a house lesson';
+      lesson.addEventListener('click', () => {
+        navigator.clipboard?.writeText(`${item.category}: ${item.rule} Better: ${item.avoid}`);
+        lesson.textContent = 'Copied';
+        setTimeout(() => { lesson.textContent = 'Copy for a house lesson'; }, 1500);
+      });
+      tools.appendChild(lesson);
+
+      body.appendChild(tools);
+      card.appendChild(body);
+
+      head.addEventListener('click', () => {
+        const open = card.classList.toggle('open');
+        if (open) card.scrollIntoView({ block: 'start', behavior: 'smooth' });
+      });
+
+      list.appendChild(card);
+
+    });
+
+    paintAdminMenu();
+
+  } catch (error) {
+
+    adminSay('adminRefusalsResult', error.message, false);
+
+  }
+
+}
+
+document.getElementById('refusalsClear')?.addEventListener('click', async event => {
+
+  const button = event.currentTarget;
+
+  button.disabled = true;
+
+  try {
+
+    await fetch(`${API_BASE}/api/admin/refusals/seen`, {
+      method: 'POST',
+      headers: await apiHeaders(),
+      body: JSON.stringify({})
+    });
+
+    await loadRefusals();
+
+    adminSay('adminRefusalsResult', 'All marked as read.', true);
+
+  } catch (error) {
+
+    adminSay('adminRefusalsResult', error.message, false);
+
+  }
+
+  button.disabled = false;
+
+});
+
 
 async function loadAdminUploads(reset = false) {
 

@@ -2130,6 +2130,59 @@ app.get('/api/admin/alerts', async (req, res) => {
 });
 
 
+/*
+  Requests that were turned down, newest first.
+*/
+app.get('/api/admin/refusals', async (req, res) => {
+
+  const user = await requireAdmin(req, res);
+
+  if (!user) return;
+
+  const { data, error } =
+    await supabaseAdmin
+      .from('refusals')
+      .select('id, created_at, email, request, reply, category, rule, avoid, severity, seen_at')
+      .order('created_at', { ascending: false })
+      .limit(60);
+
+  if (error) {
+    return res.status(500).json({ error: error.message });
+  }
+
+  res.json({ refusals: data || [] });
+
+});
+
+
+/* mark one as read, or clear the lot */
+app.post('/api/admin/refusals/seen', async (req, res) => {
+
+  const user = await requireAdmin(req, res);
+
+  if (!user) return;
+
+  try {
+
+    const id = String(req.body?.id || '');
+
+    const query =
+      supabaseAdmin.from('refusals').update({ seen_at: new Date().toISOString() });
+
+    const { error } =
+      id ? await query.eq('id', id) : await query.is('seen_at', null);
+
+    if (error) throw new Error(error.message);
+
+    res.json({ ok: true });
+
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+
+});
+
+
 app.post('/api/admin/alerts/resolve', async (req, res) => {
 
   const user = await requireAdmin(req, res);
@@ -2742,6 +2795,112 @@ async function streamWithSearch({ model, effort, instructions, messages, send })
 */
 const FALLBACK_CHAT_MODEL = 'gpt-4o-mini';
 
+/* =====================================================
+   BLOCKED REQUESTS
+
+   When a reply is a refusal, the exact request and the
+   reason are written down so an admin can see what was
+   turned away, which line it crossed, and what would have
+   been fine to ask instead. Nothing here loosens the
+   rules: the note says how to ask for something allowed,
+   never how to get round a refusal.
+===================================================== */
+
+const REFUSAL_SIGNS = [
+  /\bi (?:can|can not|cannot|can't|won't|will not)\b[^.]{0,40}\b(?:help|do|assist|write|create|make|produce|generate|provide)\b/i,
+  /\bi'?m (?:not able|unable) to\b/i,
+  /\bi am (?:not able|unable) to\b/i,
+  /\bthat'?s (?:not something|something) i (?:can|can't|cannot)\b/i,
+  /\bi (?:have to|need to|must) (?:decline|pass on that)\b/i,
+  /\bcan'?t (?:help|assist) with that\b/i,
+  /\bagainst (?:my|the) (?:rules|guidelines|policy)\b/i
+];
+
+function looksLikeRefusal(text) {
+  const reply = String(text || '');
+  if (reply.length > 1400) return false;
+  return REFUSAL_SIGNS.some(sign => sign.test(reply));
+}
+
+const REFUSAL_RULES = `
+You review moments where an AI assistant turned a request down.
+
+You are given the user's request and the assistant's refusal.
+
+Answer with JSON only:
+{"category":"...","rule":"...","avoid":"...","severity":"low|medium|high"}
+
+category: three or four words naming the kind of content, for example
+"Sexual content", "Real person likeness", "Weapons", "Self harm",
+"Malware", "Private personal data", "Copyrighted work".
+
+rule: one plain sentence saying exactly what in the request crossed the
+line. Quote the words that caused it where that helps.
+
+avoid: one or two plain sentences telling the person what they could ask
+for instead and still get an answer, staying inside the rules. Describe a
+genuinely different, allowed request. Never suggest wording tricks,
+roleplay framings, or anything meant to get the same blocked result past
+the check. If nothing similar would be allowed, say so plainly.
+
+severity: how serious the request was.
+
+Write for the app owner, in plain English, no jargon.
+`;
+
+async function noteRefusal({ user, request, reply }) {
+
+  try {
+
+    if (!supabaseAdmin) return;
+
+    const asked = String(request || '').trim().slice(0, 2000);
+
+    if (!asked) return;
+
+    let note = {};
+
+    try {
+
+      const completion =
+        await createReply({
+          model: MEMORY_MODEL,
+          reasoning_effort: 'low',
+          response_format: { type: 'json_object' },
+          messages: [
+            { role: 'system', content: REFUSAL_RULES },
+            { role: 'user', content: `REQUEST:\n${asked}\n\nREFUSAL:\n${String(reply || '').slice(0, 1200)}` }
+          ]
+        });
+
+      note = JSON.parse(completion.choices?.[0]?.message?.content || '{}');
+
+    } catch (error) {
+      console.error('REFUSAL NOTE FAILED:', error?.message);
+    }
+
+    const row = {
+      user_id: user?.id || null,
+      email: user?.email || null,
+      request: asked,
+      reply: String(reply || '').slice(0, 1200),
+      category: String(note.category || 'Not sure').slice(0, 80),
+      rule: String(note.rule || '').slice(0, 400),
+      avoid: String(note.avoid || '').slice(0, 600),
+      severity: ['low', 'medium', 'high'].includes(note.severity) ? note.severity : 'medium'
+    };
+
+    const { error } = await supabaseAdmin.from('refusals').insert(row);
+
+    if (error) console.error('REFUSAL SAVE ERROR:', error.message);
+
+  } catch (error) {
+    console.error('REFUSAL ERROR:', error?.message);
+  }
+
+}
+
+
 async function createReply(payload) {
 
   try {
@@ -3020,8 +3179,16 @@ ${await (async () => {
 
       let sent = false;
 
-      const send = data =>
+      /* kept so a refusal can be written down once it is finished */
+      let full = '';
+
+      const asked = [...cleanMessages].reverse()
+        .find(message => message.role === 'user' && typeof message.content === 'string')?.content || '';
+
+      const send = data => {
+        if (typeof data?.text === 'string') full += data.text;
         res.write(`data: ${JSON.stringify(data)}\n\n`);
+      };
 
       try {
 
@@ -3048,6 +3215,11 @@ ${await (async () => {
 
             res.write('data: [DONE]\n\n');
             res.end();
+
+            if (looksLikeRefusal(full)) {
+              noteRefusal({ user, request: asked, reply: full });
+            }
+
             return;
 
           } catch (searchError) {
@@ -3081,6 +3253,7 @@ ${await (async () => {
           if (piece) {
 
             sent = true;
+            full += piece;
 
             res.write(
               `data: ${JSON.stringify({ text: piece })}\n\n`
@@ -3101,6 +3274,10 @@ ${await (async () => {
         }
 
         res.write('data: [DONE]\n\n');
+
+        if (looksLikeRefusal(full)) {
+          noteRefusal({ user, request: asked, reply: full });
+        }
 
       } catch (error) {
 
@@ -3134,6 +3311,12 @@ ${await (async () => {
     const reply =
       response.choices?.[0]?.message?.content ||
       'Sorry, I could not generate a response.';
+
+    if (looksLikeRefusal(reply)) {
+      const asked = [...cleanMessages].reverse()
+        .find(message => message.role === 'user' && typeof message.content === 'string')?.content || '';
+      noteRefusal({ user, request: asked, reply });
+    }
 
     res.json({
       reply
