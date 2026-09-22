@@ -55,6 +55,7 @@
 </head>
 
 <body>
+<script>try{if(localStorage.getItem('natter_theme')==='halloween')document.body.classList.add('theme-halloween')}catch(e){}</script>
 
 <div class="bootOverlay show" id="bootOverlay" role="status" aria-live="polite">
   <div class="bootInner">
@@ -86,6 +87,8 @@
 <!-- =====================================================
      AUTH SCREEN
 ===================================================== -->
+
+<div class="themeDecor" id="themeDecor" aria-hidden="true"></div>
 
 <div class="authScreen" id="authScreen">
 
@@ -549,6 +552,43 @@
         </button>
 
         <div class="adminResult" id="adminPeekResult"></div>
+
+      </div>
+
+    </div>
+
+
+    <div class="adminSection good" id="adminTheme">
+
+      <button class="adminSummary" type="button" data-section="adminTheme">
+        <span class="adminDot" aria-hidden="true"></span>
+        <span class="adminSummaryText">
+          Theme
+          <span class="adminSummaryNote" id="adminThemeNote"></span>
+        </span>
+        <svg class="adminChevron" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
+      </button>
+
+      <div class="adminBody">
+
+        <div class="adminField">
+          <div class="adminLabel">Look of the site</div>
+          <div class="themeSwitch" role="group" aria-label="Site theme">
+            <button type="button" data-theme="standard">Standard</button>
+            <button type="button" data-theme="halloween">Halloween</button>
+            <button type="button" data-theme="auto">Automatic</button>
+          </div>
+        </div>
+
+        <div class="adminHint">
+          For everyone, including the sign in and sign up screens.
+          Halloween keeps the usual colours and adds faint cobwebs,
+          the odd bat, a warm pumpkin glow and a costume for the
+          robot in every routine. Automatic turns it on from
+          15 October to 1 November and off again afterwards.
+        </div>
+
+        <div class="adminResult" id="adminThemeResult"></div>
 
       </div>
 

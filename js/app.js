@@ -11906,6 +11906,159 @@ const peekRoutines = [
 ];
 
 
+/* =====================================================
+   HALLOWEEN COSTUMES
+
+   One for every routine, in the same order. Only worn when
+   the site theme is Halloween. Drawn in the robot's own
+   units (his head runs 7 to 57 across and 14 to 56 down),
+   so anything beside him moves with him.
+===================================================== */
+
+const PEEK_SKELETON_HAND_SVG = `
+<svg viewBox="0 0 18 30" aria-hidden="true">
+  <rect x="7.6" y="13" width="2.8" height="17" rx="1.4" fill="#efe9dc"/>
+  <circle cx="9" cy="13.5" r="2.2" fill="#efe9dc"/>
+  <rect x="4.6" y="7.5" width="8.8" height="5.5" rx="2" fill="#efe9dc"/>
+  <path d="M5.8 8 V2.8 M8.4 7.6 V1.2 M11 7.6 V1.8 M13.2 8.8 V4.2 M4.8 11 L1.8 8.2" stroke="#efe9dc" stroke-width="1.8" stroke-linecap="round" fill="none"/>
+  <path d="M5.8 5.2 h0.01 M8.4 4.2 h0.01 M11 4.6 h0.01" stroke="#8d8573" stroke-width="1.4" stroke-linecap="round"/>
+</svg>`;
+
+const PEEK_COSTUMES = [
+
+  /* 1. witch's hat */
+  { hideAntenna: true, svg: `
+    <path d="M17 13 Q25 -6 29 -22 Q32 -33 42 -28 Q35 -22 36 -10 L47 13 Z" fill="#231634" stroke="#6b3fc4" stroke-opacity=".6" stroke-width=".8"/>
+    <rect x="18.5" y="6.5" width="27" height="5" rx="1" fill="#ff8a1f"/>
+    <rect x="29" y="6" width="6" height="6" rx="1" fill="none" stroke="#ffd166" stroke-width="1.2"/>
+    <ellipse cx="32" cy="14.5" rx="29" ry="4.5" fill="#1a1226" stroke="#6b3fc4" stroke-opacity=".6" stroke-width=".8"/>` },
+
+  /* 2. vampire: fangs and a tall red collar */
+  { svg: `
+    <path d="M9 56 L-3 18 L14 36 Z" fill="#b3122e"/>
+    <path d="M9 56 L0 25 L13 38 Z" fill="#5a0a1a"/>
+    <path d="M55 56 L67 18 L50 36 Z" fill="#b3122e"/>
+    <path d="M55 56 L64 25 L51 38 Z" fill="#5a0a1a"/>
+    <path d="M26 43 l2 5.5 l2 -5.5 Z M34 43 l2 5.5 l2 -5.5 Z" fill="#fff"/>` },
+
+  /* 3. a jack-o'-lantern keeps him company */
+  { svg: `
+    <path d="M81 22 q1 -5 5 -6" stroke="#5a8a2e" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+    <ellipse cx="81" cy="33" rx="13" ry="10" fill="#e8680f"/>
+    <ellipse cx="81" cy="33" rx="7" ry="10" fill="#ff8a1f"/>
+    <ellipse cx="81" cy="33" rx="2.6" ry="10" fill="#ff9d3d"/>
+    <circle cx="81" cy="33" r="15" fill="#ff8a1f" opacity=".12" class="glow"/>
+    <path d="M74 31 l2.5 -3 l2.5 3 Z M83 31 l2.5 -3 l2.5 3 Z" fill="#ffe07a"/>
+    <path d="M74.5 36 q6.5 4.5 13 0 l-2 1 l-1 -1 l-2 1.4 l-2 -1.4 l-2 1.4 l-2 -1.4 l-1 1 Z" fill="#ffe07a"/>` },
+
+  /* 4. waves with a skeleton hand */
+  { hand: 'skeleton', svg: `
+    <path d="M20 47 h24" stroke="#f4f1ff" stroke-opacity=".55" stroke-width="1" stroke-linecap="round"/>` },
+
+  /* 5. a spider hangs from his antenna */
+  { antenna: `
+    <g class="bob">
+      <path d="M44 7 Q58 4 64 14 L64 22" stroke="#d9d4e6" stroke-opacity=".7" stroke-width=".7" fill="none"/>
+      <path d="M61 23 l-4 -3 M61 25 l-5 0 M61 27 l-4 3 M67 23 l4 -3 M67 25 l5 0 M67 27 l4 3" stroke="#120c1c" stroke-width="1.1" stroke-linecap="round"/>
+      <ellipse cx="64" cy="25.5" rx="3.6" ry="4.2" fill="#120c1c" stroke="#7a4bd6" stroke-width=".6"/>
+      <circle cx="62.8" cy="24" r=".7" fill="#ff4d4d"/>
+      <circle cx="65.2" cy="24" r=".7" fill="#ff4d4d"/>
+    </g>` },
+
+  /* 6. black cat: ears and whiskers */
+  { hideAntenna: true, svg: `
+    <path d="M10 22 L13 1 L28 14 Z" fill="#1b1328" stroke="#3a2a55" stroke-width=".8"/>
+    <path d="M54 22 L51 1 L36 14 Z" fill="#1b1328" stroke="#3a2a55" stroke-width=".8"/>
+    <path d="M14 15 L15 7 L22 13.5 Z M50 15 L49 7 L42 13.5 Z" fill="#ff7ab8" opacity=".7"/>
+    <path d="M30.5 42 h3 l-1.5 2 Z" fill="#ff7ab8"/>
+    <path d="M12 40 L-2 37 M12 43.5 L-2 45 M52 40 L66 37 M52 43.5 L66 45" stroke="#e9e4f5" stroke-opacity=".8" stroke-width="1" stroke-linecap="round"/>` },
+
+  /* 7. a little ghost pops up beside him, which is why he ducks */
+  { svg: `
+    <g class="rise">
+      <path d="M70 48 L70 31 Q70 19 81 19 Q92 19 92 31 L92 48 l-3.7 -4 l-3.7 4 l-3.6 -4 l-3.6 4 l-3.7 -4 Z" fill="#f4f1ff"/>
+      <ellipse cx="77" cy="30" rx="1.9" ry="2.6" fill="#1a1226"/>
+      <ellipse cx="85" cy="30" rx="1.9" ry="2.6" fill="#1a1226"/>
+      <ellipse cx="81" cy="37" rx="2.4" ry="3" fill="#1a1226"/>
+    </g>` },
+
+  /* 8. a spooky candle, flickering */
+  { svg: `
+    <circle cx="79" cy="24" r="11" fill="#ffb347" opacity=".18" class="glow"/>
+    <rect x="74.5" y="28" width="9" height="20" rx="1.5" fill="#efe6d0"/>
+    <path d="M74.5 30 q0 5 1.5 5 q1.5 0 1.5 -4 q0 7 1.8 7 q1.8 0 1.8 -6 q0 3 1.4 3 q1 0 1 -3 v-2 h-9 Z" fill="#fff8e8"/>
+    <path d="M79 28 v-3" stroke="#3a2a1a" stroke-width="1"/>
+    <path class="flicker" d="M79 16 q3.5 4.5 2.4 7.5 q-1 2 -2.4 2 q-1.4 0 -2.4 -2 q-1.1 -3 2.4 -7.5 Z" fill="#ffb347"/>
+    <path class="flicker" d="M79 20 q1.6 2.5 1 4 q-.4 1 -1 1 q-.6 0 -1 -1 q-.6 -1.5 1 -4 Z" fill="#fff3a0"/>` },
+
+  /* 9. little devil horns */
+  { svg: `
+    <path d="M14 17 Q5 8 9 -3 Q13 8 23 13 Z" fill="#e0243a" stroke="#8c0f22" stroke-width=".7"/>
+    <path d="M50 17 Q59 8 55 -3 Q51 8 41 13 Z" fill="#e0243a" stroke="#8c0f22" stroke-width=".7"/>` },
+
+  /* 10. skull face paint */
+  { svg: `
+    <circle cx="24.5" cy="35" r="7.5" fill="none" stroke="#f4f1ff" stroke-opacity=".75" stroke-width="1.4"/>
+    <circle cx="39.5" cy="35" r="7.5" fill="none" stroke="#f4f1ff" stroke-opacity=".75" stroke-width="1.4"/>
+    <path d="M32 41 l-1.8 3 h3.6 Z" fill="#f4f1ff" fill-opacity=".8"/>
+    <path d="M22 47 h20 M25 45.5 v3 M28.3 45.5 v3 M31.6 45.5 v3 M34.9 45.5 v3 M38.2 45.5 v3" stroke="#f4f1ff" stroke-opacity=".75" stroke-width="1" stroke-linecap="round"/>` },
+
+  /* 11. mummy bandages */
+  { svg: `
+    <g stroke="#e8e0cc" stroke-opacity=".93" stroke-width="4" stroke-linecap="round" fill="none">
+      <path d="M8 18 L56 22.5"/>
+      <path d="M8 52 L56 47"/>
+      <path d="M8 27 L14 26"/>
+      <path d="M50 27.5 L57 29"/>
+      <path d="M5 42 L10 40"/>
+      <path d="M56 47 q8 2 9 11"/>
+    </g>
+    <g stroke="#b8ad94" stroke-width=".6" fill="none">
+      <path d="M20 19.5 l2 -1.4 M36 21 l2 -1.4 M24 49 l2 1.4 M42 48 l2 1.4"/>
+    </g>` },
+
+  /* 12. a Frankenstein flat top, neck bolts and stitches */
+  { hideAntenna: true, svg: `
+    <path d="M9 17 L9 9 Q9 6 12 6 L52 6 Q55 6 55 9 L55 17 L51 14 L47 18 L43 14 L39 18 L35 14 L31 18 L27 14 L23 18 L19 14 L15 18 L12 15 Z" fill="#1b1328"/>
+    <rect x="-2" y="31" width="5.5" height="7" rx="1" fill="#9aa3b5"/>
+    <rect x="60.5" y="31" width="5.5" height="7" rx="1" fill="#9aa3b5"/>
+    <path d="M22 51.5 h14 M24 50 v3 M27.5 50 v3 M31 50 v3 M34.5 50 v3" stroke="#1b1328" stroke-width="1.2" stroke-linecap="round"/>` },
+
+  /* 13. carries a lantern in the lift */
+  { svg: `
+    <circle cx="79" cy="32" r="15" fill="#ffb347" opacity=".2" class="glow"/>
+    <path d="M73 21 Q79 12 85 21" stroke="#6d5a3f" stroke-width="1.6" fill="none"/>
+    <rect x="71" y="21" width="16" height="4" rx="1" fill="#3a2f22"/>
+    <rect x="72.5" y="25" width="13" height="15" fill="#ffb347" opacity=".9"/>
+    <path d="M79 25 v15 M72.5 32.5 h13" stroke="#3a2f22" stroke-width="1.2"/>
+    <rect x="71" y="40" width="16" height="3" rx="1" fill="#3a2f22"/>` },
+
+  /* 14. flies on a broomstick */
+  { svg: `
+    <path d="M6 57 L100 47" stroke="#8a5a2b" stroke-width="3" stroke-linecap="round"/>
+    <path d="M9 53 L-4 50 L-4 64 L9 61 Z" fill="#d9a441"/>
+    <path d="M-3 53 L8 55 M-3 57 L8 57 M-3 61 L8 59" stroke="#a87424" stroke-width=".8"/>
+    <rect x="7" y="53" width="3.5" height="8.5" rx="1" fill="#6b3fc4"/>` },
+
+  /* 15. a ghost sheet with eye holes */
+  { hideAntenna: true, svg: `
+    <path d="M3 64 L3 26 Q3 -4 32 -4 Q61 -4 61 26 L61 64 Z" fill="#f4f1ff" opacity=".96"/>
+    <path d="M10 10 Q18 2 26 1" stroke="#ffffff" stroke-width="2" stroke-linecap="round" fill="none" opacity=".8"/>
+    <ellipse cx="24.5" cy="33" rx="4" ry="5.2" fill="#05060d"/>
+    <ellipse cx="39.5" cy="33" rx="4" ry="5.2" fill="#05060d"/>` },
+
+  /* 16. bat wings for the periscope */
+  { svg: `
+    <path class="flapL" d="M8 30 Q-1 17 -5 25 Q-3 29 -5 33 Q-1 31 1 37 Q4 33 8 40 Z" fill="#1b1328" stroke="#7a4bd6" stroke-opacity=".7" stroke-width=".7"/>
+    <path class="flapR" d="M56 30 Q65 17 69 25 Q67 29 69 33 Q65 31 63 37 Q60 33 56 40 Z" fill="#1b1328" stroke="#7a4bd6" stroke-opacity=".7" stroke-width=".7"/>` }
+
+];
+
+function halloweenOn() {
+  return document.body.classList.contains('theme-halloween');
+}
+
+
 function createPeekBot(card) {
 
   if (!card || card.querySelector('.peekStage')) return null;
@@ -12021,6 +12174,29 @@ function createPeekBot(card) {
       ).finished.catch(() => {});
     },
 
+    /* puts on this routine's Halloween costume, if the theme is on */
+    dress(pick) {
+      api.undress();
+      if (!halloweenOn()) return;
+      const costume = PEEK_COSTUMES[pick];
+      if (!costume) return;
+      if (costume.svg) {
+        bot.insertAdjacentHTML('beforeend',
+          `<svg class="peekCostume" viewBox="-8 -40 112 104" aria-hidden="true">${costume.svg}</svg>`);
+      }
+      if (costume.antenna) {
+        antenna.insertAdjacentHTML('beforeend', `<g class="costumeBit">${costume.antenna}</g>`);
+      }
+      if (costume.hideAntenna) bot.classList.add('noAntenna');
+      if (costume.hand === 'skeleton') hand.innerHTML = PEEK_SKELETON_HAND_SVG;
+    },
+
+    undress() {
+      bot.querySelectorAll('.peekCostume, .costumeBit').forEach(node => node.remove());
+      bot.classList.remove('noAntenna');
+      if (!hand.querySelector('rect[fill="#2f6fe8"]')) hand.innerHTML = PEEK_HAND_SVG;
+    },
+
     async play(index) {
 
       if (api.busy) return;
@@ -12061,6 +12237,7 @@ function createPeekBot(card) {
       api.eyes('happy');
       eyes.style.transform = '';
       api.place('left');
+      api.dress(pick);
 
       try {
         await peekRoutines[pick](api);
@@ -12071,6 +12248,7 @@ function createPeekBot(card) {
         ball.getAnimations().forEach(animation => animation.cancel());
         api.eyes('happy');
         eyes.style.transform = '';
+        api.undress();
         api.busy = false;
       }
 
@@ -12133,6 +12311,9 @@ let restartPeeking = null;
 
   };
 
+  /* lets an admin (or a test) call up any routine by number */
+  window.natterPeek = peekBot;
+
   restartPeeking = () => {
     const next = gap();
     schedule(next === null ? null : Math.min(next, 5000));
@@ -12152,6 +12333,9 @@ let restartPeeking = null;
 ===================================================== */
 
 function paintTestFeatures() {
+
+  if (account?.theme && typeof applySiteTheme === 'function') applySiteTheme(account.theme);
+  if (typeof paintThemeSwitch === 'function') paintThemeSwitch();
 
   const showVideo = account?.canVideo === true;
   const showVoice = account?.canVoice === true;
@@ -12245,6 +12429,144 @@ document.querySelectorAll('.accessSwitch').forEach(group => {
 });
 
 paintTestFeatures();
+
+
+/* =====================================================
+   SITE THEME
+
+   Set in the admin page for everyone. The server says
+   which theme is showing (Automatic is worked out there),
+   and the last one is remembered on this device so the
+   sign in and sign up screens wear it straight away.
+===================================================== */
+
+const THEME_KEY = 'natter_theme';
+
+const THEME_WEB_SVG = `
+<svg viewBox="0 0 100 100" fill="none" stroke="#e9e4f5" stroke-width=".9" aria-hidden="true">
+  <path d="M0 0 L100 38 M0 0 L78 78 M0 0 L38 100 M0 0 L100 8 M0 0 L8 100"/>
+  <path d="M22 1.8 Q17 9 20.2 20.2 Q9 17 1.8 22"/>
+  <path d="M44 3.5 Q35 18 40 40 Q18 35 3.5 44"/>
+  <path d="M66 5.3 Q52 27 58 58 Q27 52 5.3 66"/>
+  <path d="M88 7 Q70 36 76 76 Q36 70 7 88"/>
+  <path d="M40 40 L41 64" stroke-opacity=".7"/>
+  <circle cx="41" cy="66.5" r="2.4" fill="#e9e4f5" stroke="none"/>
+</svg>`;
+
+const THEME_BAT_SVG = `
+<svg viewBox="0 0 40 20" aria-hidden="true">
+  <path d="M20 8 Q14 1 6 3 Q8 6 2 8 Q7 9 6 13 Q12 10 16 14 Q18 10 20 12 Q22 10 24 14 Q28 10 34 13 Q33 9 38 8 Q32 6 34 3 Q26 1 20 8 Z" fill="#0b0712" stroke="#7a4bd6" stroke-opacity=".6" stroke-width=".6"/>
+</svg>`;
+
+function fillThemeDecor() {
+
+  const decor = document.getElementById('themeDecor');
+
+  if (!decor || decor.childElementCount) return;
+
+  decor.innerHTML =
+    `<div class="web left">${THEME_WEB_SVG}</div>` +
+    `<div class="web right">${THEME_WEB_SVG}</div>` +
+    `<div class="bat">${THEME_BAT_SVG}</div>` +
+    `<div class="bat two">${THEME_BAT_SVG}</div>`;
+
+}
+
+function applySiteTheme(theme) {
+
+  if (theme !== 'halloween' && theme !== 'standard') return;
+
+  const halloween = theme === 'halloween';
+
+  if (halloween) fillThemeDecor();
+
+  document.body.classList.toggle('theme-halloween', halloween);
+
+  try { localStorage.setItem(THEME_KEY, theme); } catch {}
+
+}
+
+function paintThemeSwitch() {
+
+  const current = account?.siteTheme || 'standard';
+
+  document.querySelectorAll('.themeSwitch button').forEach(button => {
+    const on = button.dataset.theme === current;
+    button.classList.toggle('on', on);
+    button.setAttribute('aria-pressed', on ? 'true' : 'false');
+  });
+
+  const note = document.getElementById('adminThemeNote');
+
+  if (note) {
+    const showing = account?.theme === 'halloween' ? 'Halloween showing' : 'standard showing';
+    note.textContent =
+      current === 'auto'
+        ? `Automatic, ${showing}`
+        : current === 'halloween' ? 'Halloween' : 'Standard';
+  }
+
+}
+
+document.querySelector('.themeSwitch')?.addEventListener('click', async event => {
+
+  const button = event.target.closest('button[data-theme]');
+
+  if (!button || button.classList.contains('on')) return;
+
+  const previous = { siteTheme: account.siteTheme, theme: account.theme };
+
+  account.siteTheme = button.dataset.theme;
+  if (button.dataset.theme !== 'auto') account.theme = button.dataset.theme;
+  paintThemeSwitch();
+  applySiteTheme(account.theme);
+
+  try {
+
+    const response =
+      await fetch(`${API_BASE}/api/admin/settings`, {
+        method: 'POST',
+        headers: await apiHeaders(),
+        body: JSON.stringify({ site_theme: button.dataset.theme })
+      });
+
+    const data = await response.json();
+
+    if (!response.ok) throw new Error(data?.error || 'Could not save.');
+
+    await refreshAccount();
+
+    const label = { standard: 'Standard', halloween: 'Halloween', auto: 'Automatic' }[button.dataset.theme];
+
+    adminSay(
+      'adminThemeResult',
+      data.volatile
+        ? `${label} is on, but only until the server restarts. Run the theme SQL in Supabase to make it stick.`
+        : `${label} is now on for everyone.`,
+      !data.volatile
+    );
+
+  } catch (error) {
+
+    Object.assign(account, previous);
+    paintThemeSwitch();
+    applySiteTheme(account.theme || 'standard');
+    adminSay('adminThemeResult', error.message, false);
+
+  }
+
+});
+
+if (halloweenOn()) fillThemeDecor();
+
+/* before sign in: ask the server which theme is showing */
+fetch(`${API_BASE}/api/account`)
+  .then(response => response.ok ? response.json() : null)
+  .then(data => {
+    if (data?.theme && !account?.signedIn) applySiteTheme(data.theme);
+  })
+  .catch(() => {});
+
 
 
 /* =====================================================

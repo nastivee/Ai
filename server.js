@@ -193,6 +193,8 @@ const SETTINGS_FALLBACK = {
   /* who gets New Video and voice chat: off, admins or everyone */
   video_access: 'admins',
   voice_access: 'admins',
+  /* the look of the whole site: standard, halloween or auto */
+  site_theme: 'standard',
   /* word swaps applied to what users type, set in the admin panel */
   rules: [],
   /* house lessons: suggestions from feedback, live once an admin approves */
@@ -328,6 +330,31 @@ function featureAllowed(settings, name, user) {
   if (access === 'everyone') return Boolean(user);
   if (access === 'admins') return isAdmin(user);
   return false;
+}
+
+const SITE_THEMES = ['standard', 'halloween', 'auto'];
+
+function siteThemeSetting(settings) {
+  const value = settings?.site_theme;
+  return SITE_THEMES.includes(value) ? value : 'standard';
+}
+
+/*
+  The theme people actually see. Automatic means Halloween
+  from 15 October to 1 November, UK time, standard otherwise.
+*/
+function resolvedTheme(settings) {
+  const setting = siteThemeSetting(settings);
+  if (setting !== 'auto') return setting;
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Europe/London', month: 'numeric', day: 'numeric'
+  }).formatToParts(new Date());
+  const month = Number(parts.find(p => p.type === 'month').value);
+  const day = Number(parts.find(p => p.type === 'day').value);
+  if ((month === 10 && day >= 15) || (month === 11 && day <= 1)) {
+    return 'halloween';
+  }
+  return 'standard';
 }
 
 function peekSeconds(settings) {
@@ -1250,6 +1277,8 @@ app.get('/api/account', async (req, res) => {
       admin: false,
       holding: settings.holding_mode !== false,
       peekSeconds: peekSeconds(settings),
+      theme: resolvedTheme(settings),
+      siteTheme: siteThemeSetting(settings),
       videoAccess: featureAccess(settings, 'video'),
       voiceAccess: featureAccess(settings, 'voice'),
       canVideo: false,
@@ -1288,6 +1317,8 @@ app.get('/api/account', async (req, res) => {
     alerts: admin ? await openAlertCount() : 0,
     holding: settings.holding_mode !== false,
     peekSeconds: peekSeconds(settings),
+    theme: resolvedTheme(settings),
+    siteTheme: siteThemeSetting(settings),
     videoAccess: featureAccess(settings, 'video'),
     voiceAccess: featureAccess(settings, 'voice'),
     canVideo: featureAllowed(settings, 'video', user),
@@ -2007,6 +2038,16 @@ app.post('/api/admin/settings', async (req, res) => {
       patch[key] = body[key];
 
     }
+
+  }
+
+  if (body.site_theme !== undefined) {
+
+    if (!SITE_THEMES.includes(body.site_theme)) {
+      return res.status(400).json({ error: 'Choose standard, halloween or automatic.' });
+    }
+
+    patch.site_theme = body.site_theme;
 
   }
 

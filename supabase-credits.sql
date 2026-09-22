@@ -403,3 +403,7 @@ create policy "uploads own add" on public.uploads
   for insert with check (auth.uid() = user_id);
 
 grant select, insert on public.uploads to authenticated;
+
+-- Site theme chosen in the admin page: standard, halloween or auto
+alter table public.app_settings
+  add column if not exists site_theme text not null default 'standard';

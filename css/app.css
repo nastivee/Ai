@@ -6218,3 +6218,246 @@ body.smartMode .sidebar::after {
 @keyframes modeShine {
   to { transform: translateX(340%) skewX(-12deg); }
 }
+
+
+/* =====================================================
+   SITE THEME: HALLOWEEN
+
+   Chosen in the admin page for everyone. Subtle on
+   purpose: the usual colours stay, with faint cobwebs in
+   the top corners, a bat now and then, a warm pumpkin glow
+   on the message box and the sign in screens, and a
+   costume for the robot in every routine.
+===================================================== */
+
+.themeSwitch {
+  display: flex;
+  gap: 3px;
+  padding: 3px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  background:
+    linear-gradient(var(--mute-fill), var(--mute-fill)) padding-box,
+    linear-gradient(var(--mute-line), var(--mute-line)) border-box;
+}
+
+.themeSwitch button {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 34px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--mute-text);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.themeSwitch button:hover:not(.on) {
+  color: #fff;
+  background: rgba(255, 255, 255, .05);
+}
+
+.themeSwitch button.on {
+  background: var(--edge);
+  color: #fff;
+}
+
+.themeSwitch button[data-theme="halloween"].on {
+  background: linear-gradient(135deg, #b8520f, #ff8a1f);
+  color: #fff;
+}
+
+.themeDecor {
+  display: none;
+}
+
+body.theme-halloween .themeDecor {
+  display: block;
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1002;
+  overflow: hidden;
+}
+
+.themeDecor .web {
+  position: absolute;
+  top: 0;
+  width: 130px;
+  height: 130px;
+  opacity: .13;
+}
+
+.themeDecor .web.left {
+  left: 0;
+}
+
+.themeDecor .web.right {
+  right: 0;
+  transform: scaleX(-1);
+}
+
+/* a small bat crosses the top of the screen now and then */
+.themeDecor .bat {
+  position: absolute;
+  top: 70px;
+  left: 0;
+  width: 26px;
+  height: 14px;
+  opacity: 0;
+  animation: batCross 38s linear infinite;
+  animation-delay: 6s;
+}
+
+.themeDecor .bat.two {
+  top: 130px;
+  width: 18px;
+  height: 10px;
+  animation-duration: 53s;
+  animation-delay: 27s;
+}
+
+.themeDecor .bat svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  animation: batFlap .22s ease-in-out infinite alternate;
+  transform-origin: 50% 40%;
+}
+
+@keyframes batCross {
+  0% { transform: translate(-40px, 0); opacity: 0; }
+  1% { opacity: .5; }
+  6% { transform: translate(50vw, -26px); opacity: .5; }
+  12% { transform: translate(calc(100vw + 40px), 12px); opacity: .5; }
+  12.1%, 100% { transform: translate(calc(100vw + 40px), 12px); opacity: 0; }
+}
+
+@keyframes batFlap {
+  from { transform: scaleY(1); }
+  to { transform: scaleY(.45); }
+}
+
+/* a warm pumpkin glow on the message box, never clipped */
+body.theme-halloween .composer {
+  box-shadow:
+    0 0 0 1px rgba(255, 138, 31, .10),
+    0 10px 40px -12px rgba(255, 122, 26, .28);
+}
+
+/* sign in and sign up: the same card, a faint orange glow low down */
+body.theme-halloween .authScreen::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 70% 40% at 50% 105%, rgba(255, 122, 26, .16), transparent 70%);
+}
+
+body.theme-halloween .authCard {
+  box-shadow:
+    0 25px 80px rgba(0, 0, 0, .45),
+    0 0 60px -20px rgba(255, 122, 26, .35);
+}
+
+body.theme-halloween .logoLarge {
+  position: relative;
+}
+
+body.theme-halloween .logoLarge::after {
+  content: '';
+  display: inline-block;
+  width: 26px;
+  height: 24px;
+  margin-left: 8px;
+  vertical-align: 2px;
+  background: no-repeat center / contain url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 30'%3E%3Cpath d='M16 7 q1 -5 5 -6' stroke='%235a8a2e' stroke-width='2.4' fill='none' stroke-linecap='round'/%3E%3Cellipse cx='16' cy='18' rx='15' ry='11' fill='%23e8680f'/%3E%3Cellipse cx='16' cy='18' rx='8' ry='11' fill='%23ff8a1f'/%3E%3Cellipse cx='16' cy='18' rx='3' ry='11' fill='%23ff9d3d'/%3E%3Cpath d='M8 15 l3 -3 l3 3 Z M18 15 l3 -3 l3 3 Z' fill='%23ffe07a'/%3E%3Cpath d='M9 21 q7 5 14 0 l-2 1 l-1 -1 l-2 1.5 l-2 -1.5 l-2 1.5 l-2 -1.5 l-1 1 Z' fill='%23ffe07a'/%3E%3C/svg%3E");
+  filter: drop-shadow(0 0 6px rgba(255, 138, 31, .55));
+}
+
+/* the robot's costumes, drawn in his own units, around him */
+.peekBot svg.peekCostume {
+  position: absolute;
+  left: -6px;
+  top: -30px;
+  width: 84px;
+  height: 78px;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.peekBot.noAntenna .antenna {
+  visibility: hidden;
+}
+
+.peekCostume .flicker {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: candleFlicker .18s ease-in-out infinite alternate;
+}
+
+.peekCostume .glow {
+  animation: lanternGlow 1.4s ease-in-out infinite alternate;
+}
+
+.peekCostume .bob,
+.peekBot .antenna .bob {
+  animation: spiderBob 1.1s ease-in-out infinite alternate;
+}
+
+.peekCostume .rise {
+  animation: ghostRise 2s ease-out forwards;
+}
+
+.peekCostume .flapL,
+.peekCostume .flapR {
+  transform-box: fill-box;
+  animation: wingFlap .28s ease-in-out infinite alternate;
+}
+
+.peekCostume .flapL { transform-origin: 100% 50%; }
+.peekCostume .flapR { transform-origin: 0% 50%; }
+
+@keyframes candleFlicker {
+  from { transform: scale(1, 1) rotate(-3deg); opacity: .95; }
+  to { transform: scale(.9, 1.12) rotate(3deg); opacity: .8; }
+}
+
+@keyframes lanternGlow {
+  from { opacity: .35; }
+  to { opacity: .8; }
+}
+
+@keyframes spiderBob {
+  from { transform: translateY(0); }
+  to { transform: translateY(5px); }
+}
+
+@keyframes ghostRise {
+  0%, 40% { transform: translateY(30px); opacity: 0; }
+  58% { transform: translateY(-2px); opacity: .95; }
+  70%, 100% { transform: translateY(0); opacity: .95; }
+}
+
+@keyframes wingFlap {
+  from { transform: scaleX(1); }
+  to { transform: scaleX(.55); }
+}
+
+@media (max-width: 760px) {
+  .themeDecor .web {
+    width: 80px;
+    height: 80px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .themeDecor .bat {
+    display: none;
+  }
+}
