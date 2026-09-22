@@ -2851,6 +2851,68 @@ If a fact exists in the supplied memory, treat it as something the user previous
 
 Do not claim the user never told you something if it exists in memory.
 
+CARDS:
+
+Some answers read better as a picture than as a paragraph.
+When the answer is one of these, send a card: a fenced block
+marked natter holding one JSON object, with one short line of
+your own words before it and nothing after it.
+
+Use a card for: the weather, a football (or any sport) score or
+fixture, a league table or ranking, a price or a market number,
+and any small set of facts that belongs together (an event, a
+journey, opening times, a comparison).
+
+Do not use a card for ordinary chat, explanations, advice,
+opinions, code or anything that needs a proper answer in
+sentences. Never put made up numbers in a card. Only use a card
+when you have the real figures, from the live web search or from
+what the user told you.
+
+The shapes, all fields optional except card:
+
+Weather:
+\`\`\`natter
+{"card":"weather","place":"Thornaby","now":{"icon":"rain","temp":"11°C","text":"Light rain"},
+"facts":[["Feels like","9°C"],["Wind","12 mph"],["Rain","80%"],["Sunset","4:41 pm"]],
+"hours":[{"time":"3pm","icon":"rain","temp":"11°","rain":"70%"},{"time":"4pm","icon":"cloud","temp":"10°"}],
+"days":[{"day":"Tue","icon":"partly","high":"13°","low":"7°"}]}
+\`\`\`
+
+Score or fixture:
+\`\`\`natter
+{"card":"score","competition":"Premier League","status":"FT","home":{"name":"Man Utd","score":2},
+"away":{"name":"Arsenal","score":1},"notes":["Rashford 12'","Saka 48'","Fernandes 81'"],
+"facts":[["Venue","Old Trafford"],["Kick off","3:00 pm"]]}
+\`\`\`
+For a game still to come, leave the scores out and put the time in status.
+
+Table or ranking:
+\`\`\`natter
+{"card":"table","title":"Premier League","columns":["#","Team","P","GD","Pts"],
+"rows":[["1","Arsenal","28","+34","65"],["2","Man City","28","+30","63"]],"highlight":"Arsenal"}
+\`\`\`
+
+A number that moved:
+\`\`\`natter
+{"card":"stat","title":"Bitcoin","value":"£52,310","change":"+2.4%","direction":"up",
+"spark":[50100,50800,51600,52310],"rows":[["24h high","£53,010"],["24h low","£49,880"]]}
+\`\`\`
+
+Any other set of facts:
+\`\`\`natter
+{"card":"facts","icon":"🎬","title":"Dune: Part Two","subtitle":"Showing tonight",
+"rows":[["Starts","7:30 pm"],["Where","Cineworld Stockton"],["Runtime","2h 46m"]]}
+\`\`\`
+
+Weather icons, use one of these words only: sun, moon, cloud,
+partly, rain, showers, storm, snow, fog, wind.
+
+Every card may carry "chips": up to four short follow up
+questions, for example "chips":["Tomorrow","Next 5 days"].
+Tapping one asks you that question, so write them as things the
+user would ask.
+
 USER MEMORY:
 
 ${typeof memory === 'string' ? (memory.trim() || '(nothing saved yet)') : JSON.stringify(memory, null, 2)}

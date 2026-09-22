@@ -3939,11 +3939,361 @@ function escapeHtml(text) {
     .replace(/'/g, '&#39;');
 }
 
+
+/* =====================================================
+   ANSWER CARDS
+
+   Some things read far better as a picture than as a
+   paragraph: the weather, a football score, a league
+   table, a price. Natter sends those as a small block of
+   data and the app draws them as a card.
+===================================================== */
+
+const CARD_QUEUE = [];
+
+/* the weather pictures, drawn here so they move and never load */
+const CARD_ICONS = {
+
+  sun: `<svg viewBox="0 0 48 48" class="wIcon sun"><g class="rays" stroke="#ffd166" stroke-width="3" stroke-linecap="round"><path d="M24 3v6M24 39v6M3 24h6M39 24h6M9 9l4 4M35 35l4 4M39 9l-4 4M13 35l-4 4"/></g><circle cx="24" cy="24" r="10" fill="#ffc531"/><circle cx="20.5" cy="20.5" r="3.4" fill="#ffe79a" opacity=".8"/></svg>`,
+
+  moon: `<svg viewBox="0 0 48 48" class="wIcon"><path d="M31 6a18 18 0 1 0 11 24A14 14 0 0 1 31 6Z" fill="#cbd8ff"/><circle cx="34" cy="20" r="2.4" fill="#aebbe6"/><circle cx="27" cy="29" r="1.6" fill="#aebbe6"/></svg>`,
+
+  cloud: `<svg viewBox="0 0 48 48" class="wIcon"><g class="drift"><ellipse cx="19" cy="28" rx="13" ry="10" fill="#9fb0cc"/><ellipse cx="30" cy="30" rx="11" ry="8" fill="#b9c7de"/><ellipse cx="25" cy="23" rx="9" ry="8" fill="#cbd6e8"/></g></svg>`,
+
+  partly: `<svg viewBox="0 0 48 48" class="wIcon"><circle cx="31" cy="16" r="8" fill="#ffc531"/><g class="rays" stroke="#ffd166" stroke-width="2.6" stroke-linecap="round"><path d="M31 2v4M45 16h-4M41 6l-3 3M41 26l-3-3"/></g><g class="drift"><ellipse cx="18" cy="31" rx="12" ry="9" fill="#9fb0cc"/><ellipse cx="29" cy="33" rx="10" ry="7" fill="#b9c7de"/><ellipse cx="23" cy="26" rx="8" ry="7" fill="#cbd6e8"/></g></svg>`,
+
+  rain: `<svg viewBox="0 0 48 48" class="wIcon"><g class="drift"><ellipse cx="18" cy="21" rx="12" ry="9" fill="#8ea0bd"/><ellipse cx="29" cy="23" rx="10" ry="7" fill="#aab9d2"/><ellipse cx="23" cy="16" rx="8" ry="7" fill="#c3cee0"/></g><g stroke="#5bb8ff" stroke-width="3" stroke-linecap="round"><path class="drop d1" d="M15 33v5"/><path class="drop d2" d="M24 33v6"/><path class="drop d3" d="M33 33v5"/></g></svg>`,
+
+  showers: `<svg viewBox="0 0 48 48" class="wIcon"><circle cx="34" cy="13" r="6.5" fill="#ffc531"/><g class="drift"><ellipse cx="18" cy="22" rx="12" ry="9" fill="#8ea0bd"/><ellipse cx="29" cy="24" rx="10" ry="7" fill="#aab9d2"/><ellipse cx="23" cy="17" rx="8" ry="7" fill="#c3cee0"/></g><g stroke="#5bb8ff" stroke-width="3" stroke-linecap="round"><path class="drop d1" d="M16 34v5"/><path class="drop d3" d="M27 34v5"/></g></svg>`,
+
+  storm: `<svg viewBox="0 0 48 48" class="wIcon"><g class="drift"><ellipse cx="18" cy="20" rx="12" ry="9" fill="#75839c"/><ellipse cx="29" cy="22" rx="10" ry="7" fill="#8b99b3"/><ellipse cx="23" cy="15" rx="8" ry="7" fill="#a6b2c8"/></g><path class="bolt" d="M25 29l-8 10h6l-3 8 11-12h-6l4-6Z" fill="#ffd166"/></svg>`,
+
+  snow: `<svg viewBox="0 0 48 48" class="wIcon"><g class="drift"><ellipse cx="18" cy="21" rx="12" ry="9" fill="#9fb0cc"/><ellipse cx="29" cy="23" rx="10" ry="7" fill="#b9c7de"/><ellipse cx="23" cy="16" rx="8" ry="7" fill="#d5dfee"/></g><g fill="#e9f3ff"><circle class="flake d1" cx="16" cy="36" r="2.4"/><circle class="flake d2" cx="25" cy="38" r="2.4"/><circle class="flake d3" cx="34" cy="36" r="2.4"/></g></svg>`,
+
+  fog: `<svg viewBox="0 0 48 48" class="wIcon"><g class="drift"><ellipse cx="22" cy="19" rx="13" ry="9" fill="#a9b6c9"/></g><g stroke="#cbd6e8" stroke-width="3.4" stroke-linecap="round"><path class="mist m1" d="M9 31h30"/><path class="mist m2" d="M12 38h26"/></g></svg>`,
+
+  wind: `<svg viewBox="0 0 48 48" class="wIcon"><g stroke="#cbd6e8" stroke-width="3.2" fill="none" stroke-linecap="round"><path class="mist m1" d="M6 18h22a5 5 0 1 0-5-5"/><path class="mist m2" d="M6 28h28a5 5 0 1 1-5 5"/><path class="mist m1" d="M8 38h14"/></g></svg>`
+
+};
+
+function cardIcon(name) {
+  return CARD_ICONS[name] || CARD_ICONS.cloud;
+}
+
+function cardEl(tag, className, text) {
+  const el = document.createElement(tag);
+  if (className) el.className = className;
+  if (text !== undefined && text !== null) el.textContent = String(text);
+  return el;
+}
+
+/* a row of buttons that ask the obvious next question */
+function cardChips(card, box) {
+  if (!Array.isArray(card.chips) || !card.chips.length) return;
+  const row = cardEl('div', 'cardChips');
+  card.chips.slice(0, 4).forEach(chip => {
+    const text = typeof chip === 'string' ? chip : chip?.label;
+    if (!text) return;
+    const button = cardEl('button', 'cardChip', text);
+    button.type = 'button';
+    button.addEventListener('click', () => {
+      const ask = (typeof chip === 'object' && chip.ask) || text;
+      if (typeof messageInput !== 'undefined' && messageInput) {
+        messageInput.value = ask;
+        messageInput.dispatchEvent(new Event('input', { bubbles: true }));
+        document.getElementById('sendButton')?.click();
+      }
+    });
+    row.appendChild(button);
+  });
+  box.appendChild(row);
+}
+
+function cardFacts(rows, box, className = 'cardFacts') {
+  if (!Array.isArray(rows) || !rows.length) return;
+  const grid = cardEl('div', className);
+  rows.slice(0, 8).forEach(row => {
+    const pair = Array.isArray(row) ? row : [row?.label, row?.value];
+    if (!pair[0] && !pair[1]) return;
+    const item = cardEl('div', 'cardFact');
+    item.appendChild(cardEl('span', 'cardFactLabel', pair[0] ?? ''));
+    item.appendChild(cardEl('span', 'cardFactValue', pair[1] ?? ''));
+    grid.appendChild(item);
+  });
+  box.appendChild(grid);
+}
+
+function buildWeatherCard(card, box) {
+
+  box.classList.add('weatherCard');
+
+  const head = cardEl('div', 'cardTop');
+
+  const icon = cardEl('div', 'cardBigIcon');
+  icon.innerHTML = cardIcon(card.now?.icon);
+  head.appendChild(icon);
+
+  const text = cardEl('div', 'cardTopText');
+  text.appendChild(cardEl('div', 'cardTemp', card.now?.temp ?? ''));
+  text.appendChild(cardEl('div', 'cardWhere', card.place ?? ''));
+  text.appendChild(cardEl('div', 'cardWhat', card.now?.text ?? ''));
+  head.appendChild(text);
+
+  box.appendChild(head);
+
+  cardFacts(card.facts, box);
+
+  if (Array.isArray(card.hours) && card.hours.length) {
+    const strip = cardEl('div', 'cardStrip');
+    card.hours.slice(0, 8).forEach(hour => {
+      const cell = cardEl('div', 'cardStripCell');
+      cell.appendChild(cardEl('div', 'cardStripTop', hour.time ?? ''));
+      const small = cardEl('div', 'cardStripIcon');
+      small.innerHTML = cardIcon(hour.icon);
+      cell.appendChild(small);
+      cell.appendChild(cardEl('div', 'cardStripValue', hour.temp ?? ''));
+      if (hour.rain) cell.appendChild(cardEl('div', 'cardStripRain', hour.rain));
+      strip.appendChild(cell);
+    });
+    box.appendChild(strip);
+  }
+
+  if (Array.isArray(card.days) && card.days.length) {
+    const list = cardEl('div', 'cardDays');
+    card.days.slice(0, 7).forEach(day => {
+      const line = cardEl('div', 'cardDay');
+      line.appendChild(cardEl('span', 'cardDayName', day.day ?? ''));
+      const small = cardEl('span', 'cardDayIcon');
+      small.innerHTML = cardIcon(day.icon);
+      line.appendChild(small);
+      line.appendChild(cardEl('span', 'cardDayHigh', day.high ?? ''));
+      line.appendChild(cardEl('span', 'cardDayLow', day.low ?? ''));
+      list.appendChild(line);
+    });
+    box.appendChild(list);
+  }
+
+}
+
+function teamBadge(name) {
+  const badge = cardEl('div', 'cardBadge');
+  const initials = String(name || '?')
+    .split(/\s+/)
+    .slice(0, 2)
+    .map(word => word[0])
+    .join('')
+    .toUpperCase();
+  badge.textContent = initials;
+  return badge;
+}
+
+function buildScoreCard(card, box) {
+
+  box.classList.add('scoreCard');
+
+  const top = cardEl('div', 'cardLine');
+  if (card.competition) top.appendChild(cardEl('span', 'cardTag', card.competition));
+  if (card.status) {
+    const live = /^\d+'|live|ht$/i.test(String(card.status));
+    top.appendChild(cardEl('span', `cardStatus${live ? ' live' : ''}`, card.status));
+  }
+  if (card.when && !card.status) top.appendChild(cardEl('span', 'cardStatus', card.when));
+  box.appendChild(top);
+
+  const grid = cardEl('div', 'scoreGrid');
+
+  [card.home, card.away].forEach((side, i) => {
+    const team = cardEl('div', 'scoreTeam');
+    team.appendChild(teamBadge(side?.name));
+    team.appendChild(cardEl('div', 'scoreName', side?.name ?? ''));
+    grid.appendChild(team);
+    if (i === 0) {
+      const numbers = cardEl('div', 'scoreNumbers');
+      numbers.appendChild(cardEl('span', 'scoreValue', card.home?.score ?? '-'));
+      numbers.appendChild(cardEl('span', 'scoreDash', '–'));
+      numbers.appendChild(cardEl('span', 'scoreValue', card.away?.score ?? '-'));
+      grid.appendChild(numbers);
+    }
+  });
+
+  box.appendChild(grid);
+
+  if (Array.isArray(card.notes) && card.notes.length) {
+    const list = cardEl('div', 'cardNotes');
+    card.notes.slice(0, 8).forEach(note => list.appendChild(cardEl('div', 'cardNote', note)));
+    box.appendChild(list);
+  }
+
+  cardFacts(card.facts, box);
+
+}
+
+function buildTableCard(card, box) {
+
+  box.classList.add('tableCard');
+
+  if (card.title) box.appendChild(cardEl('div', 'cardTitle', card.title));
+
+  const table = cardEl('table', 'cardTable');
+
+  if (Array.isArray(card.columns) && card.columns.length) {
+    const head = cardEl('thead');
+    const row = cardEl('tr');
+    card.columns.forEach(name => row.appendChild(cardEl('th', '', name)));
+    head.appendChild(row);
+    table.appendChild(head);
+  }
+
+  const body = cardEl('tbody');
+
+  (card.rows || []).slice(0, 25).forEach(cells => {
+    const row = cardEl('tr');
+    if (card.highlight && cells.some(cell => String(cell) === String(card.highlight))) {
+      row.className = 'cardTableMine';
+    }
+    (cells || []).forEach(cell => row.appendChild(cardEl('td', '', cell)));
+    body.appendChild(row);
+  });
+
+  table.appendChild(body);
+  box.appendChild(table);
+
+}
+
+function buildStatCard(card, box) {
+
+  box.classList.add('statCard');
+
+  if (card.title) box.appendChild(cardEl('div', 'cardTitle', card.title));
+
+  const line = cardEl('div', 'statLine');
+  line.appendChild(cardEl('span', 'statValue', card.value ?? ''));
+
+  if (card.change) {
+    const up = card.direction === 'up' || /^\+/.test(String(card.change));
+    const down = card.direction === 'down' || /^-/.test(String(card.change));
+    line.appendChild(cardEl('span', `statChange${up ? ' up' : down ? ' down' : ''}`, card.change));
+  }
+
+  box.appendChild(line);
+
+  /* a little line drawing of the numbers, if they were sent */
+  if (Array.isArray(card.spark) && card.spark.length > 1) {
+    const numbers = card.spark.map(Number).filter(Number.isFinite);
+    if (numbers.length > 1) {
+      const low = Math.min(...numbers);
+      const high = Math.max(...numbers);
+      const span = high - low || 1;
+      const points = numbers
+        .map((value, i) => `${(i / (numbers.length - 1) * 100).toFixed(1)},${(26 - (value - low) / span * 24).toFixed(1)}`)
+        .join(' ');
+      const spark = cardEl('div', 'cardSpark');
+      spark.innerHTML =
+        `<svg viewBox="0 0 100 28" preserveAspectRatio="none" aria-hidden="true">` +
+        `<polyline points="${points}" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></svg>`;
+      box.appendChild(spark);
+    }
+  }
+
+  cardFacts(card.rows || card.facts, box);
+
+}
+
+function buildFactsCard(card, box) {
+
+  box.classList.add('factsCard');
+
+  if (card.title) {
+    const title = cardEl('div', 'cardTitle');
+    if (card.icon) title.appendChild(cardEl('span', 'cardTitleIcon', card.icon));
+    title.appendChild(cardEl('span', '', card.title));
+    box.appendChild(title);
+  }
+
+  if (card.subtitle) box.appendChild(cardEl('div', 'cardWhat', card.subtitle));
+
+  cardFacts(card.rows || card.facts, box, 'cardFacts wide');
+
+}
+
+const CARD_BUILDERS = {
+  weather: buildWeatherCard,
+  score: buildScoreCard,
+  fixture: buildFactsCard,
+  table: buildTableCard,
+  stat: buildStatCard,
+  facts: buildFactsCard
+};
+
+function buildCard(card) {
+
+  const build = CARD_BUILDERS[card?.card];
+
+  if (!build) return null;
+
+  const box = cardEl('div', 'answerCard');
+
+  try {
+    build(card, box);
+    cardChips(card, box);
+  } catch (error) {
+    console.error('CARD ERROR:', error);
+    return null;
+  }
+
+  return box;
+
+}
+
+/* fills in any card places left by the last render */
+function paintCards() {
+
+  document.querySelectorAll('.cardSlot:not(.done)').forEach(slot => {
+
+    slot.classList.add('done');
+
+    const card = CARD_QUEUE[Number(slot.dataset.card)];
+    const built = card && buildCard(card);
+
+    if (built) {
+      slot.replaceWith(built);
+    } else {
+      slot.remove();
+    }
+
+  });
+
+}
+
+
 function renderMarkdown(text) {
 
   const codeBlocks = [];
 
-  let out = escapeHtml(text || '');
+  let source = text || '';
+
+  /*
+    Card blocks. While a reply is still arriving the block
+    may be half written, so an unfinished one is held back
+    rather than shown as raw text.
+  */
+  const unfinished = source.lastIndexOf('```natter');
+
+  if (unfinished > -1 && !/```/.test(source.slice(unfinished + 9))) {
+    source = source.slice(0, unfinished);
+  }
+
+  source = source.replace(/```natter\s*\n?([\s\S]*?)```/g, (match, body) => {
+    try {
+      const card = JSON.parse(body);
+      CARD_QUEUE.push(card);
+      return `\u0000CARD${CARD_QUEUE.length - 1}\u0000`;
+    } catch {
+      return '';
+    }
+  });
+
+  let out = escapeHtml(source);
 
   // fenced code, held aside so nothing else touches it
   out = out.replace(
@@ -4019,6 +4369,14 @@ function renderMarkdown(text) {
     /\u0000CODE(\d+)\u0000/g,
     (match, index) => codeBlocks[Number(index)]
   );
+
+  // and leave a place for each card, drawn once it is on the page
+  out = out.replace(
+    /\u0000CARD(\d+)\u0000/g,
+    (match, index) => `<div class="cardSlot" data-card="${index}"></div>`
+  );
+
+  requestAnimationFrame(paintCards);
 
   return out;
 
