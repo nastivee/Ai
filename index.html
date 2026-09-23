@@ -51,7 +51,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-<link rel="stylesheet" href="./css/app.css?v=2026-09-23-117">
+<link rel="stylesheet" href="./css/app.css?v=2026-09-23-118">
 </head>
 
 <body>
@@ -823,6 +823,65 @@
         </button>
 
         <div class="adminResult" id="adminRefusalsResult"></div>
+
+      </div>
+
+    </div>
+
+
+    <div class="adminSection" id="adminExpanded">
+
+      <button class="adminSummary" type="button" data-section="adminExpanded">
+        <span class="adminDot" aria-hidden="true"></span>
+        <span class="adminSummaryText">
+          Expanded
+          <span class="adminSummaryNote" id="adminExpandedNote">In development, admins only</span>
+        </span>
+        <svg class="adminChevron" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
+      </button>
+
+      <div class="adminBody">
+
+        <div class="adminHint">
+          Being built. Only the two admins can see this page or
+          use it, and there is no switch that opens it to anyone
+          else. Every request is checked for words and then the
+          picture is checked, and nothing is shown unless both
+          pass. Everything is recorded below.
+        </div>
+
+        <div class="adminToggle">
+          <span>Expanded for admins</span>
+          <button class="adminSwitch" id="expandedSwitch" type="button">
+            Off
+          </button>
+        </div>
+
+        <div class="adminResult" id="expandedSwitchResult"></div>
+
+        <ul class="expandedChecklist" id="expandedChecklist"></ul>
+
+        <label class="adminField adminLabel" for="expandedPrompt">Describe the picture</label>
+        <textarea class="adminInput" id="expandedPrompt" rows="4" maxlength="1500" placeholder="Everyone shown must be over 25. No real people."></textarea>
+
+        <label class="adminField adminLabel" for="expandedShape">Shape</label>
+        <select class="adminInput" id="expandedShape">
+          <option value="square">Square</option>
+          <option value="portrait">Portrait</option>
+          <option value="landscape">Landscape</option>
+        </select>
+
+        <button class="adminAction" id="expandedMake" type="button">Make it</button>
+
+        <div class="adminResult" id="expandedResult"></div>
+
+        <div class="expandedPicture" id="expandedPicture"></div>
+
+        <div class="adminField adminLabel">Review queue</div>
+
+        <div class="refusalList" id="expandedQueue"></div>
+
+        <div class="adminResult" id="expandedQueueResult"></div>
 
       </div>
 
@@ -2160,8 +2219,8 @@
   </div>
 </div>
 
-<script>window.NASTIVEE_VERSION = '2026-09-23-117';</script>
-<script src="./js/app.js?v=2026-09-23-117"></script>
+<script>window.NASTIVEE_VERSION = '2026-09-23-118';</script>
+<script src="./js/app.js?v=2026-09-23-118"></script>
 
 </body>
 </html>

@@ -13436,14 +13436,44 @@ async function startVoiceCall() {
 
     call.pc = pc;
 
+    /*
+      HEARING HIM BACK
+
+      This element has to be in the page. Left floating loose it
+      holds the incoming audio perfectly happily and plays none
+      of it, which is exactly the silence that was happening: the
+      line connected, he answered, and nobody heard a word.
+    */
     const audio = document.createElement('audio');
     audio.autoplay = true;
+    audio.playsInline = true;
+    audio.setAttribute('playsinline', '');
+    audio.style.cssText = 'position:absolute;width:0;height:0;opacity:0;pointer-events:none';
+    (document.getElementById('voiceScreen') || document.body).appendChild(audio);
     call.audio = audio;
 
     pc.ontrack = event => {
       audio.srcObject = event.streams[0];
+      /* autoplay can still refuse, so ask, and say so if it will not */
+      const playing = audio.play();
+      if (playing && typeof playing.catch === 'function') {
+        playing.catch(error => {
+          console.error('VOICE PLAYBACK BLOCKED:', error?.message);
+          setVoiceState('listening', 'Tap anywhere to hear him.');
+          const nudge = () => {
+            audio.play().catch(() => {});
+            document.removeEventListener('pointerdown', nudge);
+          };
+          document.addEventListener('pointerdown', nudge, { once: true });
+        });
+      }
     };
 
+    /*
+      addTrack already opens a two way channel, so he is heard
+      and we hear him. An extra transceiver here would put a
+      second audio line in the offer and confuse the answer.
+    */
     stream.getTracks().forEach(track => pc.addTrack(track, stream));
 
     const channel = pc.createDataChannel('oai-events');
@@ -13553,7 +13583,11 @@ function endVoiceCall() {
 
   call.stream?.getTracks().forEach(track => track.stop());
 
-  if (call.audio) call.audio.srcObject = null;
+  if (call.audio) {
+    call.audio.srcObject = null;
+    try { call.audio.pause(); } catch {}
+    call.audio.remove();
+  }
 
   /* the chat list picks up a chat the call started */
   call.saving.then(() => {
@@ -17131,6 +17165,10 @@ function showAdminPage(id) {
     loadRefusals();
   }
 
+  if (target.id === 'adminExpanded') {
+    loadExpandedStudio();
+  }
+
   if (target.id === 'adminKnowledge') {
     loadKnowledge();
   }
@@ -19747,3 +19785,347 @@ resizeTextarea();
 
 checkSession();
 
+
+
+/* =====================================================
+   ADMIN PAGE: EXPANDED (IN DEVELOPMENT, ADMINS ONLY)
+
+   The server refuses every route here unless the caller is
+   an admin, so this page is the only way in. Cards follow
+   the house rules: closed on one line, colour carries the
+   state, and after any action the screen comes back to the
+   card that was being worked on.
+===================================================== */
+
+const EXPANDED_PIECES = [
+  ['record', 'Record (run supabase-expanded.sql)'],
+  ['words', 'Words check (OpenAI moderation)'],
+  ['generator', 'Picture service (EXPANDED_GEN_URL)'],
+  ['checker', 'Picture checker (EXPANDED_CHECK_URL)']
+];
+
+async function loadExpandedStudio() {
+
+  const section = document.getElementById('adminExpanded');
+  const list = document.getElementById('expandedChecklist');
+  const note = document.getElementById('adminExpandedNote');
+
+  if (!section || !list) return;
+
+  try {
+
+    const response =
+      await fetch(`${API_BASE}/api/expanded/status`, { headers: await apiHeaders() });
+
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) throw new Error(data?.error || 'Expanded is switched off on the server.');
+
+    list.innerHTML = '';
+
+    EXPANDED_PIECES.forEach(([key, label]) => {
+      const item = document.createElement('li');
+      const ready = Boolean(data.pieces?.[key]);
+      item.className = ready ? 'ready' : 'missing';
+      item.textContent = `${ready ? 'Connected' : 'Not connected'}: ${label}`;
+      list.appendChild(item);
+    });
+
+    const ready = EXPANDED_PIECES.every(([key]) => data.pieces?.[key]);
+    const on = data.on === true;
+
+    const toggle = document.getElementById('expandedSwitch');
+    toggle.classList.toggle('on', on);
+    toggle.textContent = on ? 'On' : 'Off';
+    toggle.disabled = false;
+
+    document.getElementById('expandedMake').disabled = !(on && ready);
+
+    if (note) {
+      note.textContent =
+        !on
+          ? 'Switched off'
+          : ready
+            ? 'On, admins only'
+            : 'On, still setting up, admins only';
+    }
+
+    await loadExpandedQueue();
+
+  } catch (error) {
+
+    list.innerHTML = '';
+    document.getElementById('expandedMake').disabled = true;
+    if (note) note.textContent = 'Switched off';
+    adminSay('expandedResult', error.message, false);
+
+  }
+
+}
+
+async function loadExpandedQueue(keepId) {
+
+  const queue = document.getElementById('expandedQueue');
+  const section = document.getElementById('adminExpanded');
+
+  if (!queue) return;
+
+  try {
+
+    const response =
+      await fetch(`${API_BASE}/api/admin/expanded/queue`, { headers: await apiHeaders() });
+
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) throw new Error(data?.error || 'Could not load the review queue.');
+
+    const items = data.items || [];
+
+    const needsAct = items.filter(item => item.status === 'open' && item.stage === 'output');
+    const problems = items.filter(item => item.status === 'open' && item.stage !== 'output');
+
+    section?.classList.remove('bad', 'warn', 'good');
+    section?.classList.add(needsAct.length ? 'bad' : problems.length ? 'warn' : 'good');
+
+    queue.innerHTML = '';
+
+    if (!items.length) {
+      const empty = document.createElement('div');
+      empty.className = 'adminHint';
+      empty.textContent = 'Nothing recorded yet.';
+      queue.appendChild(empty);
+      paintAdminMenu();
+      return;
+    }
+
+    items.forEach(item => queue.appendChild(expandedCard(item)));
+
+    if (keepId) {
+      const card = document.getElementById(`expanded-${keepId}`);
+      if (card) {
+        card.classList.add('open');
+        requestAnimationFrame(() => card.scrollIntoView({ block: 'start' }));
+      }
+    }
+
+    paintAdminMenu();
+
+  } catch (error) {
+
+    adminSay('expandedQueueResult', error.message, false);
+
+  }
+
+}
+
+function expandedCardState(item) {
+  if (item.status === 'cleared') return 'good read';
+  if (item.status === 'escalated') return 'warn';
+  if (item.stage === 'output') return 'bad';
+  return 'warn';
+}
+
+function expandedCard(item) {
+
+  const card = document.createElement('div');
+  card.className = `refusalCard expandedCard ${expandedCardState(item)}`;
+  card.id = `expanded-${item.id}`;
+
+  const head = document.createElement('button');
+  head.type = 'button';
+  head.className = 'refusalSummary';
+
+  const dot = document.createElement('span');
+  dot.className = 'refusalDot';
+  head.appendChild(dot);
+
+  const text = document.createElement('span');
+  text.className = 'refusalSummaryText';
+
+  const title = document.createElement('span');
+  title.className = 'refusalTitle';
+  title.textContent =
+    item.decision === 'allowed'
+      ? 'Made and shown'
+      : item.stage === 'output'
+        ? 'Picture blocked'
+        : item.stage === 'error'
+          ? 'Picture service failed'
+          : 'Words blocked';
+  text.appendChild(title);
+
+  const tag = document.createElement('span');
+  tag.className = 'refusalKind';
+  tag.textContent = item.status === 'escalated' ? 'Escalated' : item.status === 'cleared' ? 'Dealt with' : 'Needs review';
+  title.appendChild(tag);
+
+  const sub = document.createElement('span');
+  sub.className = 'refusalSub';
+  sub.textContent = [refusalWhen(item.created_at), item.email || ''].filter(Boolean).join(' · ');
+  text.appendChild(sub);
+
+  head.appendChild(text);
+
+  const chevron = document.createElement('span');
+  chevron.className = 'refusalChevron';
+  chevron.innerHTML =
+    '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>';
+  head.appendChild(chevron);
+
+  card.appendChild(head);
+
+  const body = document.createElement('div');
+  body.className = 'refusalBody';
+
+  const row = (label, value, className = '') => {
+    if (!value) return;
+    const part = document.createElement('div');
+    part.className = `refusalRow ${className}`.trim();
+    const name = document.createElement('div');
+    name.className = 'refusalLabel';
+    name.textContent = label;
+    const words = document.createElement('div');
+    words.className = 'refusalText';
+    words.textContent = value;
+    part.appendChild(name);
+    part.appendChild(words);
+    body.appendChild(part);
+  };
+
+  row('They typed', item.prompt);
+  row('Why it stopped', item.decision === 'blocked' ? item.reason : '', 'breach');
+  row('Reviewed', item.reviewed_by ? `${item.reviewed_by}, ${refusalWhen(item.reviewed_at)}` : '');
+
+  if (item.status === 'open') {
+
+    const tools = document.createElement('div');
+    tools.className = 'refusalTools';
+
+    const act = (label, action, quiet) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = quiet ? 'adminAction adminQuiet' : 'adminAction';
+      button.textContent = label;
+      button.addEventListener('click', async () => {
+        button.disabled = true;
+        try {
+          const response = await fetch(`${API_BASE}/api/admin/expanded/review`, {
+            method: 'POST',
+            headers: await apiHeaders(),
+            body: JSON.stringify({ id: item.id, action })
+          });
+          const data = await response.json().catch(() => ({}));
+          if (!response.ok) throw new Error(data?.error || 'Could not save that.');
+          await loadExpandedQueue(item.id);
+        } catch (error) {
+          button.disabled = false;
+          adminSay('expandedQueueResult', error.message, false);
+        }
+      });
+      tools.appendChild(button);
+    };
+
+    act('Mark as dealt with', 'cleared', true);
+
+    if (item.stage === 'output' || item.stage === 'prompt') {
+      act('Escalate', 'escalated', false);
+    }
+
+    body.appendChild(tools);
+
+  }
+
+  card.appendChild(body);
+
+  head.addEventListener('click', () => {
+    const open = card.classList.toggle('open');
+    if (open) card.scrollIntoView({ block: 'start', behavior: 'smooth' });
+  });
+
+  return card;
+
+}
+
+document.getElementById('expandedSwitch')?.addEventListener('click', async event => {
+
+  const toggle = event.currentTarget;
+  const on = !toggle.classList.contains('on');
+
+  toggle.disabled = true;
+
+  try {
+
+    const response = await fetch(`${API_BASE}/api/admin/expanded/switch`, {
+      method: 'POST',
+      headers: await apiHeaders(),
+      body: JSON.stringify({ on })
+    });
+
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) throw new Error(data?.error || 'Could not change the switch.');
+
+    adminSay(
+      'expandedSwitchResult',
+      data.volatile
+        ? `Switched ${on ? 'on' : 'off'}, but only until the server restarts. Run supabase-expanded.sql to make it stick.`
+        : `Switched ${on ? 'on' : 'off'} for admins.`,
+      !data.volatile
+    );
+
+  } catch (error) {
+
+    adminSay('expandedSwitchResult', error.message, false);
+
+  }
+
+  await loadExpandedStudio();
+
+});
+
+document.getElementById('expandedMake')?.addEventListener('click', async event => {
+
+  const button = event.currentTarget;
+  const prompt = document.getElementById('expandedPrompt')?.value.trim() || '';
+  const shape = document.getElementById('expandedShape')?.value || 'square';
+  const picture = document.getElementById('expandedPicture');
+
+  if (!prompt) {
+    adminSay('expandedResult', 'Describe the picture first.', false);
+    return;
+  }
+
+  button.disabled = true;
+  button.textContent = 'Checking and making...';
+  if (picture) picture.innerHTML = '';
+
+  try {
+
+    const response = await fetch(`${API_BASE}/api/expanded/image`, {
+      method: 'POST',
+      headers: await apiHeaders(),
+      body: JSON.stringify({ prompt, shape })
+    });
+
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) throw new Error(data?.error || 'Nothing was made.');
+
+    const image = document.createElement('img');
+    image.src = data.image;
+    image.alt = 'Made in Expanded';
+    picture?.appendChild(image);
+
+    adminSay('expandedResult', 'Passed both checks.', true);
+
+  } catch (error) {
+
+    adminSay('expandedResult', error.message, false);
+
+  }
+
+  button.textContent = 'Make it';
+
+  loadExpandedStudio();
+
+});

@@ -6,6 +6,7 @@ import { toFile } from 'openai/uploads';
 import { createClient } from '@supabase/supabase-js';
 import Stripe from 'stripe';
 import { createHash } from 'crypto';
+import { registerExpanded } from './expanded.js';
 
 const app = express();
 
@@ -5889,6 +5890,13 @@ style was requested.
   }
 
 });
+
+
+// =====================================================
+// EXPANDED (in development, admins only, see expanded.js)
+// =====================================================
+
+registerExpanded(app, { supabaseAdmin, openai, getUser, isAdmin, raiseAlert, getSettings, saveSettings });
 
 
 // =====================================================

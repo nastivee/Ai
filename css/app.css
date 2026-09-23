@@ -10262,3 +10262,44 @@ body.theme-frost .walkerArms {
 
 /* the block starts where his hands are */
 body.theme-frost .walkerTail { left: 18px; }
+
+
+/* =====================================================
+   EXPANDED (admin page, in development)
+===================================================== */
+
+.expandedChecklist {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13.5px;
+}
+
+.expandedChecklist li {
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: var(--mute-fill);
+}
+
+.expandedChecklist li.ready { color: #86b89a; }
+.expandedChecklist li.missing { color: #f59e0b; }
+
+.expandedPicture img {
+  display: block;
+  width: 100%;
+  margin-top: 14px;
+  border-radius: 14px;
+}
+
+.expandedCard { scroll-margin-top: 12px; }
+
+.refusalCard.good {
+  background:
+    linear-gradient(var(--mute-fill), var(--mute-fill)) padding-box,
+    linear-gradient(rgba(134, 184, 154, .45), rgba(134, 184, 154, .3)) border-box;
+}
+
+.refusalCard.good .refusalDot { background: #86b89a; }
