@@ -13584,23 +13584,17 @@ const PEEK_SVG = `
     <rect class="neck" x="26" y="50" width="12" height="10" rx="6" fill="url(#peekShell)"/>
     <!-- the arms float clear of the shell, the way that kind of robot does -->
     <g class="armL">
-      <rect class="limb" x="2" y="57" width="9.5" height="20" rx="4.75" fill="url(#peekShellArm)" transform="rotate(8 6.75 59)"/>
-      <ellipse class="mitt" cx="5" cy="79" rx="5.8" ry="5.2" fill="#ffffff"/>
+      <rect class="limb" x="1.5" y="56" width="10" height="26" rx="5" fill="url(#peekShellArm)" transform="rotate(8 6.5 58)"/>
     </g>
     <g class="armR">
-      <rect class="limb" x="52.5" y="57" width="9.5" height="20" rx="4.75" fill="url(#peekShellArm)" transform="rotate(-8 57.25 59)"/>
-      <ellipse class="mitt" cx="59" cy="79" rx="5.8" ry="5.2" fill="#ffffff"/>
+      <rect class="limb" x="52.5" y="56" width="10" height="26" rx="5" fill="url(#peekShellArm)" transform="rotate(-8 57.5 58)"/>
     </g>
-    <rect class="leg" x="21" y="88" width="9" height="12" rx="4.5" fill="url(#peekShellArm)"/>
-    <rect class="leg" x="34" y="88" width="9" height="12" rx="4.5" fill="url(#peekShellArm)"/>
-    <ellipse class="foot" cx="25.5" cy="101" rx="7.4" ry="3.6" fill="#e6edf6"/>
-    <ellipse class="foot" cx="38.5" cy="101" rx="7.4" ry="3.6" fill="#e6edf6"/>
     <!-- one smooth shell, narrower at the shoulders, no joins anywhere -->
     <path class="torso" d="M32 51
-      C 46 51 53 60 53.5 71
-      C 54 83 46 91 32 91
-      C 18 91 10 83 10.5 71
-      C 11 60 18 51 32 51 Z" fill="url(#peekShell)"/>
+      C 47 51 54 61 54.5 74
+      C 55 89 46 98 32 98
+      C 18 98 9 89 9.5 74
+      C 10 61 17 51 32 51 Z" fill="url(#peekShell)"/>
     <ellipse class="sheen" cx="22" cy="64" rx="7" ry="10" fill="#ffffff" opacity=".7"/>
     <rect class="chest" x="24.5" y="68" width="15" height="4.8" rx="2.4" fill="#cfdcea"/>
     <circle class="light" cx="32" cy="70.4" r="2" fill="#6cc8ff"/>
@@ -13634,10 +13628,14 @@ const PEEK_HIGH = -73;
 
 const PEEK_HAND_SVG = `
 <svg viewBox="0 0 18 30" aria-hidden="true">
-  <rect x="6" y="11" width="6" height="19" rx="3" fill="#2f6fe8"/>
-  <circle cx="9" cy="8.5" r="7" fill="#58b6ff"/>
-  <ellipse cx="3.2" cy="10.5" rx="2.4" ry="3.2" fill="#4aa6ff"/>
-  <circle cx="7" cy="6" r="2" fill="#bfe9ff" fill-opacity=".55"/>
+  <defs>
+    <linearGradient id="peekTip" x1="0" y1="0" x2="0.5" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#dbe5f0"/>
+    </linearGradient>
+  </defs>
+  <rect x="3.5" y="2" width="11" height="28" rx="5.5" fill="url(#peekTip)"/>
+  <ellipse cx="7.4" cy="9" rx="2.2" ry="4" fill="#ffffff" opacity=".8"/>
 </svg>`;
 
 function peekPose(y, extra = '') {
