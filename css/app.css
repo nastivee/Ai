@@ -9781,7 +9781,7 @@ body.theme-christmas .logoLarge::after {
 }
 
 .themeGround[data-theme] {
-  display: block;
+  display: block !important;
   position: fixed;
   inset: 0;
   pointer-events: none;
@@ -9794,12 +9794,12 @@ body.theme-christmas .logoLarge::after {
 .themeGround .garland,
 .themeGround .crock { position: absolute; }
 
-/* anything the user actually uses stays on top of it */
-.composer,
-.chatWrap,
-.messages,
-.appHeader,
-.sidebar {
+/*
+  The app itself sits above the ground layer. One rule, on the
+  app root only: nothing else gets its position changed, because
+  the sidebar and the columns depend on theirs.
+*/
+.app {
   position: relative;
   z-index: 1;
 }
