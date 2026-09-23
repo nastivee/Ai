@@ -9097,7 +9097,6 @@ body.theme-christmas .themeDecor {
   width: 220px;
   height: 220px;
   opacity: 0;
-  transform: scale(.1);
   animation: burst 9s ease-out infinite;
 }
 
@@ -9111,11 +9110,47 @@ body.theme-christmas .themeDecor {
 .themeDecor .firework.f4 { left: 18%; top: 14%; animation-delay: 7.6s; width: 120px; height: 120px; }
 
 @keyframes burst {
-  0% { opacity: 0; transform: scale(.08); }
+  0% { opacity: 0; }
   4% { opacity: .7; }
-  16% { opacity: .55; transform: scale(1); }
-  26% { opacity: 0; transform: scale(1.18); }
-  100% { opacity: 0; transform: scale(1.18); }
+  16% { opacity: .55; }
+  26% { opacity: 0; }
+  100% { opacity: 0; }
+}
+
+/*
+  Each strand reaches out at its own rate, from its own
+  standing start, so the burst never opens as a neat wheel.
+*/
+.themeDecor .firework .spoke,
+.themeDecor .warn .pop .spoke {
+  transform-origin: 50px 50px;
+  transform: scale(.06);
+}
+
+.themeDecor .firework .spoke {
+  animation: spokeOut 9s infinite both;
+  animation-delay: var(--lag, 0s);
+}
+
+@keyframes spokeOut {
+  0% { transform: scale(.06); opacity: 0; }
+  3% { opacity: 1; }
+  15% { transform: scale(1); opacity: 1; }
+  24% { transform: scale(1.1); opacity: 1; }
+  100% { transform: scale(1.1); opacity: 1; }
+}
+
+.themeDecor.warning .warn .pop .spoke {
+  animation: spokeOutFast 2.4s both;
+  animation-delay: calc(.5s + var(--lag, 0s));
+}
+
+@keyframes spokeOutFast {
+  0% { transform: scale(.06); opacity: 0; }
+  8% { opacity: 1; }
+  44% { transform: scale(1); opacity: 1; }
+  70% { transform: scale(1.12); opacity: 1; }
+  100% { transform: scale(1.12); opacity: 1; }
 }
 
 /* --- New Year --- */
@@ -9546,7 +9581,6 @@ body.theme-christmas .logoLarge::after {
   width: 260px;
   height: 260px;
   margin: -130px 0 0 -130px;
-  transform: scale(.1);
 }
 
 .themeDecor .warn .pop svg { display: block; width: 100%; height: 100%; }
@@ -9554,11 +9588,11 @@ body.theme-christmas .logoLarge::after {
 .themeDecor.warning .warn .pop { animation: warnPop 2.4s ease-out .5s; }
 
 @keyframes warnPop {
-  0% { opacity: 0; transform: scale(.08); }
+  0% { opacity: 0; }
   10% { opacity: 1; }
-  45% { opacity: .85; transform: scale(1); }
-  75% { opacity: 0; transform: scale(1.22); }
-  100% { opacity: 0; transform: scale(1.22); }
+  45% { opacity: .85; }
+  75% { opacity: 0; }
+  100% { opacity: 0; }
 }
 
 /* Christmas: the sleigh goes over */
@@ -9686,6 +9720,7 @@ body.theme-christmas .logoLarge::after {
 
 @media (prefers-reduced-motion: reduce) {
   .themeDecor .warn { display: none; }
+  .themeDecor .firework .spoke { animation: none; transform: scale(1); }
 }
 
 /* ============================================================

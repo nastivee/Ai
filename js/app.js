@@ -14371,20 +14371,50 @@ function lightStringSvg() {
     `stroke="#2a3140" stroke-width="2" fill="none"/>${bulbs}</svg>`;
 }
 
-/* a firework: spokes out from the middle, with a second ring of dots */
+/*
+  A firework: spokes out from the middle. No two are the same
+  length and no two grow at the same rate, because a real one
+  never opens as a neat wheel.
+*/
 function fireworkSvg(colour) {
+
+  const EASES = [
+    'cubic-bezier(.08,.82,.28,1)',
+    'cubic-bezier(.2,.68,.35,1)',
+    'cubic-bezier(.05,.95,.2,1)',
+    'cubic-bezier(.3,.6,.4,1)',
+    'cubic-bezier(.12,.88,.22,.99)'
+  ];
+
   let spokes = '';
+
   for (let i = 0; i < 16; i += 1) {
-    const angle = (i / 16) * Math.PI * 2;
-    const x = 50 + Math.cos(angle) * 44;
-    const y = 50 + Math.sin(angle) * 44;
-    const mx = 50 + Math.cos(angle) * 22;
-    const my = 50 + Math.sin(angle) * 22;
+
+    /* never evenly spaced, never the same length */
+    const angle = ((i + (Math.random() - .5) * 0.34) / 16) * Math.PI * 2;
+    const reach = 30 + Math.random() * 18;
+    const from = reach * (0.38 + Math.random() * 0.2);
+
+    const x = 50 + Math.cos(angle) * reach;
+    const y = 50 + Math.sin(angle) * reach;
+    const mx = 50 + Math.cos(angle) * from;
+    const my = 50 + Math.sin(angle) * from;
+
+    const lag = (Math.random() * 0.46).toFixed(2);
+    const ease = EASES[Math.floor(Math.random() * EASES.length)];
+    const dot = (1.4 + Math.random() * 1.4).toFixed(1);
+    const width = (1.1 + Math.random() * 0.9).toFixed(1);
+
     spokes +=
-      `<line x1="${mx.toFixed(1)}" y1="${my.toFixed(1)}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" stroke="${colour}" stroke-width="1.6" stroke-linecap="round"/>` +
-      `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2" fill="#fff"/>`;
+      `<g class="spoke" style="--lag:${lag}s;animation-timing-function:${ease}">` +
+      `<line x1="${mx.toFixed(1)}" y1="${my.toFixed(1)}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" ` +
+      `stroke="${colour}" stroke-width="${width}" stroke-linecap="round"/>` +
+      `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${dot}" fill="#fff"/></g>`;
+
   }
+
   return `<svg viewBox="0 0 100 100" aria-hidden="true">${spokes}</svg>`;
+
 }
 
 /* a rainbow arc, one band at a time */
