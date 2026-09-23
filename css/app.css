@@ -10310,10 +10310,16 @@ body.theme-frost .walkerTail { left: 18px; }
 .voiceWave {
   display: block;
   width: min(560px, 86vw);
-  height: 120px;
+  height: 130px;
   margin: 10px auto 2px;
   opacity: 0;
   transition: opacity .45s ease;
+  touch-action: none;
+  cursor: grab;
+}
+
+.voiceWave:active {
+  cursor: grabbing;
 }
 
 .voiceScreen.listening .voiceWave,

@@ -13442,6 +13442,221 @@ function waveLevel(side) {
 
 }
 
+/*
+  THE THREAD
+
+  One filament strung across the screen, simulated rather than
+  drawn: every point has a position and a velocity, and each
+  frame it pulls on its neighbours. Your voice plucks it from
+  the left, his from the right, and the two waves travel inward
+  and cross in the middle, so an interruption looks like one.
+
+  It is also grabbable. Drag the thread and let go and it rings,
+  properly, because the ringing is the same maths. Each occasion
+  gives the thread its own tension, weight and motes, so New Year
+  throws sparks where Midwinter barely bends.
+*/
+const THREAD_NODES = 150;
+
+const thread = {
+  u: new Float32Array(THREAD_NODES),
+  v: new Float32Array(THREAD_NODES),
+  motes: [],
+  grab: -1,
+  bound: false
+};
+
+/* tension: how fast a wave runs. damp: how long it rings for. */
+const THREAD_STYLE = {
+  standard:   { tension: 0.34, damp: 0.006, width: 3.0, glow: 16, mote: null,    motes: 0 },
+  newyear:    { tension: 0.42, damp: 0.004, width: 3.2, glow: 26, mote: 'spark', motes: 0.5 },
+  frost:      { tension: 0.20, damp: 0.014, width: 4.2, glow: 20, mote: 'flake', motes: 0.22 },
+  valentines: { tension: 0.26, damp: 0.009, width: 3.6, glow: 22, mote: 'heart', motes: 0.3 },
+  stpatricks: { tension: 0.38, damp: 0.005, width: 3.0, glow: 18, mote: 'clover',motes: 0.24 },
+  easter:     { tension: 0.24, damp: 0.010, width: 3.4, glow: 16, mote: 'bud',   motes: 0.26 },
+  summer:     { tension: 0.30, damp: 0.007, width: 3.2, glow: 20, mote: 'sun',   motes: 0.2 },
+  halloween:  { tension: 0.36, damp: 0.005, width: 2.8, glow: 24, mote: 'wisp',  motes: 0.4 },
+  bonfire:    { tension: 0.33, damp: 0.006, width: 3.4, glow: 28, mote: 'ember', motes: 0.55 },
+  christmas:  { tension: 0.28, damp: 0.008, width: 3.6, glow: 24, mote: 'light', motes: 0.3 }
+};
+
+function threadStyle() {
+  const id = (typeof currentTheme === 'function' ? currentTheme() : 'standard');
+  return THREAD_STYLE[id] || THREAD_STYLE.standard;
+}
+
+function threadClear() {
+  thread.u.fill(0);
+  thread.v.fill(0);
+  thread.motes.length = 0;
+  thread.grab = -1;
+}
+
+/*
+  Push a voice into one end of the thread. The sound's own shape
+  goes in, not a random wobble, so a hard consonant looks like a
+  hard consonant.
+*/
+function threadFeed(side, level, fromLeft) {
+
+  if (!side || level < 0.02) return;
+
+  const reach = Math.floor(THREAD_NODES * 0.34);
+
+  for (let i = 1; i < reach; i += 1) {
+
+    const at = fromLeft ? i : THREAD_NODES - 1 - i;
+    const sample = side.data[Math.floor((i / reach) * side.data.length)];
+    const shape = (sample - 128) / 128;
+
+    /* strongest at the end it came from, fading as it travels in */
+    const push = (1 - i / reach) ** 2;
+
+    thread.v[at] += shape * level * push * 0.9;
+
+  }
+
+}
+
+function threadStep(style) {
+
+  const t = style.tension;
+  const d = 1 - style.damp;
+
+  /* two half steps keeps it stable when someone drags hard */
+  for (let pass = 0; pass < 2; pass += 1) {
+
+    for (let i = 1; i < THREAD_NODES - 1; i += 1) {
+
+      if (i === thread.grab) continue;
+
+      thread.v[i] += (thread.u[i - 1] + thread.u[i + 1] - 2 * thread.u[i]) * t;
+      thread.v[i] *= d;
+
+    }
+
+    for (let i = 1; i < THREAD_NODES - 1; i += 1) {
+      if (i === thread.grab) continue;
+      thread.u[i] += thread.v[i] * 0.5;
+    }
+
+  }
+
+  /* pinned at both ends */
+  thread.u[0] = thread.v[0] = 0;
+  thread.u[THREAD_NODES - 1] = thread.v[THREAD_NODES - 1] = 0;
+
+}
+
+function moteAt(ctx, kind, x, y, size, tint) {
+
+  ctx.fillStyle = tint;
+
+  if (kind === 'heart') {
+    ctx.beginPath();
+    ctx.moveTo(x, y + size * 0.8);
+    ctx.bezierCurveTo(x - size * 1.4, y - size * 0.3, x - size * 0.4, y - size * 1.2, x, y - size * 0.35);
+    ctx.bezierCurveTo(x + size * 0.4, y - size * 1.2, x + size * 1.4, y - size * 0.3, x, y + size * 0.8);
+    ctx.fill();
+    return;
+  }
+
+  if (kind === 'flake') {
+    ctx.strokeStyle = tint;
+    ctx.lineWidth = Math.max(1, size * 0.3);
+    for (let a = 0; a < 3; a += 1) {
+      const angle = (Math.PI / 3) * a;
+      ctx.beginPath();
+      ctx.moveTo(x - Math.cos(angle) * size, y - Math.sin(angle) * size);
+      ctx.lineTo(x + Math.cos(angle) * size, y + Math.sin(angle) * size);
+      ctx.stroke();
+    }
+    return;
+  }
+
+  if (kind === 'clover' || kind === 'bud') {
+    for (let a = 0; a < (kind === 'clover' ? 3 : 2); a += 1) {
+      const angle = (Math.PI * 2 / (kind === 'clover' ? 3 : 2)) * a - Math.PI / 2;
+      ctx.beginPath();
+      ctx.ellipse(x + Math.cos(angle) * size * 0.6, y + Math.sin(angle) * size * 0.6,
+        size * 0.62, size * 0.44, angle, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    return;
+  }
+
+  if (kind === 'spark' || kind === 'sun') {
+    ctx.strokeStyle = tint;
+    ctx.lineWidth = Math.max(1, size * 0.26);
+    for (let a = 0; a < 4; a += 1) {
+      const angle = (Math.PI / 4) * a;
+      ctx.beginPath();
+      ctx.moveTo(x - Math.cos(angle) * size, y - Math.sin(angle) * size);
+      ctx.lineTo(x + Math.cos(angle) * size, y + Math.sin(angle) * size);
+      ctx.stroke();
+    }
+    return;
+  }
+
+  /* ember, wisp, light and anything else: a soft dot */
+  ctx.beginPath();
+  ctx.arc(x, y, size * 0.75, 0, Math.PI * 2);
+  ctx.fill();
+
+}
+
+function threadMotes(ctx, style, tint, h) {
+
+  if (!style.mote) return;
+
+  /* motes are thrown off wherever the thread is moving fastest */
+  if (thread.motes.length < 40 && Math.random() < style.motes) {
+
+    let best = 1;
+    let fastest = 0;
+
+    for (let i = 1; i < THREAD_NODES - 1; i += 1) {
+      const speed = Math.abs(thread.v[i]);
+      if (speed > fastest) { fastest = speed; best = i; }
+    }
+
+    if (fastest > 0.35) {
+      const rises = style.mote === 'ember' || style.mote === 'wisp' || style.mote === 'spark';
+      thread.motes.push({
+        x: best / (THREAD_NODES - 1),
+        y: thread.u[best],
+        vx: (Math.random() - 0.5) * 1.6,
+        vy: rises ? -(0.7 + Math.random()) : (Math.random() - 0.5) * 1.4,
+        life: 1,
+        size: 3 + Math.random() * 4
+      });
+    }
+
+  }
+
+  const w = ctx.canvas.width;
+  const mid = h / 2;
+
+  for (let i = thread.motes.length - 1; i >= 0; i -= 1) {
+
+    const m = thread.motes[i];
+
+    m.x += m.vx / w;
+    m.y += m.vy;
+    m.vy += style.mote === 'light' ? 0.06 : 0.015;
+    m.life -= 0.016;
+
+    if (m.life <= 0) { thread.motes.splice(i, 1); continue; }
+
+    ctx.globalAlpha = Math.max(0, m.life) * 0.8;
+    moteAt(ctx, style.mote, m.x * w, mid + m.y, m.size, tint);
+
+  }
+
+  ctx.globalAlpha = 1;
+
+}
+
 function waveDraw() {
 
   const canvas = voiceWave.canvas;
@@ -13452,6 +13667,7 @@ function waveDraw() {
   const w = canvas.width;
   const h = canvas.height;
   const mid = h / 2;
+  const style = threadStyle();
 
   ctx.clearRect(0, 0, w, h);
 
@@ -13460,72 +13676,128 @@ function waveDraw() {
     theirs: waveLevel(voiceWave.theirs)
   };
 
-  /* ease it so the bars breathe rather than twitch */
-  voiceWave.level.mine += (raw.mine - voiceWave.level.mine) * 0.28;
-  voiceWave.level.theirs += (raw.theirs - voiceWave.level.theirs) * 0.28;
+  voiceWave.level.mine += (raw.mine - voiceWave.level.mine) * 0.3;
+  voiceWave.level.theirs += (raw.theirs - voiceWave.level.theirs) * 0.3;
+
+  const still = document.body.classList.contains('motionOff');
+
+  if (!still) {
+    threadFeed(voiceWave.mine, voiceWave.level.mine, true);
+    threadFeed(voiceWave.theirs, voiceWave.level.theirs, false);
+    threadStep(style);
+  }
 
   const speaking = voiceWave.level.theirs > voiceWave.level.mine + 0.02;
-  const side = speaking ? voiceWave.theirs : voiceWave.mine;
-  const level = speaking ? voiceWave.level.theirs : voiceWave.level.mine;
 
-  const style = getComputedStyle(document.body);
-  const tint = (speaking ? style.getPropertyValue('--acc2') : style.getPropertyValue('--acc')).trim()
-    || (speaking ? '#9fe6ff' : '#a78bfa');
+  const css = getComputedStyle(document.body);
+  const yours = (css.getPropertyValue('--acc') || '').trim() || '#a78bfa';
+  const his = (css.getPropertyValue('--acc2') || '').trim() || '#9fe6ff';
 
-  const bars = 56;
-  const gap = w / bars;
-  const width = Math.max(3, gap * 0.42);
+  /* the thread is your colour at your end and his at his */
+  const line = ctx.createLinearGradient(0, 0, w, 0);
+  line.addColorStop(0, yours);
+  line.addColorStop(0.5, speaking ? his : yours);
+  line.addColorStop(1, his);
 
-  ctx.fillStyle = tint;
-  ctx.shadowColor = tint;
-  ctx.shadowBlur = 14;
+  const swing = mid - 14;
 
-  for (let i = 0; i < bars; i += 1) {
+  /* a soft shadow of where it just was, so fast waves smear */
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
 
-    /* sample the wave across its width so the shape is the real one */
-    let value = 0;
+  for (let layer = 0; layer < 2; layer += 1) {
 
-    if (side) {
-      const at = Math.floor((i / bars) * side.data.length);
-      value = Math.abs(side.data[at] - 128) / 128;
-    }
-
-    /* quiet still shows a living line rather than nothing */
-    const shaped = Math.max(0.035, value * 0.75 + level * 0.45);
-    const tall = Math.min(mid - 6, shaped * (mid - 6) * 1.5);
-
-    const x = i * gap + (gap - width) / 2;
-
-    ctx.globalAlpha = 0.35 + Math.min(0.65, shaped * 1.6);
     ctx.beginPath();
 
-    /* older browsers have no roundRect */
-    if (ctx.roundRect) ctx.roundRect(x, mid - tall, width, tall * 2, width / 2);
-    else ctx.rect(x, mid - tall, width, tall * 2);
+    for (let i = 0; i < THREAD_NODES; i += 1) {
 
-    ctx.fill();
+      const x = (i / (THREAD_NODES - 1)) * w;
+      const lag = layer === 0 ? thread.v[i] * 2.4 : 0;
+      const y = mid + Math.max(-swing, Math.min(swing, thread.u[i] * 26 - lag));
+
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+
+    }
+
+    ctx.strokeStyle = line;
+    ctx.globalAlpha = layer === 0 ? 0.28 : 1;
+    ctx.lineWidth = layer === 0 ? style.width * 2.4 : style.width;
+    ctx.shadowColor = speaking ? his : yours;
+    ctx.shadowBlur = layer === 0 ? 0 : style.glow;
+    ctx.stroke();
 
   }
 
   ctx.globalAlpha = 1;
   ctx.shadowBlur = 0;
 
-  /* say whose voice it is */
+  if (!still) threadMotes(ctx, style, speaking ? his : yours, h);
+
   const who = document.getElementById('voiceWho');
 
   if (who) {
     const loud = Math.max(voiceWave.level.mine, voiceWave.level.theirs);
-    who.textContent = loud < 0.045 ? '' : (speaking ? 'Natter' : 'You');
-    who.classList.toggle('them', speaking);
+    who.textContent = thread.grab >= 0 ? 'Pluck it' : (loud < 0.045 ? '' : (speaking ? 'Natter' : 'You'));
+    who.classList.toggle('them', speaking && thread.grab < 0);
   }
 
   voiceWave.frame = requestAnimationFrame(waveDraw);
 
 }
 
+/* grab the thread with a finger or a mouse and it rings when let go */
+function threadGrip(canvas) {
+
+  if (thread.bound) return;
+
+  thread.bound = true;
+
+  const nodeAt = event => {
+    const box = canvas.getBoundingClientRect();
+    const across = (event.clientX - box.left) / box.width;
+    return Math.max(1, Math.min(THREAD_NODES - 2, Math.round(across * (THREAD_NODES - 1))));
+  };
+
+  const pullTo = event => {
+    const box = canvas.getBoundingClientRect();
+    const from = (event.clientY - box.top) / box.height - 0.5;
+    const at = thread.grab;
+    if (at < 1) return;
+    thread.u[at] = (from * canvas.height) / 26;
+    thread.v[at] = 0;
+    /* neighbours follow so the pull has a shoulder rather than a spike */
+    for (let d = 1; d < 9; d += 1) {
+      const fade = 1 - d / 9;
+      if (at - d > 0) thread.u[at - d] = thread.u[at] * fade;
+      if (at + d < THREAD_NODES - 1) thread.u[at + d] = thread.u[at] * fade;
+    }
+  };
+
+  canvas.addEventListener('pointerdown', event => {
+    thread.grab = nodeAt(event);
+    canvas.setPointerCapture?.(event.pointerId);
+    pullTo(event);
+    event.preventDefault();
+  });
+
+  canvas.addEventListener('pointermove', event => {
+    if (thread.grab >= 0) { pullTo(event); event.preventDefault(); }
+  });
+
+  const release = () => { thread.grab = -1; };
+
+  canvas.addEventListener('pointerup', release);
+  canvas.addEventListener('pointercancel', release);
+  canvas.addEventListener('pointerleave', release);
+
+}
+
 function waveStart() {
   voiceWave.canvas = document.getElementById('voiceWave');
   if (!voiceWave.canvas || voiceWave.frame) return;
+  threadClear();
+  threadGrip(voiceWave.canvas);
   voiceWave.frame = requestAnimationFrame(waveDraw);
 }
 
@@ -13535,6 +13807,7 @@ function waveStop() {
   voiceWave.mine = null;
   voiceWave.theirs = null;
   voiceWave.level = { mine: 0, theirs: 0 };
+  threadClear();
   const who = document.getElementById('voiceWho');
   if (who) who.textContent = '';
   const canvas = voiceWave.canvas;

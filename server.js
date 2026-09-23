@@ -4989,7 +4989,7 @@ app.post('/api/voice/session', async (req, res) => {
       String(req.body?.memory || '').slice(0, 4000);
 
     const recent =
-      String(req.body?.recent || '').slice(0, 4000);
+      String(req.body?.recent || '').slice(0, 1800);
 
     const today =
       new Date().toLocaleDateString('en-GB', {
@@ -5001,7 +5001,9 @@ app.post('/api/voice/session', async (req, res) => {
 You are Natter AI, talking out loud with the user in a live voice call.
 
 - Speak naturally and warmly, like a friend on the phone. British English.
-- Keep replies short: a sentence or two unless they ask for more. No lists, no markdown, no reading out links.
+- Keep replies SHORT. One or two sentences, then stop and let them talk. Only go longer if they ask you to explain or expand.
+- Answer the question first. No preamble, no repeating their question back, no "great question", no summing up what you just said.
+- No lists, no markdown, no reading out links or long numbers.
 - If they interrupt, stop and listen.
 - Be helpful and direct. Only get flirty or cheeky if they clearly start it.
 - Today is ${today}. You cannot browse the web in a call; if they need something current, say so and suggest asking in the text chat.
@@ -5031,12 +5033,19 @@ ${(await houseLessonLines()) || '(none yet)'}
             type: 'realtime',
             model: VOICE_MODEL,
             instructions,
+            max_response_output_tokens: 320,
             audio: {
               input: {
                 transcription: { model: 'gpt-4o-mini-transcribe' },
-                turn_detection: { type: 'semantic_vad' }
+                /* keeps room noise from being billed as speech */
+                noise_reduction: { type: 'near_field' },
+                turn_detection: {
+                  type: 'semantic_vad',
+                  eagerness: 'high',
+                  interrupt_response: true
+                }
               },
-              output: { voice: VOICE_NAME }
+              output: { voice: VOICE_NAME, speed: 1.05 }
             }
           }
         })
