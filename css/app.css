@@ -3699,24 +3699,21 @@ body.smartMode {
   falls off him is whatever the celebration is: snow at
   Christmas, embers on Bonfire Night, hearts at Valentine's.
 */
-.progressLit {
+/*
+  The tail hangs off him rather than running on its own clock,
+  so the light is always something he has already dragged past
+  and never something arriving ahead of him.
+*/
+.walkerTail {
   position: absolute;
-  left: 0;
-  top: 50%;
+  right: calc(100% - 11px);
+  top: 11px;
   height: 4px;
-  width: 42%;
+  width: 230px;
   margin-top: -2px;
   border-radius: 10px;
-  background: linear-gradient(90deg, transparent, var(--acc, #8b5cf6) 45%, var(--acc2, #c084fc));
-  box-shadow: 0 0 14px -2px var(--accGlow, rgba(124, 58, 237, .5));
-  animation: walkLight 2.6s cubic-bezier(.45, 0, .55, 1) infinite;
-}
-
-@keyframes walkLight {
-  0% { transform: translateX(-46%); opacity: 0; }
-  12% { opacity: 1; }
-  88% { opacity: 1; }
-  100% { transform: translateX(240%); opacity: 0; }
+  background: linear-gradient(90deg, transparent, var(--accGlow, rgba(124, 58, 237, .4)) 30%, var(--acc, #8b5cf6) 72%, var(--acc2, #c084fc));
+  box-shadow: 0 0 14px -3px var(--accGlow, rgba(124, 58, 237, .5));
 }
 
 /*
@@ -3818,16 +3815,22 @@ body.motionOff .walkerDrops .drop {
   display: none;
 }
 
-body.motionOff .progressLit {
-  animation: none;
-  width: 100%;
-  opacity: .55;
+body.motionOff .progressTrack::after,
+body:not(.motionOff) .progressTrack::after { content: none; }
+
+/* paused: a steady lit wire instead of a walk */
+body.motionOff .progressTrack::before {
+  background: linear-gradient(90deg, var(--acc, #8b5cf6), var(--acc2, #c084fc));
+  opacity: .5;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .progressWalker,
   .walkerDrops .drop { display: none; }
-  .progressLit { animation: none; width: 100%; opacity: .55; }
+  .progressTrack::before {
+    background: linear-gradient(90deg, var(--acc, #8b5cf6), var(--acc2, #c084fc));
+    opacity: .5;
+  }
 }
 
 /* =====================================================
