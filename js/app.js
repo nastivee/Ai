@@ -14720,8 +14720,21 @@ const PEEK_COSTUMES = [
 const THEME_COSTUMES = {
 
   christmas: [
-  /* THE FEATURE: Father Christmas himself, sack and all */
-  { hideAntenna: true, feature: true, routine: featurePlay, quarry: 'present', svg: `
+  /* THE FEATURE: the green grump, out to make off with the presents */
+  { hideAntenna: true, feature: true, cross: true, routine: featurePlay, quarry: 'present', svg: `
+    <path d="M2 30 Q0 6 16 0 Q25 -4 32 -3 Q39 -4 48 0 Q64 6 62 30 Q59 16 50 10 Q41 5 32 5 Q23 5 14 10 Q5 16 2 30 Z" fill="#4e8c3a"/>
+    <path d="M5 26 q5 -7 3 -13 M15 14 q3 -8 0 -13 M32 5 q2 -9 0 -14 M49 14 q-3 -8 0 -13 M59 26 q-5 -7 -3 -13" stroke="#3d7a2b" stroke-width="2.6" stroke-linecap="round" fill="none"/>
+    <path d="M9 40 Q11 60 32 66 Q53 60 55 40 Q46 52 32 52 Q18 52 9 40 Z" fill="#4e8c3a"/>
+    <path d="M20 53 q6 10 12 11 q6 -1 12 -11" stroke="#3d7a2b" stroke-width="1.6" fill="none"/>
+    <path d="M10 23 L28 29" stroke="#2f5f20" stroke-width="4.4" stroke-linecap="round"/>
+    <path d="M54 23 L36 29" stroke="#2f5f20" stroke-width="4.4" stroke-linecap="round"/>
+    <path d="M23 42 Q32 38 41 42" stroke="#2f5f20" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <path d="M16 12 Q19 -6 34 -10 Q45 -13 43 -4 Q40 1 42 10 Z" fill="#c2181f"/>
+    <rect x="14" y="8" width="32" height="6" rx="3" fill="#f4f6fb"/>
+    <circle cx="45" cy="-13" r="5.5" fill="#f4f6fb"/>` },
+
+  /* Father Christmas himself */
+  { hideAntenna: true, svg: `
     <path d="M14 13 Q19 -10 41 -19 Q54 -25 52 -13 Q47 -6 45 3 L48 13 Z" fill="#c2181f"/>
     <path d="M18 10 Q23 -5 41 -15 Q47 -17 45 -11 Q36 -5 33 10 Z" fill="#e0262d" opacity=".75"/>
     <rect x="12" y="8" width="39" height="7" rx="3.5" fill="#f4f6fb"/>
@@ -14749,11 +14762,6 @@ const THEME_COSTUMES = {
     <path d="M17 62 v8 M13.5 64 l7 4 M20.5 64 l-7 4" stroke-width="1.2"/>
     <path d="M47 62 v8 M43.5 64 l7 4 M50.5 64 l-7 4" stroke-width="1.2"/></g>
     ` },
-
-  /* a candy cane propped beside him */
-  { svg: `
-    <path d="M81 54 V28 a8 8 0 0 1 16 0 v5" stroke="#f4f6fb" stroke-width="7" fill="none" stroke-linecap="round"/>
-    <path d="M81 54 V28 a8 8 0 0 1 16 0 v5" stroke="#c2181f" stroke-width="7" fill="none" stroke-linecap="round" stroke-dasharray="5 7"/>` },
 
   /* carol singing, sheet in hand */
   { svg: `
@@ -15392,6 +15400,8 @@ const THEME_COSTUMES = {
 async function featurePlay(bot) {
 
   const quarry = bot.quarry || 'present';
+  /* some of them are not pleased to be here, and that is the point */
+  bot.cross = !!bot.crossFeature;
   const kind = featurePlay.deck && featurePlay.deck.length
     ? featurePlay.deck.shift()
     : (featurePlay.deck = shuffled([0, 1, 2])).shift();
@@ -15423,14 +15433,14 @@ function shuffled(list) {
 
 /* he chases it the full length of the box and sees it off */
 async function featureChase(bot, quarry, X) {
-  bot.eyes('happy');
+  bot.eyes(bot.cross ? 'open' : 'happy');
   const start = X(0.02);
   const end = X(0.86);
   const runner = peekActor(bot, quarry, { left: Math.round(bot.W * 0.3) });
   await bot.move([at(PEEK_HIDDEN, start), at(PEEK_HIGH + 26, start)], 460, 'cubic-bezier(.2,.8,.3,1)');
   await bot.look(3.5);
   await runner.go([{ transform: 'translateY(110%)' }, { transform: 'translateY(6%)' }], 340, 'cubic-bezier(.3,1.4,.5,1)');
-  bot.eyes('happy');
+  bot.eyes(bot.cross ? 'open' : 'happy');
   await runner.go([
     { transform: 'translateY(6%) rotate(-10deg)' },
     { transform: 'translateY(6%) rotate(10deg)' },
@@ -15448,21 +15458,21 @@ async function featureChase(bot, quarry, X) {
   }
   await Promise.all([bot.move(run, 3400, 'ease-in-out'), runner.go(flee, 3400, 'ease-in-out')]);
   await runner.go([{ transform: `translateX(${away}px) translateY(6%)` }, { transform: `translateX(${away + 90}px) translateY(0%)` }], 380, 'ease-in');
-  bot.eyes('happy');
+  bot.eyes(bot.cross ? 'open' : 'happy');
   await bot.look(3.5); await bot.wait(420); await bot.look(-3.5); await bot.wait(420); await bot.look(0);
   await bot.move([at(PEEK_HIGH + 26, end), at(PEEK_HIDDEN, end)], 340, 'ease-in');
   await bot.wait(380);
   bot.handAt(end);
   await bot.move([at(PEEK_HIDDEN, end), at(PEEK_HIGH, end)], 440, 'cubic-bezier(.3,1.4,.5,1)');
-  bot.eyes('wink');
+  bot.eyes(bot.cross ? 'open' : 'wink');
   await bot.wave(2);
-  bot.eyes('happy');
+  bot.eyes(bot.cross ? 'open' : 'happy');
   await bot.move([at(PEEK_HIGH, end), at(PEEK_HIDDEN, end)], 420, 'ease-in');
 }
 
 /* it drops out of the sky and he catches it */
 async function featureCatch(bot, quarry, X) {
-  bot.eyes('happy');
+  bot.eyes(bot.cross ? 'open' : 'happy');
   const spot = X(0.46);
   const drop = peekActor(bot, quarry, { left: spot + 18, bottom: 120, start: 'translateY(-220px)' });
   await bot.move([at(PEEK_HIDDEN, spot), at(PEEK_HIGH + 34, spot)], 460, 'cubic-bezier(.2,.8,.3,1)');
@@ -15493,7 +15503,7 @@ async function featureCatch(bot, quarry, X) {
 
 /* he carries it the whole way along, holding it up */
 async function featureParade(bot, quarry, X) {
-  bot.eyes('happy');
+  bot.eyes(bot.cross ? 'open' : 'happy');
   const start = X(0.04);
   const end = X(0.84);
   const held = peekActor(bot, quarry, { left: start + 66, bottom: 78, start: 'translateY(30px)' });
@@ -15510,9 +15520,9 @@ async function featureParade(bot, quarry, X) {
     carry.push({ transform: `translateX(${x - start}px) translateY(${i % 2 ? 5 : -3}px)` });
   }
   await Promise.all([bot.move(walk, 3600, 'ease-in-out'), held.go(carry, 3600, 'ease-in-out')]);
-  bot.eyes('wink');
+  bot.eyes(bot.cross ? 'open' : 'wink');
   await bot.wave(2);
-  bot.eyes('happy');
+  bot.eyes(bot.cross ? 'open' : 'happy');
   await bot.blink();
   await bot.wait(420);
   await Promise.all([
@@ -15862,6 +15872,7 @@ function createPeekBot(card) {
       /* the feature is coming: the warning, then five seconds */
       if (star) {
         api.quarry = set[api.costume].quarry;
+        api.crossFeature = !!set[api.costume].cross;
         warnFeature();
         await api.wait(STORM_ROLL_IN + 5000);
       }
