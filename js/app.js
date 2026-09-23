@@ -13862,6 +13862,10 @@ function waveDraw() {
 
   if (who) {
     const loud = Math.max(voiceWave.level.mine, voiceWave.level.theirs);
+
+    /* if neither analyser ever produced a reading, do not use silence
+       as a reason to hang up: we cannot tell silence from deafness */
+    const canHear = !!voiceWave.mine || !!voiceWave.theirs;
     who.textContent = thread.grab >= 0 ? 'Pluck it' : (loud < 0.045 ? '' : (speaking ? 'Natter' : 'You'));
     who.classList.toggle('them', speaking && thread.grab < 0);
   }
@@ -14183,10 +14187,17 @@ async function startVoiceCall() {
   silence winds it up, a backgrounded tab winds it up faster, and
   nothing runs past the hard ceiling.
 */
-const VOICE_IDLE_WARN = 45000;
-const VOICE_IDLE_END = 65000;
-const VOICE_HIDDEN_END = 20000;
-const VOICE_MAX_CALL = 12 * 60 * 1000;
+const VOICE_IDLE_WARN = 150000;
+const VOICE_IDLE_END = 195000;
+const VOICE_HIDDEN_END = 120000;
+const VOICE_MAX_CALL = 20 * 60 * 1000;
+
+/*
+  What counts as somebody still being there. This was set at 0.05,
+  which a quiet voice or a distant microphone never reaches, so
+  calls were being wound up while people were still talking.
+*/
+const VOICE_HEARD = 0.015;
 
 let voiceIdleTimer = null;
 
@@ -14217,7 +14228,7 @@ function watchVoiceIdle() {
 
     const loud = Math.max(voiceWave.level.mine, voiceWave.level.theirs);
 
-    if (loud > 0.05) {
+    if (loud > VOICE_HEARD) {
       lastHeard = Date.now();
       if (warned) { warned = false; setVoiceState('listening', 'Still here.'); }
     }
@@ -14233,7 +14244,7 @@ function watchVoiceIdle() {
       hiddenSince = 0;
     }
 
-    const quietFor = Date.now() - lastHeard;
+    const quietFor = canHear ? Date.now() - lastHeard : 0;
 
     if (!warned && quietFor > VOICE_IDLE_WARN) {
       warned = true;

@@ -5401,7 +5401,7 @@ ${(await houseLessonLines()) || '(none yet)'}
 
     const thrifty = {
       ...plain,
-      max_output_tokens: 320,
+      max_output_tokens: 900,
       audio: {
         input: {
           transcription: { model: 'gpt-4o-mini-transcribe' },
