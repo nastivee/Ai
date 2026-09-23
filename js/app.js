@@ -13377,6 +13377,22 @@ function recentChatText() {
 }
 
 
+/*
+  Tell the server where a call fell over, so it shows up in
+  Things that broke with the stage it reached.
+*/
+function voiceTrouble(stage, detail) {
+  console.error('VOICE:', stage, detail || '');
+  apiHeaders()
+    .then(headers =>
+      fetch(`${API_BASE}/api/voice/trouble`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ stage, detail: String(detail || '').slice(0, 900) })
+      }))
+    .catch(() => {});
+}
+
 async function startVoiceCall() {
 
   if (voiceCall) return;
@@ -13406,10 +13422,14 @@ async function startVoiceCall() {
 
   try {
 
+    setVoiceState('connecting', 'Asking for your microphone...');
+
     const stream =
       await navigator.mediaDevices.getUserMedia({ audio: true });
 
     call.stream = stream;
+
+    setVoiceState('connecting', 'Microphone on, opening the line...');
 
     if (voiceCall !== call) {
       stream.getTracks().forEach(track => track.stop());
@@ -13429,8 +13449,11 @@ async function startVoiceCall() {
     const session = await started.json().catch(() => ({}));
 
     if (!started.ok || !session.key) {
+      voiceTrouble('session refused', `${started.status} ${session.error || ''}`);
       throw new Error(session.error || 'The call could not be started.');
     }
+
+    setVoiceState('connecting', 'Line open, connecting...');
 
     const pc = new RTCPeerConnection();
 
@@ -13525,10 +13548,22 @@ async function startVoiceCall() {
     });
 
     pc.addEventListener('connectionstatechange', () => {
-      if (['failed', 'disconnected'].includes(pc.connectionState) && voiceCall === call) {
+      if (voiceCall !== call) return;
+      if (pc.connectionState === 'connected') {
+        setVoiceState('listening', 'Listening');
+      }
+      if (['failed', 'disconnected'].includes(pc.connectionState)) {
+        voiceTrouble('connection ' + pc.connectionState, 'ice: ' + pc.iceConnectionState);
         setVoiceState('connecting', 'The line dropped. End the call and try again.');
       }
     });
+
+    /* nothing at all after ten seconds is worth recording too */
+    setTimeout(() => {
+      if (voiceCall === call && pc.connectionState !== 'connected') {
+        voiceTrouble('never connected', 'state: ' + pc.connectionState + ', ice: ' + pc.iceConnectionState + ', channel: ' + (call.channel?.readyState || 'none'));
+      }
+    }, 10000);
 
     const offer = await pc.createOffer();
 
@@ -13545,6 +13580,8 @@ async function startVoiceCall() {
       });
 
     if (!answer.ok) {
+      const why = await answer.text().catch(() => '');
+      voiceTrouble('sdp refused', `${answer.status} ${why.slice(0, 400)}`);
       throw new Error(`The voice service refused the call (${answer.status}).`);
     }
 
@@ -13552,7 +13589,7 @@ async function startVoiceCall() {
 
   } catch (error) {
 
-    console.error('VOICE START ERROR:', error);
+    voiceTrouble('start failed', `${error?.name || ''} ${error?.message || ''}`);
 
     const message =
       error?.name === 'NotAllowedError'

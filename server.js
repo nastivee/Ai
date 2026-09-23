@@ -4931,6 +4931,38 @@ const VOICE_NAME =
   process.env.VOICE_NAME || 'marin';
 
 
+/*
+  When a call goes wrong the browser says so here, so the
+  failure lands in the same place as everything else that breaks
+  rather than only in somebody's console.
+*/
+app.post('/api/voice/trouble', async (req, res) => {
+
+  try {
+
+    const user = await getUser(req);
+
+    if (!user) return res.status(401).json({ error: 'Sign in first.' });
+
+    noteFailure({
+      user,
+      area: 'voice',
+      stage: String(req.body?.stage || 'unknown').slice(0, 80),
+      error: { message: String(req.body?.detail || '').slice(0, 900) },
+      model: VOICE_MODEL,
+      recovered: false
+    });
+
+    res.json({ ok: true });
+
+  } catch (error) {
+
+    res.status(500).json({ error: error.message });
+
+  }
+
+});
+
 app.post('/api/voice/session', async (req, res) => {
 
   try {
