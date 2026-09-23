@@ -3675,8 +3675,13 @@ body.smartMode {
   position: relative;
   height: 26px;
   border-radius: 10px;
-  /* room for him to bob and for the sparks to fall, never clipped */
+  /*
+    Clipped at the sides so the trail cannot run out of the card,
+    but open above and below so his glow and his bob are never
+    cut off.
+  */
   overflow: visible;
+  clip-path: inset(-26px 0 -26px 0);
 }
 
 /* the wire he walks */
@@ -3732,10 +3737,10 @@ body.smartMode {
 }
 
 @keyframes walkAlong {
-  0% { transform: translateX(-4%); opacity: 0; }
+  0% { transform: translateX(0); opacity: 0; }
   10% { opacity: 1; }
-  90% { opacity: 1; }
-  100% { transform: translateX(100%); opacity: 0; }
+  88% { opacity: 1; }
+  100% { transform: translateX(calc(100% - 22px)); opacity: 0; }
 }
 
 .walkerBot {
@@ -10129,4 +10134,52 @@ body .sourceChip:hover {
 body.smartMode .sourceChip:hover {
   border-color: var(--accLine);
   background: var(--accSoft);
+}
+
+
+/* ============================================================
+   MIDWINTER, ON TRIAL
+   Everywhere else he pulls the light along behind him. Here he
+   gets behind it and shoves it to the far end, leaning into it
+   the whole way.
+   ============================================================ */
+
+body.theme-frost .walkerTail {
+  right: auto;
+  left: 20px;
+  width: 150px;
+  border-radius: 10px;
+  background: linear-gradient(90deg, var(--acc, #3b6ea5), var(--acc2, #7dd3fc));
+  box-shadow: 0 0 16px -3px var(--accGlow, rgba(125, 211, 252, .5));
+  animation: pushSquash 2.6s cubic-bezier(.45, 0, .55, 1) infinite;
+  transform-origin: left center;
+}
+
+/* the block squashes as he leans into it, then runs on */
+@keyframes pushSquash {
+  0% { transform: scaleX(.55); }
+  18% { transform: scaleX(.78); }
+  55% { transform: scaleX(1); }
+  100% { transform: scaleX(1.5); }
+}
+
+/* leaning into it, not strolling */
+body.theme-frost .walkerBot {
+  animation: pushLean .5s ease-in-out infinite alternate;
+}
+
+@keyframes pushLean {
+  from { transform: translateY(0) rotate(11deg); }
+  to { transform: translateY(-2px) rotate(17deg); }
+}
+
+/* what he kicks up goes backwards, because he is shoving forwards */
+body.theme-frost .walkerDrops .drop {
+  animation-name: pushKick;
+}
+
+@keyframes pushKick {
+  0% { opacity: 0; transform: translate(0, 0) rotate(0deg) scale(.5); }
+  15% { opacity: .95; }
+  100% { opacity: 0; transform: translate(-26px, 9px) rotate(-220deg) scale(1); }
 }
