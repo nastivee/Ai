@@ -11087,3 +11087,28 @@ body.motionOff .voiceBot .botArt,
 body.motionOff .voiceBot .ball {
   animation: none;
 }
+
+/* ---------- HER SHAPE ---------- */
+/*
+  The same robot, drawn a little differently when hers is the
+  voice: narrower at the shoulder, taken in at the waist, fuller
+  below, and slimmer arms to match.
+*/
+
+.voiceBot .torso.her { display: none; }
+.voiceBot.she .torso.him { display: none; }
+.voiceBot.she .torso.her { display: block; }
+
+.voiceBot.she .armL rect,
+.voiceBot.she .armR rect {
+  width: 5.4px;
+}
+
+.voiceBot.she .sheen {
+  cx: 26.5;
+  rx: 3.6;
+}
+
+/* the chest light sits with the narrower waist */
+.voiceBot.she .chest { x: 27; width: 10; }
+.voiceBot.she .light { cx: 32; }

@@ -793,7 +793,7 @@ async function readAccount(userId) {
   const { data, error } =
     await supabaseAdmin
       .from('profiles')
-      .select('image_credits, unlimited')
+      .select('image_credits, unlimited, plan')
       .eq('id', userId)
       .maybeSingle();
 
@@ -840,6 +840,7 @@ async function readAccount(userId) {
   return {
     credits,
     unlimited: data?.unlimited === true,
+    plan: data?.plan || null,
     unmetered: settings.paywall_enabled === false
   };
 
@@ -994,6 +995,45 @@ const IMAGE_MODEL = process.env.IMAGE_MODEL || 'gpt-image-2';
 const IMAGE_QUALITY = process.env.IMAGE_QUALITY || 'medium';
 
 /*
+  WHAT EACH PLAN GETS
+
+  An image is the most expensive thing this app does, so the
+  cheapest plan gets the cheapest picture: low quality, square
+  only. Paying more buys a better one rather than just more of
+  them. Every plan still gets a real picture, and the difference
+  is honest rather than hidden, so nobody is paying for a plan
+  that quietly gives them less than it says.
+*/
+const PLAN_IMAGES = {
+  free:    { quality: 'low',    shapes: false },
+  starter: { quality: 'low',    shapes: false },
+  plus:    { quality: 'medium', shapes: true },
+  pro:     { quality: 'high',   shapes: true }
+};
+
+function planOf(user) {
+
+  const named = String(user?.plan || '').toLowerCase();
+
+  if (PLAN_IMAGES[named]) return named;
+
+  /* anybody unmetered, including admins, gets the best of it */
+  return user?.unlimited ? 'pro' : 'free';
+
+}
+
+function imageSpecFor(user, shape) {
+
+  const plan = PLAN_IMAGES[planOf(user)] || PLAN_IMAGES.free;
+
+  return {
+    quality: process.env.IMAGE_QUALITY || plan.quality,
+    size: plan.shapes ? sizeFor(shape) : '1024x1024'
+  };
+
+}
+
+/*
   gpt-image sizes, by the shape the user picked.
 */
 function sizeFor(shape) {
@@ -1079,6 +1119,9 @@ async function requireUser(req, res) {
 
   const account =
     await readAccount(user.id);
+
+  /* what they are paying for decides the picture they get */
+  user.plan = account.plan || 'free';
 
   if (account.broken) {
 
@@ -5872,9 +5915,9 @@ app.post('/api/image', async (req, res) => {
 
         prompt: finalPrompt,
 
-        size: sizeFor(shape),
+        size: imageSpecFor(user, shape).size,
 
-        quality: IMAGE_QUALITY,
+        quality: imageSpecFor(user, shape).quality,
 
         n: 1
 
@@ -6266,9 +6309,9 @@ style was requested.
 
         prompt: finalPrompt,
 
-        size: sizeFor(shape),
+        size: imageSpecFor(user, shape).size,
 
-        quality: IMAGE_QUALITY,
+        quality: imageSpecFor(user, shape).quality,
 
         n: 1
 

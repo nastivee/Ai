@@ -14399,6 +14399,10 @@ function paintVoiceChoice() {
 
   const now = voiceChoice();
 
+  /* the robot takes the shape of whoever is speaking */
+  document.getElementById('voiceBot')
+    ?.classList.toggle('she', now === 'female');
+
   document.getElementById('voiceHim')
     ?.setAttribute('aria-pressed', String(now === 'male'));
 
