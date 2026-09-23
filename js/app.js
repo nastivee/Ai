@@ -14330,6 +14330,15 @@ function fireworkSvg(colour) {
   return `<svg viewBox="0 0 100 100" aria-hidden="true">${spokes}</svg>`;
 }
 
+/* a rainbow arc, one band at a time */
+function rainbowSvg() {
+  const bands = ['#e11d48', '#f28c28', '#f5c542', '#3ec46d', '#3b6ea5', '#7c3aed'];
+  return `<svg viewBox="0 0 100 100" fill="none" aria-hidden="true">` +
+    bands.map((colour, i) =>
+      `<circle cx="50" cy="50" r="${46 - i * 4}" stroke="${colour}" stroke-width="4" stroke-dasharray="${(2 * Math.PI * (46 - i * 4) * 0.5).toFixed(1)} 999" transform="rotate(180 50 50)"/>`
+    ).join('') + '</svg>';
+}
+
 const THEME_DECOR = {
 
   /* fireworks over the rooftops and gold falling through them */
@@ -14352,7 +14361,7 @@ const THEME_DECOR = {
 
   /* shamrocks turning as they fall, and a rainbow in the corner */
   stpatricks: () =>
-    '<div class="rainbow"></div>' +
+    '<div class="rainbow">' + rainbowSvg() + '</div>' +
     scatter(20, i =>
       `<i class="falling spin" style="left:${(i * 5 + 1).toFixed(1)}%;animation-delay:${(i * 0.71).toFixed(2)}s;animation-duration:${(10 + (i % 5)).toFixed(1)}s;width:${(12 + (i % 3) * 5)}px">${THEME_SPRITES.shamrock}</i>`),
 

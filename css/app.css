@@ -9034,16 +9034,17 @@ body.theme-christmas .themeDecor {
 
 .themeDecor .firework svg { display: block; width: 100%; height: 100%; }
 
-.themeDecor .firework.f0 { left: 12%; top: 10%; animation-delay: 0s; }
-.themeDecor .firework.f1 { left: 68%; top: 6%; animation-delay: 2.3s; width: 170px; height: 170px; }
-.themeDecor .firework.f2 { left: 40%; top: 18%; animation-delay: 4.1s; width: 140px; height: 140px; }
-.themeDecor .firework.f3 { left: 82%; top: 22%; animation-delay: 6.2s; width: 190px; height: 190px; }
-.themeDecor .firework.f4 { left: 26%; top: 3%; animation-delay: 7.6s; width: 150px; height: 150px; }
+/* they stay up in the sky, well clear of anything to read */
+.themeDecor .firework.f0 { left: 4%; top: 4%; animation-delay: 0s; width: 170px; height: 170px; }
+.themeDecor .firework.f1 { left: 74%; top: 2%; animation-delay: 2.3s; width: 140px; height: 140px; }
+.themeDecor .firework.f2 { left: 38%; top: 0; animation-delay: 4.1s; width: 120px; height: 120px; }
+.themeDecor .firework.f3 { left: 86%; top: 13%; animation-delay: 6.2s; width: 150px; height: 150px; }
+.themeDecor .firework.f4 { left: 18%; top: 14%; animation-delay: 7.6s; width: 120px; height: 120px; }
 
 @keyframes burst {
   0% { opacity: 0; transform: scale(.08); }
-  4% { opacity: .95; }
-  16% { opacity: .75; transform: scale(1); }
+  4% { opacity: .7; }
+  16% { opacity: .55; transform: scale(1); }
   26% { opacity: 0; transform: scale(1.18); }
   100% { opacity: 0; transform: scale(1.18); }
 }
@@ -9126,21 +9127,14 @@ body.theme-valentines .authCard {
 
 .themeDecor .rainbow {
   position: absolute;
-  right: -90px;
-  top: -70px;
-  width: 340px;
-  height: 340px;
-  border-radius: 50%;
-  opacity: .16;
-  background:
-    conic-gradient(from 180deg, transparent 0 50%, transparent 50% 100%),
-    repeating-radial-gradient(circle,
-      #e11d48 0 8px, #f28c28 8px 16px, #f5c542 16px 24px,
-      #3ec46d 24px 32px, #3b6ea5 32px 40px, #7c3aed 40px 48px,
-      transparent 48px 200px);
-  -webkit-mask-image: radial-gradient(circle, transparent 0 96px, #000 97px 145px, transparent 146px);
-  mask-image: radial-gradient(circle, transparent 0 96px, #000 97px 145px, transparent 146px);
+  right: -70px;
+  top: -80px;
+  width: 300px;
+  height: 300px;
+  opacity: .2;
 }
+
+.themeDecor .rainbow svg { display: block; width: 100%; height: 100%; }
 
 body.theme-stpatricks .composer {
   box-shadow:
@@ -9188,10 +9182,10 @@ body.theme-easter .authCard {
 
 .themeDecor .sun {
   position: absolute;
-  right: 7%;
-  top: 40px;
-  width: 92px;
-  height: 92px;
+  right: 3%;
+  top: 8px;
+  width: 84px;
+  height: 84px;
   border-radius: 50%;
   background: radial-gradient(circle, #fff3c4 0 34%, #fcd34d 52%, rgba(252, 211, 77, 0) 72%);
   opacity: .5;
