@@ -13569,14 +13569,14 @@ const PEEK_SVG = `
     </linearGradient>
   </defs>
   <defs>
-    <linearGradient id="peekShell" x1="0.2" y1="0" x2="0.8" y2="1">
-      <stop offset="0" stop-color="#ffffff"/>
-      <stop offset="0.55" stop-color="#f2f6fb"/>
-      <stop offset="1" stop-color="#d7e2ee"/>
+    <linearGradient id="peekShell" x1="0.15" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#6cc8ff"/>
+      <stop offset="0.55" stop-color="#3f86f0"/>
+      <stop offset="1" stop-color="#2a5fe6"/>
     </linearGradient>
     <linearGradient id="peekShellArm" x1="0" y1="0" x2="0.4" y2="1">
-      <stop offset="0" stop-color="#ffffff"/>
-      <stop offset="1" stop-color="#dbe5f0"/>
+      <stop offset="0" stop-color="#4aa6ff"/>
+      <stop offset="1" stop-color="#2248c9"/>
     </linearGradient>
   </defs>
   <g class="body">
@@ -13595,9 +13595,9 @@ const PEEK_SVG = `
       C 47.5 89 41 98 32 98
       C 23 98 16.5 89 17 74
       C 17.5 61 22.5 51 32 51 Z" fill="url(#peekShell)"/>
-    <ellipse class="sheen" cx="25.5" cy="64" rx="4.4" ry="9" fill="#ffffff" opacity=".7"/>
-    <rect class="chest" x="26.5" y="68" width="11" height="4.2" rx="2.1" fill="#cfdcea"/>
-    <circle class="light" cx="32" cy="70.1" r="1.8" fill="#6cc8ff"/>
+    <ellipse class="sheen" cx="25.5" cy="64" rx="4.4" ry="9" fill="#bfe9ff" opacity=".35"/>
+    <rect class="chest" x="26.5" y="68" width="11" height="4.2" rx="2.1" fill="#05060d"/>
+    <circle class="light" cx="32" cy="70.1" r="1.6" fill="#9fe6ff"/>
   </g>
   <g class="antenna">
     <path class="stem" d="M38 16 L40.5 6" stroke="#5ab8ff" stroke-width="3" stroke-linecap="round"/>
@@ -13630,12 +13630,12 @@ const PEEK_HAND_SVG = `
 <svg viewBox="0 0 18 30" aria-hidden="true">
   <defs>
     <linearGradient id="peekTip" x1="0" y1="0" x2="0.5" y2="1">
-      <stop offset="0" stop-color="#ffffff"/>
-      <stop offset="1" stop-color="#dbe5f0"/>
+      <stop offset="0" stop-color="#4aa6ff"/>
+      <stop offset="1" stop-color="#2248c9"/>
     </linearGradient>
   </defs>
   <rect x="5.5" y="2" width="7" height="28" rx="3.5" fill="url(#peekTip)"/>
-  <ellipse cx="8" cy="9" rx="1.4" ry="4" fill="#ffffff" opacity=".8"/>
+  <ellipse cx="8" cy="9" rx="1.4" ry="4" fill="#bfe9ff" opacity=".45"/>
 </svg>`;
 
 function peekPose(y, extra = '') {
