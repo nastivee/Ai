@@ -14237,6 +14237,181 @@ const PEEK_MUMMY_HAND_SVG = `
 /* how long the storm clouds take to roll in before the lightning */
 const STORM_ROLL_IN = 1400;
 
+const THEME_KEY = 'natter_theme';
+
+/*
+  THE CELEBRATIONS
+
+  Every celebration the site can wear. The dates that decide
+  which one Automatic shows live on the server, so they are
+  worked out once and everybody sees the same thing.
+*/
+const THEME_IDS = [
+  'standard', 'newyear', 'frost', 'valentines', 'stpatricks',
+  'easter', 'summer', 'halloween', 'bonfire', 'christmas'
+];
+
+const THEME_LABELS = {
+  standard: 'Standard',
+  auto: 'Automatic',
+  newyear: 'New Year',
+  frost: 'Midwinter',
+  valentines: "Valentine's",
+  stpatricks: "St Patrick's",
+  easter: 'Easter',
+  summer: 'Summer',
+  halloween: 'Halloween',
+  bonfire: 'Bonfire Night',
+  christmas: 'Christmas'
+};
+
+function currentTheme() {
+  const found = THEME_IDS.find(id =>
+    id !== 'standard' && document.body.classList.contains('theme-' + id));
+  return found || 'standard';
+}
+
+/* a little helper for scattering things across the sky */
+function scatter(count, make) {
+  let out = '';
+  for (let i = 0; i < count; i += 1) out += make(i);
+  return out;
+}
+
+const DECOR_SNOWFLAKE = '❄';
+
+const THEME_SPRITES = {
+
+  heart: `<svg viewBox="0 0 24 22" aria-hidden="true"><path d="M12 21 C2 13 1 7 5 3.5 C8 1 11 2.5 12 5 C13 2.5 16 1 19 3.5 C23 7 22 13 12 21 Z" fill="#ff5c8a"/></svg>`,
+
+  shamrock: `<svg viewBox="0 0 24 24" aria-hidden="true"><g fill="#3ec46d"><ellipse cx="12" cy="7" rx="4.6" ry="5.2"/><ellipse cx="6.6" cy="13" rx="5.2" ry="4.6"/><ellipse cx="17.4" cy="13" rx="5.2" ry="4.6"/></g><path d="M12 13 q1.5 5 -2 9" stroke="#2c8f4f" stroke-width="1.8" fill="none" stroke-linecap="round"/></svg>`,
+
+  egg: `<svg viewBox="0 0 20 26" aria-hidden="true"><ellipse cx="10" cy="15" rx="9" ry="11" fill="currentColor"/><path d="M1.4 13 q8.6 4 17.2 0" stroke="#fff" stroke-opacity=".7" stroke-width="2" fill="none"/><path d="M2.4 19 q7.6 3.4 15.2 0" stroke="#fff" stroke-opacity=".5" stroke-width="1.6" fill="none"/></svg>`,
+
+  petal: `<svg viewBox="0 0 18 14" aria-hidden="true"><path d="M1 7 Q6 0 17 2 Q12 13 1 7 Z" fill="currentColor"/></svg>`,
+
+  spark: `<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0 L9.4 6.6 L16 8 L9.4 9.4 L8 16 L6.6 9.4 L0 8 L6.6 6.6 Z" fill="currentColor"/></svg>`,
+
+  gull: `<svg viewBox="0 0 30 10" aria-hidden="true"><path d="M1 8 Q8 1 15 7 Q22 1 29 8" stroke="#ffffff" stroke-opacity=".5" stroke-width="1.4" fill="none" stroke-linecap="round"/></svg>`,
+
+  bauble: `<svg viewBox="0 0 20 26" aria-hidden="true"><path d="M10 0 v4" stroke="#c9a227" stroke-width="1.6"/><rect x="7.5" y="3" width="5" height="3.4" rx="1" fill="#c9a227"/><circle cx="10" cy="16" r="9" fill="currentColor"/><path d="M2 13 q8 4 16 0" stroke="#fff" stroke-opacity=".45" stroke-width="1.6" fill="none"/><circle cx="6.5" cy="12" r="2.2" fill="#fff" opacity=".28"/></svg>`
+
+};
+
+/* the fairy lights that run across the top at Christmas */
+function lightStringSvg() {
+  const colours = ['#ff4d4d', '#ffd166', '#4ade80', '#60a5fa', '#f472b6'];
+  let bulbs = '';
+  for (let i = 0; i <= 28; i += 1) {
+    const x = i * 40;
+    const y = 16 + Math.sin(i * 0.9) * 7;
+    bulbs +=
+      `<line x1="${x}" y1="${y}" x2="${x}" y2="${y + 7}" stroke="#2a3140" stroke-width="1.6"/>` +
+      `<ellipse class="bulb b${i % 5}" cx="${x}" cy="${y + 12}" rx="4" ry="5.4" fill="${colours[i % 5]}"/>`;
+  }
+  return `<svg viewBox="0 0 1120 40" preserveAspectRatio="none" aria-hidden="true">` +
+    `<path d="M0 16 ${Array.from({ length: 29 }, (unused, i) => `L${i * 40} ${16 + Math.sin(i * 0.9) * 7}`).join(' ')}" ` +
+    `stroke="#2a3140" stroke-width="2" fill="none"/>${bulbs}</svg>`;
+}
+
+/* a firework: spokes out from the middle, with a second ring of dots */
+function fireworkSvg(colour) {
+  let spokes = '';
+  for (let i = 0; i < 16; i += 1) {
+    const angle = (i / 16) * Math.PI * 2;
+    const x = 50 + Math.cos(angle) * 44;
+    const y = 50 + Math.sin(angle) * 44;
+    const mx = 50 + Math.cos(angle) * 22;
+    const my = 50 + Math.sin(angle) * 22;
+    spokes +=
+      `<line x1="${mx.toFixed(1)}" y1="${my.toFixed(1)}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" stroke="${colour}" stroke-width="1.6" stroke-linecap="round"/>` +
+      `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2" fill="#fff"/>`;
+  }
+  return `<svg viewBox="0 0 100 100" aria-hidden="true">${spokes}</svg>`;
+}
+
+const THEME_DECOR = {
+
+  /* fireworks over the rooftops and gold falling through them */
+  newyear: () =>
+    scatter(5, i =>
+      `<div class="firework f${i}">${fireworkSvg(['#ffd166', '#7dd3fc', '#f472b6', '#a78bfa', '#4ade80'][i])}</div>`) +
+    scatter(26, i =>
+      `<i class="confetti" style="left:${(i * 3.9 + 1).toFixed(1)}%;animation-delay:${(i * 0.43).toFixed(2)}s;animation-duration:${(7 + (i % 5)).toFixed(1)}s;background:${['#ffd166', '#f5f5f5', '#e7c66b', '#fff3c4'][i % 4]}"></i>`),
+
+  /* quiet snow, and frost creeping in at the corners */
+  frost: () =>
+    '<div class="frostEdge"></div>' +
+    scatter(34, i =>
+      `<i class="snow" style="left:${(i * 2.95 + 1).toFixed(1)}%;animation-delay:${(i * 0.51).toFixed(2)}s;animation-duration:${(11 + (i % 7)).toFixed(1)}s;font-size:${(7 + (i % 5) * 2.2).toFixed(1)}px;opacity:${(0.25 + (i % 4) * 0.13).toFixed(2)}">${DECOR_SNOWFLAKE}</i>`),
+
+  /* hearts drifting up the screen */
+  valentines: () =>
+    scatter(18, i =>
+      `<i class="rising heart" style="left:${(i * 5.6 + 2).toFixed(1)}%;animation-delay:${(i * 0.83).toFixed(2)}s;animation-duration:${(12 + (i % 6)).toFixed(1)}s;width:${(11 + (i % 4) * 5)}px">${THEME_SPRITES.heart}</i>`),
+
+  /* shamrocks turning as they fall, and a rainbow in the corner */
+  stpatricks: () =>
+    '<div class="rainbow"></div>' +
+    scatter(20, i =>
+      `<i class="falling spin" style="left:${(i * 5 + 1).toFixed(1)}%;animation-delay:${(i * 0.71).toFixed(2)}s;animation-duration:${(10 + (i % 5)).toFixed(1)}s;width:${(12 + (i % 3) * 5)}px">${THEME_SPRITES.shamrock}</i>`),
+
+  /* blossom on the breeze and painted eggs turning slowly */
+  easter: () =>
+    scatter(16, i =>
+      `<i class="falling drift" style="left:${(i * 6.2 + 1).toFixed(1)}%;animation-delay:${(i * 0.77).toFixed(2)}s;animation-duration:${(12 + (i % 5)).toFixed(1)}s;width:${(12 + (i % 3) * 4)}px;color:${['#f9a8d4', '#fbcfe8', '#fde68a'][i % 3]}">${THEME_SPRITES.petal}</i>`) +
+    scatter(5, i =>
+      `<i class="falling spin" style="left:${(i * 19 + 8).toFixed(1)}%;animation-delay:${(i * 3.1).toFixed(2)}s;animation-duration:${(16 + i).toFixed(1)}s;width:16px;color:${['#7dd3fc', '#fda4af', '#a7f3d0', '#fcd34d', '#c4b5fd'][i]}">${THEME_SPRITES.egg}</i>`),
+
+  /* a high sun, a warm haze and gulls going over */
+  summer: () =>
+    '<div class="sun"></div><div class="haze"></div>' +
+    scatter(3, i =>
+      `<i class="gull g${i}">${THEME_SPRITES.gull}</i>`),
+
+  halloween: () =>
+    '<div class="flash"></div>' +
+    '<div class="clouds"></div>' +
+    '<div class="bolt"></div>' +
+    `<div class="web left">${THEME_WEB_SVG}</div>` +
+    `<div class="web right">${THEME_WEB_SVG}</div>` +
+    `<div class="bat">${THEME_BAT_SVG}</div>` +
+    `<div class="bat two">${THEME_BAT_SVG}</div>`,
+
+  /* rockets going up, bursting, and embers coming down */
+  bonfire: () =>
+    scatter(4, i =>
+      `<div class="firework bonf f${i}">${fireworkSvg(['#ff8a1f', '#ffd166', '#ff5c6c', '#fde68a'][i])}</div>`) +
+    scatter(22, i =>
+      `<i class="ember" style="left:${(i * 4.5 + 1).toFixed(1)}%;animation-delay:${(i * 0.49).toFixed(2)}s;animation-duration:${(8 + (i % 5)).toFixed(1)}s;color:${['#ff8a1f', '#ffd166', '#ff6b35'][i % 3]};width:${(6 + (i % 3) * 3)}px">${THEME_SPRITES.spark}</i>`),
+
+  /* lights across the top, snow coming down, a bauble or two */
+  christmas: () =>
+    `<div class="lights">${lightStringSvg()}</div>` +
+    scatter(30, i =>
+      `<i class="snow" style="left:${(i * 3.35 + 1).toFixed(1)}%;animation-delay:${(i * 0.47).toFixed(2)}s;animation-duration:${(10 + (i % 6)).toFixed(1)}s;font-size:${(8 + (i % 5) * 2.4).toFixed(1)}px;opacity:${(0.3 + (i % 4) * 0.14).toFixed(2)}">${DECOR_SNOWFLAKE}</i>`) +
+    scatter(3, i =>
+      `<i class="hanging" style="left:${[14, 52, 86][i]}%;animation-delay:${(i * 1.4).toFixed(1)}s;color:${['#e11d48', '#c9a227', '#2f7a4f'][i]}">${THEME_SPRITES.bauble}</i>`)
+
+};
+
+
+const THEME_WEB_SVG = `
+<svg viewBox="0 0 100 100" fill="none" stroke="#e9e4f5" stroke-width=".9" aria-hidden="true">
+  <path d="M0 0 L100 38 M0 0 L78 78 M0 0 L38 100 M0 0 L100 8 M0 0 L8 100"/>
+  <path d="M22 1.8 Q17 9 20.2 20.2 Q9 17 1.8 22"/>
+  <path d="M44 3.5 Q35 18 40 40 Q18 35 3.5 44"/>
+  <path d="M66 5.3 Q52 27 58 58 Q27 52 5.3 66"/>
+  <path d="M88 7 Q70 36 76 76 Q36 70 7 88"/>
+  <path d="M40 40 L41 64" stroke-opacity=".7"/>
+  <circle cx="41" cy="66.5" r="2.4" fill="#e9e4f5" stroke="none"/>
+</svg>`;
+
+const THEME_BAT_SVG = `
+<svg viewBox="0 0 40 20" aria-hidden="true">
+  <path d="M20 8 Q14 1 6 3 Q8 6 2 8 Q7 9 6 13 Q12 10 16 14 Q18 10 20 12 Q22 10 24 14 Q28 10 34 13 Q33 9 38 8 Q32 6 34 3 Q26 1 20 8 Z" fill="#0b0712" stroke="#7a4bd6" stroke-opacity=".6" stroke-width=".6"/>
+</svg>`;
+
 const PEEK_COSTUMES = [
 
   /* 1. witch's hat */
@@ -15159,181 +15334,6 @@ paintTestFeatures();
    and the last one is remembered on this device so the
    sign in and sign up screens wear it straight away.
 ===================================================== */
-
-const THEME_KEY = 'natter_theme';
-
-/*
-  THE CELEBRATIONS
-
-  Every celebration the site can wear. The dates that decide
-  which one Automatic shows live on the server, so they are
-  worked out once and everybody sees the same thing.
-*/
-const THEME_IDS = [
-  'standard', 'newyear', 'frost', 'valentines', 'stpatricks',
-  'easter', 'summer', 'halloween', 'bonfire', 'christmas'
-];
-
-const THEME_LABELS = {
-  standard: 'Standard',
-  auto: 'Automatic',
-  newyear: 'New Year',
-  frost: 'Midwinter',
-  valentines: "Valentine's",
-  stpatricks: "St Patrick's",
-  easter: 'Easter',
-  summer: 'Summer',
-  halloween: 'Halloween',
-  bonfire: 'Bonfire Night',
-  christmas: 'Christmas'
-};
-
-function currentTheme() {
-  const found = THEME_IDS.find(id =>
-    id !== 'standard' && document.body.classList.contains('theme-' + id));
-  return found || 'standard';
-}
-
-/* a little helper for scattering things across the sky */
-function scatter(count, make) {
-  let out = '';
-  for (let i = 0; i < count; i += 1) out += make(i);
-  return out;
-}
-
-const DECOR_SNOWFLAKE = '❄';
-
-const THEME_SPRITES = {
-
-  heart: `<svg viewBox="0 0 24 22" aria-hidden="true"><path d="M12 21 C2 13 1 7 5 3.5 C8 1 11 2.5 12 5 C13 2.5 16 1 19 3.5 C23 7 22 13 12 21 Z" fill="#ff5c8a"/></svg>`,
-
-  shamrock: `<svg viewBox="0 0 24 24" aria-hidden="true"><g fill="#3ec46d"><ellipse cx="12" cy="7" rx="4.6" ry="5.2"/><ellipse cx="6.6" cy="13" rx="5.2" ry="4.6"/><ellipse cx="17.4" cy="13" rx="5.2" ry="4.6"/></g><path d="M12 13 q1.5 5 -2 9" stroke="#2c8f4f" stroke-width="1.8" fill="none" stroke-linecap="round"/></svg>`,
-
-  egg: `<svg viewBox="0 0 20 26" aria-hidden="true"><ellipse cx="10" cy="15" rx="9" ry="11" fill="currentColor"/><path d="M1.4 13 q8.6 4 17.2 0" stroke="#fff" stroke-opacity=".7" stroke-width="2" fill="none"/><path d="M2.4 19 q7.6 3.4 15.2 0" stroke="#fff" stroke-opacity=".5" stroke-width="1.6" fill="none"/></svg>`,
-
-  petal: `<svg viewBox="0 0 18 14" aria-hidden="true"><path d="M1 7 Q6 0 17 2 Q12 13 1 7 Z" fill="currentColor"/></svg>`,
-
-  spark: `<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0 L9.4 6.6 L16 8 L9.4 9.4 L8 16 L6.6 9.4 L0 8 L6.6 6.6 Z" fill="currentColor"/></svg>`,
-
-  gull: `<svg viewBox="0 0 30 10" aria-hidden="true"><path d="M1 8 Q8 1 15 7 Q22 1 29 8" stroke="#ffffff" stroke-opacity=".5" stroke-width="1.4" fill="none" stroke-linecap="round"/></svg>`,
-
-  bauble: `<svg viewBox="0 0 20 26" aria-hidden="true"><path d="M10 0 v4" stroke="#c9a227" stroke-width="1.6"/><rect x="7.5" y="3" width="5" height="3.4" rx="1" fill="#c9a227"/><circle cx="10" cy="16" r="9" fill="currentColor"/><path d="M2 13 q8 4 16 0" stroke="#fff" stroke-opacity=".45" stroke-width="1.6" fill="none"/><circle cx="6.5" cy="12" r="2.2" fill="#fff" opacity=".28"/></svg>`
-
-};
-
-/* the fairy lights that run across the top at Christmas */
-function lightStringSvg() {
-  const colours = ['#ff4d4d', '#ffd166', '#4ade80', '#60a5fa', '#f472b6'];
-  let bulbs = '';
-  for (let i = 0; i <= 28; i += 1) {
-    const x = i * 40;
-    const y = 16 + Math.sin(i * 0.9) * 7;
-    bulbs +=
-      `<line x1="${x}" y1="${y}" x2="${x}" y2="${y + 7}" stroke="#2a3140" stroke-width="1.6"/>` +
-      `<ellipse class="bulb b${i % 5}" cx="${x}" cy="${y + 12}" rx="4" ry="5.4" fill="${colours[i % 5]}"/>`;
-  }
-  return `<svg viewBox="0 0 1120 40" preserveAspectRatio="none" aria-hidden="true">` +
-    `<path d="M0 16 ${Array.from({ length: 29 }, (unused, i) => `L${i * 40} ${16 + Math.sin(i * 0.9) * 7}`).join(' ')}" ` +
-    `stroke="#2a3140" stroke-width="2" fill="none"/>${bulbs}</svg>`;
-}
-
-/* a firework: spokes out from the middle, with a second ring of dots */
-function fireworkSvg(colour) {
-  let spokes = '';
-  for (let i = 0; i < 16; i += 1) {
-    const angle = (i / 16) * Math.PI * 2;
-    const x = 50 + Math.cos(angle) * 44;
-    const y = 50 + Math.sin(angle) * 44;
-    const mx = 50 + Math.cos(angle) * 22;
-    const my = 50 + Math.sin(angle) * 22;
-    spokes +=
-      `<line x1="${mx.toFixed(1)}" y1="${my.toFixed(1)}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" stroke="${colour}" stroke-width="1.6" stroke-linecap="round"/>` +
-      `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2" fill="#fff"/>`;
-  }
-  return `<svg viewBox="0 0 100 100" aria-hidden="true">${spokes}</svg>`;
-}
-
-const THEME_DECOR = {
-
-  /* fireworks over the rooftops and gold falling through them */
-  newyear: () =>
-    scatter(5, i =>
-      `<div class="firework f${i}">${fireworkSvg(['#ffd166', '#7dd3fc', '#f472b6', '#a78bfa', '#4ade80'][i])}</div>`) +
-    scatter(26, i =>
-      `<i class="confetti" style="left:${(i * 3.9 + 1).toFixed(1)}%;animation-delay:${(i * 0.43).toFixed(2)}s;animation-duration:${(7 + (i % 5)).toFixed(1)}s;background:${['#ffd166', '#f5f5f5', '#e7c66b', '#fff3c4'][i % 4]}"></i>`),
-
-  /* quiet snow, and frost creeping in at the corners */
-  frost: () =>
-    '<div class="frostEdge"></div>' +
-    scatter(34, i =>
-      `<i class="snow" style="left:${(i * 2.95 + 1).toFixed(1)}%;animation-delay:${(i * 0.51).toFixed(2)}s;animation-duration:${(11 + (i % 7)).toFixed(1)}s;font-size:${(7 + (i % 5) * 2.2).toFixed(1)}px;opacity:${(0.25 + (i % 4) * 0.13).toFixed(2)}">${DECOR_SNOWFLAKE}</i>`),
-
-  /* hearts drifting up the screen */
-  valentines: () =>
-    scatter(18, i =>
-      `<i class="rising heart" style="left:${(i * 5.6 + 2).toFixed(1)}%;animation-delay:${(i * 0.83).toFixed(2)}s;animation-duration:${(12 + (i % 6)).toFixed(1)}s;width:${(11 + (i % 4) * 5)}px">${THEME_SPRITES.heart}</i>`),
-
-  /* shamrocks turning as they fall, and a rainbow in the corner */
-  stpatricks: () =>
-    '<div class="rainbow"></div>' +
-    scatter(20, i =>
-      `<i class="falling spin" style="left:${(i * 5 + 1).toFixed(1)}%;animation-delay:${(i * 0.71).toFixed(2)}s;animation-duration:${(10 + (i % 5)).toFixed(1)}s;width:${(12 + (i % 3) * 5)}px">${THEME_SPRITES.shamrock}</i>`),
-
-  /* blossom on the breeze and painted eggs turning slowly */
-  easter: () =>
-    scatter(16, i =>
-      `<i class="falling drift" style="left:${(i * 6.2 + 1).toFixed(1)}%;animation-delay:${(i * 0.77).toFixed(2)}s;animation-duration:${(12 + (i % 5)).toFixed(1)}s;width:${(12 + (i % 3) * 4)}px;color:${['#f9a8d4', '#fbcfe8', '#fde68a'][i % 3]}">${THEME_SPRITES.petal}</i>`) +
-    scatter(5, i =>
-      `<i class="falling spin" style="left:${(i * 19 + 8).toFixed(1)}%;animation-delay:${(i * 3.1).toFixed(2)}s;animation-duration:${(16 + i).toFixed(1)}s;width:16px;color:${['#7dd3fc', '#fda4af', '#a7f3d0', '#fcd34d', '#c4b5fd'][i]}">${THEME_SPRITES.egg}</i>`),
-
-  /* a high sun, a warm haze and gulls going over */
-  summer: () =>
-    '<div class="sun"></div><div class="haze"></div>' +
-    scatter(3, i =>
-      `<i class="gull g${i}">${THEME_SPRITES.gull}</i>`),
-
-  halloween: () =>
-    '<div class="flash"></div>' +
-    '<div class="clouds"></div>' +
-    '<div class="bolt"></div>' +
-    `<div class="web left">${THEME_WEB_SVG}</div>` +
-    `<div class="web right">${THEME_WEB_SVG}</div>` +
-    `<div class="bat">${THEME_BAT_SVG}</div>` +
-    `<div class="bat two">${THEME_BAT_SVG}</div>`,
-
-  /* rockets going up, bursting, and embers coming down */
-  bonfire: () =>
-    scatter(4, i =>
-      `<div class="firework bonf f${i}">${fireworkSvg(['#ff8a1f', '#ffd166', '#ff5c6c', '#fde68a'][i])}</div>`) +
-    scatter(22, i =>
-      `<i class="ember" style="left:${(i * 4.5 + 1).toFixed(1)}%;animation-delay:${(i * 0.49).toFixed(2)}s;animation-duration:${(8 + (i % 5)).toFixed(1)}s;color:${['#ff8a1f', '#ffd166', '#ff6b35'][i % 3]};width:${(6 + (i % 3) * 3)}px">${THEME_SPRITES.spark}</i>`),
-
-  /* lights across the top, snow coming down, a bauble or two */
-  christmas: () =>
-    `<div class="lights">${lightStringSvg()}</div>` +
-    scatter(30, i =>
-      `<i class="snow" style="left:${(i * 3.35 + 1).toFixed(1)}%;animation-delay:${(i * 0.47).toFixed(2)}s;animation-duration:${(10 + (i % 6)).toFixed(1)}s;font-size:${(8 + (i % 5) * 2.4).toFixed(1)}px;opacity:${(0.3 + (i % 4) * 0.14).toFixed(2)}">${DECOR_SNOWFLAKE}</i>`) +
-    scatter(3, i =>
-      `<i class="hanging" style="left:${[14, 52, 86][i]}%;animation-delay:${(i * 1.4).toFixed(1)}s;color:${['#e11d48', '#c9a227', '#2f7a4f'][i]}">${THEME_SPRITES.bauble}</i>`)
-
-};
-
-
-const THEME_WEB_SVG = `
-<svg viewBox="0 0 100 100" fill="none" stroke="#e9e4f5" stroke-width=".9" aria-hidden="true">
-  <path d="M0 0 L100 38 M0 0 L78 78 M0 0 L38 100 M0 0 L100 8 M0 0 L8 100"/>
-  <path d="M22 1.8 Q17 9 20.2 20.2 Q9 17 1.8 22"/>
-  <path d="M44 3.5 Q35 18 40 40 Q18 35 3.5 44"/>
-  <path d="M66 5.3 Q52 27 58 58 Q27 52 5.3 66"/>
-  <path d="M88 7 Q70 36 76 76 Q36 70 7 88"/>
-  <path d="M40 40 L41 64" stroke-opacity=".7"/>
-  <circle cx="41" cy="66.5" r="2.4" fill="#e9e4f5" stroke="none"/>
-</svg>`;
-
-const THEME_BAT_SVG = `
-<svg viewBox="0 0 40 20" aria-hidden="true">
-  <path d="M20 8 Q14 1 6 3 Q8 6 2 8 Q7 9 6 13 Q12 10 16 14 Q18 10 20 12 Q22 10 24 14 Q28 10 34 13 Q33 9 38 8 Q32 6 34 3 Q26 1 20 8 Z" fill="#0b0712" stroke="#7a4bd6" stroke-opacity=".6" stroke-width=".6"/>
-</svg>`;
 
 /* a jagged bolt with a branch or two, drawn fresh each strike */
 function lightningSvg() {
