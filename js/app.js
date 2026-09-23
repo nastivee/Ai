@@ -2769,38 +2769,187 @@ function knownName() {
   Openers built from what is remembered. Nothing is invented:
   a line only becomes a chip when the memory mentions it.
 */
+/*
+  SOMEWHERE TO START
+
+  A big pool of openers, shuffled every time the screen is
+  empty, so it never feels like the same four buttons. One is
+  picked for the time of day, one for whatever we know about
+  the person, and the rest come from the pool at random. What
+  showed last time is held back so it does not repeat.
+*/
+const STARTERS = {
+
+  morning: [
+    "What's in the news this morning?",
+    'Plan my day around three things',
+    'Give me a ten minute breakfast',
+    'What should I be getting ahead of today?',
+    'Something to read with my coffee',
+    "What's the weather doing today?",
+    'Write my to do list from this mess of notes',
+    'One thing worth learning before work'
+  ],
+
+  afternoon: [
+    'Help me get through my inbox',
+    'Rewrite this so it sounds less blunt',
+    'What should I have for tea tonight?',
+    'Talk me through a decision I keep putting off',
+    'Give me a quick win for this afternoon',
+    'Explain something I should already understand',
+    'Check my sums on this'
+  ],
+
+  evening: [
+    'Something easy to cook tonight',
+    'What should I watch this evening?',
+    'Help me plan the weekend',
+    'Sort tomorrow out before I forget it',
+    'Tell me something I did not know',
+    'Write the message I have been avoiding',
+    'A recipe with what I already have in'
+  ],
+
+  late: [
+    'Wind down: tell me something interesting',
+    'Explain something gently, I am half asleep',
+    'Help me stop thinking about work',
+    'Something quiet to read',
+    'Set me up for the morning'
+  ],
+
+  /* the everyday pool, drawn from at random */
+  general: [
+    'Explain something complicated simply',
+    'Help me write a difficult email',
+    'Make me a picture',
+    'Plan a trip somewhere',
+    'Settle an argument with facts',
+    'Turn my notes into something readable',
+    'Give me three ideas and pick the best one',
+    'What is everyone talking about today?',
+    'Help me practise for an interview',
+    'Check this writing for me',
+    'Summarise something long',
+    'Compare two things properly',
+    'Talk me out of a bad idea',
+    'Give me a recipe for something I have never made',
+    'Explain the news story behind the headline',
+    'Help me budget for something',
+    'Write a toast for an occasion',
+    'What is a good gift for someone hard to buy for?',
+    'Teach me something in five minutes',
+    'Help me name something',
+    'Turn this into a proper plan',
+    'What questions should I be asking?',
+    'Find the flaw in my reasoning',
+    'Write the awkward reply for me',
+    'Make a checklist for something I keep forgetting',
+    'Give me the short version',
+    'What would you do in my position?',
+    'Help me get started on something I am dreading',
+    'Explain a word everyone uses and nobody defines',
+    'Make this shorter without losing anything',
+    'What am I missing here?',
+    'Give me something to think about',
+    'Help me plan a party',
+    'What is worth knowing about this week?',
+    'Draft the difficult conversation for me',
+    'Turn a rough idea into a proper one',
+    'Explain how something works, properly',
+    'Give me a week of meals',
+    'Help me write a review',
+    'What are the odds on this working?',
+    'Make a decision easier',
+    'Write something funny for me',
+    'Take the other side of this argument',
+    'Help me sound more confident in writing',
+    'Give me an honest opinion on something',
+    'What would a sensible person do?',
+    'Explain the rules of something',
+    'Make me a plan I will actually stick to',
+    'Give me a fact worth repeating',
+    'Sort this list into something sensible'
+  ],
+
+  /* only shown when there is a reason to */
+  work: [
+    'Help me write a difficult email',
+    'Turn these notes into minutes',
+    'Draft something firm but polite',
+    'What should I say in this meeting?',
+    'Help me push back on this without falling out'
+  ],
+
+  business: [
+    'Ideas to bring in more customers this month',
+    'Work out the margin on this',
+    'Write something for our social media',
+    'What are competitors doing that we are not?',
+    'Help me price this properly'
+  ],
+
+  making: [
+    'Make me a picture for today',
+    'Design something for me',
+    'Turn a description into an image',
+    'Make a logo idea'
+  ]
+
+};
+
+function shuffledPicks(list, count, avoid) {
+  const pool = list.filter(item => !avoid.has(item));
+  const source = pool.length >= count ? pool : list.slice();
+  const out = [];
+  const taken = new Set();
+  while (out.length < count && taken.size < source.length) {
+    const i = Math.floor(Math.random() * source.length);
+    if (taken.has(i)) continue;
+    taken.add(i);
+    out.push(source[i]);
+  }
+  return out;
+}
+
+/* what was on screen last time, so it does not come straight back */
+let lastStarters = new Set();
+
 function startIdeas() {
 
   const text = String(memory || '').toLowerCase();
+  const avoid = lastStarters;
   const ideas = [];
 
+  /* one that is actually about them, if we know anything */
   const place =
     /(?:lives?|living|based|from)\s+(?:in|at|near)\s+([A-Z][A-Za-z'-]{2,20}(?:\s[A-Z][A-Za-z'-]{2,20})?)/.exec(String(memory || '')) ||
     /(?:lives?|based)\s+([A-Z][A-Za-z'-]{2,20})/.exec(String(memory || ''));
 
-  if (place) ideas.push(`Weather in ${place[1].trim()}`);
-
+  const personal = [];
+  if (place) personal.push(`Weather in ${place[1].trim()}`);
   if (/business|company|shop|takeaway|restaurant|agency|firm|venue/.test(text)) {
-    ideas.push('Ideas to bring in more customers this month');
+    personal.push(...STARTERS.business);
   }
+  if (/work|job|role|manager|director/.test(text)) personal.push(...STARTERS.work);
+  if (/photo|image|picture|design|art/.test(text)) personal.push(...STARTERS.making);
 
-  if (/work|job|role|manager|director/.test(text)) {
-    ideas.push('Help me write a difficult email');
-  }
+  if (personal.length) ideas.push(...shuffledPicks(personal, 1, avoid));
 
-  if (/photo|image|picture|design|art/.test(text)) {
-    ideas.push('Make me a picture for today');
-  }
-
+  /* one for the time of day */
   const day = timeOfDay();
+  const hour = STARTERS[day] || STARTERS.afternoon;
+  ideas.push(...shuffledPicks(hour, 1, avoid));
 
-  if (day === 'morning') ideas.push("What's in the news this morning?");
-  if (day === 'evening') ideas.push('Something easy to cook tonight');
-  if (day === 'late') ideas.push('Wind down: tell me something interesting');
+  /* and fill up from the pool */
+  ideas.push(...shuffledPicks(STARTERS.general, 4, avoid));
 
-  ideas.push('What can you do?');
+  const picked = [...new Set(ideas)].slice(0, 4);
 
-  return [...new Set(ideas)].slice(0, 4);
+  lastStarters = new Set(picked);
+
+  return picked;
 
 }
 
