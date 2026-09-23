@@ -985,6 +985,15 @@ sweep.unref();
 
 
 /*
+  Which image model draws. Changeable on Render without a
+  deploy, so a cheaper one can be tried on real users and put
+  back in seconds if it is not good enough.
+*/
+const IMAGE_MODEL = process.env.IMAGE_MODEL || 'gpt-image-2';
+
+const IMAGE_QUALITY = process.env.IMAGE_QUALITY || 'medium';
+
+/*
   gpt-image sizes, by the shape the user picked.
 */
 function sizeFor(shape) {
@@ -5859,13 +5868,13 @@ app.post('/api/image', async (req, res) => {
     const result =
       await openai.images.generate({
 
-        model: 'gpt-image-2',
+        model: IMAGE_MODEL,
 
         prompt: finalPrompt,
 
         size: sizeFor(shape),
 
-        quality: 'medium',
+        quality: IMAGE_QUALITY,
 
         n: 1
 
@@ -6251,7 +6260,7 @@ style was requested.
     const result =
       await openai.images.edit({
 
-        model: 'gpt-image-2',
+        model: IMAGE_MODEL,
 
         image: imageFiles.length > 1 ? imageFiles : imageFiles[0],
 
@@ -6259,7 +6268,7 @@ style was requested.
 
         size: sizeFor(shape),
 
-        quality: 'medium',
+        quality: IMAGE_QUALITY,
 
         n: 1
 
