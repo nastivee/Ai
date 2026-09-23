@@ -4128,8 +4128,19 @@ body.motionOff .progressTrack::before {
 
 }
 
+/*
+  STOP
+
+  It takes Send's place rather than sitting next to it, so there
+  is only ever one button to press, and it carries the theme's
+  own red so it reads as stop in every celebration.
+*/
 .stopButton {
   display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 0 14px;
+  border-radius: 14px;
   background: #3a1520;
   border: 1px solid #6b2634;
   color: #ff8a8a;
@@ -4137,7 +4148,22 @@ body.motionOff .progressTrack::before {
 
 .stopButton.show {
   display: flex;
+  animation: stopIn .16s var(--ease) both;
 }
+
+@keyframes stopIn {
+  from { opacity: 0; transform: scale(.82); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.stopButton:hover {
+  background: #4d1b29;
+  border-color: #8c3244;
+  color: #ffb3b3;
+}
+
+/* while something is running, Send stands down */
+body.replying .sendButton { display: none; }
 
 .stopSquare {
   width: 13px;

@@ -7145,10 +7145,16 @@ async function editImage(
       extraImages = await Promise.all(extraImages.map(one => resolveImage(one)));
     }
 
+    /* so the one Stop button can call a picture off too */
+    const picture = new AbortController();
+    const releasePicture = canStop(() => picture.abort());
+
     const response =
       await fetch(
         `${API_BASE}/api/image/edit`,
         {
+
+          signal: picture.signal,
 
           method:
             'POST',
@@ -7269,6 +7275,7 @@ async function editImage(
 
   } finally {
 
+    releasePicture();
     endJob(jobId);
 
   }
@@ -7503,11 +7510,44 @@ request specifically asked for a plain background.
 }
 
 
+/*
+  STOPPING
+
+  Send turns into Stop while something is running, rather than
+  sitting beside it. Two buttons at once left people guessing
+  which one they wanted.
+
+  Every running job registers how to call it off here, so the
+  one button stops whatever is actually going on: a reply mid
+  sentence, or a picture being made.
+*/
+const stoppers = new Set();
+
+function canStop(abort) {
+  stoppers.add(abort);
+  showStop();
+  return () => { stoppers.delete(abort); showStop(); };
+}
+
+function showStop() {
+  const on = stoppers.size > 0;
+  stopButton.classList.toggle('show', on);
+  document.body.classList.toggle('replying', on);
+  stopButton.title = on ? 'Stop' : '';
+}
+
 stopButton.addEventListener('click', () => {
+
+  /* whatever is running, call it off */
+  [...stoppers].forEach(stop => {
+    try { stop(); } catch {}
+  });
+
+  stoppers.clear();
 
   replyController?.abort();
 
-  stopButton.classList.remove('show');
+  showStop();
 
 });
 
@@ -12656,7 +12696,7 @@ async function sendNormalMessage(
 
   replyController = new AbortController();
 
-  stopButton.classList.add('show');
+  const releaseStop = canStop(() => replyController?.abort());
 
 
   try {
@@ -12846,7 +12886,7 @@ async function sendNormalMessage(
 
     replyController = null;
 
-    stopButton.classList.remove('show');
+    releaseStop();
 
     endJob(jobId);
 
