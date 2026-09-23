@@ -13378,6 +13378,172 @@ function recentChatText() {
 
 
 /*
+  WAVEFORMS
+
+  Two real ones, read off the actual audio rather than faked on
+  a timer: yours from the microphone, his from what comes back.
+  Whoever is louder owns the line, so you can see it listening
+  and see it answering, and see which of you is talking over the
+  other.
+*/
+const voiceWave = {
+  ctx: null,
+  mine: null,
+  theirs: null,
+  frame: null,
+  canvas: null,
+  level: { mine: 0, theirs: 0 }
+};
+
+function waveAttach(kind, stream) {
+
+  if (!stream) return;
+
+  try {
+
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+
+    if (!Ctx) return;
+
+    if (!voiceWave.ctx) voiceWave.ctx = new Ctx();
+    if (voiceWave.ctx.state === 'suspended') voiceWave.ctx.resume().catch(() => {});
+
+    const source = voiceWave.ctx.createMediaStreamSource(stream);
+    const analyser = voiceWave.ctx.createAnalyser();
+
+    analyser.fftSize = 1024;
+    analyser.smoothingTimeConstant = 0.72;
+
+    /* listening only: the audio element is what actually plays him */
+    source.connect(analyser);
+
+    voiceWave[kind] = { analyser, data: new Uint8Array(analyser.fftSize) };
+
+  } catch (error) {
+    console.error('WAVE ERROR:', error?.message);
+  }
+
+}
+
+function waveLevel(side) {
+
+  if (!side) return 0;
+
+  side.analyser.getByteTimeDomainData(side.data);
+
+  let peak = 0;
+
+  for (let i = 0; i < side.data.length; i += 4) {
+    const v = Math.abs(side.data[i] - 128) / 128;
+    if (v > peak) peak = v;
+  }
+
+  return peak;
+
+}
+
+function waveDraw() {
+
+  const canvas = voiceWave.canvas;
+
+  if (!canvas) return;
+
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width;
+  const h = canvas.height;
+  const mid = h / 2;
+
+  ctx.clearRect(0, 0, w, h);
+
+  const raw = {
+    mine: waveLevel(voiceWave.mine),
+    theirs: waveLevel(voiceWave.theirs)
+  };
+
+  /* ease it so the bars breathe rather than twitch */
+  voiceWave.level.mine += (raw.mine - voiceWave.level.mine) * 0.28;
+  voiceWave.level.theirs += (raw.theirs - voiceWave.level.theirs) * 0.28;
+
+  const speaking = voiceWave.level.theirs > voiceWave.level.mine + 0.02;
+  const side = speaking ? voiceWave.theirs : voiceWave.mine;
+  const level = speaking ? voiceWave.level.theirs : voiceWave.level.mine;
+
+  const style = getComputedStyle(document.body);
+  const tint = (speaking ? style.getPropertyValue('--acc2') : style.getPropertyValue('--acc')).trim()
+    || (speaking ? '#9fe6ff' : '#a78bfa');
+
+  const bars = 56;
+  const gap = w / bars;
+  const width = Math.max(3, gap * 0.42);
+
+  ctx.fillStyle = tint;
+  ctx.shadowColor = tint;
+  ctx.shadowBlur = 14;
+
+  for (let i = 0; i < bars; i += 1) {
+
+    /* sample the wave across its width so the shape is the real one */
+    let value = 0;
+
+    if (side) {
+      const at = Math.floor((i / bars) * side.data.length);
+      value = Math.abs(side.data[at] - 128) / 128;
+    }
+
+    /* quiet still shows a living line rather than nothing */
+    const shaped = Math.max(0.035, value * 0.75 + level * 0.45);
+    const tall = Math.min(mid - 6, shaped * (mid - 6) * 1.5);
+
+    const x = i * gap + (gap - width) / 2;
+
+    ctx.globalAlpha = 0.35 + Math.min(0.65, shaped * 1.6);
+    ctx.beginPath();
+
+    /* older browsers have no roundRect */
+    if (ctx.roundRect) ctx.roundRect(x, mid - tall, width, tall * 2, width / 2);
+    else ctx.rect(x, mid - tall, width, tall * 2);
+
+    ctx.fill();
+
+  }
+
+  ctx.globalAlpha = 1;
+  ctx.shadowBlur = 0;
+
+  /* say whose voice it is */
+  const who = document.getElementById('voiceWho');
+
+  if (who) {
+    const loud = Math.max(voiceWave.level.mine, voiceWave.level.theirs);
+    who.textContent = loud < 0.045 ? '' : (speaking ? 'Natter' : 'You');
+    who.classList.toggle('them', speaking);
+  }
+
+  voiceWave.frame = requestAnimationFrame(waveDraw);
+
+}
+
+function waveStart() {
+  voiceWave.canvas = document.getElementById('voiceWave');
+  if (!voiceWave.canvas || voiceWave.frame) return;
+  voiceWave.frame = requestAnimationFrame(waveDraw);
+}
+
+function waveStop() {
+  if (voiceWave.frame) cancelAnimationFrame(voiceWave.frame);
+  voiceWave.frame = null;
+  voiceWave.mine = null;
+  voiceWave.theirs = null;
+  voiceWave.level = { mine: 0, theirs: 0 };
+  const who = document.getElementById('voiceWho');
+  if (who) who.textContent = '';
+  const canvas = voiceWave.canvas;
+  if (canvas) canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+  try { voiceWave.ctx?.close(); } catch {}
+  voiceWave.ctx = null;
+}
+
+/*
   Tell the server where a call fell over, so it shows up in
   Things that broke with the stage it reached.
 */
@@ -13405,7 +13571,7 @@ async function startVoiceCall() {
   voiceTranscript.innerHTML = '';
   voiceMute.textContent = 'Mute';
   voiceMute.classList.remove('muted');
-  setVoiceState('connecting', 'Connecting...');
+  setVoiceState('connecting', 'Starting up...');
   voiceScreen.classList.add('show');
 
   voiceCall = {
@@ -13429,7 +13595,10 @@ async function startVoiceCall() {
 
     call.stream = stream;
 
-    setVoiceState('connecting', 'Microphone on, opening the line...');
+    waveAttach('mine', stream);
+    waveStart();
+
+    setVoiceState('connecting', 'Microphone on...');
 
     if (voiceCall !== call) {
       stream.getTracks().forEach(track => track.stop());
@@ -13450,10 +13619,10 @@ async function startVoiceCall() {
 
     if (!started.ok || !session.key) {
       voiceTrouble('session refused', `${started.status} ${session.error || ''}`);
-      throw new Error(session.error || 'The call could not be started.');
+      throw new Error(session.error || 'Could not start listening.');
     }
 
-    setVoiceState('connecting', 'Line open, connecting...');
+    setVoiceState('connecting', 'Almost there...');
 
     const pc = new RTCPeerConnection();
 
@@ -13477,6 +13646,7 @@ async function startVoiceCall() {
 
     pc.ontrack = event => {
       audio.srcObject = event.streams[0];
+      waveAttach('theirs', event.streams[0]);
       /* autoplay can still refuse, so ask, and say so if it will not */
       const playing = audio.play();
       if (playing && typeof playing.catch === 'function') {
@@ -13554,7 +13724,7 @@ async function startVoiceCall() {
       }
       if (['failed', 'disconnected'].includes(pc.connectionState)) {
         voiceTrouble('connection ' + pc.connectionState, 'ice: ' + pc.iceConnectionState);
-        setVoiceState('connecting', 'The line dropped. End the call and try again.');
+        setVoiceState('connecting', 'Lost you there. Close it and open it again.');
       }
     });
 
@@ -13582,7 +13752,7 @@ async function startVoiceCall() {
     if (!answer.ok) {
       const why = await answer.text().catch(() => '');
       voiceTrouble('sdp refused', `${answer.status} ${why.slice(0, 400)}`);
-      throw new Error(`The voice service refused the call (${answer.status}).`);
+      throw new Error(`Could not start listening (${answer.status}).`);
     }
 
     await pc.setRemoteDescription({ type: 'answer', sdp: await answer.text() });
@@ -13594,7 +13764,7 @@ async function startVoiceCall() {
     const message =
       error?.name === 'NotAllowedError'
         ? 'Natter needs permission to use your microphone. Allow it in your browser and try again.'
-        : (error?.message || 'The call could not be started.');
+        : (error?.message || 'Could not start listening.');
 
     endVoiceCall();
 
@@ -13619,6 +13789,8 @@ function endVoiceCall() {
   try { call.pc?.close(); } catch {}
 
   call.stream?.getTracks().forEach(track => track.stop());
+
+  waveStop();
 
   if (call.audio) {
     call.audio.srcObject = null;

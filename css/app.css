@@ -10303,3 +10303,44 @@ body.theme-frost .walkerTail { left: 18px; }
 }
 
 .refusalCard.good .refusalDot { background: #86b89a; }
+
+/* ---------- VOICE WAVEFORMS ---------- */
+/* Real audio, drawn live: yours in the theme accent, his in the second. */
+
+.voiceWave {
+  display: block;
+  width: min(560px, 86vw);
+  height: 120px;
+  margin: 10px auto 2px;
+  opacity: 0;
+  transition: opacity .45s ease;
+}
+
+.voiceScreen.listening .voiceWave,
+.voiceScreen.speaking .voiceWave,
+.voiceScreen.live .voiceWave {
+  opacity: 1;
+}
+
+body.motionOff .voiceWave {
+  opacity: .25;
+}
+
+.voiceWho {
+  min-height: 20px;
+  text-align: center;
+  font-size: 13px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--acc, #a78bfa);
+  opacity: .85;
+  transition: color .3s ease, opacity .3s ease;
+}
+
+.voiceWho:empty {
+  opacity: 0;
+}
+
+.voiceWho.them {
+  color: var(--acc2, #9fe6ff);
+}
