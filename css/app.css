@@ -10304,53 +10304,6 @@ body.theme-frost .walkerTail { left: 18px; }
 
 .refusalCard.good .refusalDot { background: #86b89a; }
 
-/* ---------- VOICE WAVEFORMS ---------- */
-/* Real audio, drawn live: yours in the theme accent, his in the second. */
-
-.voiceWave {
-  display: block;
-  width: min(560px, 86vw);
-  height: 130px;
-  margin: 10px auto 2px;
-  opacity: 0;
-  transition: opacity .45s ease;
-  touch-action: none;
-  cursor: grab;
-}
-
-.voiceWave:active {
-  cursor: grabbing;
-}
-
-.voiceScreen.listening .voiceWave,
-.voiceScreen.speaking .voiceWave,
-.voiceScreen.live .voiceWave {
-  opacity: 1;
-}
-
-body.motionOff .voiceWave {
-  opacity: .25;
-}
-
-.voiceWho {
-  min-height: 20px;
-  text-align: center;
-  font-size: 13px;
-  letter-spacing: .12em;
-  text-transform: uppercase;
-  color: var(--acc, #a78bfa);
-  opacity: .85;
-  transition: color .3s ease, opacity .3s ease;
-}
-
-.voiceWho:empty {
-  opacity: 0;
-}
-
-.voiceWho.them {
-  color: var(--acc2, #9fe6ff);
-}
-
 /* ---------- LONGER WAITS: THE THINKING DOTS ---------- */
 /* Past a few seconds the walker bows out and these take over. */
 
@@ -10467,3 +10420,141 @@ body.motionOff .progressDots i {
   }
 
 }
+
+/* ---------- THE VOICE ROBOT ---------- */
+/*
+  He stands where the waveform was. Two states driven by the real
+  audio: his mouth opens on what he is actually saying, and he
+  leans in with rings running toward him while you talk.
+*/
+
+.voiceBot {
+  --mouth: 0;
+  --lean: 0;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  /* room for the rings, so no glow or ring is ever clipped */
+  width: min(300px, 78vw);
+  padding: 26px 0 6px;
+  margin: 0 auto;
+  opacity: 0;
+  transition: opacity .5s ease;
+}
+
+.voiceScreen.show .voiceBot,
+.voiceScreen.listening .voiceBot,
+.voiceScreen.speaking .voiceBot {
+  opacity: 1;
+}
+
+.botArt {
+  width: 132px;
+  height: auto;
+  overflow: visible;
+  filter: drop-shadow(0 12px 26px rgba(63, 134, 240, .35));
+  transition: transform .3s var(--ease, ease);
+}
+
+/* he breathes when neither of you is saving anything */
+.voiceBot.idle .botArt {
+  animation: botBreathe 4.2s ease-in-out infinite;
+}
+
+@keyframes botBreathe {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-4px) scale(1.012); }
+}
+
+/* leaning toward you, by however much you are giving him */
+.voiceBot.hearing .botHead {
+  transform: translateY(calc(var(--lean) * 2px)) rotate(calc(var(--lean) * -4deg));
+  transform-origin: 32px 52px;
+  transition: transform .12s linear;
+}
+
+.voiceBot.hearing .botArt {
+  transform: scale(1.02);
+}
+
+/* the mouth is the sound: height and width both follow it */
+.mouth .lips {
+  transform-box: fill-box;
+  transform-origin: center;
+  transform:
+    scaleY(calc(1 + var(--mouth) * 5.5))
+    scaleX(calc(1 - var(--mouth) * 0.22));
+  transition: transform .055s linear;
+}
+
+.voiceBot.talking .mouth .lips {
+  filter: drop-shadow(0 0 6px #9fe6ff);
+}
+
+/* his eyes narrow a touch while he is speaking, the way a face does */
+.voiceBot.talking .eyeOpen {
+  transform: scaleY(.8);
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: transform .2s ease;
+}
+
+.voiceBot.talking .ball,
+.voiceBot.hearing .ball {
+  filter: drop-shadow(0 0 7px #8fdcff);
+}
+
+/* the chest light keeps time with whoever is speaking */
+.voiceBot.talking .light { fill: #9fe6ff; }
+.voiceBot.hearing .light { fill: var(--acc, #a78bfa); }
+
+/* ---- rings: sound travelling in toward him while you talk ---- */
+
+.botEar {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 130px;
+  height: 130px;
+  margin: -65px 0 0 -65px;
+  border-radius: 50%;
+  border: 2px solid var(--acc, #a78bfa);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.voiceBot.hearing .botEar {
+  animation: botHear 1.9s ease-out infinite;
+}
+
+.voiceBot.hearing .botEar.r2 { animation-delay: .63s; }
+.voiceBot.hearing .botEar.r3 { animation-delay: 1.26s; }
+
+/* they start wide and close in on him, rather than radiating out */
+@keyframes botHear {
+  0% { transform: scale(1.75); opacity: 0; }
+  25% { opacity: .5; }
+  100% { transform: scale(.72); opacity: 0; }
+}
+
+body.motionOff .voiceBot .botEar,
+body.motionOff .voiceBot .botArt {
+  animation: none;
+}
+
+.voiceWho {
+  min-height: 20px;
+  margin-top: 10px;
+  text-align: center;
+  font-size: 12px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--acc, #a78bfa);
+  opacity: .85;
+  transition: color .3s ease, opacity .3s ease;
+}
+
+.voiceWho:empty { opacity: 0; }
+.voiceWho.them { color: var(--acc2, #9fe6ff); }
