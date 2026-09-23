@@ -13968,17 +13968,19 @@ function voiceChoice() {
 
 function paintVoiceChoice() {
 
-  const label = document.getElementById('voicePickLabel');
+  const now = voiceChoice();
 
-  if (!label) return;
+  document.getElementById('voiceHim')
+    ?.setAttribute('aria-pressed', String(now === 'male'));
 
-  label.textContent = voiceChoice() === 'female' ? 'Her voice' : 'His voice';
+  document.getElementById('voiceHer')
+    ?.setAttribute('aria-pressed', String(now === 'female'));
 
 }
 
-document.getElementById('voicePick')?.addEventListener('click', () => {
+function chooseVoice(next) {
 
-  const next = voiceChoice() === 'female' ? 'male' : 'female';
+  if (next === voiceChoice()) return;
 
   try { localStorage.setItem(VOICE_CHOICE_KEY, next); } catch {}
 
@@ -14004,7 +14006,13 @@ document.getElementById('voicePick')?.addEventListener('click', () => {
 
   }
 
-});
+}
+
+document.getElementById('voiceHim')
+  ?.addEventListener('click', () => chooseVoice('male'));
+
+document.getElementById('voiceHer')
+  ?.addEventListener('click', () => chooseVoice('female'));
 
 paintVoiceChoice();
 

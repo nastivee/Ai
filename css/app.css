@@ -10760,3 +10760,61 @@ body.theme-christmas  .voiceBot .botArt { --botLight: #ffd0d0; --botMid: #d7433f
     font-size: 12px;
   }
 }
+
+/* ---------- WHOSE VOICE: A TWO WAY TOGGLE ---------- */
+/*
+  Two icons in one shell, the live one filled with the theme.
+  Which voice you get is obvious without reading anything.
+*/
+
+.voicePick {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 15px;
+  border: 1px solid #4a3568;
+  background: linear-gradient(135deg, #2a1c44, #1d1430);
+}
+
+.voiceSex {
+  width: 40px;
+  height: 34px;
+  padding: 0 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid transparent;
+  border-radius: 11px;
+  background: transparent;
+  color: #9d90ad;
+  cursor: pointer;
+  transition:
+    background .35s var(--ease),
+    color .35s var(--ease),
+    border-color .35s var(--ease);
+}
+
+.voiceSex svg {
+  width: 17px;
+  height: 17px;
+}
+
+.voiceSex:hover {
+  color: #efe7f9;
+}
+
+/* the live one takes the theme, the same fill New chat uses */
+.voiceSex[aria-pressed="true"] {
+  --nc-edge: var(--edge);
+  --nc-fill: var(--edge-fill);
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,0)) padding-box,
+    linear-gradient(var(--nc-fill), var(--nc-fill)) padding-box,
+    var(--nc-edge) border-box;
+  color: #f3eefa;
+}
+
+.voiceSex[aria-pressed="true"] svg {
+  filter: drop-shadow(0 0 6px var(--accGlow, rgba(167, 139, 250, .6)));
+}

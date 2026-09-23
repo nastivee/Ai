@@ -51,7 +51,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-<link rel="stylesheet" href="./css/app.css?v=2026-09-23-138">
+<link rel="stylesheet" href="./css/app.css?v=2026-09-23-139">
 </head>
 
 <body>
@@ -2223,9 +2223,29 @@
 
     <div class="voiceControls">
       <button class="voiceControl" id="voiceMute" type="button">Mute</button>
-      <button class="voiceControl" id="voicePick" type="button" aria-label="Change the voice">
-        <span id="voicePickLabel">His voice</span>
-      </button>
+      <div class="voicePick" role="group" aria-label="Whose voice">
+
+        <button class="voiceSex" id="voiceHim" type="button"
+                aria-pressed="true" aria-label="His voice" title="His voice">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="10" cy="14" r="6"></circle>
+            <path d="M14.5 9.5 21 3"></path>
+            <path d="M15 3h6v6"></path>
+          </svg>
+        </button>
+
+        <button class="voiceSex" id="voiceHer" type="button"
+                aria-pressed="false" aria-label="Her voice" title="Her voice">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="9" r="6"></circle>
+            <path d="M12 15v7"></path>
+            <path d="M8.5 19h7"></path>
+          </svg>
+        </button>
+
+      </div>
       <button class="voiceControl end" id="voiceEnd" type="button">Done</button>
     </div>
 
@@ -2294,8 +2314,8 @@
   </div>
 </div>
 
-<script>window.NASTIVEE_VERSION = '2026-09-23-138';</script>
-<script src="./js/app.js?v=2026-09-23-138"></script>
+<script>window.NASTIVEE_VERSION = '2026-09-23-139';</script>
+<script src="./js/app.js?v=2026-09-23-139"></script>
 
 </body>
 </html>
