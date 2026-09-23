@@ -51,7 +51,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-<link rel="stylesheet" href="./css/app.css?v=2026-09-23-141">
+<link rel="stylesheet" href="./css/app.css?v=2026-09-23-142">
 </head>
 
 <body>
@@ -789,6 +789,104 @@
         </button>
 
         <div class="adminResult" id="adminFailuresResult"></div>
+
+      </div>
+
+    </div>
+
+    <div class="adminSection" id="adminPricing">
+
+      <button class="adminSummary" type="button" data-section="adminPricing">
+        <span class="adminDot" aria-hidden="true"></span>
+        <span class="adminSummaryText">
+          Pricing and profit
+          <span class="adminSummaryNote" id="adminPricingNote">Checking...</span>
+        </span>
+        <svg class="adminChevron" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
+      </button>
+
+      <div class="adminBody">
+
+        <div class="adminHint">
+          What a user costs and what a pack earns. Change any
+          figure and everything below recalculates as you type.
+          Nothing here charges anybody: it is the model you price
+          against, so you can see what a plan is worth before you
+          sell it. Saving keeps these numbers for next time.
+        </div>
+
+        <div class="priceGroup">
+          <div class="priceGroupTitle">What each thing costs you, in pence</div>
+
+          <div class="priceGrid">
+            <label class="priceField">
+              <span>One image</span>
+              <input type="number" id="costImage" step="0.1" min="0" value="2.4">
+            </label>
+            <label class="priceField">
+              <span>One reply</span>
+              <input type="number" id="costAsk" step="0.01" min="0" value="0.3">
+            </label>
+            <label class="priceField">
+              <span>Voice, per minute</span>
+              <input type="number" id="costVoice" step="0.1" min="0" value="1.5">
+            </label>
+            <label class="priceField">
+              <span>One web search</span>
+              <input type="number" id="costSearch" step="0.1" min="0" value="0.7">
+            </label>
+          </div>
+
+          <div class="priceGrid">
+            <label class="priceField">
+              <span>Card fee, percent</span>
+              <input type="number" id="feePercent" step="0.1" min="0" value="1.5">
+            </label>
+            <label class="priceField">
+              <span>Card fee, pence</span>
+              <input type="number" id="feeFixed" step="1" min="0" value="20">
+            </label>
+            <label class="priceField">
+              <span>Hosting, pounds a month</span>
+              <input type="number" id="fixedMonthly" step="1" min="0" value="25">
+            </label>
+            <label class="priceField">
+              <span>VAT, percent</span>
+              <input type="number" id="vatPercent" step="1" min="0" value="0">
+            </label>
+          </div>
+        </div>
+
+        <div class="priceGroup">
+          <div class="priceGroupTitle">The packs</div>
+          <div class="packTable" id="packTable"></div>
+          <button class="adminAction adminQuiet" id="packAdd" type="button">
+            Add a pack
+          </button>
+        </div>
+
+        <div class="priceGroup">
+          <div class="priceGroupTitle">What it makes</div>
+
+          <div class="priceGrid">
+            <label class="priceField">
+              <span>Signups</span>
+              <input type="number" id="mixSignups" step="100" min="0" value="1000">
+            </label>
+            <label class="priceField">
+              <span>Percent who never pay</span>
+              <input type="number" id="mixFree" step="1" min="0" max="100" value="70">
+            </label>
+          </div>
+
+          <div class="projectTable" id="projectTable"></div>
+        </div>
+
+        <button class="adminAction" id="pricingSave" type="button">
+          Save these numbers
+        </button>
+
+        <div class="adminResult" id="adminPricingResult"></div>
 
       </div>
 
@@ -2314,8 +2412,8 @@
   </div>
 </div>
 
-<script>window.NASTIVEE_VERSION = '2026-09-23-141';</script>
-<script src="./js/app.js?v=2026-09-23-141"></script>
+<script>window.NASTIVEE_VERSION = '2026-09-23-142';</script>
+<script src="./js/app.js?v=2026-09-23-142"></script>
 
 </body>
 </html>

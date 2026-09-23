@@ -2035,6 +2035,31 @@ app.post('/api/admin/settings', async (req, res) => {
     patch.holding_mode = body.holding_mode;
   }
 
+  /*
+    The pricing model. It charges nobody and gates nothing, it is
+    the admin's own working, so it is stored as it comes but with
+    a ceiling on size and a check that it is the right shape.
+  */
+  if (body.pricing_model !== undefined) {
+
+    const model = body.pricing_model;
+
+    if (!model || typeof model !== 'object' || !Array.isArray(model.packs)) {
+      return res.status(400).json({ error: 'That pricing model is not the right shape.' });
+    }
+
+    if (model.packs.length > 20) {
+      return res.status(400).json({ error: 'Twenty packs is plenty.' });
+    }
+
+    if (JSON.stringify(model).length > 20000) {
+      return res.status(400).json({ error: 'That pricing model is too big to store.' });
+    }
+
+    patch.pricing_model = model;
+
+  }
+
   if (body.pack_price_pence !== undefined) {
 
     const pence =

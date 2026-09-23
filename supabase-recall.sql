@@ -122,3 +122,14 @@ begin
     end;
   end if;
 end $$;
+
+
+-- =========================================================
+-- THE PRICING MODEL
+--
+-- An admin's own working: what a user costs, what a pack
+-- earns. It charges nobody and gates nothing.
+-- =========================================================
+
+alter table public.app_settings
+  add column if not exists pricing_model jsonb;

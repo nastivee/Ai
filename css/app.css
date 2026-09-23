@@ -10822,3 +10822,164 @@ body.theme-christmas  .voiceBot .botArt { --botLight: #ffd0d0; --botMid: #d7433f
 .voiceSex[aria-pressed="true"] svg {
   filter: drop-shadow(0 0 6px var(--accGlow, rgba(167, 139, 250, .6)));
 }
+
+/* ---------- PRICING AND PROFIT ---------- */
+
+.priceGroup {
+  margin: 14px 0 6px;
+  padding: 14px;
+  border: 1px solid #2f2447;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, .02);
+}
+
+.priceGroupTitle {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .9px;
+  text-transform: uppercase;
+  color: #8d80a0;
+  margin-bottom: 10px;
+}
+
+.priceGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.priceField {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.priceField span {
+  font-size: 11.5px;
+  color: #a396b4;
+}
+
+.priceField input,
+.packRow input {
+  width: 100%;
+  min-width: 0;
+  height: 36px;
+  padding: 0 10px;
+  border: 1px solid #3a2c55;
+  border-radius: 10px;
+  background: #171024;
+  color: #efe7f9;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.priceField input:focus,
+.packRow input:focus {
+  outline: none;
+  border-color: #6b4fa0;
+}
+
+/* ---- the packs ---- */
+
+.packTable,
+.projectTable {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  /* a narrow phone scrolls this one block rather than the page */
+  overflow-x: auto;
+}
+
+.packRow {
+  display: grid;
+  grid-template-columns: 1.4fr .9fr .8fr .9fr .8fr .8fr 1fr 1.3fr 34px;
+  gap: 7px;
+  align-items: center;
+  min-width: 720px;
+  padding: 6px;
+  border-radius: 11px;
+  border: 1px solid transparent;
+}
+
+.packRow.packLoss {
+  border-color: #6d2733;
+  background: rgba(190, 60, 80, .1);
+}
+
+.packRow.packThin {
+  border-color: #6a4f22;
+  background: rgba(214, 150, 46, .09);
+}
+
+.packHead {
+  min-width: 720px;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: .7px;
+  text-transform: uppercase;
+  color: #8d80a0;
+  padding: 0 6px;
+}
+
+.packNum {
+  font-size: 12.5px;
+  color: #cfc3dd;
+  padding: 0 4px;
+}
+
+.packNum.strong {
+  color: #efe7f9;
+  font-weight: 800;
+}
+
+/* larger mark, no box around it, the way every close control here is */
+.packDrop {
+  width: 30px;
+  height: 30px;
+  padding: 0 8px;
+  border: 0;
+  background: none;
+  color: #8d80a0;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.packDrop:hover {
+  color: #ff9db0;
+}
+
+/* ---- the projection ---- */
+
+.projectRow {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 7px;
+  min-width: 620px;
+  padding: 9px 8px;
+  border-radius: 11px;
+  background: rgba(255, 255, 255, .02);
+  font-size: 12.5px;
+  color: #cfc3dd;
+}
+
+.projectRow .strong {
+  color: #b9f2c6;
+  font-weight: 800;
+}
+
+.projectRow.projectLoss .strong {
+  color: #ff9db0;
+}
+
+.projectHead {
+  background: none;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: .7px;
+  text-transform: uppercase;
+  color: #8d80a0;
+  padding-bottom: 2px;
+}

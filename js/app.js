@@ -10739,6 +10739,20 @@ function paintAdmin() {
   lessonsData = adminData.settings?.lessons || { auto: true, items: [] };
   paintLessons();
 
+  /* the saved pricing model, or the measured defaults */
+  const saved = adminData.settings?.pricing_model;
+
+  if (saved && Array.isArray(saved.packs)) {
+    pricing = {
+      ...JSON.parse(JSON.stringify(PRICING_DEFAULT)),
+      ...saved,
+      costs: { ...PRICING_DEFAULT.costs, ...(saved.costs || {}) },
+      fees: { ...PRICING_DEFAULT.fees, ...(saved.fees || {}) }
+    };
+  }
+
+  paintPricing();
+
   const c =
     adminData.configured || {};
 
@@ -10921,6 +10935,341 @@ function paintAdmin() {
 
 }
 
+
+/* =====================================================
+   PRICING AND PROFIT
+
+   A model, not a till. Every figure here is editable and
+   everything recalculates as it is typed, so a plan can be
+   judged before it is sold rather than after. The defaults are
+   what the app actually measured, not guesses.
+===================================================== */
+
+const PRICING_DEFAULT = {
+  costs: { image: 2.4, ask: 0.3, voice: 1.5, search: 0.7 },
+  fees: { percent: 1.5, fixed: 20 },
+  fixedMonthly: 25,
+  vat: 0,
+  signups: 1000,
+  freeShare: 70,
+  packs: [
+    { name: 'Free',    price: 0,     images: 3,   asks: 40,  voice: 0,  share: 0 },
+    { name: 'Starter', price: 4.99,  images: 25,  asks: 150, voice: 10, share: 20 },
+    { name: 'Plus',    price: 9.99,  images: 60,  asks: 250, voice: 20, share: 8 },
+    { name: 'Pro',     price: 19.99, images: 130, asks: 500, voice: 25, share: 2 }
+  ]
+};
+
+let pricing = JSON.parse(JSON.stringify(PRICING_DEFAULT));
+
+function priceMoney(n) {
+  const sign = n < 0 ? '-' : '';
+  return `${sign}£${Math.abs(n).toFixed(2)}`;
+}
+
+function bigMoney(n) {
+  const sign = n < 0 ? '-' : '';
+  return `${sign}£${Math.abs(Math.round(n)).toLocaleString('en-GB')}`;
+}
+
+/* what one person on this pack costs and earns, per month */
+function packMaths(pack) {
+
+  const c = pricing.costs;
+
+  const cost =
+    (pack.images * c.image + pack.asks * c.ask + pack.voice * c.voice) / 100;
+
+  const fee =
+    pack.price > 0
+      ? pack.price * (pricing.fees.percent / 100) + pricing.fees.fixed / 100
+      : 0;
+
+  /* VAT comes out of the price, it is not added on top */
+  const net =
+    pricing.vat > 0
+      ? pack.price / (1 + pricing.vat / 100)
+      : pack.price;
+
+  const profit = net - cost - fee;
+
+  return {
+    cost,
+    fee,
+    net,
+    profit,
+    margin: pack.price > 0 ? (profit / pack.price) * 100 : 0
+  };
+
+}
+
+function readPricingFields() {
+
+  const num = (id, fallback) => {
+    const value = Number(document.getElementById(id)?.value);
+    return Number.isFinite(value) ? value : fallback;
+  };
+
+  pricing.costs.image = num('costImage', 2.4);
+  pricing.costs.ask = num('costAsk', 0.3);
+  pricing.costs.voice = num('costVoice', 1.5);
+  pricing.costs.search = num('costSearch', 0.7);
+  pricing.fees.percent = num('feePercent', 1.5);
+  pricing.fees.fixed = num('feeFixed', 20);
+  pricing.fixedMonthly = num('fixedMonthly', 25);
+  pricing.vat = num('vatPercent', 0);
+  pricing.signups = num('mixSignups', 1000);
+  pricing.freeShare = num('mixFree', 70);
+
+}
+
+function paintPacks() {
+
+  const table = document.getElementById('packTable');
+
+  if (!table) return;
+
+  table.innerHTML = '';
+
+  const head = document.createElement('div');
+  head.className = 'packRow packHead';
+  head.innerHTML =
+    '<span>Name</span><span>Price</span><span>Images</span>' +
+    '<span>Replies</span><span>Voice</span><span>Share %</span>' +
+    '<span>Costs you</span><span>Profit</span><span></span>';
+  table.appendChild(head);
+
+  pricing.packs.forEach((pack, index) => {
+
+    const sums = packMaths(pack);
+
+    const row = document.createElement('div');
+
+    row.className =
+      'packRow' +
+      (pack.price > 0 && sums.profit <= 0 ? ' packLoss' : '') +
+      (pack.price > 0 && sums.margin > 0 && sums.margin < 40 ? ' packThin' : '');
+
+    const field = (key, step) => {
+      const box = document.createElement('input');
+      box.type = key === 'name' ? 'text' : 'number';
+      if (step) box.step = step;
+      box.value = pack[key];
+      box.addEventListener('input', () => {
+        pack[key] = key === 'name' ? box.value : Number(box.value || 0);
+        paintPacks();
+        paintProjection();
+      });
+      return box;
+    };
+
+    row.append(
+      field('name'),
+      field('price', '0.01'),
+      field('images', '1'),
+      field('asks', '10'),
+      field('voice', '1'),
+      field('share', '1')
+    );
+
+    const cost = document.createElement('span');
+    cost.className = 'packNum';
+    cost.textContent = priceMoney(sums.cost + sums.fee);
+
+    const profit = document.createElement('span');
+    profit.className = 'packNum strong';
+    profit.textContent =
+      pack.price > 0
+        ? `${priceMoney(sums.profit)} (${sums.margin.toFixed(0)}%)`
+        : priceMoney(sums.profit);
+
+    const drop = document.createElement('button');
+    drop.type = 'button';
+    drop.className = 'packDrop';
+    drop.setAttribute('aria-label', `Remove ${pack.name}`);
+    drop.textContent = '×';
+    drop.addEventListener('click', () => {
+      pricing.packs.splice(index, 1);
+      paintPacks();
+      paintProjection();
+    });
+
+    row.append(cost, profit, drop);
+
+    table.appendChild(row);
+
+  });
+
+}
+
+function paintProjection() {
+
+  const table = document.getElementById('projectTable');
+
+  if (!table) return;
+
+  const paying = pricing.packs.filter(pack => pack.price > 0);
+
+  const counts = [100, 500, 1000, 5000, 10000, 25000];
+
+  const rows = counts.map(signups => {
+
+    let revenue = 0;
+    let costs = 0;
+
+    pricing.packs.forEach(pack => {
+      const sums = packMaths(pack);
+      const people = signups * (pack.share / 100);
+      revenue += sums.net * people;
+      costs += (sums.cost + sums.fee) * people;
+    });
+
+    /* free users cost something even though they pay nothing */
+    const freePack = pricing.packs.find(pack => pack.price === 0);
+
+    if (freePack) {
+      const sums = packMaths(freePack);
+      const freeCount = signups * (pricing.freeShare / 100);
+      costs += sums.cost * freeCount;
+    }
+
+    const profit = revenue - costs - pricing.fixedMonthly;
+
+    return { signups, revenue, costs, profit };
+
+  });
+
+  table.innerHTML = '';
+
+  const head = document.createElement('div');
+  head.className = 'projectRow projectHead';
+  head.innerHTML =
+    '<span>Signups</span><span>Paying</span><span>Revenue</span>' +
+    '<span>Costs</span><span>Profit a month</span><span>A year</span>';
+  table.appendChild(head);
+
+  const payShare =
+    paying.reduce((total, pack) => total + pack.share, 0) / 100;
+
+  rows.forEach(row => {
+
+    const line = document.createElement('div');
+
+    line.className =
+      'projectRow' + (row.profit < 0 ? ' projectLoss' : '');
+
+    line.innerHTML =
+      `<span>${row.signups.toLocaleString('en-GB')}</span>` +
+      `<span>${Math.round(row.signups * payShare).toLocaleString('en-GB')}</span>` +
+      `<span>${bigMoney(row.revenue)}</span>` +
+      `<span>${bigMoney(row.costs + pricing.fixedMonthly)}</span>` +
+      `<span class="strong">${bigMoney(row.profit)}</span>` +
+      `<span>${bigMoney(row.profit * 12)}</span>`;
+
+    table.appendChild(line);
+
+  });
+
+  const note = document.getElementById('adminPricingNote');
+
+  if (note) {
+
+    const atThousand =
+      rows.find(row => row.signups === 1000);
+
+    note.textContent =
+      atThousand
+        ? `${bigMoney(atThousand.profit)} a month at a thousand signups`
+        : '';
+
+    const card = document.getElementById('adminPricing');
+
+    if (card) {
+      card.classList.toggle('needsEye', !!atThousand && atThousand.profit <= 0);
+      card.classList.toggle('settled', !!atThousand && atThousand.profit > 0);
+    }
+
+  }
+
+}
+
+function paintPricing() {
+
+  const put = (id, value) => {
+    const box = document.getElementById(id);
+    if (box) box.value = value;
+  };
+
+  put('costImage', pricing.costs.image);
+  put('costAsk', pricing.costs.ask);
+  put('costVoice', pricing.costs.voice);
+  put('costSearch', pricing.costs.search);
+  put('feePercent', pricing.fees.percent);
+  put('feeFixed', pricing.fees.fixed);
+  put('fixedMonthly', pricing.fixedMonthly);
+  put('vatPercent', pricing.vat);
+  put('mixSignups', pricing.signups);
+  put('mixFree', pricing.freeShare);
+
+  paintPacks();
+  paintProjection();
+
+}
+
+[
+  'costImage', 'costAsk', 'costVoice', 'costSearch',
+  'feePercent', 'feeFixed', 'fixedMonthly', 'vatPercent',
+  'mixSignups', 'mixFree'
+].forEach(id => {
+  document.getElementById(id)?.addEventListener('input', () => {
+    readPricingFields();
+    paintPacks();
+    paintProjection();
+  });
+});
+
+document.getElementById('packAdd')?.addEventListener('click', () => {
+  pricing.packs.push({
+    name: 'New pack', price: 14.99, images: 80, asks: 300, voice: 20, share: 0
+  });
+  paintPacks();
+  paintProjection();
+});
+
+document.getElementById('pricingSave')?.addEventListener('click', async () => {
+
+  const button = document.getElementById('pricingSave');
+
+  button.disabled = true;
+
+  try {
+
+    readPricingFields();
+
+    const response =
+      await fetch(`${API_BASE}/api/admin/settings`, {
+        method: 'POST',
+        headers: await apiHeaders(),
+        body: JSON.stringify({ pricing_model: pricing })
+      });
+
+    const data = await response.json();
+
+    if (!response.ok) throw new Error(data?.error || 'Could not save.');
+
+    adminSay('adminPricingResult', 'Saved.', true);
+
+  } catch (error) {
+
+    adminSay('adminPricingResult', error.message, false);
+
+  } finally {
+
+    button.disabled = false;
+
+  }
+
+});
 
 async function loadAdmin() {
 
