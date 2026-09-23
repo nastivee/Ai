@@ -10183,3 +10183,31 @@ body.theme-frost .walkerDrops .drop {
   15% { opacity: .95; }
   100% { opacity: 0; transform: translate(-26px, 9px) rotate(-220deg) scale(1); }
 }
+
+
+/* his arms, out in front, only when he is pushing */
+.walkerArms { display: none; }
+
+body.theme-frost .walkerArms { display: block; }
+
+body.theme-frost .walkerArm {
+  fill: var(--acc, #3b6ea5);
+  transform-origin: 32px 19px;
+}
+
+body.theme-frost .walkerArm.top { animation: shoveTop .5s ease-in-out infinite alternate; }
+body.theme-frost .walkerArm.low { animation: shoveLow .5s ease-in-out infinite alternate; }
+
+/* the shoulders work as he leans into it */
+@keyframes shoveTop {
+  from { transform: rotate(-7deg) translateX(0); }
+  to { transform: rotate(-2deg) translateX(2px); }
+}
+
+@keyframes shoveLow {
+  from { transform: rotate(6deg) translateX(1px); }
+  to { transform: rotate(2deg) translateX(3px); }
+}
+
+/* the block starts where his hands are */
+body.theme-frost .walkerTail { left: 30px; }
