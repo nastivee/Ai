@@ -13637,6 +13637,9 @@ function voiceTrouble(stage, detail) {
     .catch(() => {});
 }
 
+/* set while a call is reopening to change voice */
+let voiceSwitching = false;
+
 async function startVoiceCall() {
 
   if (voiceCall) return;
@@ -13646,7 +13649,11 @@ async function startVoiceCall() {
     return;
   }
 
-  voiceTranscript.innerHTML = '';
+  /* swapping voices reopens the line, so keep what was said */
+  if (!voiceSwitching) voiceTranscript.innerHTML = '';
+
+  voiceSwitching = false;
+
   voiceMute.textContent = 'Mute';
   voiceMute.classList.remove('muted');
   setVoiceState('connecting', 'Starting up...');
@@ -13977,11 +13984,24 @@ document.getElementById('voicePick')?.addEventListener('click', () => {
 
   paintVoiceChoice();
 
-  /* a call already open keeps the voice it started with */
+  /*
+    A voice is fixed when the line opens, so changing it means
+    opening a new one. Rather than telling somebody to close and
+    reopen, do it for them: it takes about a second and it is
+    what they plainly meant by pressing the button.
+  */
   if (voiceCall) {
-    setVoiceState('listening', next === 'female'
-      ? 'Her voice next time you open this.'
-      : 'His voice next time you open this.');
+
+    setVoiceState('connecting', next === 'female'
+      ? 'Switching to her voice...'
+      : 'Switching to his voice...');
+
+    voiceSwitching = true;
+
+    endVoiceCall();
+
+    setTimeout(() => { startVoiceCall(); }, 400);
+
   }
 
 });

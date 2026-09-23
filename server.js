@@ -5259,6 +5259,13 @@ function voiceNameFor(asked) {
 
 const VOICE_NAME = VOICE_HIM;
 
+if (VOICE_HIM === VOICE_HER) {
+  console.warn(
+    `VOICE_NAME_M and VOICE_NAME_F are both "${VOICE_HIM}", ` +
+    'so switching voices will do nothing.'
+  );
+}
+
 
 /*
   When a call goes wrong the browser says so here, so the
@@ -5434,7 +5441,8 @@ ${(await houseLessonLines()) || '(none yet)'}
       throw new Error(data?.error?.message || `Voice service error ${response.status}`);
     }
 
-    res.json({ key: data.value, model: VOICE_MODEL });
+    /* the name back, so the app can show whose voice is live */
+    res.json({ key: data.value, model: VOICE_MODEL, voice: chosenVoice });
 
   } catch (error) {
 
