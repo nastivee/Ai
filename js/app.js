@@ -13581,23 +13581,23 @@ const PEEK_SVG = `
   </defs>
   <g class="body">
     <!-- no neck seam: the shell runs straight up under the head -->
-    <rect class="neck" x="26" y="50" width="12" height="10" rx="6" fill="url(#peekShell)"/>
+    <rect class="neck" x="27.5" y="50" width="9" height="10" rx="4.5" fill="url(#peekShell)"/>
     <!-- the arms float clear of the shell, the way that kind of robot does -->
     <g class="armL">
-      <rect class="limb" x="1.5" y="56" width="10" height="26" rx="5" fill="url(#peekShellArm)" transform="rotate(8 6.5 58)"/>
+      <rect class="limb" x="7" y="56" width="6.4" height="26" rx="3.2" fill="url(#peekShellArm)" transform="rotate(8 10.2 58)"/>
     </g>
     <g class="armR">
-      <rect class="limb" x="52.5" y="56" width="10" height="26" rx="5" fill="url(#peekShellArm)" transform="rotate(-8 57.5 58)"/>
+      <rect class="limb" x="50.6" y="56" width="6.4" height="26" rx="3.2" fill="url(#peekShellArm)" transform="rotate(-8 53.8 58)"/>
     </g>
     <!-- one smooth shell, narrower at the shoulders, no joins anywhere -->
     <path class="torso" d="M32 51
-      C 47 51 54 61 54.5 74
-      C 55 89 46 98 32 98
-      C 18 98 9 89 9.5 74
-      C 10 61 17 51 32 51 Z" fill="url(#peekShell)"/>
-    <ellipse class="sheen" cx="22" cy="64" rx="7" ry="10" fill="#ffffff" opacity=".7"/>
-    <rect class="chest" x="24.5" y="68" width="15" height="4.8" rx="2.4" fill="#cfdcea"/>
-    <circle class="light" cx="32" cy="70.4" r="2" fill="#6cc8ff"/>
+      C 41.5 51 46.5 61 47 74
+      C 47.5 89 41 98 32 98
+      C 23 98 16.5 89 17 74
+      C 17.5 61 22.5 51 32 51 Z" fill="url(#peekShell)"/>
+    <ellipse class="sheen" cx="25.5" cy="64" rx="4.4" ry="9" fill="#ffffff" opacity=".7"/>
+    <rect class="chest" x="26.5" y="68" width="11" height="4.2" rx="2.1" fill="#cfdcea"/>
+    <circle class="light" cx="32" cy="70.1" r="1.8" fill="#6cc8ff"/>
   </g>
   <g class="antenna">
     <path class="stem" d="M38 16 L40.5 6" stroke="#5ab8ff" stroke-width="3" stroke-linecap="round"/>
@@ -13634,8 +13634,8 @@ const PEEK_HAND_SVG = `
       <stop offset="1" stop-color="#dbe5f0"/>
     </linearGradient>
   </defs>
-  <rect x="3.5" y="2" width="11" height="28" rx="5.5" fill="url(#peekTip)"/>
-  <ellipse cx="7.4" cy="9" rx="2.2" ry="4" fill="#ffffff" opacity=".8"/>
+  <rect x="5.5" y="2" width="7" height="28" rx="3.5" fill="url(#peekTip)"/>
+  <ellipse cx="8" cy="9" rx="1.4" ry="4" fill="#ffffff" opacity=".8"/>
 </svg>`;
 
 function peekPose(y, extra = '') {
