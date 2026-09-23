@@ -4148,7 +4148,30 @@ body.motionOff .progressTrack::before {
 
 .stopButton.show {
   display: flex;
+  gap: 8px;
   animation: stopIn .16s var(--ease) both;
+}
+
+/* it says what it does, not just a square */
+.stopWord {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: .1px;
+}
+
+/* a slow pulse so it is noticed without shouting */
+.stopButton.show .stopSquare {
+  animation: stopBeat 1.5s ease-in-out infinite;
+}
+
+@keyframes stopBeat {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .45; }
+}
+
+/* on a narrow screen the square carries it on its own */
+@media (max-width: 560px) {
+  .stopWord { display: none; }
 }
 
 @keyframes stopIn {
