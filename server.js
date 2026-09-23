@@ -4097,15 +4097,10 @@ ${await (async () => {
       briefly so replies start quickly, Smart thinks harder.
       Both can be changed on Render without a deploy.
     */
-    const model =
-      mode === 'smart'
-        ? (process.env.SMART_MODEL || 'gpt-5.6')
-        : (process.env.FAST_MODEL || 'gpt-5.6');
+    const picked = await pickModel({ user, mode, newest, messages });
 
-    const effort =
-      mode === 'smart'
-        ? (process.env.SMART_EFFORT || 'medium')
-        : (process.env.FAST_EFFORT || 'low');
+    const model = picked.model;
+    const effort = picked.effort;
 
 
     const payload = {
@@ -4325,6 +4320,101 @@ ${await (async () => {
 // for every future chat. It hands back the updated list;
 // the browser seals it and saves it. Nothing is kept here.
 // =====================================================
+
+/*
+  WHICH MODEL ANSWERS
+
+  Somebody's first few questions decide whether they stay, so
+  those get the full model. After that the everyday model takes
+  over, which is a fraction of the price for the same answer on
+  ordinary questions. A hard question pulls the full model back
+  regardless of how long they have been here, and choosing Smart
+  by hand always wins.
+*/
+const WELCOME_ASKS = 3;
+
+/* questions the everyday model would make a worse job of */
+const HARD_ASK = new RegExp([
+  '```',
+  '\\bwhy\\b', '\\bexplain\\b', '\\bcompare\\b', '\\bdifference between\\b',
+  '\\bstep by step\\b', '\\bwalk me through\\b', '\\bwork out\\b', '\\bcalculate\\b',
+  '\\bwrite (?:me )?(?:a|an|the)\\b', '\\bdraft\\b', '\\bplan\\b', '\\bstrategy\\b',
+  '\\bdebug\\b', '\\berror\\b', '\\bcode\\b', '\\bfunction\\b', '\\bsql\\b',
+  '\\bcontract\\b', '\\blease\\b', '\\blegal\\b', '\\btax\\b',
+  '\\bessay\\b', '\\bsummari[sz]e\\b', '\\banal(?:yse|yze)\\b', '\\bpros and cons\\b'
+].join('|'), 'i');
+
+async function asksSoFar(user) {
+
+  try {
+
+    const { count, error } =
+      await supabaseAdmin
+        .from('messages')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .eq('role', 'user');
+
+    if (error) throw new Error(error.message);
+
+    return Number(count || 0);
+
+  } catch (error) {
+
+    /* if the count fails, be generous rather than stingy */
+    console.warn('ASK COUNT FAILED:', error?.message);
+    return 0;
+
+  }
+
+}
+
+async function pickModel({ user, mode, newest, messages }) {
+
+  const strong = process.env.SMART_MODEL || 'gpt-5.6';
+  const settled = process.env.SETTLED_MODEL || 'gpt-5.4-mini';
+
+  /* they asked for Smart, they get Smart */
+  if (mode === 'smart') {
+    return {
+      model: strong,
+      effort: process.env.SMART_EFFORT || 'medium',
+      why: 'chosen'
+    };
+  }
+
+  const said = String(newest || '');
+
+  const last = Array.isArray(messages) ? messages[messages.length - 1] : null;
+  const hasImage =
+    !!last && Array.isArray(last.content) &&
+    last.content.some(part => part?.type === 'image_url' || part?.type === 'input_image');
+
+  if (said.length > 280 || HARD_ASK.test(said) || hasImage) {
+    return {
+      model: strong,
+      effort: process.env.FAST_EFFORT || 'low',
+      why: 'hard'
+    };
+  }
+
+  const asked = await asksSoFar(user);
+
+  if (asked < WELCOME_ASKS) {
+    return {
+      model: process.env.FAST_MODEL || strong,
+      effort: process.env.FAST_EFFORT || 'low',
+      why: 'welcome'
+    };
+  }
+
+  return {
+    model: settled,
+    effort: process.env.SETTLED_EFFORT || 'low',
+    why: 'settled'
+  };
+
+}
 
 const MEMORY_MODEL =
   process.env.MEMORY_MODEL || 'gpt-5.6-luna';
