@@ -6160,15 +6160,12 @@ body.smartMode .sidebar::after {
    itself away, and whether anything is allowed to move.
    ===================================================== */
 
+/* both switches are for everybody, on every size of screen */
 .sidebarPills {
-  display: none;
+  display: flex;
   gap: 5px;
   flex-wrap: nowrap;
   align-items: center;
-}
-
-@media (min-width: 761px) {
-  .sidebarPills { display: flex; }
 }
 
 .sidebarPill {
