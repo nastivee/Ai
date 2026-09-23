@@ -13905,6 +13905,72 @@ function waveLevel(side) {
 
 }
 
+/*
+  EXPRESSION
+
+  Amplitude alone gives a mouth that flaps. The words give it
+  something to say. The realtime line sends the transcript as he
+  speaks it, a few characters at a time, so the last vowel he
+  reached decides the shape of his mouth and the punctuation
+  decides his face: a question tilts his head, an exclamation
+  bounces him, a laugh screws his eyes up.
+*/
+const VISEMES = {
+  a: 'wide', e: 'wide', i: 'narrow', o: 'round', u: 'round',
+  m: 'shut', b: 'shut', p: 'shut', f: 'teeth', v: 'teeth'
+};
+
+const MOODS = ['happy', 'curious', 'surprised', 'thinking'];
+
+let moodTimer = null;
+
+function botMood(mood, hold = 1600) {
+
+  const bot = voiceWave.canvas;
+
+  if (!bot) return;
+
+  MOODS.forEach(name => bot.classList.toggle(name, name === mood));
+
+  clearTimeout(moodTimer);
+
+  moodTimer = setTimeout(() => {
+    MOODS.forEach(name => bot.classList.remove(name));
+  }, hold);
+
+}
+
+function botHears(text) {
+
+  const bot = voiceWave.canvas;
+  const said = String(text || '');
+
+  if (!bot || !said) return;
+
+  /* the shape of the last sound he actually reached */
+  const letters = said.toLowerCase().replace(/[^a-z]/g, '');
+
+  for (let i = letters.length - 1; i >= 0; i -= 1) {
+    const shape = VISEMES[letters[i]];
+    if (shape) {
+      bot.dataset.viseme = shape;
+      break;
+    }
+  }
+
+  /* and the mood of it */
+  if (/\b(ha){2,}|\blol\b|\bhaha\b/i.test(said)) {
+    botMood('happy', 2200);
+  } else if (said.includes('?')) {
+    botMood('curious', 2000);
+  } else if (said.includes('!')) {
+    botMood('surprised', 1400);
+  } else if (/\b(hmm+|erm|well|let me think)\b/i.test(said)) {
+    botMood('thinking', 2000);
+  }
+
+}
+
 function waveDraw() {
 
   const bot = voiceWave.canvas;
@@ -13969,7 +14035,9 @@ function waveStop() {
   if (who) who.textContent = '';
   const bot = voiceWave.canvas;
   if (bot) {
-    bot.classList.remove('talking', 'hearing', 'idle');
+    bot.classList.remove('talking', 'hearing', 'idle', ...MOODS);
+    delete bot.dataset.viseme;
+    clearTimeout(moodTimer);
     bot.style.removeProperty('--mouth');
     bot.style.removeProperty('--lean');
   }
@@ -14138,9 +14206,14 @@ async function startVoiceCall() {
 
         case 'response.output_audio.delta':
         case 'response.audio.delta':
+          setVoiceState('speaking', 'Natter is talking');
+          break;
+
         case 'response.output_audio_transcript.delta':
         case 'response.audio_transcript.delta':
           setVoiceState('speaking', 'Natter is talking');
+          /* the words themselves, as he says them */
+          botHears(data.delta || data.transcript || '');
           break;
 
         case 'response.output_audio_transcript.done':

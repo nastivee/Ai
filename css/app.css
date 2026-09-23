@@ -10765,58 +10765,55 @@ body.theme-christmas  .voiceBot .botArt { --botLight: #ffd0d0; --botMid: #d7433f
   }
 }
 
-/* ---------- WHOSE VOICE: A TWO WAY TOGGLE ---------- */
+/* ---------- WHOSE VOICE ---------- */
 /*
-  Two icons in one shell, the live one filled with the theme.
-  Which voice you get is obvious without reading anything.
+  Deliberately NOT the two pills in a shell that Fast and Smart
+  use, because at a glance that read as a second mode switch.
+  Two separate round buttons instead: this picks a voice and
+  nothing else.
 */
 
 .voicePick {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 4px;
-  border-radius: 15px;
-  border: 1px solid #4a3568;
-  background: linear-gradient(135deg, #2a1c44, #1d1430);
+  gap: 8px;
 }
 
 .voiceSex {
-  width: 40px;
-  height: 34px;
-  padding: 0 10px;
+  width: 46px;
+  height: 46px;
+  padding: 0 12px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border: 1.5px solid transparent;
-  border-radius: 11px;
-  background: transparent;
+  border: 1px solid #4a3568;
+  border-radius: 50%;
+  background: #251a38;
   color: #9d90ad;
   cursor: pointer;
   transition:
     background .35s var(--ease),
     color .35s var(--ease),
-    border-color .35s var(--ease);
+    border-color .35s var(--ease),
+    transform .35s var(--ease);
 }
 
 .voiceSex svg {
-  width: 17px;
-  height: 17px;
+  width: 19px;
+  height: 19px;
 }
 
 .voiceSex:hover {
   color: #efe7f9;
+  border-color: #6b4fa0;
 }
 
-/*
-  The live one takes the celebration theme, not the Fast and Smart
-  mode colours, so picking a voice never looks like the site has
-  changed mode.
-*/
+/* the live one fills with the occasion's colour and sits forward */
 .voiceSex[aria-pressed="true"] {
-  border-color: var(--accLine, #4a3568);
-  background: var(--accSoft, rgba(167, 139, 250, .16));
+  border-color: var(--acc, #a78bfa);
+  background: var(--accSoft, rgba(167, 139, 250, .18));
   color: var(--acc, #cbb6ff);
+  transform: scale(1.06);
 }
 
 .voiceSex[aria-pressed="true"] svg {
@@ -10982,4 +10979,111 @@ body.theme-christmas  .voiceBot .botArt { --botLight: #ffd0d0; --botMid: #d7433f
   text-transform: uppercase;
   color: #8d80a0;
   padding-bottom: 2px;
+}
+
+/* ---------- THE ROBOT'S FACE ---------- */
+/*
+  Mouth shape follows the sound he has actually reached in the
+  words coming down the line, and the whole face follows the
+  punctuation. Amplitude still drives how far it opens, so the
+  two work together rather than fighting.
+*/
+
+.voiceBot[data-viseme="wide"] .mouth .lips {
+  transform:
+    scaleY(calc(1 + var(--mouth) * 1.9))
+    scaleX(calc(1.25 + var(--mouth) * 0.2));
+}
+
+.voiceBot[data-viseme="narrow"] .mouth .lips {
+  transform:
+    scaleY(calc(1 + var(--mouth) * 1.4))
+    scaleX(0.7);
+}
+
+.voiceBot[data-viseme="round"] .mouth .lips {
+  transform:
+    scaleY(calc(1 + var(--mouth) * 3))
+    scaleX(calc(0.62 - var(--mouth) * 0.06));
+}
+
+.voiceBot[data-viseme="shut"] .mouth .lips {
+  transform: scaleY(.85) scaleX(1.05);
+}
+
+.voiceBot[data-viseme="teeth"] .mouth .lips {
+  transform:
+    scaleY(calc(1 + var(--mouth) * 0.9))
+    scaleX(1.18);
+}
+
+/* ---- moods ---- */
+
+/* happy: eyes squeeze up into arcs and he bobs */
+.voiceBot.happy .eyeOpen {
+  transform: scaleY(.35);
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.voiceBot.happy .botArt {
+  animation: botLaugh .5s ease-in-out 3;
+}
+
+@keyframes botLaugh {
+  0%, 100% { transform: translateY(0) rotate(0); }
+  50% { transform: translateY(-5px) rotate(-1.5deg); }
+}
+
+/* curious: head cocks and the antenna leans with it */
+.voiceBot.curious .botHead {
+  transform: rotate(7deg);
+  transform-origin: 32px 52px;
+  transition: transform .4s var(--ease, ease);
+}
+
+.voiceBot.curious .ball {
+  animation: botPing 1.1s ease-in-out infinite;
+}
+
+@keyframes botPing {
+  0%, 100% { r: 4.2; }
+  50% { r: 5.4; }
+}
+
+/* surprised: eyes go wide and he jumps */
+.voiceBot.surprised .eyeOpen {
+  transform: scale(1.35);
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.voiceBot.surprised .botArt {
+  animation: botJump .42s ease-out 1;
+}
+
+@keyframes botJump {
+  0% { transform: translateY(0); }
+  40% { transform: translateY(-11px); }
+  100% { transform: translateY(0); }
+}
+
+/* thinking: he looks off to one side and the light dims */
+.voiceBot.thinking .eyes {
+  transform: translateX(3.5px);
+  transition: transform .5s var(--ease, ease);
+}
+
+.voiceBot.thinking .light {
+  opacity: .45;
+}
+
+.voiceBot .eyeOpen,
+.voiceBot .eyes {
+  transition: transform .28s var(--ease, ease);
+}
+
+body.motionOff .voiceBot .botArt,
+body.motionOff .voiceBot .ball {
+  animation: none;
 }
