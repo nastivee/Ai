@@ -10190,24 +10190,20 @@ body.theme-frost .walkerDrops .drop {
 
 body.theme-frost .walkerArms { display: block; }
 
-body.theme-frost .walkerArm {
-  fill: var(--acc, #3b6ea5);
-  transform-origin: 32px 19px;
-}
+body.theme-frost .walkerArm { fill: var(--acc2, #7dd3fc); }
 
-body.theme-frost .walkerArm.top { animation: shoveTop .5s ease-in-out infinite alternate; }
-body.theme-frost .walkerArm.low { animation: shoveLow .5s ease-in-out infinite alternate; }
+body.theme-frost .walkerFist { fill: #ffffff; }
+
+body.theme-frost .walkerArms {
+  animation: shoveArms .5s ease-in-out infinite alternate;
+  transform-origin: 26px 19px;
+}
 
 /* the shoulders work as he leans into it */
-@keyframes shoveTop {
-  from { transform: rotate(-7deg) translateX(0); }
-  to { transform: rotate(-2deg) translateX(2px); }
-}
-
-@keyframes shoveLow {
-  from { transform: rotate(6deg) translateX(1px); }
-  to { transform: rotate(2deg) translateX(3px); }
+@keyframes shoveArms {
+  from { transform: translateX(0) scaleX(1); }
+  to { transform: translateX(2.5px) scaleX(1.06); }
 }
 
 /* the block starts where his hands are */
-body.theme-frost .walkerTail { left: 30px; }
+body.theme-frost .walkerTail { left: 18px; }
