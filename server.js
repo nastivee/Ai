@@ -4567,57 +4567,47 @@ ${lines.join('\n')}
   regardless of how long they have been here, and choosing Smart
   by hand always wins.
 */
-const WELCOME_ASKS = 3;
+/*
+  The everyday model answers first, always. Nothing dearer runs
+  unless the question genuinely cannot be done well without it,
+  and even then only for someone paying for it or for an admin.
+  A free account stays on the everyday model whatever it asks,
+  and whatever it toggles.
+*/
 
-/* questions the everyday model would make a worse job of */
-const HARD_ASK = new RegExp([
+/* the small set of things the everyday model makes a worse job of */
+const NEEDS_MORE = new RegExp([
   '```',
-  '\\bwhy\\b', '\\bexplain\\b', '\\bcompare\\b', '\\bdifference between\\b',
-  '\\bstep by step\\b', '\\bwalk me through\\b', '\\bwork out\\b', '\\bcalculate\\b',
-  '\\bwrite (?:me )?(?:a|an|the)\\b', '\\bdraft\\b', '\\bplan\\b', '\\bstrategy\\b',
-  '\\bdebug\\b', '\\berror\\b', '\\bcode\\b', '\\bfunction\\b', '\\bsql\\b',
-  '\\bcontract\\b', '\\blease\\b', '\\blegal\\b', '\\btax\\b',
-  '\\bessay\\b', '\\bsummari[sz]e\\b', '\\banal(?:yse|yze)\\b', '\\bpros and cons\\b'
+  '\\bstep by step\\b', '\\bwalk me through\\b',
+  '\\bwork (?:it|this) out\\b', '\\bcalculate\\b', '\\bsolve\\b', '\\bprove\\b',
+  '\\bdebug\\b', '\\bstack trace\\b', '\\bwhy (?:is|does|won\'?t|doesn\'?t) (?:my|our|this) \\w+ (?:not |fail|break|error|crash)',
+  '\\brefactor\\b', '\\boptimi[sz]e\\b',
+  '\\bwrite (?:me )?(?:a|an|the) (?:essay|report|contract|letter|proposal|policy|plan)\\b',
+  '\\bbusiness plan\\b', '\\bstrategy\\b',
+  '\\bcontract\\b', '\\blease\\b', '\\btenancy\\b', '\\blegal\\b', '\\btax\\b',
+  '\\banal(?:yse|yze)\\b', '\\bcompare .{0,40}\\b(?:and|vs|versus)\\b',
+  '\\bpros and cons\\b', '\\btrade ?offs?\\b'
 ].join('|'), 'i');
 
-async function asksSoFar(user) {
+async function canAffordBetter(user) {
+
+  if (isAdmin(user)) return true;
 
   try {
-
-    const { count, error } =
-      await supabaseAdmin
-        .from('messages')
-        .select('id', { count: 'exact', head: true })
-        .eq('user_id', user.id)
-        .eq('role', 'user');
-
-    if (error) throw new Error(error.message);
-
-    return Number(count || 0);
-
+    const account = await readAccount(user.id);
+    return account?.unlimited === true;
   } catch (error) {
-
-    /* if the count fails, be generous rather than stingy */
-    console.warn('ASK COUNT FAILED:', error?.message);
-    return 0;
-
+    /* if the balance cannot be read, do not spend their money */
+    console.warn('PLAN READ FAILED:', error?.message);
+    return false;
   }
 
 }
 
 async function pickModel({ user, mode, newest, messages }) {
 
-  const strong = process.env.SMART_MODEL || 'gpt-5.6';
-  const settled = process.env.SETTLED_MODEL || 'gpt-5.4-mini';
-
-  /* they asked for Smart, they get Smart */
-  if (mode === 'smart') {
-    return {
-      model: strong,
-      effort: process.env.SMART_EFFORT || 'medium',
-      why: 'chosen'
-    };
-  }
+  const everyday = process.env.SETTLED_MODEL || 'gpt-5.4-mini';
+  const better = process.env.SMART_MODEL || 'gpt-5.6';
 
   const said = String(newest || '');
 
@@ -4626,29 +4616,31 @@ async function pickModel({ user, mode, newest, messages }) {
     !!last && Array.isArray(last.content) &&
     last.content.some(part => part?.type === 'image_url' || part?.type === 'input_image');
 
-  if (said.length > 280 || HARD_ASK.test(said) || hasImage) {
-    return {
-      model: strong,
-      effort: process.env.FAST_EFFORT || 'low',
-      why: 'hard'
-    };
+  /*
+    Asking by hand still has to clear the same bar: it says they
+    want the better model, not that the question needs it.
+  */
+  const asksForIt = mode === 'smart';
+
+  const needsIt =
+    hasImage ||
+    said.length > 600 ||
+    NEEDS_MORE.test(said);
+
+  if (!needsIt && !asksForIt) {
+    return { model: everyday, effort: process.env.SETTLED_EFFORT || 'low', why: 'everyday' };
   }
 
-  const asked = await asksSoFar(user);
-
-  if (asked < WELCOME_ASKS) {
-    return {
-      model: process.env.FAST_MODEL || strong,
-      effort: process.env.FAST_EFFORT || 'low',
-      why: 'welcome'
-    };
+  /* it would help. Is this someone who is paying for it? */
+  if (!(await canAffordBetter(user))) {
+    return { model: everyday, effort: process.env.SETTLED_EFFORT || 'low', why: 'not paid' };
   }
 
-  return {
-    model: settled,
-    effort: process.env.SETTLED_EFFORT || 'low',
-    why: 'settled'
-  };
+  if (needsIt) {
+    return { model: better, effort: process.env.SMART_EFFORT || 'medium', why: 'needed' };
+  }
+
+  return { model: better, effort: process.env.FAST_EFFORT || 'low', why: 'chosen' };
 
 }
 
