@@ -10483,9 +10483,10 @@ body.motionOff .progressDots i {
 .mouth .lips {
   transform-box: fill-box;
   transform-origin: center;
+  /* capped so a loud word never runs past the visor */
   transform:
-    scaleY(calc(1 + var(--mouth) * 5.5))
-    scaleX(calc(1 - var(--mouth) * 0.22));
+    scaleY(calc(1 + var(--mouth) * 2.4))
+    scaleX(calc(1 - var(--mouth) * 0.18));
   transition: transform .055s linear;
 }
 
