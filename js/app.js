@@ -14108,6 +14108,8 @@ async function startVoiceCall() {
     waveStart();
     watchVoiceIdle();
 
+    call.openedAt = Date.now();
+
     setVoiceState('connecting', 'Microphone on...');
 
     if (voiceCall !== call) {
@@ -14471,6 +14473,27 @@ function endVoiceCall() {
 
   clearInterval(voiceIdleTimer);
   voiceIdleTimer = null;
+
+  /*
+    Tell the server how long that took. Fire and forget: a call
+    that has already ended should never be held up, and a report
+    that fails just means a minute went uncounted.
+  */
+  if (call.openedAt) {
+
+    const seconds = Math.round((Date.now() - call.openedAt) / 1000);
+
+    if (seconds > 2 && !guestMode) {
+      apiHeaders().then(headers =>
+        fetch(`${API_BASE}/api/voice/used`, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ seconds })
+        }).catch(() => {})
+      ).catch(() => {});
+    }
+
+  }
 
   if (call.audio) {
     call.audio.srcObject = null;

@@ -873,6 +873,76 @@ async function spendCredit(userId) {
 
 
 /*
+  Minutes of talking. Held in seconds so a part minute is never
+  lost, and idempotent on the payment reference the same way
+  credits are, so a webhook sent twice only pays once.
+*/
+async function addVoiceMinutes(userId, minutes, reference) {
+
+  if (!supabaseAdmin) return 0;
+
+  try {
+
+    if (reference) {
+
+      const { data: seen } =
+        await supabaseAdmin
+          .from('credit_events')
+          .select('id')
+          .eq('reference', `${reference}:voice`)
+          .maybeSingle();
+
+      if (seen) return 0;
+
+    }
+
+    const { data } =
+      await supabaseAdmin
+        .from('profiles')
+        .select('voice_seconds')
+        .eq('id', userId)
+        .maybeSingle();
+
+    const now = Number(data?.voice_seconds || 0) + Math.round(minutes * 60);
+
+    const { error } =
+      await supabaseAdmin
+        .from('profiles')
+        .update({ voice_seconds: now })
+        .eq('id', userId);
+
+    if (error) throw new Error(error.message);
+
+    if (reference) {
+      await supabaseAdmin.from('credit_events').insert({
+        user_id: userId,
+        amount: 0,
+        reason: `voice: +${minutes} minutes`,
+        reference: `${reference}:voice`
+      });
+    }
+
+    return now;
+
+  } catch (error) {
+
+    console.error('VOICE MINUTES FAILED:', error.message);
+
+    raiseAlert(
+      'voice minutes not added',
+      'high',
+      `${minutes} minutes were paid for but not added to account ${userId}.`,
+      error.message
+    );
+
+    return 0;
+
+  }
+
+}
+
+
+/*
   Puts credit on. The reference makes it idempotent, so a
   webhook Stripe sends twice only pays once.
 */
@@ -1301,13 +1371,47 @@ app.post(
 
         if (session.payment_status === 'paid' && userId) {
 
+          /* minutes of talking, if the pack carried any */
+          const minutes = Number(session.metadata?.voice || 0);
+
+          if (minutes > 0) {
+            await addVoiceMinutes(userId, minutes, `stripe:${session.id}`);
+          }
+
+          /* and the plan, if they bought one */
+          const boughtPlan = String(session.metadata?.plan || '');
+
+          if (boughtPlan && supabaseAdmin) {
+
+            const { error: planError } =
+              await supabaseAdmin
+                .from('profiles')
+                .update({ plan: boughtPlan })
+                .eq('id', userId);
+
+            if (planError) {
+              console.error('PLAN SET FAILED:', planError.message);
+              raiseAlert(
+                'plan not set',
+                'high',
+                `A ${boughtPlan} subscription was paid for but the plan ` +
+                `could not be set on account ${userId}. They are paying ` +
+                'for something they are not getting.',
+                planError.message
+              );
+            }
+
+          }
+
           const balance =
-            await addCredits(
-              userId,
-              images,
-              'stripe',
-              `stripe:${session.id}`
-            );
+            images > 0
+              ? await addCredits(
+                  userId,
+                  images,
+                  'stripe',
+                  `stripe:${session.id}`
+                )
+              : 0;
 
           /* what was actually paid, for the dashboard */
           if (supabaseAdmin && Number.isFinite(session.amount_total)) {
@@ -1325,7 +1429,9 @@ app.post(
 
           noteWebhook(
             true,
-            `Credited ${images} images. Balance now ${balance}.`,
+            `Handed over: ${images} images, ${session.metadata?.voice || 0} ` +
+            `voice minutes${session.metadata?.plan ? `, ${session.metadata.plan} plan` : ''}. ` +
+            `Image balance now ${balance}.`,
             { type: event.type }
           );
 
@@ -1853,6 +1959,77 @@ app.post('/api/account/delete', async (req, res) => {
 /*
   Sends the user to Stripe to buy a pack.
 */
+/*
+  WHAT IS FOR SALE
+
+  One list, used by the app to show the shop, by checkout to
+  charge the right amount, and by the webhook to hand over what
+  was bought. Prices are in pence so nothing rounds badly.
+
+  Plans recur and set what quality of picture somebody gets.
+  Top ups are bought once and never expire, which is the whole
+  point of them: nobody likes a clock on something they paid for.
+*/
+const PACKS = [
+
+  /* ---- monthly plans ---- */
+  {
+    id: 'starter', kind: 'plan', plan: 'starter',
+    name: 'Starter', pence: 499,
+    blurb: '20 pictures, 120 replies and 5 minutes of talking, every month.',
+    images: 20, voice: 5
+  },
+  {
+    id: 'plus', kind: 'plan', plan: 'plus',
+    name: 'Plus', pence: 999,
+    blurb: '12 better pictures in any shape, 250 replies and 15 minutes of talking, every month.',
+    images: 12, voice: 15
+  },
+  {
+    id: 'pro', kind: 'plan', plan: 'pro',
+    name: 'Pro', pence: 1999,
+    blurb: '30 pictures at the best quality, 500 replies and 30 minutes of talking, every month.',
+    images: 30, voice: 30
+  },
+
+  /* ---- voice ---- */
+  { id: 'voice15',  kind: 'topup', name: '15 minutes of talking',  pence: 199,  blurb: 'Fifteen minutes of voice chat. Never expires.', voice: 15 },
+  { id: 'voice45',  kind: 'topup', name: '45 minutes of talking',  pence: 499,  blurb: 'Three quarters of an hour of voice chat. Never expires.', voice: 45 },
+  { id: 'voice120', kind: 'topup', name: '2 hours of talking',     pence: 999,  blurb: 'Two hours of voice chat. Never expires.', voice: 120 },
+  { id: 'voice300', kind: 'topup', name: '5 hours of talking',     pence: 1999, blurb: 'Five hours of voice chat. Never expires.', voice: 300 },
+
+  /* ---- pictures ---- */
+  { id: 'img20',  kind: 'topup', name: '20 quick pictures',  pence: 349,  blurb: 'Twenty pictures. Never expires.', images: 20 },
+  { id: 'img15b', kind: 'topup', name: '15 better pictures', pence: 899,  blurb: 'Fifteen pictures at better quality. Never expires.', images: 15 },
+  { id: 'img8',   kind: 'topup', name: '8 best pictures',    pence: 1499, blurb: 'Eight pictures at the best quality. Never expires.', images: 8 },
+
+  /* ---- combinations ---- */
+  { id: 'daypass',    kind: 'topup', name: 'Day pass',   pence: 299,  blurb: '5 pictures and 10 minutes of talking.', images: 5, voice: 10 },
+  { id: 'chatterbox', kind: 'topup', name: 'Chatterbox', pence: 799,  blurb: 'An hour and a half of talking, no pictures.', voice: 90 },
+  { id: 'weekend',    kind: 'topup', name: 'Weekend',    pence: 699,  blurb: '10 pictures and half an hour of talking.', images: 10, voice: 30 },
+  { id: 'creator',    kind: 'topup', name: 'Creator',    pence: 1699, blurb: '25 pictures and 45 minutes of talking.', images: 25, voice: 45 }
+
+];
+
+function packById(id) {
+  return PACKS.find(pack => pack.id === String(id || ''));
+}
+
+/* the shop, for the app to draw */
+app.get('/api/packs', (req, res) => {
+  res.json({
+    packs: PACKS.map(pack => ({
+      id: pack.id,
+      kind: pack.kind,
+      name: pack.name,
+      blurb: pack.blurb,
+      pence: pack.pence,
+      images: pack.images || 0,
+      voice: pack.voice || 0
+    }))
+  });
+});
+
 app.post('/api/checkout', async (req, res) => {
 
   const user = await getUser(req);
@@ -1878,10 +2055,31 @@ app.post('/api/checkout', async (req, res) => {
     const settings =
       await getSettings();
 
+    /*
+      A named pack, or the old single image pack when nothing is
+      named, so anything already pointing at this route keeps
+      working exactly as it did.
+    */
+    const pack = packById(req.body?.pack);
+
+    const buying = pack || {
+      id: 'legacy',
+      kind: 'topup',
+      name: `${settings.pack_images} Natter images`,
+      blurb:
+        `${settings.pack_images} image generations on your ` +
+        'Natter AI account. They do not expire.',
+      pence: settings.pack_price_pence,
+      images: settings.pack_images,
+      voice: 0
+    };
+
+    const recurring = buying.kind === 'plan';
+
     const session =
       await stripe.checkout.sessions.create({
 
-        mode: 'payment',
+        mode: recurring ? 'subscription' : 'payment',
 
         client_reference_id: user.id,
 
@@ -1889,20 +2087,36 @@ app.post('/api/checkout', async (req, res) => {
 
         metadata: {
           user_id: user.id,
-          images: String(settings.pack_images)
+          pack: buying.id,
+          images: String(buying.images || 0),
+          voice: String(buying.voice || 0),
+          plan: buying.plan || ''
         },
+
+        /* a subscription carries its own copy, since Stripe reads
+           the session metadata only for one off payments */
+        subscription_data: recurring
+          ? {
+              metadata: {
+                user_id: user.id,
+                pack: buying.id,
+                images: String(buying.images || 0),
+                voice: String(buying.voice || 0),
+                plan: buying.plan || ''
+              }
+            }
+          : undefined,
 
         line_items: [
           {
             quantity: 1,
             price_data: {
               currency: 'gbp',
-              unit_amount: settings.pack_price_pence,
+              unit_amount: buying.pence,
+              recurring: recurring ? { interval: 'month' } : undefined,
               product_data: {
-                name: `${settings.pack_images} Natter images`,
-                description:
-                  `${settings.pack_images} image generations on ` +
-                  'your Natter AI account. They do not expire.'
+                name: `Natter ${buying.name}`,
+                description: buying.blurb
               }
             }
           }
@@ -5349,6 +5563,54 @@ if (VOICE_HIM === VOICE_HER) {
   failure lands in the same place as everything else that breaks
   rather than only in somebody's console.
 */
+/*
+  WHAT A CALL USED
+
+  The line runs browser to OpenAI, so the server never sees how
+  long anybody talked. The app reports it when the call ends and
+  the balance comes down by that much. Capped at twenty minutes
+  a report, so a wrong number cannot empty somebody's account.
+*/
+app.post('/api/voice/used', async (req, res) => {
+
+  const user = await getUser(req);
+
+  if (!user) return res.status(401).json({ error: 'Not signed in.' });
+
+  const seconds =
+    Math.max(0, Math.min(1200, Math.round(Number(req.body?.seconds || 0))));
+
+  if (!seconds || !supabaseAdmin) return res.json({ ok: true, left: null });
+
+  try {
+
+    const { data } =
+      await supabaseAdmin
+        .from('profiles')
+        .select('voice_seconds')
+        .eq('id', user.id)
+        .maybeSingle();
+
+    const left =
+      Math.max(0, Number(data?.voice_seconds || 0) - seconds);
+
+    await supabaseAdmin
+      .from('profiles')
+      .update({ voice_seconds: left })
+      .eq('id', user.id);
+
+    res.json({ ok: true, left });
+
+  } catch (error) {
+
+    console.error('VOICE USED ERROR:', error.message);
+    res.json({ ok: false, left: null });
+
+  }
+
+});
+
+
 app.post('/api/voice/trouble', async (req, res) => {
 
   try {
