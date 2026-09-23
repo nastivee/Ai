@@ -9903,3 +9903,88 @@ body.theme-christmas .logoLarge::after {
   position: relative;
   z-index: 1;
 }
+
+/* ============================================================
+   THE CELEBRATION'S COLOUR, ON THE BUTTONS YOU USE MID CHAT
+
+   Improve, Change this, the reply tools, the card chips and the
+   openers all take their accent from whichever celebration is
+   running, so the theme reaches the things you actually press
+   rather than stopping at the wallpaper. Standard keeps the
+   purple it always had.
+   ============================================================ */
+
+:root {
+  --acc: #7c3aed;
+  --acc2: #9333ea;
+  --accLine: #6d4fb8;
+  --accSoft: rgba(124, 58, 237, .13);
+  --accGlow: rgba(124, 58, 237, .25);
+  --accInk: #ffffff;
+}
+
+body.theme-christmas { --acc: #c2181f; --acc2: #1f7a46; --accLine: #a8323a; --accSoft: rgba(194, 24, 31, .14); --accGlow: rgba(194, 24, 31, .28); --accInk: #ffffff; }
+body.theme-newyear   { --acc: #7c3aed; --acc2: #f5c542; --accLine: #b98edb; --accSoft: rgba(245, 197, 66, .14); --accGlow: rgba(245, 197, 66, .3); --accInk: #1a1224; }
+body.theme-frost     { --acc: #3b6ea5; --acc2: #7dd3fc; --accLine: #6ba8d8; --accSoft: rgba(125, 211, 252, .15); --accGlow: rgba(125, 211, 252, .3); --accInk: #06121c; }
+body.theme-valentines{ --acc: #be123c; --acc2: #ff5c8a; --accLine: #e0688c; --accSoft: rgba(255, 92, 138, .15); --accGlow: rgba(255, 92, 138, .3); --accInk: #ffffff; }
+body.theme-stpatricks{ --acc: #1f7a46; --acc2: #3ec46d; --accLine: #46a86a; --accSoft: rgba(62, 196, 109, .15); --accGlow: rgba(62, 196, 109, .3); --accInk: #05180c; }
+body.theme-easter    { --acc: #c084fc; --acc2: #f9a8d4; --accLine: #e5a8e0; --accSoft: rgba(249, 168, 212, .16); --accGlow: rgba(249, 168, 212, .3); --accInk: #1b1220; }
+body.theme-summer    { --acc: #f59e0b; --acc2: #fde68a; --accLine: #e8b23f; --accSoft: rgba(252, 211, 77, .16); --accGlow: rgba(252, 211, 77, .32); --accInk: #241704; }
+body.theme-halloween { --acc: #b8520f; --acc2: #ff8a1f; --accLine: #d1762c; --accSoft: rgba(255, 138, 31, .15); --accGlow: rgba(255, 138, 31, .3); --accInk: #1d1004; }
+body.theme-bonfire   { --acc: #b8520f; --acc2: #ffd166; --accLine: #d1762c; --accSoft: rgba(255, 138, 31, .16); --accGlow: rgba(255, 138, 31, .32); --accInk: #1d1004; }
+
+/* every one of them eases, so switching theme is a fade not a jump */
+.imageActionButton,
+.replyTool,
+.cardChip,
+.startChip,
+.sourceChip {
+  transition:
+    background .35s var(--ease),
+    border-color .35s var(--ease),
+    color .35s var(--ease),
+    box-shadow .35s var(--ease);
+}
+
+/* Improve, Change this and the rest */
+body .imageActionButton:hover {
+  border-color: var(--accLine);
+  background: var(--accSoft);
+}
+
+body .imageActionButton.primary {
+  border-color: transparent;
+  background: linear-gradient(135deg, var(--acc), var(--acc2));
+  color: var(--accInk);
+  box-shadow: 0 8px 22px var(--accGlow);
+}
+
+body .imageActionButton.primary:hover {
+  background: linear-gradient(135deg, var(--acc), var(--acc2));
+  filter: brightness(1.08);
+}
+
+/* copy, retry and save */
+body .replyTool:hover {
+  color: #fff;
+  border-color: var(--accLine);
+  background: var(--accSoft);
+}
+
+body .replyTool.done {
+  color: var(--acc2);
+  border-color: var(--accLine);
+}
+
+/* the buttons under a card, and the openers on an empty screen */
+body .cardChip:hover,
+body .startChip:hover,
+body .sourceChip:hover {
+  border-color: var(--accLine);
+  background: var(--accSoft);
+}
+
+body.smartMode .sourceChip:hover {
+  border-color: var(--accLine);
+  background: var(--accSoft);
+}
