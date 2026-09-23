@@ -4149,8 +4149,13 @@ body.motionOff .progressTrack::before {
 .stopButton.show {
   display: flex;
   gap: 8px;
+  /* wide enough for the word, since the composer buttons are square by default */
+  width: auto;
+  min-width: 44px;
   animation: stopIn .16s var(--ease) both;
 }
+
+.stopSquare { flex-shrink: 0; }
 
 /* it says what it does, not just a square */
 .stopWord {
@@ -4172,6 +4177,7 @@ body.motionOff .progressTrack::before {
 /* on a narrow screen the square carries it on its own */
 @media (max-width: 560px) {
   .stopWord { display: none; }
+  .stopButton.show { width: 44px; }
 }
 
 @keyframes stopIn {
