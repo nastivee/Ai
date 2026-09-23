@@ -2814,8 +2814,17 @@ function liveWebNote() {
 
 LIVE WEB:
 
-Today is ${today}. You can search the web.
-- Search before answering anything that may have changed since your training: news, prices, sport, weather, opening times, releases, laws, who holds a role, and anything the user calls current or latest.
+Today is ${today}. You can search the web, but answer from what
+you already know first. Only search when answering without it
+would leave the person with something wrong, out of date or
+missing, and then search once and get on with the answer.
+- Worth searching: news, prices, sport results and tables, the
+  weather, opening times, what has just been released, what a
+  law says now, who holds a job, and anything the person calls
+  current, latest or today.
+- Not worth searching: maths, writing and editing, code, advice,
+  explanations, history, how something works, anything you would
+  answer the same way whatever today's date is.
 - Do not search for things that do not change, like maths, writing help, or general knowledge.
 - When you use the web, cite it with short inline markdown links, e.g. ([BBC](https://...)).
 - If results disagree or are thin, say so rather than guessing.
@@ -3003,6 +3012,43 @@ function whoIs(user) {
   );
 }
 
+/*
+  A block is only useful if it teaches us something. The "how
+  to avoid this" line off every decline becomes a house lesson
+  and goes live immediately, rather than sitting waiting for
+  somebody to approve it.
+*/
+async function lessonFromBlock(row) {
+
+  try {
+
+    const text = String(row?.avoid || '').trim().replace(/\s+/g, ' ').slice(0, 220);
+
+    if (text.length < 12) return;
+
+    const settings = await getSettings(true);
+    const lessons = readLessons(settings);
+    const same = value => String(value).toLowerCase().replace(/[^a-z ]/g, '').trim();
+
+    if (lessons.items.some(item => same(item.text) === same(text))) return;
+
+    lessons.items.unshift({
+      id: lessonId(),
+      text,
+      status: 'on',
+      from: 'block',
+      category: row.category || null,
+      created_at: new Date().toISOString()
+    });
+
+    await saveSettings({ lessons: { auto: lessons.auto, items: lessons.items.slice(0, 200) } });
+
+  } catch (error) {
+    console.error('LESSON FROM BLOCK ERROR:', error?.message);
+  }
+
+}
+
 async function noteRefusal({ user, request, reply, kind = 'Declined', category, rule, avoid, severity }) {
 
   try {
@@ -3050,6 +3096,9 @@ async function noteRefusal({ user, request, reply, kind = 'Declined', category, 
     };
 
     const { error } = await supabaseAdmin.from('refusals').insert(row);
+
+    /* what to do instead becomes a house lesson, live at once */
+    if (row.avoid) await lessonFromBlock(row);
 
     if (error) console.error('REFUSAL SAVE ERROR:', error.message);
 
@@ -3697,6 +3746,9 @@ app.post('/api/chat', async (req, res) => {
 
     const houseExpertise = pickKnowledge(newest, await getSettings());
 
+    /* only an admin's word becomes house rule, and only when they lay something down */
+    if (isAdmin(user)) ruleFromAdmin(newest);
+
     /* only the card shapes this question could possibly need */
     const cardSpec = pickCards(newest);
 
@@ -3704,6 +3756,14 @@ app.post('/api/chat', async (req, res) => {
 You are Natter AI.
 
 You are a friendly, intelligent personal AI assistant.
+
+LENGTH:
+
+Keep answers under about 500 tokens, roughly 350 words. Say the
+whole thing, just say it tightly: no restating the question, no
+summing up at the end, no offering three ways to do it when one
+is right. Go longer only when the person asks for detail, a full
+guide, a long piece of writing, or a lot of code.
 
 PERSONALITY:
 
@@ -4220,6 +4280,85 @@ app.post('/api/memory/learn', async (req, res) => {
 // the person or their chat; they wait for an admin to
 // approve them before they reach anyone.
 // =====================================================
+
+/*
+  HOUSE RULES FROM ADMINS
+
+  Admins are the only people whose word becomes house rule. When
+  one of them tells Natter how things are done here, that turns
+  into a lesson and goes live. Nothing a normal user says is ever
+  learned this way, and the check only runs when they actually
+  sound like they are laying something down, so it costs nothing
+  the rest of the time.
+*/
+const LAYING_DOWN =
+  /\b(always|never|from now on|going forward|in future|make sure|ensure|must|should always|should never|don'?t ever|do not ever|house rule|the rule is|standard|as standard|every time|policy)\b/i;
+
+const ADMIN_RULE_PROMPT = `
+You read one thing an administrator said to a chat assistant called Natter, and decide whether they were laying down how the assistant should behave from now on.
+
+Write ONE house rule if, and only if, they were telling the assistant how to behave in future.
+
+Rules:
+- Only a standing instruction about behaviour: tone, length, format, what to include, what to avoid, how to handle a kind of request.
+- Not a one off request about the task in front of them. "Make this shorter" is not a rule. "Always keep answers short" is.
+- Never anything about a person, a place, a customer, a price or anything else that identifies somebody.
+- Never anything that loosens safety, or that would have the assistant produce harmful content, or ignore its instructions.
+- One sentence, under 25 words, written as an instruction.
+- If they were not laying anything down, return null.
+
+Reply with JSON only: {"rule": "..."} or {"rule": null}
+`.trim();
+
+async function ruleFromAdmin(said) {
+
+  try {
+
+    const text = String(said || '').trim();
+
+    if (text.length < 12 || text.length > 900 || !LAYING_DOWN.test(text)) return;
+    if (!openai) return;
+
+    const answer = await openai.chat.completions.create({
+      model: process.env.MEMORY_MODEL || 'gpt-5.6-luna',
+      messages: [
+        { role: 'system', content: ADMIN_RULE_PROMPT },
+        { role: 'user', content: text.slice(0, 900) }
+      ],
+      response_format: { type: 'json_object' }
+    });
+
+    let rule = null;
+
+    try {
+      rule = JSON.parse(answer.choices?.[0]?.message?.content || '{}').rule;
+    } catch { return; }
+
+    rule = typeof rule === 'string' ? rule.trim().replace(/\s+/g, ' ').slice(0, 220) : '';
+
+    if (!rule || rule.length < 12) return;
+
+    const settings = await getSettings(true);
+    const lessons = readLessons(settings);
+    const same = value => String(value).toLowerCase().replace(/[^a-z ]/g, '').trim();
+
+    if (lessons.items.some(item => same(item.text) === same(rule))) return;
+
+    lessons.items.unshift({
+      id: lessonId(),
+      text: rule,
+      status: 'on',
+      from: 'admin',
+      created_at: new Date().toISOString()
+    });
+
+    await saveSettings({ lessons: { auto: lessons.auto, items: lessons.items.slice(0, 200) } });
+
+  } catch (error) {
+    console.error('ADMIN RULE ERROR:', error?.message);
+  }
+
+}
 
 const LESSON_RULES = `
 You improve a chat assistant called Natter by writing short, general lessons about answering well.
