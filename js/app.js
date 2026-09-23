@@ -14009,7 +14009,8 @@ async function startVoiceCall() {
         headers: await apiHeaders(),
         body: JSON.stringify({
           memory: typeof memory === 'string' ? memory : '',
-          recent: recentChatText()
+          recent: recentChatText(),
+          voice: voiceChoice()
         })
       });
 
@@ -14251,6 +14252,53 @@ function watchVoiceIdle() {
   }, 2000);
 
 }
+
+/*
+  WHOSE VOICE
+
+  Kept on this device rather than on the account, so it is one tap
+  and no round trip. Changing it mid call would mean tearing the
+  line down and opening a new one, so it takes effect when the
+  call is next opened and the button says so.
+*/
+const VOICE_CHOICE_KEY = 'natter.voice';
+
+function voiceChoice() {
+  try {
+    return localStorage.getItem(VOICE_CHOICE_KEY) === 'female' ? 'female' : 'male';
+  } catch {
+    return 'male';
+  }
+}
+
+function paintVoiceChoice() {
+
+  const label = document.getElementById('voicePickLabel');
+
+  if (!label) return;
+
+  label.textContent = voiceChoice() === 'female' ? 'Her voice' : 'His voice';
+
+}
+
+document.getElementById('voicePick')?.addEventListener('click', () => {
+
+  const next = voiceChoice() === 'female' ? 'male' : 'female';
+
+  try { localStorage.setItem(VOICE_CHOICE_KEY, next); } catch {}
+
+  paintVoiceChoice();
+
+  /* a call already open keeps the voice it started with */
+  if (voiceCall) {
+    setVoiceState('listening', next === 'female'
+      ? 'Her voice next time you open this.'
+      : 'His voice next time you open this.');
+  }
+
+});
+
+paintVoiceChoice();
 
 function endVoiceCall() {
 

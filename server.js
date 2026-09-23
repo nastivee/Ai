@@ -5253,8 +5253,19 @@ app.post('/api/prompt/improve', async (req, res) => {
 const VOICE_MODEL =
   process.env.VOICE_MODEL || 'gpt-realtime-2.1-mini';
 
-const VOICE_NAME =
-  process.env.VOICE_NAME || 'cedar';
+/*
+  Two voices, chosen in the app. Anything the browser sends that
+  is not one of these two words is ignored, so the voice name can
+  never be set from outside.
+*/
+const VOICE_HIM = process.env.VOICE_NAME_M || process.env.VOICE_NAME || 'cedar';
+const VOICE_HER = process.env.VOICE_NAME_F || 'marin';
+
+function voiceNameFor(asked) {
+  return String(asked || '').toLowerCase() === 'female' ? VOICE_HER : VOICE_HIM;
+}
+
+const VOICE_NAME = VOICE_HIM;
 
 
 /*
@@ -5316,6 +5327,8 @@ app.post('/api/voice/session', async (req, res) => {
 
     const recent =
       String(req.body?.recent || '').slice(0, 1800);
+
+    const chosenVoice = voiceNameFor(req.body?.voice);
 
     const today =
       new Date().toLocaleDateString('en-GB', {
@@ -5382,7 +5395,7 @@ ${(await houseLessonLines()) || '(none yet)'}
           transcription: { model: 'gpt-4o-mini-transcribe' },
           turn_detection: { type: 'semantic_vad' }
         },
-        output: { voice: VOICE_NAME }
+        output: { voice: chosenVoice }
       }
     };
 
@@ -5400,7 +5413,7 @@ ${(await houseLessonLines()) || '(none yet)'}
             interrupt_response: true
           }
         },
-        output: { voice: VOICE_NAME, speed: 1.05 }
+        output: { voice: chosenVoice, speed: 1.05 }
       }
     };
 
