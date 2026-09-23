@@ -5018,8 +5018,8 @@ HOUSE LESSONS (how to answer well):
 ${(await houseLessonLines()) || '(none yet)'}
 `.trim();
 
-    const response =
-      await fetch('https://api.openai.com/v1/realtime/client_secrets', {
+    const askForKey = session =>
+      fetch('https://api.openai.com/v1/realtime/client_secrets', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${cleanKey(process.env.OPENAI_API_KEY)}`,
@@ -5029,29 +5029,67 @@ ${(await houseLessonLines()) || '(none yet)'}
         },
         body: JSON.stringify({
           expires_after: { anchor: 'created_at', seconds: 120 },
-          session: {
-            type: 'realtime',
-            model: VOICE_MODEL,
-            instructions,
-            max_response_output_tokens: 320,
-            audio: {
-              input: {
-                transcription: { model: 'gpt-4o-mini-transcribe' },
-                /* keeps room noise from being billed as speech */
-                noise_reduction: { type: 'near_field' },
-                turn_detection: {
-                  type: 'semantic_vad',
-                  eagerness: 'high',
-                  interrupt_response: true
-                }
-              },
-              output: { voice: VOICE_NAME, speed: 1.05 }
-            }
-          }
+          session
         })
       });
 
-    const data = await response.json().catch(() => ({}));
+    /*
+      The cost savers are all optional extras, and the realtime API
+      renames them between versions. If it turns one down, drop the
+      extras and open the call anyway: a slightly dearer call beats
+      no call at all.
+    */
+    const plain = {
+      type: 'realtime',
+      model: VOICE_MODEL,
+      instructions,
+      audio: {
+        input: {
+          transcription: { model: 'gpt-4o-mini-transcribe' },
+          turn_detection: { type: 'semantic_vad' }
+        },
+        output: { voice: VOICE_NAME }
+      }
+    };
+
+    const thrifty = {
+      ...plain,
+      max_output_tokens: 320,
+      audio: {
+        input: {
+          transcription: { model: 'gpt-4o-mini-transcribe' },
+          /* keeps room noise from being billed as speech */
+          noise_reduction: { type: 'near_field' },
+          turn_detection: {
+            type: 'semantic_vad',
+            eagerness: 'high',
+            interrupt_response: true
+          }
+        },
+        output: { voice: VOICE_NAME, speed: 1.05 }
+      }
+    };
+
+    let response = await askForKey(thrifty);
+    let data = await response.json().catch(() => ({}));
+
+    if (!response.ok && /unknown parameter|unrecognized|additional properties|invalid_value/i.test(String(data?.error?.message || ''))) {
+
+      console.warn('VOICE SESSION: extras refused, falling back:', data?.error?.message);
+
+      await noteFailure({
+        user,
+        area: 'voice',
+        stage: 'session-extras',
+        error: String(data?.error?.message || '').slice(0, 300),
+        model: VOICE_MODEL,
+        recovered: true
+      });
+
+      response = await askForKey(plain);
+      data = await response.json().catch(() => ({}));
+
+    }
 
     if (!response.ok || !data?.value) {
       throw new Error(data?.error?.message || `Voice service error ${response.status}`);
