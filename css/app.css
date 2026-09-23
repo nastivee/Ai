@@ -9427,3 +9427,10 @@ body.theme-christmas .logoLarge::after {
     display: none;
   }
 }
+
+/* the line under a label that says what is set right now */
+.adminNote {
+  font-size: 11.5px;
+  color: var(--mute-text);
+  margin: -2px 0 7px;
+}

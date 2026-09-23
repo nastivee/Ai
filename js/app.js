@@ -15447,36 +15447,78 @@ function applySiteTheme(theme) {
 
 function paintThemeSwitch() {
 
-  const current = account?.siteTheme || 'standard';
+  document.querySelectorAll('.themeSwitch').forEach(group => {
 
-  document.querySelectorAll('.themeSwitch button').forEach(button => {
-    const on = button.dataset.theme === current;
-    button.classList.toggle('on', on);
-    button.setAttribute('aria-pressed', on ? 'true' : 'false');
+    const admin = group.dataset.scope === 'admin';
+    const current = admin
+      ? (account?.adminTheme || 'match')
+      : (account?.siteTheme || 'standard');
+
+    group.querySelectorAll('button[data-theme]').forEach(button => {
+      const on = button.dataset.theme === current;
+      button.classList.toggle('on', on);
+      button.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+
   });
+
+  const showing = THEME_LABELS[account?.theme] || 'Standard';
+  const site = account?.siteTheme || 'standard';
+  const live = THEME_LABELS[account?.liveTheme] || 'Standard';
 
   const note = document.getElementById('adminThemeNote');
 
   if (note) {
-    const showing = THEME_LABELS[account?.theme] || 'Standard';
     note.textContent =
-      current === 'auto'
-        ? `Automatic, ${showing} showing`
-        : (THEME_LABELS[current] || 'Standard');
+      site === 'auto'
+        ? `Automatic, ${live} showing`
+        : (THEME_LABELS[site] || 'Standard');
+  }
+
+  const mine = document.getElementById('adminOwnThemeNote');
+
+  if (mine) {
+    mine.textContent =
+      (account?.adminTheme || 'match') === 'match'
+        ? `Same as everyone else, ${live} showing`
+        : `${showing} showing, admins only`;
   }
 
 }
 
-document.querySelector('.themeSwitch')?.addEventListener('click', async event => {
+document.addEventListener('click', async event => {
 
-  const button = event.target.closest('button[data-theme]');
+  const button = event.target.closest('.themeSwitch button[data-theme]');
 
   if (!button || button.classList.contains('on')) return;
 
-  const previous = { siteTheme: account.siteTheme, theme: account.theme };
+  const group = button.closest('.themeSwitch');
+  const admin = group?.dataset.scope === 'admin';
+  const key = admin ? 'admin_theme' : 'site_theme';
+  const resultBox = admin ? 'adminOwnThemeResult' : 'adminThemeResult';
 
-  account.siteTheme = button.dataset.theme;
-  if (button.dataset.theme !== 'auto') account.theme = button.dataset.theme;
+  const previous = {
+    siteTheme: account.siteTheme,
+    adminTheme: account.adminTheme,
+    theme: account.theme
+  };
+
+  /* show it straight away, then let the server have the last word */
+  if (admin) {
+    account.adminTheme = button.dataset.theme;
+    if (button.dataset.theme === 'match') {
+      account.theme = account.liveTheme || account.siteTheme || 'standard';
+    } else if (button.dataset.theme !== 'auto') {
+      account.theme = button.dataset.theme;
+    }
+  } else {
+    account.siteTheme = button.dataset.theme;
+    if (button.dataset.theme !== 'auto') account.liveTheme = button.dataset.theme;
+    if ((account.adminTheme || 'match') === 'match' && button.dataset.theme !== 'auto') {
+      account.theme = button.dataset.theme;
+    }
+  }
+
   paintThemeSwitch();
   applySiteTheme(account.theme);
 
@@ -15486,7 +15528,7 @@ document.querySelector('.themeSwitch')?.addEventListener('click', async event =>
       await fetch(`${API_BASE}/api/admin/settings`, {
         method: 'POST',
         headers: await apiHeaders(),
-        body: JSON.stringify({ site_theme: button.dataset.theme })
+        body: JSON.stringify({ [key]: button.dataset.theme })
       });
 
     const data = await response.json();
@@ -15495,13 +15537,18 @@ document.querySelector('.themeSwitch')?.addEventListener('click', async event =>
 
     await refreshAccount();
 
-    const label = THEME_LABELS[button.dataset.theme] || 'Standard';
+    const label =
+      button.dataset.theme === 'match'
+        ? 'Matching the site'
+        : (THEME_LABELS[button.dataset.theme] || 'Standard');
+
+    const who = admin ? 'for admins' : 'for everyone';
 
     adminSay(
-      'adminThemeResult',
+      resultBox,
       data.volatile
-        ? `${label} is on, but only until the server restarts. Run the theme SQL in Supabase to make it stick.`
-        : `${label} is now on for everyone.`,
+        ? `${label} is on ${who}, but only until the server restarts. Run the theme SQL in Supabase to make it stick.`
+        : `${label} is now on ${who}.`,
       !data.volatile
     );
 
@@ -15510,7 +15557,7 @@ document.querySelector('.themeSwitch')?.addEventListener('click', async event =>
     Object.assign(account, previous);
     paintThemeSwitch();
     applySiteTheme(account.theme || 'standard');
-    adminSay('adminThemeResult', error.message, false);
+    adminSay(resultBox, error.message, false);
 
   }
 

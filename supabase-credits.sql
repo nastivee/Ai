@@ -408,6 +408,10 @@ grant select, insert on public.uploads to authenticated;
 alter table public.app_settings
   add column if not exists site_theme text not null default 'standard';
 
+-- what admins see, so a celebration can be checked before everyone gets it
+alter table public.app_settings
+  add column if not exists admin_theme text not null default 'match';
+
 -- Requests Natter turned down, shown in the admin page
 create table if not exists public.refusals (
   id uuid primary key default gen_random_uuid(),

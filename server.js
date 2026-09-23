@@ -195,6 +195,8 @@ const SETTINGS_FALLBACK = {
   voice_access: 'admins',
   /* the look of the whole site: standard, auto, or a celebration */
   site_theme: 'standard',
+  /* what admins see instead, or match to see what everyone else sees */
+  admin_theme: 'match',
   /* word swaps applied to what users type, set in the admin panel */
   rules: [],
   /* house expertise packs switched off in the admin page */
@@ -363,6 +365,18 @@ function siteThemeSetting(settings) {
   return SITE_THEMES.includes(value) ? value : 'standard';
 }
 
+/*
+  Admins can be shown a different celebration from everyone
+  else, so a theme can be looked over before the site wears it.
+  Match means an admin sees exactly what a visitor sees.
+*/
+const ADMIN_THEMES = ['match'].concat(SITE_THEMES);
+
+function adminThemeSetting(settings) {
+  const value = settings?.admin_theme;
+  return ADMIN_THEMES.includes(value) ? value : 'match';
+}
+
 /* Easter Sunday for a year, the usual church arithmetic */
 function easterSunday(year) {
   const a = year % 19;
@@ -422,6 +436,15 @@ function resolvedTheme(settings, now = new Date()) {
   const today = ukToday(now);
   const season = THEME_SEASONS.find(item => withinSeason(item, today));
   return season ? season.id : 'standard';
+}
+
+/* the theme for one person: admins may be looking at another */
+function themeFor(settings, user, now = new Date()) {
+  const admin = adminThemeSetting(settings);
+  if (admin !== 'match' && isAdmin(user)) {
+    return resolvedTheme({ site_theme: admin }, now);
+  }
+  return resolvedTheme(settings, now);
 }
 
 function peekSeconds(settings) {
@@ -1389,8 +1412,10 @@ app.get('/api/account', async (req, res) => {
     alerts: admin ? await openAlertCount() : 0,
     holding: settings.holding_mode !== false,
     peekSeconds: peekSeconds(settings),
-    theme: resolvedTheme(settings),
+    theme: themeFor(settings, user),
     siteTheme: siteThemeSetting(settings),
+    adminTheme: adminThemeSetting(settings),
+    liveTheme: resolvedTheme(settings),
     videoAccess: featureAccess(settings, 'video'),
     voiceAccess: featureAccess(settings, 'voice'),
     canVideo: featureAllowed(settings, 'video', user),
@@ -2131,6 +2156,16 @@ app.post('/api/admin/settings', async (req, res) => {
     }
 
     patch.site_theme = body.site_theme;
+
+  }
+
+  if (body.admin_theme !== undefined) {
+
+    if (!ADMIN_THEMES.includes(body.admin_theme)) {
+      return res.status(400).json({ error: 'Choose match, standard, automatic or one of the celebrations.' });
+    }
+
+    patch.admin_theme = body.admin_theme;
 
   }
 

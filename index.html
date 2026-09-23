@@ -51,7 +51,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-<link rel="stylesheet" href="./css/app.css?v=2026-09-22-84">
+<link rel="stylesheet" href="./css/app.css?v=2026-09-23-85">
 </head>
 
 <body>
@@ -579,7 +579,7 @@
 
         <div class="adminField">
           <div class="adminLabel">Look of the site</div>
-          <div class="themeSwitch" role="group" aria-label="Site theme">
+          <div class="themeSwitch" data-scope="site" role="group" aria-label="Site theme">
             <button type="button" data-theme="standard">Standard</button>
             <button type="button" data-theme="auto">Automatic</button>
             <button type="button" data-theme="newyear">New Year</button>
@@ -610,6 +610,35 @@
         </div>
 
         <div class="adminResult" id="adminThemeResult"></div>
+
+        <div class="adminField">
+          <div class="adminLabel">What admins see</div>
+          <div class="adminNote" id="adminOwnThemeNote"></div>
+          <div class="themeSwitch" data-scope="admin" role="group" aria-label="Admin theme">
+            <button type="button" data-theme="match">Match the site</button>
+            <button type="button" data-theme="standard">Standard</button>
+            <button type="button" data-theme="auto">Automatic</button>
+            <button type="button" data-theme="newyear">New Year</button>
+            <button type="button" data-theme="frost">Midwinter</button>
+            <button type="button" data-theme="valentines">Valentine's</button>
+            <button type="button" data-theme="stpatricks">St Patrick's</button>
+            <button type="button" data-theme="easter">Easter</button>
+            <button type="button" data-theme="summer">Summer</button>
+            <button type="button" data-theme="halloween">Halloween</button>
+            <button type="button" data-theme="bonfire">Bonfire Night</button>
+            <button type="button" data-theme="christmas">Christmas</button>
+          </div>
+        </div>
+
+        <div class="adminHint">
+          Only for admins, so a celebration can be looked over on the
+          live site before anyone else gets it. Match the site means
+          you see exactly what a visitor sees. Anything else shows
+          only to admins and leaves everyone else on whatever the
+          switch above says.
+        </div>
+
+        <div class="adminResult" id="adminOwnThemeResult"></div>
 
       </div>
 
@@ -2057,8 +2086,8 @@
   </div>
 </div>
 
-<script>window.NASTIVEE_VERSION = '2026-09-22-84';</script>
-<script src="./js/app.js?v=2026-09-22-84"></script>
+<script>window.NASTIVEE_VERSION = '2026-09-23-85';</script>
+<script src="./js/app.js?v=2026-09-23-85"></script>
 
 </body>
 </html>
