@@ -10350,3 +10350,69 @@ body.motionOff .voiceWave {
 .voiceWho.them {
   color: var(--acc2, #9fe6ff);
 }
+
+/* ---------- LONGER WAITS: THE THINKING DOTS ---------- */
+/* Past a few seconds the walker bows out and these take over. */
+
+.progressDots {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  width: 58px;
+  height: 44px;
+  margin: 0 auto;
+  border-radius: 16px;
+  background: var(--accSoft, rgba(255, 255, 255, .06));
+  border: 1px solid var(--accLine, rgba(255, 255, 255, .1));
+  opacity: 0;
+  transform: scale(.82);
+  pointer-events: none;
+  /* the pill has no height until it is wanted, so nothing jumps */
+  max-height: 0;
+  overflow: hidden;
+  transition: opacity .38s ease, transform .38s ease, max-height .38s ease;
+}
+
+.progressDots i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--acc, #a78bfa);
+  opacity: .5;
+  animation: dotThink 1.25s ease-in-out infinite;
+}
+
+.progressDots i:nth-child(2) { animation-delay: .16s; }
+.progressDots i:nth-child(3) { animation-delay: .32s; }
+
+@keyframes dotThink {
+  0%, 100% { transform: translateY(0); opacity: .42; }
+  40% { transform: translateY(-5px); opacity: 1; }
+}
+
+.imageProgress.longWait .progressDots {
+  opacity: 1;
+  transform: scale(1);
+  max-height: 44px;
+  overflow: visible;
+}
+
+/* the bar steps aside rather than vanishing on the spot */
+.imageProgress .progressTrack {
+  transition: opacity .34s ease, max-height .34s ease, margin .34s ease;
+  max-height: 120px;
+}
+
+.imageProgress.longWait .progressTrack {
+  opacity: 0;
+  max-height: 0;
+  margin-top: 0;
+  margin-bottom: 0;
+  pointer-events: none;
+}
+
+body.motionOff .progressDots i {
+  animation: none;
+  opacity: .7;
+}

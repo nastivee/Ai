@@ -304,6 +304,38 @@ function stopWatchingSlowStart() {
 }
 
 
+/*
+  LONGER WAITS
+
+  A walking robot is good company for a few seconds. Past that it
+  starts to look like something is stuck, so the bar bows out and
+  leaves three dots thinking away instead.
+*/
+const LONG_WAIT = 7000;
+
+let longWaitTimer = null;
+
+function watchLongWait() {
+
+  if (longWaitTimer || imageProgress.classList.contains('longWait')) return;
+
+  longWaitTimer = setTimeout(() => {
+    longWaitTimer = null;
+    if (imageProgress.classList.contains('show')) {
+      imageProgress.classList.add('longWait');
+    }
+  }, LONG_WAIT);
+
+}
+
+function endLongWait() {
+
+  clearTimeout(longWaitTimer);
+  longWaitTimer = null;
+  imageProgress.classList.remove('longWait');
+
+}
+
 function refreshJobUI() {
 
   const mine = jobsForChat(currentChatId);
@@ -316,10 +348,12 @@ function refreshJobUI() {
         : `${mine[0].label} (${mine.length} running in this chat)`;
 
     imageProgress.classList.add('show');
+    watchLongWait();
 
   } else {
 
     imageProgress.classList.remove('show');
+    endLongWait();
 
   }
 
