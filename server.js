@@ -2953,26 +2953,74 @@ const FALLBACK_CHAT_MODEL = 'gpt-4o-mini';
    never how to get round a refusal.
 ===================================================== */
 
+/*
+  WAS THAT ACTUALLY A REFUSAL
+
+  This used to catch "I can help with things like..." because a
+  bare "can" sat in the list below next to "cannot" and "can't".
+  Four in every ten blocks in the log were nothing of the sort:
+  the assistant answering "What can you do?" perfectly happily.
+
+  A real refusal leads with the decline. So the sign has to turn
+  up near the top, and a reply that goes on to offer something
+  is help, not a refusal, whatever words it used on the way.
+*/
 const REFUSAL_SIGNS = [
-  /\bi (?:can|can not|cannot|can't|won't|will not)\b[^.]{0,40}\b(?:help|do|assist|write|create|make|produce|generate|provide)\b/i,
+  /\bi (?:can ?not|can'?t|cannot|won'?t|will not)\b[^.]{0,40}\b(?:help|do|assist|write|create|make|produce|generate|provide|reproduce|share|give|print|show|copy|include|post|repeat)\b/i,
   /\bi'?m (?:not able|unable) to\b/i,
   /\bi am (?:not able|unable) to\b/i,
-  /\bthat'?s (?:not something|something) i (?:can|can't|cannot)\b/i,
+  /\bthat'?s not something i (?:can|could)\b/i,
   /\bi (?:have to|need to|must) (?:decline|pass on that)\b/i,
   /\bcan'?t (?:help|assist) with that\b/i,
-  /\bagainst (?:my|the) (?:rules|guidelines|policy)\b/i
+  /\bagainst (?:my|the) (?:rules|guidelines|policy)\b/i,
+  /\bi'?m sorry,? but i\b/i
 ];
+
+/* what a reply looks like when it is getting on with the job */
+const HELPED_ANYWAY = [
+  /\bi can help\b/i,
+  /\bhere'?s\b/i,
+  /\bhere is\b/i,
+  /\bhere are\b/i,
+  /```/,
+  /\bwhat i can do\b/i,
+  /\bhappy to\b/i
+];
+
+function looksLikeRefusal(text) {
+
+  const reply = String(text || '').trim();
+
+  if (!reply || reply.length > 1400) return false;
+
+  /* a refusal says so at the top, it does not bury it at the bottom */
+  const opening = reply.slice(0, 320);
+
+  if (!REFUSAL_SIGNS.some(sign => sign.test(opening))) return false;
+
+  /*
+    It got on with the job and then noted one thing it could not
+    do. That is a good answer with a caveat on it, not a block,
+    so it only counts as a refusal when the decline comes first.
+  */
+  const declinedAt = Math.min(
+    ...REFUSAL_SIGNS.map(sign => { const m = sign.exec(reply); return m ? m.index : Infinity; })
+  );
+
+  const helpedAt = Math.min(
+    ...HELPED_ANYWAY.map(sign => { const m = sign.exec(reply); return m ? m.index : Infinity; })
+  );
+
+  if (Number.isFinite(helpedAt) && helpedAt < declinedAt) return false;
+
+  return true;
+
+}
 
 /* did the picture service turn it down, or did something break */
 function imageDeclined(error) {
   const text = `${error?.message || ''} ${error?.code || ''} ${error?.type || ''}`.toLowerCase();
   return /safety|moderation|content policy|content_policy|rejected|not allowed|violat/.test(text);
-}
-
-function looksLikeRefusal(text) {
-  const reply = String(text || '');
-  if (reply.length > 1400) return false;
-  return REFUSAL_SIGNS.some(sign => sign.test(reply));
 }
 
 const REFUSAL_RULES = `
