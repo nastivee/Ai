@@ -13742,7 +13742,7 @@ function waveDraw() {
   const his = (css.getPropertyValue('--acc2') || '').trim() || '#9fe6ff';
 
   const swing = mid - 16;
-  const scale = 34;
+  const scale = 29;
 
   /* where every point of the thread actually sits this frame */
   const px = [];
@@ -13773,8 +13773,15 @@ function waveDraw() {
   wash.addColorStop(1, his);
 
   ctx.save();
-  ctx.globalAlpha = 0.16;
-  ctx.fillStyle = wash;
+
+  /* brightest along the centre line, gone by the edges */
+  const depth = ctx.createLinearGradient(0, mid - swing, 0, mid + swing);
+  depth.addColorStop(0, 'rgba(0,0,0,0)');
+  depth.addColorStop(0.5, speaking ? his : yours);
+  depth.addColorStop(1, 'rgba(0,0,0,0)');
+
+  ctx.globalAlpha = 0.2;
+  ctx.fillStyle = depth;
   ctx.beginPath();
   ctx.moveTo(px[0], py[0]);
   for (let i = 1; i < THREAD_NODES; i += 1) ctx.lineTo(px[i], py[i]);
