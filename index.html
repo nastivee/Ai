@@ -51,7 +51,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-<link rel="stylesheet" href="./css/app.css?v=2026-09-23-107">
+<link rel="stylesheet" href="./css/app.css?v=2026-09-23-108">
 </head>
 
 <body>
@@ -759,6 +759,41 @@
     </div>
 
 
+    <div class="adminSection" id="adminFailures">
+
+      <button class="adminSummary" type="button" data-section="adminFailures">
+        <span class="adminDot" aria-hidden="true"></span>
+        <span class="adminSummaryText">
+          Things that broke
+          <span class="adminSummaryNote" id="adminFailuresNote">Checking...</span>
+        </span>
+        <svg class="adminChevron" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
+      </button>
+
+      <div class="adminBody">
+
+        <div class="adminHint">
+          Not blocks: failures. A model that would not answer, a
+          job that fell over, a picture that errored. Users feel
+          these the same way they feel a refusal, but the fix is
+          engineering rather than wording. Anything marked
+          recovered still gave the person an answer, just not the
+          way it was meant to, which is worth knowing because it
+          usually costs more.
+        </div>
+
+        <div class="refusalList" id="failureList"></div>
+
+        <button class="adminAction adminQuiet" id="failuresClear" type="button">
+          Mark all as read
+        </button>
+
+        <div class="adminResult" id="adminFailuresResult"></div>
+
+      </div>
+
+    </div>
+
     <div class="adminSection" id="adminRefusals">
 
       <button class="adminSummary" type="button" data-section="adminRefusals">
@@ -773,11 +808,12 @@
       <div class="adminBody">
 
         <div class="adminHint">
-          Everything that went wrong or was turned down, with the
-          person's name: chat refusals, pictures and videos the
-          safety checks blocked, and jobs that failed. Each one
-          names what happened and what would work instead. Tap a
-          card to open it.
+          Things Natter decided not to do, with the person's
+          name: chat refusals, and pictures the safety checks
+          blocked. Each one names what happened and what would
+          work instead. Things that broke rather than being
+          turned down are in their own section below. Tap a card
+          to open it.
         </div>
 
         <div class="refusalList" id="refusalList"></div>
@@ -2097,8 +2133,8 @@
   </div>
 </div>
 
-<script>window.NASTIVEE_VERSION = '2026-09-23-107';</script>
-<script src="./js/app.js?v=2026-09-23-107"></script>
+<script>window.NASTIVEE_VERSION = '2026-09-23-108';</script>
+<script src="./js/app.js?v=2026-09-23-108"></script>
 
 </body>
 </html>

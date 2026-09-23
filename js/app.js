@@ -17083,6 +17083,10 @@ function showAdminPage(id) {
     loadAdminUploads(true);
   }
 
+  if (target.id === 'adminFailures') {
+    loadFailures();
+  }
+
   if (target.id === 'adminRefusals') {
     loadRefusals();
   }
@@ -17819,6 +17823,197 @@ function refusalWhen(value) {
   if (mins < 1440) return `${Math.round(mins / 60)} hours ago`;
   return when.toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
 }
+
+/*
+  WHAT BROKE
+
+  The same card as a block, but these are failures rather than
+  decisions. Recovered ones are dimmed: the person still got an
+  answer, it just cost more to give them.
+*/
+const FAILURE_AREAS = {
+  chat: 'Chat',
+  image: 'Picture',
+  video: 'Video',
+  voice: 'Voice',
+  search: 'Web search'
+};
+
+async function loadFailures() {
+
+  const list = document.getElementById('failureList');
+  const note = document.getElementById('adminFailuresNote');
+  const section = document.getElementById('adminFailures');
+
+  if (!list) return;
+
+  try {
+
+    const response =
+      await fetch(`${API_BASE}/api/admin/failures`, { headers: await apiHeaders() });
+
+    const data = await response.json();
+
+    if (!response.ok) throw new Error(data?.error || 'Could not load failures.');
+
+    const items = data.failures || [];
+    const fresh = items.filter(item => !item.seen_at);
+    const broke = fresh.filter(item => !item.recovered);
+
+    list.innerHTML = '';
+
+    if (note) {
+      note.textContent =
+        items.length
+          ? `${items.length} in all, ${broke.length} unread`
+          : 'Nothing has broken yet';
+    }
+
+    section?.classList.remove('bad', 'warn', 'good');
+    section?.classList.add(broke.length ? 'bad' : fresh.length ? 'warn' : 'good');
+
+    if (!items.length) {
+      const empty = document.createElement('div');
+      empty.className = 'adminHint';
+      empty.textContent = 'Nothing has fallen over. Long may it last.';
+      list.appendChild(empty);
+      paintAdminMenu();
+      return;
+    }
+
+    items.forEach(item => {
+
+      const card = document.createElement('div');
+      card.className =
+        `refusalCard ${item.seen_at ? 'read' : item.recovered ? 'warn' : 'bad'}`;
+      card.id = `failure-${item.id}`;
+
+      const head = document.createElement('button');
+      head.type = 'button';
+      head.className = 'refusalSummary';
+
+      const dot = document.createElement('span');
+      dot.className = 'refusalDot';
+      head.appendChild(dot);
+
+      const text = document.createElement('span');
+      text.className = 'refusalSummaryText';
+
+      const title = document.createElement('span');
+      title.className = 'refusalTitle';
+      title.textContent = item.stage || 'Failed';
+      text.appendChild(title);
+
+      const tag = document.createElement('span');
+      tag.className = 'refusalKind';
+      tag.textContent = item.recovered
+        ? `${FAILURE_AREAS[item.area] || item.area} · recovered`
+        : (FAILURE_AREAS[item.area] || item.area);
+      title.appendChild(tag);
+
+      const sub = document.createElement('span');
+      sub.className = 'refusalSub';
+      sub.textContent =
+        [item.name, item.model, item.status, refusalWhen(item.created_at)]
+          .filter(Boolean).join(' · ');
+      text.appendChild(sub);
+
+      head.appendChild(text);
+      card.appendChild(head);
+
+      const body = document.createElement('div');
+      body.className = 'refusalBody';
+
+      const add = (label, value) => {
+        if (!value) return;
+        const row = document.createElement('div');
+        row.className = 'refusalRow';
+        const key = document.createElement('span');
+        key.className = 'refusalLabel';
+        key.textContent = label;
+        const val = document.createElement('span');
+        val.className = 'refusalValue';
+        val.textContent = value;
+        row.appendChild(key);
+        row.appendChild(val);
+        body.appendChild(row);
+      };
+
+      add('What happened', item.stage);
+      add('Where', FAILURE_AREAS[item.area] || item.area);
+      add('Model', item.model);
+      add('Code', item.status);
+      add('Detail', item.detail);
+      add('Who it hit', item.name);
+      add(
+        'Did they get an answer',
+        item.recovered
+          ? 'Yes, but not the usual way, so it cost more than it should have.'
+          : 'No, they saw an error.'
+      );
+
+      card.appendChild(body);
+
+      head.addEventListener('click', async () => {
+
+        const open = card.classList.toggle('open');
+
+        /* the card being worked on comes back to the top of the screen */
+        if (open) card.scrollIntoView({ block: 'start', behavior: 'smooth' });
+
+        if (open && !item.seen_at) {
+          item.seen_at = new Date().toISOString();
+          card.classList.remove('bad', 'warn');
+          card.classList.add('read');
+          try {
+            await fetch(`${API_BASE}/api/admin/failures/seen`, {
+              method: 'POST',
+              headers: await apiHeaders(),
+              body: JSON.stringify({ id: item.id })
+            });
+          } catch {}
+          loadFailures();
+        }
+
+      });
+
+      list.appendChild(card);
+
+    });
+
+    paintAdminMenu();
+
+  } catch (error) {
+
+    adminSay('adminFailuresResult', error.message, false);
+
+  }
+
+}
+
+document.getElementById('failuresClear')?.addEventListener('click', async () => {
+
+  try {
+
+    const response =
+      await fetch(`${API_BASE}/api/admin/failures/seen`, {
+        method: 'POST',
+        headers: await apiHeaders(),
+        body: JSON.stringify({})
+      });
+
+    if (!response.ok) throw new Error('Could not mark them as read.');
+
+    adminSay('adminFailuresResult', 'All marked as read.', true);
+    loadFailures();
+
+  } catch (error) {
+
+    adminSay('adminFailuresResult', error.message, false);
+
+  }
+
+});
 
 async function loadRefusals() {
 

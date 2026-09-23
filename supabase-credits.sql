@@ -431,3 +431,32 @@ alter table public.refusals enable row level security;
 
 create index if not exists refusals_created_idx
   on public.refusals (created_at desc);
+
+
+-- ============================================================
+-- THINGS THAT BROKE
+-- Separate from refusals: a refusal is us deciding not to do
+-- something, this is us failing to. Recovered means the user
+-- still got an answer, just not the way it was meant to work.
+-- ============================================================
+
+create table if not exists public.failures (
+  id          uuid primary key default gen_random_uuid(),
+  created_at  timestamptz not null default now(),
+  user_id     uuid,
+  email       text,
+  name        text,
+  area        text not null default 'chat',
+  stage       text,
+  status      text,
+  model       text,
+  detail      text,
+  recovered   boolean not null default false,
+  seen_at     timestamptz
+);
+
+create index if not exists failures_created_idx on public.failures (created_at desc);
+create index if not exists failures_area_idx on public.failures (area, recovered);
+
+alter table public.failures enable row level security;
+-- no policies: only the service role writes and reads this table

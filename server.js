@@ -2274,6 +2274,62 @@ app.get('/api/admin/knowledge', async (req, res) => {
 });
 
 
+/*
+  What broke, as opposed to what we turned down. Recovered ones
+  are listed too, because a model quietly falling back every
+  time is a cost problem even though nobody saw an error.
+*/
+app.get('/api/admin/failures', async (req, res) => {
+
+  const user = await requireAdmin(req, res);
+
+  if (!user) return;
+
+  const { data, error } =
+    await supabaseAdmin
+      .from('failures')
+      .select('id, created_at, email, name, area, stage, status, model, detail, recovered, seen_at')
+      .order('created_at', { ascending: false })
+      .limit(60);
+
+  if (error) {
+    return res.status(500).json({ error: error.message });
+  }
+
+  res.json({ failures: data || [] });
+
+});
+
+/* mark one as read, or clear the lot */
+app.post('/api/admin/failures/seen', async (req, res) => {
+
+  const user = await requireAdmin(req, res);
+
+  if (!user) return;
+
+  try {
+
+    const id = String(req.body?.id || '');
+
+    const query =
+      supabaseAdmin.from('failures').update({ seen_at: new Date().toISOString() });
+
+    const { error } = id
+      ? await query.eq('id', id)
+      : await query.is('seen_at', null);
+
+    if (error) throw error;
+
+    res.json({ ok: true });
+
+  } catch (error) {
+
+    res.status(500).json({ error: error.message });
+
+  }
+
+});
+
 app.get('/api/admin/refusals', async (req, res) => {
 
   const user = await requireAdmin(req, res);
@@ -3061,6 +3117,50 @@ function whoIs(user) {
 }
 
 /*
+  THINGS THAT BROKE
+
+  Separate from the blocks. A block is us deciding not to do
+  something; this is us failing to. Users feel them the same
+  way, "it didn't work", but the fixes are completely
+  different, so keeping them in one pile hides both.
+
+  "recovered" means the user still got an answer, just not the
+  way it was meant to happen: the model fell back, the search
+  was skipped. Those matter for cost and quality but nobody saw
+  an error.
+*/
+async function noteFailure({ user, area = 'chat', stage = '', error, model = '', recovered = false }) {
+
+  try {
+
+    if (!supabaseAdmin) return;
+
+    const message = String(error?.message || error || '').slice(0, 900);
+    const status = error?.status || error?.code || null;
+
+    const row = {
+      user_id: user?.id || null,
+      email: user?.email || null,
+      name: whoIs(user),
+      area: String(area).slice(0, 40),
+      stage: String(stage).slice(0, 80),
+      status: status ? String(status).slice(0, 40) : null,
+      model: String(model || '').slice(0, 60),
+      detail: message,
+      recovered: !!recovered
+    };
+
+    const { error: wrote } = await supabaseAdmin.from('failures').insert(row);
+
+    if (wrote) console.error('FAILURE LOG ERROR:', wrote.message);
+
+  } catch (problem) {
+    console.error('FAILURE LOG ERROR:', problem?.message);
+  }
+
+}
+
+/*
   A block is only useful if it teaches us something. The "how
   to avoid this" line off every decline becomes a house lesson
   and goes live immediately, rather than sitting waiting for
@@ -3428,6 +3528,14 @@ async function createReply(payload) {
       text
     );
 
+    noteFailure({
+      area: 'chat',
+      stage: 'model refused, fell back',
+      error,
+      model: payload.model,
+      recovered: true
+    });
+
     const { reasoning_effort, ...rest } = payload;
 
     return openai.chat.completions.create({
@@ -3743,9 +3851,14 @@ function trimHistory(list) {
 
 app.post('/api/chat', async (req, res) => {
 
+  /* kept out here so the catch below can still say who it was */
+  let whoAsked = null;
+
   try {
 
     const user = await getUser(req);
+
+    whoAsked = user;
 
     if (await holdingBlocks(user)) {
 
@@ -4184,6 +4297,8 @@ ${await (async () => {
       'Chat replies are failing.',
       error?.message
     );
+
+    noteFailure({ user: whoAsked, area: 'chat', stage: 'reply failed', error });
 
     res.status(500).json({
       error: 'Chat request failed',
