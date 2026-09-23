@@ -10416,3 +10416,54 @@ body.motionOff .progressDots i {
   animation: none;
   opacity: .7;
 }
+
+/* ---------- PILLS STAY INSIDE THE DRAWER ---------- */
+/*
+  The two pills sat on one nowrap row. On a phone, with the text
+  scaled up, that row grew wider than the drawer and the spare
+  width poked out past the closed drawer's edge, over the chat.
+  They wrap now, and the row can never be wider than its panel.
+*/
+
+.versionRow {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.sidebarPills {
+  flex-wrap: wrap;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.sidebarPill {
+  max-width: 100%;
+  min-width: 0;
+}
+
+.sidebarPill span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* nothing in the drawer may be wider than the drawer */
+.sidebar > * {
+  max-width: 100%;
+}
+
+@media (max-width: 760px) {
+
+  /* one to a row, full width: easier to hit and nothing to spill */
+  .sidebarPills {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+  }
+
+  .sidebarPill {
+    width: 100%;
+    min-height: 34px;
+    font-size: 11px;
+  }
+
+}
