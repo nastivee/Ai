@@ -14396,6 +14396,24 @@ function rainbowSvg() {
     ).join('') + '</svg>';
 }
 
+/*
+  Some pieces belong on the ground, behind everything, so they
+  never sit over a button: the egg piles, the pot of gold, the
+  garland along the top.
+*/
+const THEME_GROUND = {
+
+  easter: () =>
+    `<div class="pile left">${THEME_SPRITES.eggPile}</div>` +
+    `<div class="pile right">${THEME_SPRITES.eggPile}</div>` +
+    `<i class="roller">${THEME_SPRITES.egg}</i>`,
+
+  stpatricks: () =>
+    `<div class="garland">${THEME_SPRITES.garland}</div>` +
+    `<div class="crock">${THEME_SPRITES.crock}</div>`
+
+};
+
 const THEME_DECOR = {
 
   /* fireworks over the rooftops and gold falling through them */
@@ -14422,16 +14440,11 @@ const THEME_DECOR = {
   /* a garland along the top, a rainbow, and the gold at the end of it */
   stpatricks: () =>
     '<div class="warn"><i class="sweep"></i></div>' +
-    '<div class="rainbow">' + rainbowSvg() + '</div>' +
-    `<div class="garland">${THEME_SPRITES.garland}</div>` +
-    `<div class="crock">${THEME_SPRITES.crock}</div>`,
+    '<div class="rainbow">' + rainbowSvg() + '</div>',
 
   /* egg piles either side, one rolling through, and blossom on the breeze */
   easter: () =>
     '<div class="warn"><i class="flurry"></i></div>' +
-    `<div class="pile left">${THEME_SPRITES.eggPile}</div>` +
-    `<div class="pile right">${THEME_SPRITES.eggPile}</div>` +
-    `<i class="roller">${THEME_SPRITES.egg}</i>` +
     scatter(10, i =>
       `<i class="falling drift" style="left:${(i * 9.6 + 3).toFixed(1)}%;animation-delay:${(i * 1.9).toFixed(2)}s;animation-duration:${(15 + (i % 5)).toFixed(1)}s;width:${(11 + (i % 3) * 3)}px;color:${['#f9a8d4', '#fbcfe8', '#fde68a'][i % 3]}">${THEME_SPRITES.petal}</i>`),
 
@@ -15360,7 +15373,7 @@ async function featureChase(bot, quarry, X) {
   const start = X(0.02);
   const end = X(0.86);
   const runner = peekActor(bot, quarry, { left: Math.round(bot.W * 0.3) });
-  await bot.move([at(PEEK_HIDDEN, start), at(PEEK_EYES, start)], 440, 'cubic-bezier(.2,.8,.3,1)');
+  await bot.move([at(PEEK_HIDDEN, start), at(PEEK_HIGH + 26, start)], 460, 'cubic-bezier(.2,.8,.3,1)');
   await bot.look(3.5);
   await runner.go([{ transform: 'translateY(110%)' }, { transform: 'translateY(6%)' }], 340, 'cubic-bezier(.3,1.4,.5,1)');
   bot.eyes('open');
@@ -15373,15 +15386,17 @@ async function featureChase(bot, quarry, X) {
   const run = [];
   const flee = [];
   const away = bot.W - Math.round(bot.W * 0.3) - 44;
+  /* he runs it high, so the whole costume is on show */
+  const RUN = PEEK_HIGH + 26;
   for (let i = 0; i <= n; i += 1) {
-    run.push(at(i % 2 ? PEEK_EYES - 12 : PEEK_EYES, Math.round(start + (end - start) * i / n), `rotate(${i % 2 ? 9 : 6}deg)`));
+    run.push(at(i % 2 ? RUN - 12 : RUN, Math.round(start + (end - start) * i / n), `rotate(${i % 2 ? 9 : 6}deg)`));
     flee.push({ transform: `translateX(${Math.round(away * i / n)}px) translateY(${i % 2 ? -8 : 6}%)` });
   }
   await Promise.all([bot.move(run, 3400, 'ease-in-out'), runner.go(flee, 3400, 'ease-in-out')]);
   await runner.go([{ transform: `translateX(${away}px) translateY(6%)` }, { transform: `translateX(${away + 90}px) translateY(0%)` }], 380, 'ease-in');
   bot.eyes('happy');
   await bot.look(3.5); await bot.wait(420); await bot.look(-3.5); await bot.wait(420); await bot.look(0);
-  await bot.move([at(PEEK_EYES, end), at(PEEK_HIDDEN, end)], 320, 'ease-in');
+  await bot.move([at(PEEK_HIGH + 26, end), at(PEEK_HIDDEN, end)], 340, 'ease-in');
   await bot.wait(380);
   bot.handAt(end);
   await bot.move([at(PEEK_HIDDEN, end), at(PEEK_HIGH, end)], 440, 'cubic-bezier(.3,1.4,.5,1)');
@@ -15395,12 +15410,12 @@ async function featureChase(bot, quarry, X) {
 async function featureCatch(bot, quarry, X) {
   const spot = X(0.46);
   const drop = peekActor(bot, quarry, { left: spot + 18, bottom: 120, start: 'translateY(-220px)' });
-  await bot.move([at(PEEK_HIDDEN, spot), at(PEEK_EYES, spot)], 440, 'cubic-bezier(.2,.8,.3,1)');
+  await bot.move([at(PEEK_HIDDEN, spot), at(PEEK_HIGH + 34, spot)], 460, 'cubic-bezier(.2,.8,.3,1)');
   await bot.look(0);
   await bot.wait(420);
   await Promise.all([
     drop.go([{ transform: 'translateY(-220px)' }, { transform: 'translateY(-26px)' }], 900, 'cubic-bezier(.4,0,.8,1)'),
-    (async () => { await bot.wait(320); bot.eyes('open'); await bot.move([at(PEEK_EYES, spot), at(PEEK_HIGH, spot)], 420, 'cubic-bezier(.3,1.4,.5,1)'); })()
+    (async () => { await bot.wait(320); bot.eyes('open'); await bot.move([at(PEEK_HIGH + 34, spot), at(PEEK_HIGH, spot)], 420, 'cubic-bezier(.3,1.4,.5,1)'); })()
   ]);
   await drop.go([
     { transform: 'translateY(-26px)' },
@@ -16147,6 +16162,14 @@ function fillThemeDecor(theme) {
   decor.className = 'themeDecor';
   decor.innerHTML = build ? build() : '';
 
+  const ground = document.getElementById('themeGround');
+
+  if (ground) {
+    const under = THEME_GROUND[wanted];
+    ground.dataset.theme = wanted;
+    ground.innerHTML = under ? under() : '';
+  }
+
 }
 
 function applySiteTheme(theme) {
@@ -16162,6 +16185,8 @@ function applySiteTheme(theme) {
 
   if (theme === 'standard') {
     if (decor) { decor.innerHTML = ''; delete decor.dataset.theme; }
+    const ground = document.getElementById('themeGround');
+    if (ground) { ground.innerHTML = ''; delete ground.dataset.theme; }
   } else {
     fillThemeDecor(theme);
   }
