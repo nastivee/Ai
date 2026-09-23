@@ -3672,23 +3672,162 @@ body.smartMode {
 }
 
 .progressTrack {
-  height: 5px;
+  position: relative;
+  height: 26px;
+  border-radius: 10px;
+  /* room for him to bob and for the sparks to fall, never clipped */
+  overflow: visible;
+}
+
+/* the wire he walks */
+.progressTrack::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 4px;
+  margin-top: -2px;
+  border-radius: 10px;
   background: #292033;
-  border-radius: 10px;
-  overflow: hidden;
 }
 
-.progressBar {
-  width: 20%;
-  height: 100%;
-  background: linear-gradient(90deg, #8b5cf6, #c084fc);
+/*
+  THE LOADER
+
+  He walks the wire and pulls the light along behind him. What
+  falls off him is whatever the celebration is: snow at
+  Christmas, embers on Bonfire Night, hearts at Valentine's.
+*/
+.progressLit {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  height: 4px;
+  width: 42%;
+  margin-top: -2px;
   border-radius: 10px;
-  animation: progressMove 1.4s infinite ease-in-out;
+  background: linear-gradient(90deg, transparent, var(--acc, #8b5cf6) 45%, var(--acc2, #c084fc));
+  box-shadow: 0 0 14px -2px var(--accGlow, rgba(124, 58, 237, .5));
+  animation: walkLight 2.6s cubic-bezier(.45, 0, .55, 1) infinite;
 }
 
-@keyframes progressMove {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(500%); }
+@keyframes walkLight {
+  0% { transform: translateX(-46%); opacity: 0; }
+  12% { opacity: 1; }
+  88% { opacity: 1; }
+  100% { transform: translateX(240%); opacity: 0; }
+}
+
+/*
+  The walker box is the full width of the wire, so moving it one
+  of its own widths carries him exactly end to end, whatever the
+  screen is doing.
+*/
+.progressWalker {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 100%;
+  height: 0;
+  margin-top: -11px;
+  animation: walkAlong 2.6s cubic-bezier(.45, 0, .55, 1) infinite;
+}
+
+@keyframes walkAlong {
+  0% { transform: translateX(-4%); opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { transform: translateX(100%); opacity: 0; }
+}
+
+.walkerBot {
+  position: absolute;
+  left: -13px;
+  display: block;
+  width: 26px;
+  height: auto;
+  overflow: visible;
+  animation: walkBob .46s ease-in-out infinite alternate;
+  filter: drop-shadow(0 0 7px var(--accGlow, rgba(124, 58, 237, .5)));
+}
+
+@keyframes walkBob {
+  from { transform: translateY(0) rotate(-5deg); }
+  to { transform: translateY(-3px) rotate(5deg); }
+}
+
+.walkerHead { fill: var(--acc2, #6cc8ff); }
+.walkerEar,
+.walkerAntenna { fill: var(--acc, #2a5fe6); }
+.walkerBall { fill: var(--acc2, #8fdcff); }
+.walkerVisor { fill: #05060d; }
+.walkerEye {
+  fill: none;
+  stroke: var(--acc2, #9fe6ff);
+  stroke-width: 2.6;
+  stroke-linecap: round;
+}
+
+/* what he shakes loose as he goes */
+.walkerDrops {
+  position: absolute;
+  left: 0;
+  top: 13px;
+  width: 0;
+  height: 0;
+}
+
+.walkerDrops .drop {
+  position: absolute;
+  left: 0;
+  top: 0;
+  font-size: 9px;
+  line-height: 1;
+  color: var(--acc2, #c084fc);
+  opacity: 0;
+  animation: walkDrop 1.25s ease-in infinite;
+}
+
+.walkerDrops .drop::before { content: var(--drop, '\2726'); }
+
+.walkerDrops .d2 { animation-delay: .42s; font-size: 7px; }
+.walkerDrops .d3 { animation-delay: .84s; font-size: 11px; }
+
+@keyframes walkDrop {
+  0% { opacity: 0; transform: translate(0, -2px) rotate(0deg) scale(.6); }
+  15% { opacity: .95; }
+  100% { opacity: 0; transform: translate(-16px, 15px) rotate(190deg) scale(1); }
+}
+
+/* what falls, per celebration */
+:root { --drop: '\2726'; }
+body.theme-christmas,
+body.theme-frost { --drop: '\2744'; }
+body.theme-valentines { --drop: '\2665'; }
+body.theme-stpatricks { --drop: '\2618'; }
+body.theme-easter { --drop: '\273F'; }
+body.theme-summer { --drop: '\2600'; }
+body.theme-newyear { --drop: '\2727'; }
+body.theme-halloween,
+body.theme-bonfire { --drop: '\2739'; }
+
+/* nothing walks anywhere when motion is off, it just glows */
+body.motionOff .progressWalker,
+body.motionOff .walkerDrops .drop {
+  display: none;
+}
+
+body.motionOff .progressLit {
+  animation: none;
+  width: 100%;
+  opacity: .55;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .progressWalker,
+  .walkerDrops .drop { display: none; }
+  .progressLit { animation: none; width: 100%; opacity: .55; }
 }
 
 /* =====================================================
