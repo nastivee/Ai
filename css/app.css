@@ -6154,31 +6154,93 @@ body.smartMode .sidebar::after {
   gap: 8px;
 }
 
-.pinSidebar {
-  display: none;
-  align-items: center;
-  gap: 6px;
-  min-height: 28px;
-  padding: 0 10px;
-  border: 0;
-  border-radius: 8px;
-  background: none;
-  color: var(--mute-text);
-  font-size: 11px;
-  font-weight: 700;
-  cursor: pointer;
-}
+/* =====================================================
+   SIDEBAR PILLS
+   Two switches, side by side: whether the sidebar tucks
+   itself away, and whether anything is allowed to move.
+   ===================================================== */
 
-.pinSidebar:hover {
-  color: #fff;
-  background: rgba(255, 255, 255, .05);
+.sidebarPills {
+  display: none;
+  gap: 6px;
+  flex-wrap: wrap;
 }
 
 @media (min-width: 761px) {
-  .pinSidebar {
-    display: inline-flex;
-  }
+  .sidebarPills { display: flex; }
 }
+
+.sidebarPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 30px;
+  padding: 0 13px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background:
+    linear-gradient(rgba(255, 255, 255, .04), rgba(255, 255, 255, .04)) padding-box,
+    linear-gradient(rgba(255, 255, 255, .09), rgba(255, 255, 255, .09)) border-box;
+  color: var(--mute-text);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .2px;
+  cursor: pointer;
+  transition: color .16s var(--ease), background .16s var(--ease), border-color .16s var(--ease);
+}
+
+.sidebarPill svg { flex-shrink: 0; }
+
+.sidebarPill:hover {
+  color: #fff;
+  background:
+    linear-gradient(rgba(255, 255, 255, .08), rgba(255, 255, 255, .08)) padding-box,
+    linear-gradient(rgba(255, 255, 255, .16), rgba(255, 255, 255, .16)) border-box;
+}
+
+.sidebarPill[aria-pressed="true"] {
+  color: #fff;
+  background:
+    linear-gradient(rgba(124, 58, 237, .22), rgba(124, 58, 237, .22)) padding-box,
+    linear-gradient(rgba(167, 139, 250, .38), rgba(167, 139, 250, .38)) border-box;
+}
+
+/* the motion pill swaps its own mark */
+#motionToggle .pillPlay { display: none; }
+#motionToggle.off .pillPause { display: none; }
+#motionToggle.off .pillPlay { display: inline-block; }
+
+/* =====================================================
+   MOTION OFF
+   Nothing stops dead. The celebration and the robot fade
+   away, and fade back in the same way when it is switched
+   on again.
+   ===================================================== */
+
+.themeDecor,
+.themeGround,
+.peekStage {
+  transition: opacity .42s var(--ease);
+}
+
+body.motionOff .themeDecor,
+body.motionOff .themeGround,
+body.motionOff .peekStage {
+  opacity: 0;
+}
+
+/* once it has faded, everything in it holds still */
+body.motionOff .themeDecor *,
+body.motionOff .themeDecor *::before,
+body.motionOff .themeDecor *::after,
+body.motionOff .themeGround *,
+body.motionOff .peekStage *,
+body.motionOff .peekStage *::before,
+body.motionOff .peekStage *::after {
+  animation-play-state: paused !important;
+}
+
+body.motionOff .peekStage { pointer-events: none; }
 
 /* =====================================================
    FAST / SMART SHEEN

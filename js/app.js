@@ -15858,6 +15858,7 @@ let restartPeeking = null;
 
   const shouldSkip = () =>
     document.hidden ||
+    !motionOn() ||
     !card.offsetParent ||
     (messageInput.value || '').trim().length > 0 ||
     document.querySelector('.voiceScreen.show, .profileOverlay.show, .adminOverlay.show, .payOverlay.show');
@@ -18305,6 +18306,68 @@ function paintPin() {
 try { document.body.classList.toggle('sidebarPinned', localStorage.getItem(PIN_KEY) === '1'); } catch {}
 
 paintPin();
+
+/*
+  MOVEMENT
+
+  One switch for everything that moves on its own: the robot,
+  the celebration in the background, the warning before the
+  feature robot. It fades out rather than stopping dead, and
+  fades back in the same way. Remembered per computer, and it
+  starts off for anyone who asks their computer for less
+  movement.
+*/
+const MOTION_KEY = 'natter_motion';
+
+function motionOn() {
+  return !document.body.classList.contains('motionOff');
+}
+
+function paintMotion() {
+  const on = motionOn();
+  const button = document.getElementById('motionToggle');
+  if (!button) return;
+  button.setAttribute('aria-pressed', on ? 'true' : 'false');
+  button.classList.toggle('off', !on);
+  const label = document.getElementById('motionToggleLabel');
+  if (label) label.textContent = on ? 'Pause motion' : 'Play motion';
+  button.title = on
+    ? 'Stop the robot and the background moving'
+    : 'Let the robot and the background move again';
+}
+
+try {
+  const saved = localStorage.getItem(MOTION_KEY);
+  const quiet = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+  document.body.classList.toggle('motionOff', saved === null ? !!quiet : saved === '0');
+} catch {}
+
+paintMotion();
+
+document.getElementById('motionToggle')?.addEventListener('click', () => {
+
+  const off = motionOn();
+
+  document.body.classList.toggle('motionOff', off);
+
+  /* if he is mid routine, let him finish fading rather than vanish */
+  if (off) {
+    setTimeout(() => {
+      document.querySelectorAll('.peekStage').forEach(stage => {
+        stage.getAnimations?.().forEach(animation => animation.cancel());
+        stage.querySelectorAll('*').forEach(bit => bit.getAnimations?.().forEach(a => a.cancel()));
+        stage.querySelectorAll('.peekBaddie').forEach(bit => bit.remove());
+      });
+    }, 420);
+  } else if (typeof restartPeeking === 'function') {
+    restartPeeking();
+  }
+
+  try { localStorage.setItem(MOTION_KEY, off ? '0' : '1'); } catch {}
+
+  paintMotion();
+
+});
 
 document.getElementById('pinSidebar')?.addEventListener('click', () => {
   const pinned = !document.body.classList.contains('sidebarPinned');
