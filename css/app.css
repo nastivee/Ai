@@ -10808,15 +10808,15 @@ body.theme-christmas  .voiceBot .botArt { --botLight: #ffd0d0; --botMid: #d7433f
   color: #efe7f9;
 }
 
-/* the live one takes the theme, the same fill New chat uses */
+/*
+  The live one takes the celebration theme, not the Fast and Smart
+  mode colours, so picking a voice never looks like the site has
+  changed mode.
+*/
 .voiceSex[aria-pressed="true"] {
-  --nc-edge: var(--edge);
-  --nc-fill: var(--edge-fill);
-  background:
-    linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,0)) padding-box,
-    linear-gradient(var(--nc-fill), var(--nc-fill)) padding-box,
-    var(--nc-edge) border-box;
-  color: #f3eefa;
+  border-color: var(--accLine, #4a3568);
+  background: var(--accSoft, rgba(167, 139, 250, .16));
+  color: var(--acc, #cbb6ff);
 }
 
 .voiceSex[aria-pressed="true"] svg {

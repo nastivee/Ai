@@ -14022,7 +14022,10 @@ function endVoiceCall() {
 
   voiceCall = null;
 
-  voiceScreen.classList.remove('show', 'listening', 'speaking');
+  /* a voice swap reopens the line underneath, so the screen stays */
+  voiceScreen.classList.remove('listening', 'speaking');
+
+  if (!voiceSwitching) voiceScreen.classList.remove('show');
 
   if (!call) return;
 
