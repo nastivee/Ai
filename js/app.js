@@ -14313,6 +14313,44 @@ const THEME_SPRITES = {
 
   gull: `<svg viewBox="0 0 30 10" aria-hidden="true"><path d="M1 8 Q8 1 15 7 Q22 1 29 8" stroke="#ffffff" stroke-opacity=".5" stroke-width="1.4" fill="none" stroke-linecap="round"/></svg>`,
 
+  eggPile: `<svg viewBox="0 0 120 80" aria-hidden="true">
+    <ellipse cx="60" cy="74" rx="56" ry="6" fill="#000" opacity=".18"/>
+    <ellipse cx="22" cy="58" rx="13" ry="16" fill="#7dd3fc"/><path d="M9 54 q13 6 26 0" stroke="#fff" stroke-width="3" fill="none" opacity=".8"/>
+    <ellipse cx="48" cy="60" rx="14" ry="17" fill="#f9a8d4"/><path d="M34 56 q14 6 28 0" stroke="#fde68a" stroke-width="3" fill="none"/>
+    <ellipse cx="76" cy="58" rx="13" ry="16" fill="#a7f3d0"/><path d="M63 62 q13 5 26 0" stroke="#fff" stroke-width="2.6" fill="none" opacity=".75"/>
+    <ellipse cx="100" cy="61" rx="12" ry="15" fill="#fcd34d"/><path d="M88 57 q12 5 24 0" stroke="#f9a8d4" stroke-width="2.6" fill="none"/>
+    <ellipse cx="35" cy="34" rx="12" ry="15" fill="#c4b5fd"/><path d="M23 30 q12 5 24 0" stroke="#fff" stroke-width="2.6" fill="none" opacity=".8"/>
+    <ellipse cx="63" cy="32" rx="13" ry="16" fill="#fde68a"/><path d="M50 36 q13 5 26 0" stroke="#7dd3fc" stroke-width="2.8" fill="none"/>
+    <ellipse cx="88" cy="35" rx="11" ry="14" fill="#f9a8d4"/><path d="M77 31 q11 5 22 0" stroke="#fff" stroke-width="2.4" fill="none" opacity=".7"/>
+    <ellipse cx="50" cy="10" rx="12" ry="15" fill="#7dd3fc"/><path d="M38 6 q12 5 24 0" stroke="#fde68a" stroke-width="2.8" fill="none"/>
+    <ellipse cx="74" cy="12" rx="10" ry="13" fill="#a7f3d0"/><path d="M64 9 q10 4 20 0" stroke="#fff" stroke-width="2.2" fill="none" opacity=".7"/>
+  </svg>`,
+
+  garland: `<svg viewBox="0 0 1200 54" preserveAspectRatio="none" aria-hidden="true">
+    <path d="M0 8 Q60 40 120 8 T240 8 T360 8 T480 8 T600 8 T720 8 T840 8 T960 8 T1080 8 T1200 8" stroke="#2c8f4f" stroke-width="3" fill="none"/>
+    <g fill="#3ec46d">
+      <g transform="translate(60 26) scale(.75)"><ellipse cx="0" cy="-6" rx="7" ry="8"/><ellipse cx="-8" cy="4" rx="8" ry="7"/><ellipse cx="8" cy="4" rx="8" ry="7"/></g>
+      <g transform="translate(180 26) scale(.6)"><ellipse cx="0" cy="-6" rx="7" ry="8"/><ellipse cx="-8" cy="4" rx="8" ry="7"/><ellipse cx="8" cy="4" rx="8" ry="7"/></g>
+      <g transform="translate(300 26) scale(.8)"><ellipse cx="0" cy="-6" rx="7" ry="8"/><ellipse cx="-8" cy="4" rx="8" ry="7"/><ellipse cx="8" cy="4" rx="8" ry="7"/></g>
+      <g transform="translate(420 26) scale(.62)"><ellipse cx="0" cy="-6" rx="7" ry="8"/><ellipse cx="-8" cy="4" rx="8" ry="7"/><ellipse cx="8" cy="4" rx="8" ry="7"/></g>
+      <g transform="translate(540 26) scale(.78)"><ellipse cx="0" cy="-6" rx="7" ry="8"/><ellipse cx="-8" cy="4" rx="8" ry="7"/><ellipse cx="8" cy="4" rx="8" ry="7"/></g>
+      <g transform="translate(660 26) scale(.64)"><ellipse cx="0" cy="-6" rx="7" ry="8"/><ellipse cx="-8" cy="4" rx="8" ry="7"/><ellipse cx="8" cy="4" rx="8" ry="7"/></g>
+      <g transform="translate(780 26) scale(.8)"><ellipse cx="0" cy="-6" rx="7" ry="8"/><ellipse cx="-8" cy="4" rx="8" ry="7"/><ellipse cx="8" cy="4" rx="8" ry="7"/></g>
+      <g transform="translate(900 26) scale(.6)"><ellipse cx="0" cy="-6" rx="7" ry="8"/><ellipse cx="-8" cy="4" rx="8" ry="7"/><ellipse cx="8" cy="4" rx="8" ry="7"/></g>
+      <g transform="translate(1020 26) scale(.76)"><ellipse cx="0" cy="-6" rx="7" ry="8"/><ellipse cx="-8" cy="4" rx="8" ry="7"/><ellipse cx="8" cy="4" rx="8" ry="7"/></g>
+      <g transform="translate(1140 26) scale(.66)"><ellipse cx="0" cy="-6" rx="7" ry="8"/><ellipse cx="-8" cy="4" rx="8" ry="7"/><ellipse cx="8" cy="4" rx="8" ry="7"/></g>
+    </g>
+  </svg>`,
+
+  crock: `<svg viewBox="0 0 110 80" aria-hidden="true">
+    <ellipse cx="55" cy="75" rx="48" ry="5" fill="#000" opacity=".2"/>
+    <path d="M14 30 h82 l-8 34 a34 12 0 0 1 -66 0 Z" fill="#12141c"/>
+    <ellipse cx="55" cy="30" rx="41" ry="11" fill="#1d212c"/>
+    <g fill="#f5c542"><circle cx="36" cy="26" r="8"/><circle cx="55" cy="21" r="9"/><circle cx="73" cy="26" r="7.5"/><circle cx="46" cy="16" r="7"/><circle cx="64" cy="14" r="6.5"/></g>
+    <g fill="#ffe9a8"><circle cx="34" cy="23" r="2.6"/><circle cx="53" cy="18" r="3"/><circle cx="62" cy="12" r="2.2"/></g>
+    <g fill="#f5c542"><circle cx="14" cy="60" r="6"/><circle cx="98" cy="58" r="5.4"/><circle cx="6" cy="68" r="4.6"/></g>
+  </svg>`,
+
   bauble: `<svg viewBox="0 0 20 26" aria-hidden="true"><path d="M10 0 v4" stroke="#c9a227" stroke-width="1.6"/><rect x="7.5" y="3" width="5" height="3.4" rx="1" fill="#c9a227"/><circle cx="10" cy="16" r="9" fill="currentColor"/><path d="M2 13 q8 4 16 0" stroke="#fff" stroke-opacity=".45" stroke-width="1.6" fill="none"/><circle cx="6.5" cy="12" r="2.2" fill="#fff" opacity=".28"/></svg>`
 
 };
@@ -14381,20 +14419,21 @@ const THEME_DECOR = {
     scatter(18, i =>
       `<i class="rising heart" style="left:${(i * 5.6 + 2).toFixed(1)}%;animation-delay:${(i * 0.83).toFixed(2)}s;animation-duration:${(12 + (i % 6)).toFixed(1)}s;width:${(11 + (i % 4) * 5)}px">${THEME_SPRITES.heart}</i>`),
 
-  /* shamrocks turning as they fall, and a rainbow in the corner */
+  /* a garland along the top, a rainbow, and the gold at the end of it */
   stpatricks: () =>
     '<div class="warn"><i class="sweep"></i></div>' +
     '<div class="rainbow">' + rainbowSvg() + '</div>' +
-    scatter(20, i =>
-      `<i class="falling spin" style="left:${(i * 5 + 1).toFixed(1)}%;animation-delay:${(i * 0.71).toFixed(2)}s;animation-duration:${(10 + (i % 5)).toFixed(1)}s;width:${(12 + (i % 3) * 5)}px">${THEME_SPRITES.shamrock}</i>`),
+    `<div class="garland">${THEME_SPRITES.garland}</div>` +
+    `<div class="crock">${THEME_SPRITES.crock}</div>`,
 
-  /* blossom on the breeze and painted eggs turning slowly */
+  /* egg piles either side, one rolling through, and blossom on the breeze */
   easter: () =>
     '<div class="warn"><i class="flurry"></i></div>' +
-    scatter(16, i =>
-      `<i class="falling drift" style="left:${(i * 6.2 + 1).toFixed(1)}%;animation-delay:${(i * 0.77).toFixed(2)}s;animation-duration:${(12 + (i % 5)).toFixed(1)}s;width:${(12 + (i % 3) * 4)}px;color:${['#f9a8d4', '#fbcfe8', '#fde68a'][i % 3]}">${THEME_SPRITES.petal}</i>`) +
-    scatter(5, i =>
-      `<i class="falling spin" style="left:${(i * 19 + 8).toFixed(1)}%;animation-delay:${(i * 3.1).toFixed(2)}s;animation-duration:${(16 + i).toFixed(1)}s;width:16px;color:${['#7dd3fc', '#fda4af', '#a7f3d0', '#fcd34d', '#c4b5fd'][i]}">${THEME_SPRITES.egg}</i>`),
+    `<div class="pile left">${THEME_SPRITES.eggPile}</div>` +
+    `<div class="pile right">${THEME_SPRITES.eggPile}</div>` +
+    `<i class="roller">${THEME_SPRITES.egg}</i>` +
+    scatter(10, i =>
+      `<i class="falling drift" style="left:${(i * 9.6 + 3).toFixed(1)}%;animation-delay:${(i * 1.9).toFixed(2)}s;animation-duration:${(15 + (i % 5)).toFixed(1)}s;width:${(11 + (i % 3) * 3)}px;color:${['#f9a8d4', '#fbcfe8', '#fde68a'][i % 3]}">${THEME_SPRITES.petal}</i>`),
 
   /* a high sun, a warm haze and gulls going over */
   summer: () =>

@@ -9618,3 +9618,82 @@ body.theme-christmas .logoLarge::after {
 @media (prefers-reduced-motion: reduce) {
   .themeDecor .warn { display: none; }
 }
+
+/* ============================================================
+   THINGS THAT BELONG WHERE THEY ARE
+   Snow falls, embers rise, hearts float. Eggs do not fall out
+   of the sky, so Easter gets piles of them and the odd one
+   rolling past, and the shamrocks hang in a garland.
+   ============================================================ */
+
+.themeDecor .pile {
+  position: absolute;
+  bottom: -10px;
+  width: 190px;
+  opacity: .5;
+}
+
+.themeDecor .pile svg { display: block; width: 100%; height: auto; }
+
+.themeDecor .pile.left { left: -22px; }
+.themeDecor .pile.right { right: -22px; transform: scaleX(-1); width: 160px; opacity: .42; }
+
+/* one egg rolls the width of the screen now and then */
+.themeDecor .roller {
+  position: absolute;
+  bottom: 6px;
+  left: 0;
+  display: block;
+  width: 22px;
+  opacity: 0;
+  animation: eggRoll 44s linear infinite;
+  animation-delay: 9s;
+}
+
+.themeDecor .roller svg { display: block; width: 100%; height: auto; }
+
+@keyframes eggRoll {
+  0% { transform: translateX(-40px) rotate(0deg); opacity: 0; }
+  2% { opacity: .75; }
+  22% { transform: translateX(calc(100vw + 40px)) rotate(900deg); opacity: .75; }
+  22.1%, 100% { transform: translateX(calc(100vw + 40px)) rotate(900deg); opacity: 0; }
+}
+
+.themeDecor .garland {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 54px;
+  opacity: .5;
+}
+
+.themeDecor .garland svg { display: block; width: 100%; height: 100%; }
+
+.themeDecor .crock {
+  position: absolute;
+  right: 26px;
+  bottom: -6px;
+  width: 132px;
+  opacity: .55;
+  filter: drop-shadow(0 0 16px rgba(245, 197, 66, .3));
+  animation: crockGlint 5s ease-in-out infinite;
+}
+
+.themeDecor .crock svg { display: block; width: 100%; height: auto; }
+
+@keyframes crockGlint {
+  0%, 100% { filter: drop-shadow(0 0 14px rgba(245, 197, 66, .22)); }
+  50% { filter: drop-shadow(0 0 22px rgba(245, 197, 66, .45)); }
+}
+
+@media (max-width: 560px) {
+  .themeDecor .pile { width: 130px; }
+  .themeDecor .pile.right { width: 110px; }
+  .themeDecor .crock { width: 96px; right: 10px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .themeDecor .roller { display: none; }
+  .themeDecor .crock { animation: none; }
+}
