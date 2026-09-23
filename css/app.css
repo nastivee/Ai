@@ -6249,6 +6249,7 @@ body.smartMode .sidebar::after {
 
 .themeSwitch {
   display: flex;
+  flex-wrap: wrap;
   gap: 3px;
   padding: 3px;
   border-radius: 12px;
@@ -6259,7 +6260,7 @@ body.smartMode .sidebar::after {
 }
 
 .themeSwitch button {
-  flex: 1 1 0;
+  flex: 1 1 28%;
   min-width: 0;
   min-height: 34px;
   padding: 0 10px;
@@ -8899,4 +8900,536 @@ body.smartMode .guideKeys { border-left-color: #93c5fd; }
   .fixtureName { font-size: 12px; }
   .sportTeam { min-width: 112px; }
   .sportTable { font-size: 12px; }
+}
+
+/* ============================================================
+   THE CELEBRATIONS
+
+   Every one of these keeps the site exactly as it is and puts
+   something over the top: a backdrop, a warmer glow on the
+   message box, a charm beside the sign in logo. The decor layer
+   never takes a click and never gets in the way of the words.
+   ============================================================ */
+
+body.theme-newyear .themeDecor,
+body.theme-frost .themeDecor,
+body.theme-valentines .themeDecor,
+body.theme-stpatricks .themeDecor,
+body.theme-easter .themeDecor,
+body.theme-summer .themeDecor,
+body.theme-bonfire .themeDecor,
+body.theme-christmas .themeDecor {
+  display: block;
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1002;
+  overflow: hidden;
+}
+
+/* --- the moving parts, shared --- */
+
+.themeDecor .snow,
+.themeDecor .falling,
+.themeDecor .confetti,
+.themeDecor .rising,
+.themeDecor .ember {
+  position: absolute;
+  top: -8vh;
+  display: block;
+  font-style: normal;
+  line-height: 1;
+  will-change: transform;
+}
+
+.themeDecor .snow {
+  color: #eaf4ff;
+  text-shadow: 0 0 6px rgba(190, 225, 255, .5);
+  animation: fallSoft linear infinite;
+}
+
+.themeDecor .falling {
+  animation: fallSoft linear infinite;
+}
+
+.themeDecor .falling.spin svg,
+.themeDecor .falling.drift svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.themeDecor .falling.spin { animation-name: fallSpin; }
+.themeDecor .falling.drift { animation-name: fallDrift; }
+
+.themeDecor .confetti {
+  width: 5px;
+  height: 10px;
+  border-radius: 1px;
+  opacity: .7;
+  animation: fallSpin linear infinite;
+}
+
+.themeDecor .rising {
+  top: auto;
+  bottom: -10vh;
+  animation: riseUp linear infinite;
+}
+
+.themeDecor .rising svg { display: block; width: 100%; height: auto; }
+
+.themeDecor .ember {
+  top: auto;
+  bottom: -6vh;
+  animation: emberUp ease-out infinite;
+}
+
+.themeDecor .ember svg { display: block; width: 100%; height: auto; }
+
+@keyframes fallSoft {
+  0% { transform: translate3d(0, 0, 0); opacity: 0; }
+  6% { opacity: 1; }
+  92% { opacity: 1; }
+  100% { transform: translate3d(22px, 118vh, 0); opacity: 0; }
+}
+
+@keyframes fallSpin {
+  0% { transform: translate3d(0, 0, 0) rotate(0deg); opacity: 0; }
+  6% { opacity: .95; }
+  92% { opacity: .95; }
+  100% { transform: translate3d(-30px, 118vh, 0) rotate(540deg); opacity: 0; }
+}
+
+@keyframes fallDrift {
+  0% { transform: translate3d(0, 0, 0) rotate(-10deg); opacity: 0; }
+  8% { opacity: .9; }
+  50% { transform: translate3d(40px, 55vh, 0) rotate(160deg); }
+  90% { opacity: .9; }
+  100% { transform: translate3d(-10px, 118vh, 0) rotate(330deg); opacity: 0; }
+}
+
+@keyframes riseUp {
+  0% { transform: translate3d(0, 0, 0) scale(.7); opacity: 0; }
+  10% { opacity: .75; }
+  50% { transform: translate3d(26px, -55vh, 0) scale(1); }
+  88% { opacity: .75; }
+  100% { transform: translate3d(-14px, -115vh, 0) scale(.8); opacity: 0; }
+}
+
+@keyframes emberUp {
+  0% { transform: translate3d(0, 0, 0) scale(1); opacity: 0; }
+  12% { opacity: .9; }
+  100% { transform: translate3d(34px, -70vh, 0) scale(.3); opacity: 0; }
+}
+
+/* a burst that opens and fades, used at New Year and Bonfire Night */
+.themeDecor .firework {
+  position: absolute;
+  width: 220px;
+  height: 220px;
+  opacity: 0;
+  transform: scale(.1);
+  animation: burst 9s ease-out infinite;
+}
+
+.themeDecor .firework svg { display: block; width: 100%; height: 100%; }
+
+.themeDecor .firework.f0 { left: 12%; top: 10%; animation-delay: 0s; }
+.themeDecor .firework.f1 { left: 68%; top: 6%; animation-delay: 2.3s; width: 170px; height: 170px; }
+.themeDecor .firework.f2 { left: 40%; top: 18%; animation-delay: 4.1s; width: 140px; height: 140px; }
+.themeDecor .firework.f3 { left: 82%; top: 22%; animation-delay: 6.2s; width: 190px; height: 190px; }
+.themeDecor .firework.f4 { left: 26%; top: 3%; animation-delay: 7.6s; width: 150px; height: 150px; }
+
+@keyframes burst {
+  0% { opacity: 0; transform: scale(.08); }
+  4% { opacity: .95; }
+  16% { opacity: .75; transform: scale(1); }
+  26% { opacity: 0; transform: scale(1.18); }
+  100% { opacity: 0; transform: scale(1.18); }
+}
+
+/* --- New Year --- */
+
+body.theme-newyear .composer {
+  box-shadow:
+    0 0 0 1px rgba(245, 197, 66, .10),
+    0 10px 40px -12px rgba(245, 197, 66, .26);
+}
+
+body.theme-newyear .authScreen::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse 70% 40% at 50% 0%, rgba(245, 197, 66, .16), transparent 70%);
+}
+
+body.theme-newyear .authCard {
+  box-shadow: 0 25px 80px rgba(0, 0, 0, .45), 0 0 60px -20px rgba(245, 197, 66, .32);
+}
+
+/* --- Midwinter --- */
+
+.themeDecor .frostEdge {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 0% 0%, rgba(190, 227, 255, .16), transparent 26%),
+    radial-gradient(circle at 100% 0%, rgba(190, 227, 255, .16), transparent 26%),
+    radial-gradient(circle at 0% 100%, rgba(190, 227, 255, .10), transparent 22%),
+    radial-gradient(circle at 100% 100%, rgba(190, 227, 255, .10), transparent 22%);
+}
+
+body.theme-frost .composer {
+  box-shadow:
+    0 0 0 1px rgba(125, 211, 252, .12),
+    0 10px 40px -12px rgba(125, 211, 252, .26);
+}
+
+body.theme-frost .authScreen::after,
+body.theme-christmas .authScreen::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse 70% 40% at 50% 0%, rgba(125, 211, 252, .15), transparent 70%);
+}
+
+body.theme-frost .authCard {
+  box-shadow: 0 25px 80px rgba(0, 0, 0, .45), 0 0 60px -20px rgba(125, 211, 252, .3);
+}
+
+/* --- Valentine's --- */
+
+body.theme-valentines .composer {
+  box-shadow:
+    0 0 0 1px rgba(255, 92, 138, .12),
+    0 10px 40px -12px rgba(255, 92, 138, .3);
+}
+
+body.theme-valentines .authScreen::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse 70% 40% at 50% 105%, rgba(255, 92, 138, .18), transparent 70%);
+}
+
+body.theme-valentines .authCard {
+  box-shadow: 0 25px 80px rgba(0, 0, 0, .45), 0 0 60px -20px rgba(255, 92, 138, .36);
+}
+
+/* --- St Patrick's --- */
+
+.themeDecor .rainbow {
+  position: absolute;
+  right: -90px;
+  top: -70px;
+  width: 340px;
+  height: 340px;
+  border-radius: 50%;
+  opacity: .16;
+  background:
+    conic-gradient(from 180deg, transparent 0 50%, transparent 50% 100%),
+    repeating-radial-gradient(circle,
+      #e11d48 0 8px, #f28c28 8px 16px, #f5c542 16px 24px,
+      #3ec46d 24px 32px, #3b6ea5 32px 40px, #7c3aed 40px 48px,
+      transparent 48px 200px);
+  -webkit-mask-image: radial-gradient(circle, transparent 0 96px, #000 97px 145px, transparent 146px);
+  mask-image: radial-gradient(circle, transparent 0 96px, #000 97px 145px, transparent 146px);
+}
+
+body.theme-stpatricks .composer {
+  box-shadow:
+    0 0 0 1px rgba(62, 196, 109, .12),
+    0 10px 40px -12px rgba(62, 196, 109, .28);
+}
+
+body.theme-stpatricks .authScreen::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse 70% 40% at 50% 105%, rgba(62, 196, 109, .16), transparent 70%);
+}
+
+body.theme-stpatricks .authCard {
+  box-shadow: 0 25px 80px rgba(0, 0, 0, .45), 0 0 60px -20px rgba(62, 196, 109, .34);
+}
+
+/* --- Easter --- */
+
+body.theme-easter .composer {
+  box-shadow:
+    0 0 0 1px rgba(249, 168, 212, .13),
+    0 10px 40px -12px rgba(196, 181, 253, .3);
+}
+
+body.theme-easter .authScreen::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 60% 35% at 22% 100%, rgba(249, 168, 212, .16), transparent 70%),
+    radial-gradient(ellipse 60% 35% at 78% 0%, rgba(167, 243, 208, .13), transparent 70%);
+}
+
+body.theme-easter .authCard {
+  box-shadow: 0 25px 80px rgba(0, 0, 0, .45), 0 0 60px -20px rgba(249, 168, 212, .32);
+}
+
+/* --- Summer --- */
+
+.themeDecor .sun {
+  position: absolute;
+  right: 7%;
+  top: 40px;
+  width: 92px;
+  height: 92px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff3c4 0 34%, #fcd34d 52%, rgba(252, 211, 77, 0) 72%);
+  opacity: .5;
+  animation: sunBeat 7s ease-in-out infinite;
+}
+
+.themeDecor .haze {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 80% 45% at 80% 6%, rgba(252, 211, 77, .13), transparent 70%),
+    linear-gradient(180deg, rgba(125, 211, 252, .06), transparent 40%);
+}
+
+.themeDecor .gull {
+  position: absolute;
+  display: block;
+  width: 34px;
+  opacity: 0;
+  animation: gullCross 34s linear infinite;
+}
+
+.themeDecor .gull svg { display: block; width: 100%; height: auto; }
+
+.themeDecor .gull.g0 { top: 14%; animation-delay: 1s; }
+.themeDecor .gull.g1 { top: 21%; width: 24px; animation-delay: 13s; animation-duration: 44s; }
+.themeDecor .gull.g2 { top: 9%; width: 18px; animation-delay: 26s; animation-duration: 52s; }
+
+@keyframes sunBeat {
+  0%, 100% { transform: scale(1); opacity: .5; }
+  50% { transform: scale(1.06); opacity: .62; }
+}
+
+@keyframes gullCross {
+  0% { transform: translate(-60px, 0); opacity: 0; }
+  3% { opacity: .75; }
+  50% { transform: translate(50vw, -22px); }
+  92% { opacity: .75; }
+  100% { transform: translate(calc(100vw + 60px), 10px); opacity: 0; }
+}
+
+body.theme-summer .composer {
+  box-shadow:
+    0 0 0 1px rgba(252, 211, 77, .13),
+    0 10px 40px -12px rgba(252, 211, 77, .28);
+}
+
+body.theme-summer .authScreen::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 70% 40% at 50% 0%, rgba(252, 211, 77, .16), transparent 70%),
+    radial-gradient(ellipse 80% 40% at 50% 110%, rgba(125, 211, 252, .12), transparent 70%);
+}
+
+body.theme-summer .authCard {
+  box-shadow: 0 25px 80px rgba(0, 0, 0, .45), 0 0 60px -20px rgba(252, 211, 77, .3);
+}
+
+/* --- Bonfire Night --- */
+
+body.theme-bonfire .composer {
+  box-shadow:
+    0 0 0 1px rgba(255, 138, 31, .12),
+    0 10px 40px -12px rgba(255, 138, 31, .3);
+}
+
+body.theme-bonfire .authScreen::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse 70% 40% at 50% 105%, rgba(255, 138, 31, .18), transparent 70%);
+}
+
+body.theme-bonfire .authCard {
+  box-shadow: 0 25px 80px rgba(0, 0, 0, .45), 0 0 60px -20px rgba(255, 138, 31, .34);
+}
+
+/* --- Christmas --- */
+
+.themeDecor .lights {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 46px;
+}
+
+.themeDecor .lights svg { display: block; width: 100%; height: 100%; }
+
+.themeDecor .lights .bulb {
+  filter: drop-shadow(0 0 5px currentColor);
+  animation: bulbGlow 2.6s ease-in-out infinite;
+}
+
+.themeDecor .lights .bulb.b1 { animation-delay: .5s; }
+.themeDecor .lights .bulb.b2 { animation-delay: 1s; }
+.themeDecor .lights .bulb.b3 { animation-delay: 1.5s; }
+.themeDecor .lights .bulb.b4 { animation-delay: 2s; }
+
+@keyframes bulbGlow {
+  0%, 100% { opacity: .45; }
+  50% { opacity: 1; }
+}
+
+.themeDecor .hanging {
+  position: absolute;
+  top: 34px;
+  display: block;
+  width: 22px;
+  transform-origin: 50% -34px;
+  animation: swing 4.5s ease-in-out infinite;
+}
+
+.themeDecor .hanging svg { display: block; width: 100%; height: auto; }
+
+@keyframes swing {
+  0%, 100% { transform: rotate(-5deg); }
+  50% { transform: rotate(5deg); }
+}
+
+body.theme-christmas .composer {
+  box-shadow:
+    0 0 0 1px rgba(62, 196, 109, .11),
+    0 10px 40px -12px rgba(225, 29, 72, .24);
+}
+
+body.theme-christmas .authCard {
+  box-shadow: 0 25px 80px rgba(0, 0, 0, .45), 0 0 60px -20px rgba(62, 196, 109, .32);
+}
+
+/* --- the charm beside the sign in logo --- */
+
+body.theme-newyear .logoLarge,
+body.theme-frost .logoLarge,
+body.theme-valentines .logoLarge,
+body.theme-stpatricks .logoLarge,
+body.theme-easter .logoLarge,
+body.theme-summer .logoLarge,
+body.theme-bonfire .logoLarge,
+body.theme-christmas .logoLarge {
+  position: relative;
+}
+
+body.theme-newyear .logoLarge::after,
+body.theme-frost .logoLarge::after,
+body.theme-valentines .logoLarge::after,
+body.theme-stpatricks .logoLarge::after,
+body.theme-easter .logoLarge::after,
+body.theme-summer .logoLarge::after,
+body.theme-bonfire .logoLarge::after,
+body.theme-christmas .logoLarge::after {
+  content: '';
+  display: inline-block;
+  width: 26px;
+  height: 26px;
+  margin-left: 8px;
+  vertical-align: -2px;
+  background: no-repeat center / contain;
+}
+
+body.theme-newyear .logoLarge::after {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 3 l2.6 7.4 L26 13 l-7.4 2.6 L16 23 l-2.6 -7.4 L6 13 l7.4 -2.6 Z' fill='%23f5c542'/%3E%3Ccircle cx='25' cy='24' r='2.6' fill='%23fff3c4'/%3E%3Ccircle cx='7' cy='23' r='2' fill='%23fde68a'/%3E%3C/svg%3E");
+  filter: drop-shadow(0 0 6px rgba(245, 197, 66, .6));
+}
+
+body.theme-frost .logoLarge::after {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cg stroke='%23dbeafe' stroke-width='2.2' stroke-linecap='round'%3E%3Cpath d='M16 3 v26 M5 9.5 l22 13 M27 9.5 l-22 13'/%3E%3Cpath d='M16 8 l-3.5 -3.5 M16 8 l3.5 -3.5 M16 24 l-3.5 3.5 M16 24 l3.5 3.5' stroke-width='1.8'/%3E%3C/g%3E%3C/svg%3E");
+  filter: drop-shadow(0 0 6px rgba(190, 227, 255, .6));
+}
+
+body.theme-valentines .logoLarge::after {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 22'%3E%3Cpath d='M12 21 C2 13 1 7 5 3.5 C8 1 11 2.5 12 5 C13 2.5 16 1 19 3.5 C23 7 22 13 12 21 Z' fill='%23ff5c8a'/%3E%3C/svg%3E");
+  filter: drop-shadow(0 0 7px rgba(255, 92, 138, .6));
+}
+
+body.theme-stpatricks .logoLarge::after {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cg fill='%233ec46d'%3E%3Cellipse cx='12' cy='7' rx='4.6' ry='5.2'/%3E%3Cellipse cx='6.6' cy='13' rx='5.2' ry='4.6'/%3E%3Cellipse cx='17.4' cy='13' rx='5.2' ry='4.6'/%3E%3C/g%3E%3Cpath d='M12 13 q1.5 5 -2 9' stroke='%232c8f4f' stroke-width='1.8' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  filter: drop-shadow(0 0 6px rgba(62, 196, 109, .55));
+}
+
+body.theme-easter .logoLarge::after {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 26'%3E%3Cellipse cx='10' cy='15' rx='9' ry='11' fill='%237dd3fc'/%3E%3Cpath d='M1.4 13 q8.6 4 17.2 0' stroke='%23ffffff' stroke-width='2' fill='none'/%3E%3Cpath d='M2.4 19 q7.6 3.4 15.2 0' stroke='%23fde68a' stroke-width='1.8' fill='none'/%3E%3Cpath d='M3 8 q7 3 14 0' stroke='%23f9a8d4' stroke-width='1.8' fill='none'/%3E%3C/svg%3E");
+  filter: drop-shadow(0 0 6px rgba(249, 168, 212, .5));
+}
+
+body.theme-summer .logoLarge::after {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='7.5' fill='%23fcd34d'/%3E%3Cg stroke='%23fcd34d' stroke-width='2.4' stroke-linecap='round'%3E%3Cpath d='M16 2 v4 M16 26 v4 M2 16 h4 M26 16 h4 M6 6 l3 3 M23 23 l3 3 M26 6 l-3 3 M9 23 l-3 3'/%3E%3C/g%3E%3C/svg%3E");
+  filter: drop-shadow(0 0 7px rgba(252, 211, 77, .55));
+}
+
+body.theme-bonfire .logoLarge::after {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='3' fill='%23fff3c4'/%3E%3Cg stroke='%23ff8a1f' stroke-width='2.2' stroke-linecap='round'%3E%3Cpath d='M16 1 v7 M16 24 v7 M1 16 h7 M24 16 h7 M5 5 l5 5 M22 22 l5 5 M27 5 l-5 5 M10 22 l-5 5'/%3E%3C/g%3E%3C/svg%3E");
+  filter: drop-shadow(0 0 7px rgba(255, 138, 31, .6));
+}
+
+body.theme-christmas .logoLarge::after {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 2 L23 14 L9 14 Z' fill='%231f7a46'/%3E%3Cpath d='M16 9 L25 23 L7 23 Z' fill='%23256f44'/%3E%3Crect x='14' y='23' width='4' height='6' rx='1' fill='%236b4423'/%3E%3Ccircle cx='12' cy='12' r='1.6' fill='%23e11d48'/%3E%3Ccircle cx='20' cy='11' r='1.6' fill='%2360a5fa'/%3E%3Ccircle cx='16' cy='19' r='1.6' fill='%23f5c542'/%3E%3Ccircle cx='11' cy='20' r='1.6' fill='%23e11d48'/%3E%3C/svg%3E");
+  filter: drop-shadow(0 0 6px rgba(62, 196, 109, .5));
+}
+
+/* --- the switch, in each celebration's own colours --- */
+
+.themeSwitch button[data-theme="newyear"].on { background: linear-gradient(135deg, #7c3aed, #f5c542); color: #12141c; }
+.themeSwitch button[data-theme="frost"].on { background: linear-gradient(135deg, #2c5580, #7dd3fc); color: #06121c; }
+.themeSwitch button[data-theme="valentines"].on { background: linear-gradient(135deg, #be123c, #ff8ba0); color: #fff; }
+.themeSwitch button[data-theme="stpatricks"].on { background: linear-gradient(135deg, #1f7a46, #3ec46d); color: #06170d; }
+.themeSwitch button[data-theme="easter"].on { background: linear-gradient(135deg, #f9a8d4, #a7f3d0); color: #1b1220; }
+.themeSwitch button[data-theme="summer"].on { background: linear-gradient(135deg, #f59e0b, #fde68a); color: #241704; }
+.themeSwitch button[data-theme="bonfire"].on { background: linear-gradient(135deg, #b8520f, #ffd166); color: #1d1004; }
+.themeSwitch button[data-theme="christmas"].on { background: linear-gradient(135deg, #1f7a46, #c2181f); color: #fff; }
+
+/* nobody has to watch any of it move */
+@media (prefers-reduced-motion: reduce) {
+  .themeDecor .snow,
+  .themeDecor .falling,
+  .themeDecor .confetti,
+  .themeDecor .rising,
+  .themeDecor .ember,
+  .themeDecor .firework,
+  .themeDecor .gull,
+  .themeDecor .sun,
+  .themeDecor .hanging,
+  .themeDecor .lights .bulb {
+    animation: none;
+  }
+  .themeDecor .snow,
+  .themeDecor .falling,
+  .themeDecor .confetti,
+  .themeDecor .rising,
+  .themeDecor .ember,
+  .themeDecor .firework,
+  .themeDecor .gull {
+    display: none;
+  }
 }

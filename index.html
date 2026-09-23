@@ -51,11 +51,11 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-<link rel="stylesheet" href="./css/app.css?v=2026-09-22-81">
+<link rel="stylesheet" href="./css/app.css?v=2026-09-22-82">
 </head>
 
 <body>
-<script>try{if(localStorage.getItem('natter_theme')==='halloween')document.body.classList.add('theme-halloween')}catch(e){}</script>
+<script>try{var t=localStorage.getItem('natter_theme');if(t&&/^(newyear|frost|valentines|stpatricks|easter|summer|halloween|bonfire|christmas)$/.test(t))document.body.classList.add('theme-'+t)}catch(e){}</script>
 
 <div class="bootOverlay show" id="bootOverlay" role="status" aria-live="polite">
   <div class="bootInner">
@@ -581,17 +581,32 @@
           <div class="adminLabel">Look of the site</div>
           <div class="themeSwitch" role="group" aria-label="Site theme">
             <button type="button" data-theme="standard">Standard</button>
-            <button type="button" data-theme="halloween">Halloween</button>
             <button type="button" data-theme="auto">Automatic</button>
+            <button type="button" data-theme="newyear">New Year</button>
+            <button type="button" data-theme="frost">Midwinter</button>
+            <button type="button" data-theme="valentines">Valentine's</button>
+            <button type="button" data-theme="stpatricks">St Patrick's</button>
+            <button type="button" data-theme="easter">Easter</button>
+            <button type="button" data-theme="summer">Summer</button>
+            <button type="button" data-theme="halloween">Halloween</button>
+            <button type="button" data-theme="bonfire">Bonfire Night</button>
+            <button type="button" data-theme="christmas">Christmas</button>
           </div>
         </div>
 
         <div class="adminHint">
           For everyone, including the sign in and sign up screens.
-          Halloween keeps the usual colours and adds faint cobwebs,
-          the odd bat, a warm pumpkin glow and a costume for the
-          robot in every routine. Automatic turns it on from
-          15 October to 1 November and off again afterwards.
+          Every celebration keeps the usual colours and adds its own
+          backdrop, a glow on the message box, a charm on the sign in
+          logo and a costume for the robot in every routine.
+          Automatic carries its own dates, so it dresses the site up
+          and takes it down again on its own: New Year 28 December to
+          2 January, Midwinter to 31 January, Valentine's 7 to
+          15 February, St Patrick's 15 to 18 March, Easter from ten
+          days before Easter Sunday to Easter Monday, Summer through
+          July and August, Halloween 15 October to 1 November,
+          Bonfire Night 2 to 6 November and Christmas from
+          1 December.
         </div>
 
         <div class="adminResult" id="adminThemeResult"></div>
@@ -2042,8 +2057,8 @@
   </div>
 </div>
 
-<script>window.NASTIVEE_VERSION = '2026-09-22-81';</script>
-<script src="./js/app.js?v=2026-09-22-81"></script>
+<script>window.NASTIVEE_VERSION = '2026-09-22-82';</script>
+<script src="./js/app.js?v=2026-09-22-82"></script>
 
 </body>
 </html>

@@ -193,7 +193,7 @@ const SETTINGS_FALLBACK = {
   /* who gets New Video and voice chat: off, admins or everyone */
   video_access: 'admins',
   voice_access: 'admins',
-  /* the look of the whole site: standard, halloween or auto */
+  /* the look of the whole site: standard, auto, or a celebration */
   site_theme: 'standard',
   /* word swaps applied to what users type, set in the admin panel */
   rules: [],
@@ -334,29 +334,94 @@ function featureAllowed(settings, name, user) {
   return false;
 }
 
-const SITE_THEMES = ['standard', 'halloween', 'auto'];
+/*
+  THE CELEBRATIONS
+
+  Every theme carries its own dates. Automatic looks down this
+  list in order and shows the first one today falls inside, so a
+  site left on Automatic dresses itself all year without anyone
+  touching it. Dates are UK dates. Easter moves, so it is worked
+  out rather than written down.
+*/
+const THEME_SEASONS = [
+  { id: 'newyear', name: 'New Year', from: [12, 28], to: [1, 2] },
+  { id: 'frost', name: 'Midwinter', from: [1, 3], to: [1, 31] },
+  { id: 'valentines', name: "Valentine's", from: [2, 7], to: [2, 15] },
+  { id: 'stpatricks', name: "St Patrick's", from: [3, 15], to: [3, 18] },
+  { id: 'easter', name: 'Easter', easter: [-10, 1] },
+  { id: 'summer', name: 'Summer', from: [7, 1], to: [8, 31] },
+  { id: 'halloween', name: 'Halloween', from: [10, 15], to: [11, 1] },
+  { id: 'bonfire', name: 'Bonfire Night', from: [11, 2], to: [11, 6] },
+  { id: 'christmas', name: 'Christmas', from: [12, 1], to: [12, 27] }
+];
+
+const SITE_THEMES =
+  ['standard', 'auto'].concat(THEME_SEASONS.map(season => season.id));
 
 function siteThemeSetting(settings) {
   const value = settings?.site_theme;
   return SITE_THEMES.includes(value) ? value : 'standard';
 }
 
+/* Easter Sunday for a year, the usual church arithmetic */
+function easterSunday(year) {
+  const a = year % 19;
+  const b = Math.floor(year / 100);
+  const c = year % 100;
+  const d = Math.floor(b / 4);
+  const e = b % 4;
+  const f = Math.floor((b + 8) / 25);
+  const g = Math.floor((b - f + 1) / 3);
+  const h = (19 * a + b - d - g + 15) % 30;
+  const i = Math.floor(c / 4);
+  const k = c % 4;
+  const l = (32 + 2 * e + 2 * i - h - k) % 7;
+  const m = Math.floor((a + 11 * h + 22 * l) / 451);
+  const month = Math.floor((h + l - 7 * m + 114) / 31);
+  const day = ((h + l - 7 * m + 114) % 31) + 1;
+  return new Date(Date.UTC(year, month - 1, day));
+}
+
+/* today in the UK, as a plain year, month and day */
+function ukToday(now = new Date()) {
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Europe/London', year: 'numeric', month: 'numeric', day: 'numeric'
+  }).formatToParts(now);
+  const pick = type => Number(parts.find(part => part.type === type).value);
+  return { year: pick('year'), month: pick('month'), day: pick('day') };
+}
+
+function withinSeason(season, today) {
+
+  if (season.easter) {
+    const sunday = easterSunday(today.year);
+    const start = new Date(sunday); start.setUTCDate(start.getUTCDate() + season.easter[0]);
+    const end = new Date(sunday); end.setUTCDate(end.getUTCDate() + season.easter[1]);
+    const now = Date.UTC(today.year, today.month - 1, today.day);
+    return now >= start.getTime() && now <= end.getTime();
+  }
+
+  const [fromMonth, fromDay] = season.from;
+  const [toMonth, toDay] = season.to;
+  const now = today.month * 100 + today.day;
+  const start = fromMonth * 100 + fromDay;
+  const end = toMonth * 100 + toDay;
+
+  /* a season that runs over the turn of the year */
+  return start <= end ? (now >= start && now <= end) : (now >= start || now <= end);
+
+}
+
 /*
-  The theme people actually see. Automatic means Halloween
-  from 15 October to 1 November, UK time, standard otherwise.
+  The theme people actually see. Automatic works it out from
+  today's date, anything else is shown as chosen.
 */
-function resolvedTheme(settings) {
+function resolvedTheme(settings, now = new Date()) {
   const setting = siteThemeSetting(settings);
   if (setting !== 'auto') return setting;
-  const parts = new Intl.DateTimeFormat('en-GB', {
-    timeZone: 'Europe/London', month: 'numeric', day: 'numeric'
-  }).formatToParts(new Date());
-  const month = Number(parts.find(p => p.type === 'month').value);
-  const day = Number(parts.find(p => p.type === 'day').value);
-  if ((month === 10 && day >= 15) || (month === 11 && day <= 1)) {
-    return 'halloween';
-  }
-  return 'standard';
+  const today = ukToday(now);
+  const season = THEME_SEASONS.find(item => withinSeason(item, today));
+  return season ? season.id : 'standard';
 }
 
 function peekSeconds(settings) {
@@ -2062,7 +2127,7 @@ app.post('/api/admin/settings', async (req, res) => {
   if (body.site_theme !== undefined) {
 
     if (!SITE_THEMES.includes(body.site_theme)) {
-      return res.status(400).json({ error: 'Choose standard, halloween or automatic.' });
+      return res.status(400).json({ error: 'Choose standard, automatic or one of the celebrations.' });
     }
 
     patch.site_theme = body.site_theme;

@@ -14396,6 +14396,286 @@ const PEEK_COSTUMES = [
 
 ];
 
+/*
+  A costume set for every other celebration, drawn in the same
+  units as the robot: his head sits about y 13 to 48, and there
+  is room for a prop beside him out at x 80.
+*/
+const THEME_COSTUMES = {
+
+  christmas: [
+
+    /* santa hat, leaning over with a bobble */
+    { hideAntenna: true, svg: `
+      <path d="M16 13 Q20 -8 40 -17 Q52 -22 50 -12 Q46 -6 44 4 L47 13 Z" fill="#c2181f"/>
+      <path d="M20 10 Q24 -4 40 -13 Q45 -15 44 -10 Q36 -4 32 10 Z" fill="#e0262d" opacity=".8"/>
+      <rect x="14" y="9" width="35" height="6.5" rx="3.2" fill="#f4f6fb"/>
+      <circle cx="52" cy="-14" r="6" fill="#f4f6fb"/>` },
+
+    /* antlers and a collar of bells */
+    { svg: `
+      <path d="M20 12 Q16 -2 9 -8 M16 2 Q10 -1 6 -6 M18 6 Q12 6 7 3" stroke="#8a5a2b" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+      <path d="M44 12 Q48 -2 55 -8 M48 2 Q54 -1 58 -6 M46 6 Q52 6 57 3" stroke="#8a5a2b" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+      <path d="M8 52 Q32 60 56 52" stroke="#1f7a46" stroke-width="5" fill="none" stroke-linecap="round"/>
+      <circle cx="32" cy="57.5" r="3.4" fill="#f5c542"/>` },
+
+    /* a little tree keeps him company */
+    { svg: `
+      <path d="M81 8 L92 30 L70 30 Z" fill="#1f7a46"/>
+      <path d="M81 18 L95 42 L67 42 Z" fill="#256f44"/>
+      <rect x="78" y="42" width="6" height="7" rx="1.5" fill="#6b4423"/>
+      <path d="M81 4 l1.6 4 l4 1.6 l-4 1.6 l-1.6 4 l-1.6 -4 l-4 -1.6 l4 -1.6 Z" fill="#f5c542"/>
+      <circle cx="76" cy="27" r="2" fill="#e11d48"/><circle cx="87" cy="26" r="2" fill="#60a5fa"/>
+      <circle cx="81" cy="37" r="2" fill="#f5c542"/><circle cx="73" cy="38" r="2" fill="#e11d48"/>` },
+
+    /* scarf and a woolly hat, ready for the cold */
+    { hideAntenna: true, svg: `
+      <path d="M13 13 Q16 -5 32 -5 Q48 -5 51 13 Z" fill="#1f7a46"/>
+      <rect x="11" y="8" width="42" height="7" rx="3.5" fill="#f4f6fb"/>
+      <circle cx="32" cy="-9" r="6" fill="#f4f6fb"/>
+      <path d="M9 51 Q32 60 55 51 L55 57 Q32 65 9 57 Z" fill="#c2181f"/>
+      <path d="M48 56 L54 74 L46 76 L42 58 Z" fill="#c2181f"/>
+      <path d="M13 53 h38 M13 59 h38" stroke="#8f0f16" stroke-width="1.4" opacity=".55"/>` }
+
+  ],
+
+  newyear: [
+
+    /* party hat and a streamer */
+    { hideAntenna: true, svg: `
+      <path d="M17 13 L32 -22 L47 13 Z" fill="#7c3aed"/>
+      <path d="M22.5 0 L32 -22 L37 -10 Z" fill="#a78bfa"/>
+      <circle cx="32" cy="-24" r="4" fill="#f5c542"/>
+      <path d="M50 8 q12 -6 18 4 q-10 4 -6 14" stroke="#f472b6" stroke-width="2.4" fill="none" stroke-linecap="round"/>` },
+
+    /* the novelty glasses */
+    { svg: `
+      <rect x="9" y="24" width="20" height="14" rx="6" fill="none" stroke="#f5c542" stroke-width="2.6"/>
+      <rect x="35" y="24" width="20" height="14" rx="6" fill="none" stroke="#f5c542" stroke-width="2.6"/>
+      <path d="M29 31 h6" stroke="#f5c542" stroke-width="2.6"/>
+      <path d="M9 31 H2 M55 31 h7" stroke="#f5c542" stroke-width="2.2" stroke-linecap="round"/>` },
+
+    /* a glass raised for midnight */
+    { svg: `
+      <path d="M73 14 L89 14 L84 28 L78 28 Z" fill="#dbeafe" opacity=".45" stroke="#e8edf6" stroke-width="1"/>
+      <path d="M75 18 L87 18 L84 26 L78 26 Z" fill="#f5c542" opacity=".8"/>
+      <rect x="80" y="28" width="2" height="12" fill="#e8edf6" opacity=".7"/>
+      <ellipse cx="81" cy="41" rx="7" ry="2" fill="#e8edf6" opacity=".7"/>
+      <circle cx="79" cy="10" r="1.6" fill="#fff8d6"/><circle cx="85" cy="6" r="1.2" fill="#fff8d6"/><circle cx="82" cy="2" r="1" fill="#fff8d6"/>` },
+
+    /* top hat and bow tie */
+    { hideAntenna: true, svg: `
+      <rect x="20" y="-18" width="24" height="26" rx="2" fill="#12141c"/>
+      <rect x="20" y="-2" width="24" height="6" fill="#f5c542"/>
+      <ellipse cx="32" cy="9" rx="24" ry="4.5" fill="#12141c"/>
+      <path d="M22 52 L31 56 L22 60 Z M42 52 L33 56 L42 60 Z" fill="#c2181f"/>
+      <circle cx="32" cy="56" r="2.6" fill="#8f0f16"/>` }
+
+  ],
+
+  frost: [
+
+    /* bobble hat pulled down */
+    { hideAntenna: true, svg: `
+      <path d="M12 13 Q14 -6 32 -6 Q50 -6 52 13 Z" fill="#3b6ea5"/>
+      <path d="M22 -4 Q22 6 20 13 M32 -6 Q32 4 32 13 M42 -4 Q42 6 44 13" stroke="#2c5580" stroke-width="1.6" fill="none"/>
+      <rect x="10" y="8" width="44" height="8" rx="4" fill="#dbeafe"/>
+      <circle cx="32" cy="-10" r="6.5" fill="#dbeafe"/>` },
+
+    /* earmuffs and a scarf */
+    { svg: `
+      <path d="M8 22 Q32 6 56 22" stroke="#7dd3fc" stroke-width="3" fill="none"/>
+      <ellipse cx="7" cy="28" rx="7" ry="8.5" fill="#dbeafe"/>
+      <ellipse cx="57" cy="28" rx="7" ry="8.5" fill="#dbeafe"/>
+      <path d="M9 51 Q32 60 55 51 L55 57 Q32 65 9 57 Z" fill="#3b6ea5"/>
+      <path d="M14 55 L8 73 L16 75 L21 57 Z" fill="#3b6ea5"/>` },
+
+    /* icicles hanging over him */
+    { svg: `
+      <path d="M-6 -6 h104 v4 H-6 Z" fill="#dbeafe" opacity=".5"/>
+      <path d="M2 -2 l2.5 12 l2.5 -12 Z M16 -2 l3 18 l3 -18 Z M34 -2 l2 9 l2 -9 Z M52 -2 l3 15 l3 -15 Z M74 -2 l2.5 11 l2.5 -11 Z M90 -2 l3 16 l3 -16 Z" fill="#bfe3ff" opacity=".8"/>` },
+
+    /* a snowman beside him */
+    { svg: `
+      <circle cx="81" cy="40" r="11" fill="#f4f6fb"/>
+      <circle cx="81" cy="24" r="8" fill="#f4f6fb"/>
+      <rect x="73" y="13" width="16" height="7" rx="1" fill="#12141c"/>
+      <ellipse cx="81" cy="20" rx="12" ry="2.4" fill="#12141c"/>
+      <circle cx="78" cy="23" r="1.4" fill="#12141c"/><circle cx="84" cy="23" r="1.4" fill="#12141c"/>
+      <path d="M81 26 l6 2 l-6 2 Z" fill="#f28c28"/>
+      <path d="M70 36 l-8 -6 M92 36 l8 -6" stroke="#6b4423" stroke-width="1.8" stroke-linecap="round"/>` }
+
+  ],
+
+  valentines: [
+
+    /* a heart on the antenna */
+    { antenna: `
+      <path d="M32 -6 C25 -12 25 -20 30 -22 C33 -23 35 -21 35.5 -19 C36 -21 38 -23 41 -22 C46 -20 46 -12 39 -6 Q35.5 -3 32 -6 Z" fill="#ff5c8a" transform="translate(-3.5 6) scale(1.1)"/>` },
+
+    /* cupid's wings and an arrow */
+    { svg: `
+      <path d="M8 30 Q-6 16 -10 30 Q-4 32 -8 42 Q0 36 8 42 Z" fill="#f9d7e4" stroke="#f9a8d4" stroke-width=".8"/>
+      <path d="M56 30 Q70 16 74 30 Q68 32 72 42 Q64 36 56 42 Z" fill="#f9d7e4" stroke="#f9a8d4" stroke-width=".8"/>
+      <path d="M-2 56 L66 44" stroke="#c98a3f" stroke-width="2" stroke-linecap="round"/>
+      <path d="M66 44 l-9 -4 l2 4 l-2 4 Z" fill="#ff5c8a"/>` },
+
+    /* roses picked up on the way */
+    { svg: `
+      <path d="M78 34 L81 52 M84 34 L81 52 M74 38 L81 52" stroke="#2c8f4f" stroke-width="1.8" stroke-linecap="round"/>
+      <circle cx="78" cy="32" r="5.5" fill="#e11d48"/><circle cx="87" cy="33" r="5" fill="#ff5c8a"/><circle cx="82" cy="26" r="5.5" fill="#c2181f"/>
+      <path d="M78 32 a3 3 0 0 1 3 -2 M82 26 a3 3 0 0 1 3 -2" stroke="#ffb3c6" stroke-width="1" fill="none"/>
+      <path d="M74 44 q-6 -2 -7 -7 q7 0 8 6 Z" fill="#2c8f4f"/>` },
+
+    /* hearts floating up off him */
+    { svg: `
+      <g fill="#ff5c8a" opacity=".9">
+      <path class="glow" d="M60 4 C56 0 56 -4 59 -5 Q61 -5 62 -3 Q63 -5 65 -5 C68 -4 68 0 64 4 Q62 6 60 4 Z"/>
+      <path d="M70 -8 C67 -11 67 -14 69 -15 Q71 -15 71.5 -13.5 Q72 -15 74 -15 C76 -14 76 -11 73 -8 Q71.5 -6.5 70 -8 Z" opacity=".7"/>
+      <path d="M52 -14 C50 -16 50 -18 51.5 -18.5 Q53 -18.5 53.3 -17.5 Q53.6 -18.5 55 -18.5 C56.5 -18 56.5 -16 54.5 -14 Q53.5 -13 52 -14 Z" opacity=".5"/>
+      </g>` }
+
+  ],
+
+  stpatricks: [
+
+    /* the leprechaun's hat, buckle and all */
+    { hideAntenna: true, svg: `
+      <rect x="19" y="-16" width="26" height="24" rx="2" fill="#1f7a46"/>
+      <rect x="19" y="-2" width="26" height="7" fill="#12141c"/>
+      <rect x="28" y="-1.5" width="8" height="6" rx="1" fill="none" stroke="#f5c542" stroke-width="2"/>
+      <ellipse cx="32" cy="10" rx="25" ry="4.8" fill="#1f7a46"/>
+      <path d="M8 10 Q32 4 56 10" stroke="#2c8f4f" stroke-width="1" fill="none" opacity=".6"/>` },
+
+    /* a ginger beard */
+    { svg: `
+      <path d="M9 34 Q10 56 32 62 Q54 56 55 34 Q48 46 32 46 Q16 46 9 34 Z" fill="#d4762a"/>
+      <path d="M20 47 Q26 58 32 59 Q38 58 44 47" stroke="#b85f1c" stroke-width="1.4" fill="none"/>
+      <path d="M22 41 Q32 37 42 41" stroke="#b85f1c" stroke-width="1.6" fill="none"/>` },
+
+    /* a shamrock for luck */
+    { svg: `
+      <g fill="#3ec46d">
+      <ellipse cx="81" cy="22" rx="7" ry="8"/><ellipse cx="72" cy="32" rx="8" ry="7"/><ellipse cx="90" cy="32" rx="8" ry="7"/></g>
+      <path d="M81 32 q3 10 -3 18" stroke="#2c8f4f" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+      <circle cx="81" cy="28" r="2.4" fill="#2c8f4f" opacity=".4"/>` },
+
+    /* the pot of gold */
+    { svg: `
+      <path d="M68 32 h26 l-3 16 a10 10 0 0 1 -20 0 Z" fill="#12141c"/>
+      <ellipse cx="81" cy="32" rx="13" ry="4" fill="#1d212c"/>
+      <circle cx="75" cy="30" r="3.4" fill="#f5c542"/><circle cx="83" cy="28" r="3.6" fill="#ffd977"/>
+      <circle cx="88" cy="31" r="3" fill="#f5c542"/><circle cx="79" cy="26" r="2.8" fill="#ffe9a8"/>` }
+
+  ],
+
+  easter: [
+
+    /* bunny ears */
+    { svg: `
+      <path d="M22 13 Q16 -12 22 -22 Q29 -26 29 -12 Q29 0 28 13 Z" fill="#f4f6fb"/>
+      <path d="M23 8 Q20 -10 24 -18 Q27 -20 26.5 -10 Q26 0 26 8 Z" fill="#f9a8d4"/>
+      <path d="M42 13 Q48 -12 42 -22 Q35 -26 35 -12 Q35 0 36 13 Z" fill="#f4f6fb"/>
+      <path d="M41 8 Q44 -10 40 -18 Q37 -20 37.5 -10 Q38 0 38 8 Z" fill="#f9a8d4"/>` },
+
+    /* a painted egg */
+    { svg: `
+      <ellipse cx="81" cy="32" rx="12" ry="16" fill="#7dd3fc"/>
+      <path d="M69.4 28 q11.6 6 23.2 0" stroke="#fff" stroke-width="3" fill="none" opacity=".85"/>
+      <path d="M70.6 37 q10.4 5 20.8 0" stroke="#fde68a" stroke-width="3" fill="none"/>
+      <path d="M72 22 q9 4 18 0" stroke="#f9a8d4" stroke-width="2.6" fill="none"/>
+      <ellipse cx="76" cy="24" rx="3" ry="4" fill="#fff" opacity=".3"/>` },
+
+    /* a chick sitting on his head */
+    { hideAntenna: true, svg: `
+      <ellipse cx="34" cy="0" rx="11" ry="10" fill="#fcd34d"/>
+      <ellipse cx="34" cy="-11" rx="7.5" ry="7" fill="#fde68a"/>
+      <path d="M34 -18 q1 -4 4 -5 q-1 3 0 5 Z" fill="#fcd34d"/>
+      <circle cx="31" cy="-12" r="1.4" fill="#12141c"/><circle cx="37" cy="-12" r="1.4" fill="#12141c"/>
+      <path d="M34 -9 l4 2 l-4 2 Z" fill="#f28c28"/>
+      <path d="M24 4 q-6 -2 -7 -6 q6 0 8 4 Z" fill="#fde68a"/>` },
+
+    /* a crown of spring flowers */
+    { svg: `
+      <path d="M9 18 Q32 6 55 18" stroke="#3ec46d" stroke-width="2.4" fill="none"/>
+      <g><circle cx="13" cy="16" r="4" fill="#f9a8d4"/><circle cx="13" cy="16" r="1.5" fill="#fcd34d"/></g>
+      <g><circle cx="26" cy="10" r="4.5" fill="#fde68a"/><circle cx="26" cy="10" r="1.6" fill="#f28c28"/></g>
+      <g><circle cx="40" cy="10" r="4.2" fill="#c4b5fd"/><circle cx="40" cy="10" r="1.5" fill="#fcd34d"/></g>
+      <g><circle cx="52" cy="16" r="4" fill="#a7f3d0"/><circle cx="52" cy="16" r="1.5" fill="#fcd34d"/></g>` }
+
+  ],
+
+  summer: [
+
+    /* sunglasses */
+    { svg: `
+      <path d="M6 24 h52 v3 h-52 Z" fill="#12141c"/>
+      <path d="M7 26 h20 q2 10 -8 11 q-11 1 -12 -11 Z" fill="#1d212c" stroke="#3b4252" stroke-width="1"/>
+      <path d="M37 26 h20 q-1 12 -12 11 q-10 -1 -8 -11 Z" fill="#1d212c" stroke="#3b4252" stroke-width="1"/>
+      <path d="M12 29 l5 4 M42 29 l5 4" stroke="#7dd3fc" stroke-width="1.6" opacity=".6"/>` },
+
+    /* a straw hat */
+    { hideAntenna: true, svg: `
+      <ellipse cx="32" cy="12" rx="32" ry="7" fill="#e6c47a"/>
+      <path d="M16 12 Q18 -6 32 -6 Q46 -6 48 12 Z" fill="#f0d79a"/>
+      <path d="M15 8 Q32 2 49 8" stroke="#3b6ea5" stroke-width="4" fill="none"/>
+      <path d="M2 12 Q32 7 62 12" stroke="#d9b264" stroke-width="1" fill="none" opacity=".7"/>` },
+
+    /* an ice cream, melting a bit */
+    { svg: `
+      <path d="M73 34 L89 34 L81 54 Z" fill="#e0a95c"/>
+      <path d="M75 38 L84 47 M79 35 L87 43" stroke="#c98a3f" stroke-width="1" opacity=".7"/>
+      <circle cx="78" cy="29" r="7" fill="#f9d7e4"/><circle cx="86" cy="29" r="6.5" fill="#fde68a"/>
+      <circle cx="82" cy="21" r="7" fill="#f4f6fb"/>
+      <path d="M82 13 q2 -4 5 -4 q-2 3 -1 5 Z" fill="#e11d48"/>` },
+
+    /* snorkel and mask */
+    { svg: `
+      <rect x="7" y="22" width="50" height="17" rx="7" fill="none" stroke="#e11d48" stroke-width="2.6"/>
+      <rect x="10" y="24" width="44" height="13" rx="5" fill="#7dd3fc" opacity=".3"/>
+      <path d="M57 30 q10 0 10 -12 v-14" stroke="#e11d48" stroke-width="3.4" fill="none" stroke-linecap="round"/>
+      <path d="M12 27 l6 5" stroke="#fff" stroke-width="1.6" opacity=".5"/>` }
+
+  ],
+
+  bonfire: [
+
+    /* a sparkler held up */
+    { svg: `
+      <path d="M62 44 L84 18" stroke="#8a8f9c" stroke-width="2.2" stroke-linecap="round"/>
+      <g class="glow">
+      <circle cx="86" cy="15" r="5" fill="#fff8d6" opacity=".85"/>
+      <path d="M86 2 v8 M86 20 v8 M73 15 h8 M91 15 h8 M77 6 l6 6 M89 18 l6 6 M95 6 l-6 6 M83 18 l-6 6" stroke="#ffd166" stroke-width="1.8" stroke-linecap="round"/></g>` },
+
+    /* a rocket waiting to go up */
+    { svg: `
+      <path d="M81 6 Q88 16 88 30 L74 30 Q74 16 81 6 Z" fill="#e11d48"/>
+      <path d="M81 6 Q84 12 84.5 20 L77.5 20 Q78 12 81 6 Z" fill="#ff8ba0" opacity=".5"/>
+      <path d="M74 30 l-5 8 l5 -2 Z M88 30 l5 8 l-5 -2 Z" fill="#c2181f"/>
+      <rect x="79" y="30" width="4" height="18" fill="#6b4423"/>
+      <circle cx="81" cy="14" r="3" fill="#f5c542"/>` },
+
+    /* a toffee apple */
+    { svg: `
+      <rect x="80" y="30" width="3" height="20" rx="1.5" fill="#d9b264"/>
+      <circle cx="81.5" cy="24" r="12" fill="#a4161a"/>
+      <circle cx="81.5" cy="24" r="12" fill="#e11d48" opacity=".45"/>
+      <ellipse cx="77" cy="19" rx="3.5" ry="4.5" fill="#fff" opacity=".35" transform="rotate(-20 77 19)"/>
+      <path d="M81.5 12 q4 -5 9 -4 q-3 4 -7 5 Z" fill="#3ec46d"/>` },
+
+    /* woolly hat, and a burst going off above him */
+    { hideAntenna: true, svg: `
+      <path d="M13 13 Q15 -5 32 -5 Q49 -5 51 13 Z" fill="#7c3aed"/>
+      <rect x="11" y="8" width="42" height="7.5" rx="3.7" fill="#f5c542"/>
+      <circle cx="32" cy="-9" r="6" fill="#f5c542"/>
+      <g class="glow" transform="translate(76 -18)">
+      <circle r="2.4" fill="#fff8d6"/>
+      <path d="M0 -14 v7 M0 7 v7 M-14 0 h7 M7 0 h7 M-10 -10 l5 5 M5 5 l5 5 M10 -10 l-5 5 M-5 5 l-5 5" stroke="#ff8a1f" stroke-width="1.8" stroke-linecap="round"/></g>` }
+
+  ]
+
+};
+
 function halloweenOn() {
   return document.body.classList.contains('theme-halloween');
 }
@@ -14539,11 +14819,14 @@ function createPeekBot(card) {
       ).finished.catch(() => {});
     },
 
-    /* puts on this routine's Halloween costume, if the theme is on */
+    /* puts on this routine's costume for whichever celebration is on */
     dress(pick) {
       api.undress();
-      if (!halloweenOn()) return;
-      const costume = PEEK_COSTUMES[pick];
+      const theme = currentTheme();
+      if (theme === 'standard') return;
+      const set = theme === 'halloween' ? PEEK_COSTUMES : THEME_COSTUMES[theme];
+      if (!Array.isArray(set) || !set.length) return;
+      const costume = theme === 'halloween' ? set[pick] : set[pick % set.length];
       if (!costume) return;
       if (costume.svg) {
         bot.insertAdjacentHTML('beforeend',
@@ -14879,6 +15162,163 @@ paintTestFeatures();
 
 const THEME_KEY = 'natter_theme';
 
+/*
+  THE CELEBRATIONS
+
+  Every celebration the site can wear. The dates that decide
+  which one Automatic shows live on the server, so they are
+  worked out once and everybody sees the same thing.
+*/
+const THEME_IDS = [
+  'standard', 'newyear', 'frost', 'valentines', 'stpatricks',
+  'easter', 'summer', 'halloween', 'bonfire', 'christmas'
+];
+
+const THEME_LABELS = {
+  standard: 'Standard',
+  auto: 'Automatic',
+  newyear: 'New Year',
+  frost: 'Midwinter',
+  valentines: "Valentine's",
+  stpatricks: "St Patrick's",
+  easter: 'Easter',
+  summer: 'Summer',
+  halloween: 'Halloween',
+  bonfire: 'Bonfire Night',
+  christmas: 'Christmas'
+};
+
+function currentTheme() {
+  const found = THEME_IDS.find(id =>
+    id !== 'standard' && document.body.classList.contains('theme-' + id));
+  return found || 'standard';
+}
+
+/* a little helper for scattering things across the sky */
+function scatter(count, make) {
+  let out = '';
+  for (let i = 0; i < count; i += 1) out += make(i);
+  return out;
+}
+
+const DECOR_SNOWFLAKE = '❄';
+
+const THEME_SPRITES = {
+
+  heart: `<svg viewBox="0 0 24 22" aria-hidden="true"><path d="M12 21 C2 13 1 7 5 3.5 C8 1 11 2.5 12 5 C13 2.5 16 1 19 3.5 C23 7 22 13 12 21 Z" fill="#ff5c8a"/></svg>`,
+
+  shamrock: `<svg viewBox="0 0 24 24" aria-hidden="true"><g fill="#3ec46d"><ellipse cx="12" cy="7" rx="4.6" ry="5.2"/><ellipse cx="6.6" cy="13" rx="5.2" ry="4.6"/><ellipse cx="17.4" cy="13" rx="5.2" ry="4.6"/></g><path d="M12 13 q1.5 5 -2 9" stroke="#2c8f4f" stroke-width="1.8" fill="none" stroke-linecap="round"/></svg>`,
+
+  egg: `<svg viewBox="0 0 20 26" aria-hidden="true"><ellipse cx="10" cy="15" rx="9" ry="11" fill="currentColor"/><path d="M1.4 13 q8.6 4 17.2 0" stroke="#fff" stroke-opacity=".7" stroke-width="2" fill="none"/><path d="M2.4 19 q7.6 3.4 15.2 0" stroke="#fff" stroke-opacity=".5" stroke-width="1.6" fill="none"/></svg>`,
+
+  petal: `<svg viewBox="0 0 18 14" aria-hidden="true"><path d="M1 7 Q6 0 17 2 Q12 13 1 7 Z" fill="currentColor"/></svg>`,
+
+  spark: `<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0 L9.4 6.6 L16 8 L9.4 9.4 L8 16 L6.6 9.4 L0 8 L6.6 6.6 Z" fill="currentColor"/></svg>`,
+
+  gull: `<svg viewBox="0 0 30 10" aria-hidden="true"><path d="M1 8 Q8 1 15 7 Q22 1 29 8" stroke="#ffffff" stroke-opacity=".5" stroke-width="1.4" fill="none" stroke-linecap="round"/></svg>`,
+
+  bauble: `<svg viewBox="0 0 20 26" aria-hidden="true"><path d="M10 0 v4" stroke="#c9a227" stroke-width="1.6"/><rect x="7.5" y="3" width="5" height="3.4" rx="1" fill="#c9a227"/><circle cx="10" cy="16" r="9" fill="currentColor"/><path d="M2 13 q8 4 16 0" stroke="#fff" stroke-opacity=".45" stroke-width="1.6" fill="none"/><circle cx="6.5" cy="12" r="2.2" fill="#fff" opacity=".28"/></svg>`
+
+};
+
+/* the fairy lights that run across the top at Christmas */
+function lightStringSvg() {
+  const colours = ['#ff4d4d', '#ffd166', '#4ade80', '#60a5fa', '#f472b6'];
+  let bulbs = '';
+  for (let i = 0; i <= 28; i += 1) {
+    const x = i * 40;
+    const y = 16 + Math.sin(i * 0.9) * 7;
+    bulbs +=
+      `<line x1="${x}" y1="${y}" x2="${x}" y2="${y + 7}" stroke="#2a3140" stroke-width="1.6"/>` +
+      `<ellipse class="bulb b${i % 5}" cx="${x}" cy="${y + 12}" rx="4" ry="5.4" fill="${colours[i % 5]}"/>`;
+  }
+  return `<svg viewBox="0 0 1120 40" preserveAspectRatio="none" aria-hidden="true">` +
+    `<path d="M0 16 ${Array.from({ length: 29 }, (unused, i) => `L${i * 40} ${16 + Math.sin(i * 0.9) * 7}`).join(' ')}" ` +
+    `stroke="#2a3140" stroke-width="2" fill="none"/>${bulbs}</svg>`;
+}
+
+/* a firework: spokes out from the middle, with a second ring of dots */
+function fireworkSvg(colour) {
+  let spokes = '';
+  for (let i = 0; i < 16; i += 1) {
+    const angle = (i / 16) * Math.PI * 2;
+    const x = 50 + Math.cos(angle) * 44;
+    const y = 50 + Math.sin(angle) * 44;
+    const mx = 50 + Math.cos(angle) * 22;
+    const my = 50 + Math.sin(angle) * 22;
+    spokes +=
+      `<line x1="${mx.toFixed(1)}" y1="${my.toFixed(1)}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" stroke="${colour}" stroke-width="1.6" stroke-linecap="round"/>` +
+      `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2" fill="#fff"/>`;
+  }
+  return `<svg viewBox="0 0 100 100" aria-hidden="true">${spokes}</svg>`;
+}
+
+const THEME_DECOR = {
+
+  /* fireworks over the rooftops and gold falling through them */
+  newyear: () =>
+    scatter(5, i =>
+      `<div class="firework f${i}">${fireworkSvg(['#ffd166', '#7dd3fc', '#f472b6', '#a78bfa', '#4ade80'][i])}</div>`) +
+    scatter(26, i =>
+      `<i class="confetti" style="left:${(i * 3.9 + 1).toFixed(1)}%;animation-delay:${(i * 0.43).toFixed(2)}s;animation-duration:${(7 + (i % 5)).toFixed(1)}s;background:${['#ffd166', '#f5f5f5', '#e7c66b', '#fff3c4'][i % 4]}"></i>`),
+
+  /* quiet snow, and frost creeping in at the corners */
+  frost: () =>
+    '<div class="frostEdge"></div>' +
+    scatter(34, i =>
+      `<i class="snow" style="left:${(i * 2.95 + 1).toFixed(1)}%;animation-delay:${(i * 0.51).toFixed(2)}s;animation-duration:${(11 + (i % 7)).toFixed(1)}s;font-size:${(7 + (i % 5) * 2.2).toFixed(1)}px;opacity:${(0.25 + (i % 4) * 0.13).toFixed(2)}">${DECOR_SNOWFLAKE}</i>`),
+
+  /* hearts drifting up the screen */
+  valentines: () =>
+    scatter(18, i =>
+      `<i class="rising heart" style="left:${(i * 5.6 + 2).toFixed(1)}%;animation-delay:${(i * 0.83).toFixed(2)}s;animation-duration:${(12 + (i % 6)).toFixed(1)}s;width:${(11 + (i % 4) * 5)}px">${THEME_SPRITES.heart}</i>`),
+
+  /* shamrocks turning as they fall, and a rainbow in the corner */
+  stpatricks: () =>
+    '<div class="rainbow"></div>' +
+    scatter(20, i =>
+      `<i class="falling spin" style="left:${(i * 5 + 1).toFixed(1)}%;animation-delay:${(i * 0.71).toFixed(2)}s;animation-duration:${(10 + (i % 5)).toFixed(1)}s;width:${(12 + (i % 3) * 5)}px">${THEME_SPRITES.shamrock}</i>`),
+
+  /* blossom on the breeze and painted eggs turning slowly */
+  easter: () =>
+    scatter(16, i =>
+      `<i class="falling drift" style="left:${(i * 6.2 + 1).toFixed(1)}%;animation-delay:${(i * 0.77).toFixed(2)}s;animation-duration:${(12 + (i % 5)).toFixed(1)}s;width:${(12 + (i % 3) * 4)}px;color:${['#f9a8d4', '#fbcfe8', '#fde68a'][i % 3]}">${THEME_SPRITES.petal}</i>`) +
+    scatter(5, i =>
+      `<i class="falling spin" style="left:${(i * 19 + 8).toFixed(1)}%;animation-delay:${(i * 3.1).toFixed(2)}s;animation-duration:${(16 + i).toFixed(1)}s;width:16px;color:${['#7dd3fc', '#fda4af', '#a7f3d0', '#fcd34d', '#c4b5fd'][i]}">${THEME_SPRITES.egg}</i>`),
+
+  /* a high sun, a warm haze and gulls going over */
+  summer: () =>
+    '<div class="sun"></div><div class="haze"></div>' +
+    scatter(3, i =>
+      `<i class="gull g${i}">${THEME_SPRITES.gull}</i>`),
+
+  halloween: () =>
+    '<div class="flash"></div>' +
+    '<div class="clouds"></div>' +
+    '<div class="bolt"></div>' +
+    `<div class="web left">${THEME_WEB_SVG}</div>` +
+    `<div class="web right">${THEME_WEB_SVG}</div>` +
+    `<div class="bat">${THEME_BAT_SVG}</div>` +
+    `<div class="bat two">${THEME_BAT_SVG}</div>`,
+
+  /* rockets going up, bursting, and embers coming down */
+  bonfire: () =>
+    scatter(4, i =>
+      `<div class="firework bonf f${i}">${fireworkSvg(['#ff8a1f', '#ffd166', '#ff5c6c', '#fde68a'][i])}</div>`) +
+    scatter(22, i =>
+      `<i class="ember" style="left:${(i * 4.5 + 1).toFixed(1)}%;animation-delay:${(i * 0.49).toFixed(2)}s;animation-duration:${(8 + (i % 5)).toFixed(1)}s;color:${['#ff8a1f', '#ffd166', '#ff6b35'][i % 3]};width:${(6 + (i % 3) * 3)}px">${THEME_SPRITES.spark}</i>`),
+
+  /* lights across the top, snow coming down, a bauble or two */
+  christmas: () =>
+    `<div class="lights">${lightStringSvg()}</div>` +
+    scatter(30, i =>
+      `<i class="snow" style="left:${(i * 3.35 + 1).toFixed(1)}%;animation-delay:${(i * 0.47).toFixed(2)}s;animation-duration:${(10 + (i % 6)).toFixed(1)}s;font-size:${(8 + (i % 5) * 2.4).toFixed(1)}px;opacity:${(0.3 + (i % 4) * 0.14).toFixed(2)}">${DECOR_SNOWFLAKE}</i>`) +
+    scatter(3, i =>
+      `<i class="hanging" style="left:${[14, 52, 86][i]}%;animation-delay:${(i * 1.4).toFixed(1)}s;color:${['#e11d48', '#c9a227', '#2f7a4f'][i]}">${THEME_SPRITES.bauble}</i>`)
+
+};
+
+
 const THEME_WEB_SVG = `
 <svg viewBox="0 0 100 100" fill="none" stroke="#e9e4f5" stroke-width=".9" aria-hidden="true">
   <path d="M0 0 L100 38 M0 0 L78 78 M0 0 L38 100 M0 0 L100 8 M0 0 L8 100"/>
@@ -14951,35 +15391,46 @@ function strikeStorm() {
   ];
 }
 
-function fillThemeDecor() {
+function fillThemeDecor(theme) {
 
   const decor = document.getElementById('themeDecor');
 
-  if (!decor || decor.childElementCount) return;
+  if (!decor) return;
+
+  const wanted = theme || currentTheme();
+
+  if (decor.dataset.theme === wanted && decor.childElementCount) return;
 
   /* the moving flames, fetched early so they are ready when he needs them */
-  ['img/flame-crown.webp', 'img/flame-single.webp'].forEach(src => { const img = new Image(); img.src = src; });
+  if (wanted === 'halloween') {
+    ['img/flame-crown.webp', 'img/flame-single.webp']
+      .forEach(src => { const img = new Image(); img.src = src; });
+  }
 
-  decor.innerHTML =
-    '<div class="flash"></div>' +
-    '<div class="clouds"></div>' +
-    '<div class="bolt"></div>' +
-    `<div class="web left">${THEME_WEB_SVG}</div>` +
-    `<div class="web right">${THEME_WEB_SVG}</div>` +
-    `<div class="bat">${THEME_BAT_SVG}</div>` +
-    `<div class="bat two">${THEME_BAT_SVG}</div>`;
+  const build = THEME_DECOR[wanted];
+
+  decor.dataset.theme = wanted;
+  decor.className = 'themeDecor';
+  decor.innerHTML = build ? build() : '';
 
 }
 
 function applySiteTheme(theme) {
 
-  if (theme !== 'halloween' && theme !== 'standard') return;
+  if (theme === 'auto' || !THEME_IDS.includes(theme)) return;
 
-  const halloween = theme === 'halloween';
+  THEME_IDS.forEach(id => {
+    if (id === 'standard') return;
+    document.body.classList.toggle('theme-' + id, id === theme);
+  });
 
-  if (halloween) fillThemeDecor();
+  const decor = document.getElementById('themeDecor');
 
-  document.body.classList.toggle('theme-halloween', halloween);
+  if (theme === 'standard') {
+    if (decor) { decor.innerHTML = ''; delete decor.dataset.theme; }
+  } else {
+    fillThemeDecor(theme);
+  }
 
   try { localStorage.setItem(THEME_KEY, theme); } catch {}
 
@@ -14998,11 +15449,11 @@ function paintThemeSwitch() {
   const note = document.getElementById('adminThemeNote');
 
   if (note) {
-    const showing = account?.theme === 'halloween' ? 'Halloween showing' : 'standard showing';
+    const showing = THEME_LABELS[account?.theme] || 'Standard';
     note.textContent =
       current === 'auto'
-        ? `Automatic, ${showing}`
-        : current === 'halloween' ? 'Halloween' : 'Standard';
+        ? `Automatic, ${showing} showing`
+        : (THEME_LABELS[current] || 'Standard');
   }
 
 }
@@ -15035,7 +15486,7 @@ document.querySelector('.themeSwitch')?.addEventListener('click', async event =>
 
     await refreshAccount();
 
-    const label = { standard: 'Standard', halloween: 'Halloween', auto: 'Automatic' }[button.dataset.theme];
+    const label = THEME_LABELS[button.dataset.theme] || 'Standard';
 
     adminSay(
       'adminThemeResult',
@@ -15056,7 +15507,7 @@ document.querySelector('.themeSwitch')?.addEventListener('click', async event =>
 
 });
 
-if (halloweenOn()) fillThemeDecor();
+if (currentTheme() !== 'standard') fillThemeDecor();
 
 /* before sign in: ask the server which theme is showing */
 fetch(`${API_BASE}/api/account`)
