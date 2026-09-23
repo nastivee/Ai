@@ -10559,3 +10559,129 @@ body.motionOff .voiceBot .botArt {
 
 .voiceWho:empty { opacity: 0; }
 .voiceWho.them { color: var(--acc2, #9fe6ff); }
+
+/* ---------- SIDEBAR TIDY ---------- */
+
+/*
+  The version sits under the settings button and is taken out of
+  the flow, so wherever it lands it cannot shift Privacy and Terms.
+*/
+.sidebarBottom {
+  position: relative;
+}
+
+.versionTag {
+  position: absolute;
+  left: 15px;
+  bottom: 13px;
+  font-size: 8.5px;
+  letter-spacing: .3px;
+  color: #4f4760;
+  pointer-events: none;
+}
+
+/* the pills get the whole row to themselves now */
+.versionRow .sidebarPills {
+  flex-direction: row;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.versionRow .sidebarPill {
+  width: auto;
+  font-size: 9px;
+  padding: 0 9px;
+}
+
+@media (max-width: 760px) {
+  .versionRow .sidebarPills {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  .versionRow .sidebarPill {
+    width: auto;
+    min-height: 30px;
+    font-size: 10px;
+  }
+}
+
+/* the list stops about halfway down and pages from there */
+#chatHistoryList {
+  max-height: 44vh;
+  overflow-y: auto;
+}
+
+.chatPager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 4px 2px;
+}
+
+.pagerStep {
+  padding: 0 12px;
+  min-height: 28px;
+  border: 1px solid #3a2c55;
+  border-radius: 9px;
+  background: linear-gradient(135deg, #221836, #191223);
+  color: #cfc3dd;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.pagerStep:hover:not(:disabled) {
+  border-color: #503a73;
+  color: #efe7f9;
+}
+
+.pagerStep:disabled {
+  opacity: .35;
+  cursor: default;
+}
+
+.pagerWhere {
+  font-size: 10.5px;
+  color: #756a83;
+  letter-spacing: .4px;
+}
+
+
+/* ---------- THE ROBOT WEARS THE THEME ---------- */
+/*
+  His shell is two colours and a highlight. Each occasion sets
+  them, so he arrives in the same outfit as the rest of the site.
+*/
+.voiceBot .botArt {
+  --botLight: #6cc8ff;
+  --botMid: #3f86f0;
+  --botDark: #2a5fe6;
+  --botGlow: #9fe6ff;
+}
+
+.voiceBot .botArt linearGradient stop:first-child { stop-color: var(--botLight); }
+.voiceBot .botArt #vbHead stop:last-child,
+.voiceBot .botArt #vbShell stop:last-child,
+.voiceBot .botArt #vbEar stop:last-child,
+.voiceBot .botArt #vbArm stop:last-child { stop-color: var(--botDark); }
+.voiceBot .botArt #vbShell stop:nth-child(2) { stop-color: var(--botMid); }
+
+.voiceBot .botArt .eyeOpen,
+.voiceBot .botArt .light,
+.voiceBot .botArt .ball,
+.voiceBot .botArt .lips { fill: var(--botGlow); }
+
+.voiceBot .botArt .antenna path { stroke: var(--botMid); }
+.voiceBot .botArt .rim { stroke: var(--botGlow); }
+.voiceBot .botArt .sheen { fill: var(--botGlow); }
+
+body.theme-newyear    .voiceBot .botArt { --botLight: #ffe8a3; --botMid: #f3c14a; --botDark: #a8741a; --botGlow: #fff3c9; }
+body.theme-frost      .voiceBot .botArt { --botLight: #dff4ff; --botMid: #9fd4f5; --botDark: #4a7fa8; --botGlow: #f2fbff; }
+body.theme-valentines .voiceBot .botArt { --botLight: #ffc2dd; --botMid: #f2699f; --botDark: #a8235c; --botGlow: #ffe1ee; }
+body.theme-stpatricks .voiceBot .botArt { --botLight: #b6f0c0; --botMid: #4cb862; --botDark: #1d6b31; --botGlow: #dcffe3; }
+body.theme-easter     .voiceBot .botArt { --botLight: #ffe6b8; --botMid: #b9d99a; --botDark: #7a9b5e; --botGlow: #fff6e2; }
+body.theme-summer     .voiceBot .botArt { --botLight: #ffd98a; --botMid: #ff9e4a; --botDark: #c25a18; --botGlow: #fff0cc; }
+body.theme-halloween  .voiceBot .botArt { --botLight: #ffc178; --botMid: #f07d1e; --botDark: #8a3a06; --botGlow: #ffdcae; }
+body.theme-bonfire    .voiceBot .botArt { --botLight: #ffce8f; --botMid: #f2761f; --botDark: #8f2d08; --botGlow: #ffe3bc; }
+body.theme-christmas  .voiceBot .botArt { --botLight: #ffd0d0; --botMid: #d7433f; --botDark: #7c1614; --botGlow: #ffe9e4; }

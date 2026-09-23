@@ -1947,6 +1947,69 @@ async function loadChats() {
 }
 
 
+/*
+  PAGING THE CHAT LIST
+
+  A long history pushed everything under it off the screen. The
+  list now stops about halfway down and pages instead, so saved
+  comments and the buttons below stay where they are however many
+  chats somebody has.
+*/
+const CHATS_PER_PAGE = 8;
+
+let chatPage = 0;
+let lastNeedle = '';
+
+function pagesOf(list) {
+  return Math.max(1, Math.ceil(list.length / CHATS_PER_PAGE));
+}
+
+function pageOf(list) {
+
+  /* deleting the last chat on a page should not strand you */
+  if (chatPage > pagesOf(list) - 1) chatPage = pagesOf(list) - 1;
+  if (chatPage < 0) chatPage = 0;
+
+  const from = chatPage * CHATS_PER_PAGE;
+
+  return list.slice(from, from + CHATS_PER_PAGE);
+
+}
+
+function drawChatPager(list) {
+
+  const pages = pagesOf(list);
+
+  if (pages < 2) return;
+
+  const bar = document.createElement('div');
+
+  bar.className = 'chatPager';
+
+  const back = document.createElement('button');
+  back.type = 'button';
+  back.className = 'pagerStep';
+  back.textContent = 'Back';
+  back.disabled = chatPage < 1;
+  back.addEventListener('click', () => { chatPage -= 1; renderChatHistory(); });
+
+  const where = document.createElement('span');
+  where.className = 'pagerWhere';
+  where.textContent = `${chatPage + 1} of ${pages}`;
+
+  const on = document.createElement('button');
+  on.type = 'button';
+  on.className = 'pagerStep';
+  on.textContent = 'More';
+  on.disabled = chatPage >= pages - 1;
+  on.addEventListener('click', () => { chatPage += 1; renderChatHistory(); });
+
+  bar.append(back, where, on);
+
+  chatHistoryList.appendChild(bar);
+
+}
+
 function renderChatHistory() {
 
   chatHistoryList.innerHTML =
@@ -1963,6 +2026,12 @@ function renderChatHistory() {
     (chatSearch?.value || '')
       .trim()
       .toLowerCase();
+
+  /* a new search starts at the first page, not wherever you were */
+  if (needle !== lastNeedle) {
+    lastNeedle = needle;
+    chatPage = 0;
+  }
 
   const visible =
     needle
@@ -1987,7 +2056,7 @@ function renderChatHistory() {
 
   }
 
-  visible.forEach(
+  pageOf(visible).forEach(
     chatItem => {
 
       const row =
@@ -2105,6 +2174,8 @@ function renderChatHistory() {
 
     }
   );
+
+  drawChatPager(visible);
 
 }
 
