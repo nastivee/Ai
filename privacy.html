@@ -28,7 +28,9 @@
 
 <p class="lede">
   The short version. Your chats are encrypted in your browser with a key
-  only your password can open, so we cannot read them. Your messages are
+  only your password can open, so we cannot read them. We also keep a
+  second, separately encrypted copy so the assistant can remember what
+  you told it before, and that one we can open. Your messages are
   still sent to OpenAI in readable form, because that is the only way a
   reply can be written. We do not sell anything to anybody.
 </p>
@@ -121,6 +123,31 @@
   switched on is sealed the same way the next time you open the app. What sits in our database is ciphertext. Neither we, nor
   our hosting providers, nor anyone who obtained a copy of the database,
   can read it without your password.
+</p>
+
+<h3>What we keep so it can remember you</h3>
+
+<p>
+  To answer a question about something you said weeks or months ago,
+  the assistant needs a way to find that conversation again. Sending it
+  your entire history every time would be slow and expensive, so instead
+  we keep a separate searchable copy of each question and answer.
+</p>
+
+<p>
+  That copy is encrypted too, with AES-GCM, but with <strong>a key held
+  on our server rather than the one derived from your password</strong>.
+  It is ciphertext in the database, so a stolen copy of the database is
+  no use on its own. The difference from the paragraph above is honest
+  and worth stating plainly: <strong>we can open this copy, and the
+  version encrypted with your password we cannot</strong>. It is opened
+  only to find the few lines relevant to what you have just asked, and
+  those lines are sent to the model along with your question.
+</p>
+
+<p>
+  Deleting a chat deletes what was remembered from it. Deleting your
+  account deletes all of it.
 </p>
 
 <h3>What is not encrypted, and you should know it</h3>

@@ -12828,6 +12828,8 @@ async function sendNormalMessage(
 
               mode: chatMode,
 
+              chatId: currentChatId,
+
               stream: true
 
             })

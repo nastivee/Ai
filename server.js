@@ -5,7 +5,7 @@ import sharp from 'sharp';
 import { toFile } from 'openai/uploads';
 import { createClient } from '@supabase/supabase-js';
 import Stripe from 'stripe';
-import { createHash } from 'crypto';
+import { createHash, createCipheriv, createDecipheriv, randomBytes } from 'crypto';
 import { registerExpanded } from './expanded.js';
 
 const app = express();
@@ -3899,7 +3899,10 @@ app.post('/api/chat', async (req, res) => {
       stream = false,
 
       /* 'fast' or 'smart', chosen in the app */
-      mode = 'fast'
+      mode = 'fast',
+
+      /* which chat this is, so recall can skip what is already on screen */
+      chatId = null
     } = req.body;
 
     const newest =
@@ -4023,7 +4026,7 @@ Then give a link, found with the live web search, to where
 the person can get it themselves: the official source, the
 publisher, the archive, Project Gutenberg, the licensed
 lyrics site. A link and a plain reason beats an apology.
-${cardSpec}
+${cardSpec}${await recallFor({ user, asked: newest, skipChat: chatId })}
 USER MEMORY:
 
 ${typeof memory === 'string' ? (memory.trim() || '(nothing saved yet)') : JSON.stringify(memory, null, 2)}
@@ -4178,6 +4181,8 @@ ${await (async () => {
               noteRefusal({ user, request: asked, reply: full });
             }
 
+            rememberExchange({ user, chatId, asked: newest, reply: full });
+
             return;
 
           } catch (searchError) {
@@ -4237,6 +4242,8 @@ ${await (async () => {
           noteRefusal({ user, request: asked, reply: full });
         }
 
+        rememberExchange({ user, chatId, asked: newest, reply: full });
+
       } catch (error) {
 
         console.error('CHAT STREAM ERROR:', error);
@@ -4275,6 +4282,9 @@ ${await (async () => {
         .find(message => message.role === 'user' && typeof message.content === 'string')?.content || '';
       noteRefusal({ user, request: asked, reply });
     }
+
+    /* kept for later, never in the way of the answer */
+    rememberExchange({ user, chatId, asked: newest, reply });
 
     res.json({
       reply
@@ -4320,6 +4330,214 @@ ${await (async () => {
 // for every future chat. It hands back the updated list;
 // the browser seals it and saves it. Nothing is kept here.
 // =====================================================
+
+/*
+  RECALL
+
+  A searchable copy of what was said, so a question about
+  something from months ago can be answered without posting the
+  entire history up to the model every time. Sending five
+  relevant lines costs a fraction of a penny. Sending everything
+  costs pounds a day and gets worse the longer somebody stays.
+
+  The copy is sealed with RECALL_KEY, which lives on the server.
+  Supabase holds ciphertext. If the key is not set, recall simply
+  does not run: nothing is written, nothing is read, and the app
+  behaves exactly as it did before.
+*/
+const EMBED_MODEL = process.env.EMBED_MODEL || 'text-embedding-3-small';
+
+const RECALL_WANTED = Number(process.env.RECALL_WANTED || 5);
+const RECALL_MIN_CHARS = 60;
+const RECALL_MAX_CHARS = 1200;
+
+let recallKey = null;
+
+function recallReady() {
+
+  if (recallKey) return true;
+
+  const raw = String(process.env.RECALL_KEY || '').trim();
+
+  if (!raw) return false;
+
+  try {
+    const bytes = Buffer.from(raw, 'base64');
+    if (bytes.length !== 32) {
+      console.warn('RECALL_KEY must be 32 bytes base64. Recall is off.');
+      return false;
+    }
+    recallKey = bytes;
+    return true;
+  } catch {
+    console.warn('RECALL_KEY is not valid base64. Recall is off.');
+    return false;
+  }
+
+}
+
+function sealRecall(text) {
+
+  const iv = randomBytes(12);
+  const cipher = createCipheriv('aes-256-gcm', recallKey, iv);
+  const body = Buffer.concat([cipher.update(String(text), 'utf8'), cipher.final()]);
+
+  return [
+    iv.toString('base64'),
+    cipher.getAuthTag().toString('base64'),
+    body.toString('base64')
+  ].join(':');
+
+}
+
+function openRecall(sealed) {
+
+  try {
+
+    const [iv, tag, body] = String(sealed).split(':');
+    const decipher = createDecipheriv('aes-256-gcm', recallKey, Buffer.from(iv, 'base64'));
+
+    decipher.setAuthTag(Buffer.from(tag, 'base64'));
+
+    return Buffer.concat([
+      decipher.update(Buffer.from(body, 'base64')),
+      decipher.final()
+    ]).toString('utf8');
+
+  } catch (error) {
+    /* a row sealed with an older key is simply skipped */
+    return '';
+  }
+
+}
+
+async function embed(text) {
+
+  const response = await fetch('https://api.openai.com/v1/embeddings', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${cleanKey(process.env.OPENAI_API_KEY)}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      model: EMBED_MODEL,
+      input: String(text).slice(0, 8000)
+    })
+  });
+
+  const data = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw new Error(data?.error?.message || `Embedding failed ${response.status}`);
+  }
+
+  return data?.data?.[0]?.embedding || null;
+
+}
+
+/* what was said, kept for later. Never blocks a reply. */
+async function rememberExchange({ user, chatId, asked, reply }) {
+
+  if (!recallReady() || !user?.id) return;
+
+  const question = String(asked || '').trim();
+  const answer = String(reply || '').trim();
+
+  if (question.length < 12) return;
+
+  /* small talk is not worth a row, and CHATTY already knows it */
+  if (question.length < RECALL_MIN_CHARS && CHATTY.test(question)) return;
+
+  const text =
+    `Asked: ${question.slice(0, RECALL_MAX_CHARS)}\n` +
+    `Answered: ${answer.slice(0, RECALL_MAX_CHARS)}`;
+
+  try {
+
+    const vector = await embed(text);
+
+    if (!vector) return;
+
+    const { error } = await supabaseAdmin.from('recall').insert({
+      user_id: user.id,
+      chat_id: chatId || null,
+      sealed: sealRecall(text),
+      chars: text.length,
+      embedding: vector
+    });
+
+    if (error) throw new Error(error.message);
+
+  } catch (error) {
+
+    console.warn('RECALL WRITE FAILED:', error?.message);
+
+    noteFailure({
+      user,
+      area: 'recall',
+      stage: 'write',
+      error: String(error?.message || '').slice(0, 300),
+      model: EMBED_MODEL,
+      recovered: true
+    });
+
+  }
+
+}
+
+/* the few older lines worth putting in front of this question */
+async function recallFor({ user, asked, skipChat }) {
+
+  if (!recallReady() || !user?.id) return '';
+
+  const question = String(asked || '').trim();
+
+  /* no point searching the past for hello */
+  if (question.length < 12 || CHATTY.test(question)) return '';
+
+  try {
+
+    const vector = await embed(question);
+
+    if (!vector) return '';
+
+    const { data, error } = await supabaseAdmin.rpc('match_recall', {
+      who: user.id,
+      query_embedding: vector,
+      wanted: RECALL_WANTED,
+      floor_score: 0.3
+    });
+
+    if (error) throw new Error(error.message);
+
+    const lines = (data || [])
+      /* whatever is already in this chat's history is not news */
+      .filter(row => !skipChat || String(row.chat_id) !== String(skipChat))
+      .map(row => {
+        const text = openRecall(row.sealed);
+        if (!text) return '';
+        const when = new Date(row.created_at).toLocaleDateString('en-GB', {
+          day: 'numeric', month: 'long', year: 'numeric'
+        });
+        return `- ${when}: ${text.replace(/\s+/g, ' ').slice(0, 420)}`;
+      })
+      .filter(Boolean);
+
+    if (!lines.length) return '';
+
+    return `
+FROM EARLIER CONVERSATIONS (they may not remember saying this, so do not announce that you looked it up. Use it only if it actually bears on what they just asked):
+${lines.join('\n')}
+`;
+
+  } catch (error) {
+
+    console.warn('RECALL READ FAILED:', error?.message);
+    return '';
+
+  }
+
+}
 
 /*
   WHICH MODEL ANSWERS
