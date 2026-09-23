@@ -13739,6 +13739,25 @@ const PEEK_SKELETON_HAND_SVG = `
 
 const PEEK_ACTORS = {
 
+  /* what each celebration's feature robot is after */
+
+  present: `<svg viewBox="0 0 34 34" aria-hidden="true"><rect x="2" y="12" width="30" height="20" rx="2" fill="#c2181f"/><rect x="14" y="12" width="6" height="20" fill="#f5c542"/><rect x="2" y="12" width="30" height="5" fill="#f5c542"/><path d="M17 12 q-9 -2 -8 -7 q1 -4 8 7 Z M17 12 q9 -2 8 -7 q-1 -4 -8 7 Z" fill="#f5c542"/></svg>`,
+
+  clock: `<svg viewBox="0 0 34 34" aria-hidden="true"><circle cx="17" cy="18" r="14" fill="#f4f6fb"/><circle cx="17" cy="18" r="11.5" fill="#1b1f2b"/><path d="M17 18 V9 M17 18 l7 4" stroke="#f5c542" stroke-width="2" stroke-linecap="round"/><circle cx="17" cy="18" r="1.8" fill="#f5c542"/><rect x="13" y="0" width="8" height="5" rx="1.5" fill="#8a8f9c"/></svg>`,
+
+  snowball: `<svg viewBox="0 0 34 34" aria-hidden="true"><circle cx="17" cy="19" r="13" fill="#f4f6fb"/><circle cx="12" cy="14" r="4" fill="#fff"/><circle cx="22" cy="22" r="3" fill="#dbe3ee"/></svg>`,
+
+  arrow: `<svg viewBox="0 0 40 20" aria-hidden="true"><path d="M2 10 h26" stroke="#c98a3f" stroke-width="3" stroke-linecap="round"/><path d="M2 10 l6 -4 v8 Z" fill="#e8e0d0"/><path d="M28 10 C24 5 27 1 32 3 Q34 1 36 3 C39 6 35 11 30 15 Q28 13 28 10 Z" fill="#ff5c8a"/></svg>`,
+
+  gold: `<svg viewBox="0 0 34 34" aria-hidden="true"><path d="M3 14 h28 l-3 14 a11 11 0 0 1 -22 0 Z" fill="#12141c"/><ellipse cx="17" cy="14" rx="14" ry="4.4" fill="#1d212c"/><circle cx="11" cy="12" r="3.6" fill="#f5c542"/><circle cx="20" cy="10" r="3.8" fill="#ffd977"/><circle cx="25" cy="13" r="3.2" fill="#f5c542"/></svg>`,
+
+  egg: `<svg viewBox="0 0 26 34" aria-hidden="true"><ellipse cx="13" cy="20" rx="11" ry="13.5" fill="#7dd3fc"/><path d="M2.2 16 q10.8 5 21.6 0" stroke="#fff" stroke-width="2.6" fill="none"/><path d="M3.4 25 q9.6 4.4 19.2 0" stroke="#fde68a" stroke-width="2.4" fill="none"/></svg>`,
+
+  ball: `<svg viewBox="0 0 34 34" aria-hidden="true"><circle cx="17" cy="17" r="15" fill="#f4f6fb"/><path d="M17 2 a15 15 0 0 1 13 8 l-13 7 Z" fill="#e11d48"/><path d="M30 10 a15 15 0 0 1 -6 19 l-7 -12 Z" fill="#f5c542"/><path d="M24 29 a15 15 0 0 1 -14 0 l7 -12 Z" fill="#3ec46d"/><path d="M10 29 a15 15 0 0 1 -6 -19 l13 7 Z" fill="#3b6ea5"/></svg>`,
+
+  rocket: `<svg viewBox="0 0 24 44" aria-hidden="true"><path d="M12 1 Q19 11 19 25 L5 25 Q5 11 12 1 Z" fill="#e11d48"/><path d="M12 1 Q15 7 15.5 15 L8.5 15 Q9 7 12 1 Z" fill="#ff8ba0" opacity=".55"/><path d="M5 25 l-4 7 l4 -2 Z M19 25 l4 7 l-4 -2 Z" fill="#c2181f"/><rect x="10" y="25" width="4" height="14" fill="#6b4423"/><circle cx="12" cy="10" r="3" fill="#f5c542"/></svg>`,
+
+
   thief: `
 <svg viewBox="0 0 40 40" aria-hidden="true">
   <path d="M8 40 L8 22 Q8 7 20 7 Q32 7 32 22 L32 40 Z" fill="#2a1640" stroke="#7a4bd6" stroke-opacity=".7" stroke-width="1"/>
@@ -14343,6 +14362,7 @@ const THEME_DECOR = {
 
   /* fireworks over the rooftops and gold falling through them */
   newyear: () =>
+    '<div class="warn"><i class="sky"></i><b class="pop">' + fireworkSvg('#ffd166') + '</b></div>' +
     scatter(5, i =>
       `<div class="firework f${i}">${fireworkSvg(['#ffd166', '#7dd3fc', '#f472b6', '#a78bfa', '#4ade80'][i])}</div>`) +
     scatter(26, i =>
@@ -14350,23 +14370,27 @@ const THEME_DECOR = {
 
   /* quiet snow, and frost creeping in at the corners */
   frost: () =>
+    '<div class="warn"><i class="gust"></i></div>' +
     '<div class="frostEdge"></div>' +
     scatter(34, i =>
       `<i class="snow" style="left:${(i * 2.95 + 1).toFixed(1)}%;animation-delay:${(i * 0.51).toFixed(2)}s;animation-duration:${(11 + (i % 7)).toFixed(1)}s;font-size:${(7 + (i % 5) * 2.2).toFixed(1)}px;opacity:${(0.25 + (i % 4) * 0.13).toFixed(2)}">${DECOR_SNOWFLAKE}</i>`),
 
   /* hearts drifting up the screen */
   valentines: () =>
+    '<div class="warn"><b class="burst">' + THEME_SPRITES.heart + '</b><i class="sky"></i></div>' +
     scatter(18, i =>
       `<i class="rising heart" style="left:${(i * 5.6 + 2).toFixed(1)}%;animation-delay:${(i * 0.83).toFixed(2)}s;animation-duration:${(12 + (i % 6)).toFixed(1)}s;width:${(11 + (i % 4) * 5)}px">${THEME_SPRITES.heart}</i>`),
 
   /* shamrocks turning as they fall, and a rainbow in the corner */
   stpatricks: () =>
+    '<div class="warn"><i class="sweep"></i></div>' +
     '<div class="rainbow">' + rainbowSvg() + '</div>' +
     scatter(20, i =>
       `<i class="falling spin" style="left:${(i * 5 + 1).toFixed(1)}%;animation-delay:${(i * 0.71).toFixed(2)}s;animation-duration:${(10 + (i % 5)).toFixed(1)}s;width:${(12 + (i % 3) * 5)}px">${THEME_SPRITES.shamrock}</i>`),
 
   /* blossom on the breeze and painted eggs turning slowly */
   easter: () =>
+    '<div class="warn"><i class="flurry"></i></div>' +
     scatter(16, i =>
       `<i class="falling drift" style="left:${(i * 6.2 + 1).toFixed(1)}%;animation-delay:${(i * 0.77).toFixed(2)}s;animation-duration:${(12 + (i % 5)).toFixed(1)}s;width:${(12 + (i % 3) * 4)}px;color:${['#f9a8d4', '#fbcfe8', '#fde68a'][i % 3]}">${THEME_SPRITES.petal}</i>`) +
     scatter(5, i =>
@@ -14374,6 +14398,7 @@ const THEME_DECOR = {
 
   /* a high sun, a warm haze and gulls going over */
   summer: () =>
+    '<div class="warn"><i class="flare"></i></div>' +
     '<div class="sun"></div><div class="haze"></div>' +
     scatter(3, i =>
       `<i class="gull g${i}">${THEME_SPRITES.gull}</i>`),
@@ -14389,6 +14414,7 @@ const THEME_DECOR = {
 
   /* rockets going up, bursting, and embers coming down */
   bonfire: () =>
+    '<div class="warn"><i class="climb"></i><b class="pop">' + fireworkSvg('#ff8a1f') + '</b></div>' +
     scatter(4, i =>
       `<div class="firework bonf f${i}">${fireworkSvg(['#ff8a1f', '#ffd166', '#ff5c6c', '#fde68a'][i])}</div>`) +
     scatter(22, i =>
@@ -14396,6 +14422,7 @@ const THEME_DECOR = {
 
   /* lights across the top, snow coming down, a bauble or two */
   christmas: () =>
+    '<div class="warn"><i class="sleigh">' + SLEIGH_SVG + '</i></div>' +
     `<div class="lights">${lightStringSvg()}</div>` +
     scatter(30, i =>
       `<i class="snow" style="left:${(i * 3.35 + 1).toFixed(1)}%;animation-delay:${(i * 0.47).toFixed(2)}s;animation-duration:${(10 + (i % 6)).toFixed(1)}s;font-size:${(8 + (i % 5) * 2.4).toFixed(1)}px;opacity:${(0.3 + (i % 4) * 0.14).toFixed(2)}">${DECOR_SNOWFLAKE}</i>`) +
@@ -14588,6 +14615,54 @@ const PEEK_COSTUMES = [
 const THEME_COSTUMES = {
 
   christmas: [
+  /* THE FEATURE: Father Christmas himself, sack and all */
+  { hideAntenna: true, feature: true, routine: featurePlay, quarry: 'present', svg: `
+    <path d="M14 13 Q19 -10 41 -19 Q54 -25 52 -13 Q47 -6 45 3 L48 13 Z" fill="#c2181f"/>
+    <path d="M18 10 Q23 -5 41 -15 Q47 -17 45 -11 Q36 -5 33 10 Z" fill="#e0262d" opacity=".75"/>
+    <rect x="12" y="8" width="39" height="7" rx="3.5" fill="#f4f6fb"/>
+    <circle cx="55" cy="-16" r="6.5" fill="#f4f6fb"/>
+    <path d="M10 36 Q11 60 32 68 Q53 60 54 36 Q47 50 32 50 Q17 50 10 36 Z" fill="#f4f6fb"/>
+    <path d="M22 50 Q27 62 32 64 Q37 62 42 50" stroke="#dbe3ee" stroke-width="1.4" fill="none"/>
+    <path d="M24 40 Q32 36 40 40" stroke="#dbe3ee" stroke-width="1.6" fill="none"/>
+    <path d="M6 58 Q32 52 58 58 L58 76 Q32 82 6 76 Z" fill="#c2181f"/>
+    <rect x="4" y="62" width="56" height="7" rx="1" fill="#12141c"/>
+    <rect x="27" y="61" width="10" height="9" rx="1.5" fill="#f5c542"/>` },
+
+  /* elf, ears and all */
+  { hideAntenna: true, svg: `
+    <path d="M17 13 Q20 -6 36 -9 Q46 -11 44 -2 Q41 4 44 13 Z" fill="#1f7a46"/>
+    <circle cx="46" cy="-12" r="4.5" fill="#f5c542"/>
+    <rect x="15" y="9" width="35" height="6" rx="3" fill="#c2181f"/>
+    <path d="M6 24 Q-2 20 -1 28 Q0 34 7 34 Z" fill="#f0c9a8"/>
+    <path d="M58 24 Q66 20 65 28 Q64 34 57 34 Z" fill="#f0c9a8"/>` },
+
+  /* a snowflake jumper */
+  { svg: `
+    <path d="M6 50 Q32 44 58 50 L58 78 Q32 84 6 78 Z" fill="#1f4f8f"/>
+    <g stroke="#f4f6fb" stroke-width="1.6" stroke-linecap="round">
+    <path d="M32 56 v14 M25 59.5 l14 7 M39 59.5 l-14 7"/>
+    <path d="M17 62 v8 M13.5 64 l7 4 M20.5 64 l-7 4" stroke-width="1.2"/>
+    <path d="M47 62 v8 M43.5 64 l7 4 M50.5 64 l-7 4" stroke-width="1.2"/></g>
+    ` },
+
+  /* a candy cane propped beside him */
+  { svg: `
+    <path d="M81 54 V28 a8 8 0 0 1 16 0 v5" stroke="#f4f6fb" stroke-width="7" fill="none" stroke-linecap="round"/>
+    <path d="M81 54 V28 a8 8 0 0 1 16 0 v5" stroke="#c2181f" stroke-width="7" fill="none" stroke-linecap="round" stroke-dasharray="5 7"/>` },
+
+  /* carol singing, sheet in hand */
+  { svg: `
+    <path d="M62 40 L92 34 L94 58 L64 64 Z" fill="#f4f6fb"/>
+    <path d="M66 46 h22 M66 51 h22 M66 56 h16" stroke="#8a8f9c" stroke-width="1.2"/>
+    <path d="M12 44 q-6 -8 -2 -13" stroke="#f5c542" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+    <path d="M6 38 q-7 -6 -4 -12" stroke="#f5c542" stroke-width="1.4" fill="none" stroke-linecap="round"/>` },
+
+  /* the fairy off the top of the tree */
+  { hideAntenna: true, svg: `
+    <path d="M32 -22 l3.4 9 l9 3.4 l-9 3.4 L32 3 l-3.4 -9 l-9 -3.4 l9 -3.4 Z" fill="#f5c542" class="glow"/>
+    <circle cx="32" cy="-9.5" r="3" fill="#fff8d6"/>
+    <path d="M8 30 Q-4 18 -8 30 Q-2 33 -6 42 Q2 36 8 42 Z" fill="#dbeafe" opacity=".8"/>
+    <path d="M56 30 Q68 18 72 30 Q66 33 70 42 Q62 36 56 42 Z" fill="#dbeafe" opacity=".8"/>` },
 
     /* santa hat, leaning over with a bobble */
     { hideAntenna: true, svg: `
@@ -14624,6 +14699,58 @@ const THEME_COSTUMES = {
   ],
 
   newyear: [
+  /* THE FEATURE: the one counting it down, clock and all */
+  { hideAntenna: true, feature: true, routine: featurePlay, quarry: 'clock', svg: `
+    <rect x="18" y="-20" width="28" height="28" rx="2" fill="#12141c"/>
+    <rect x="18" y="-3" width="28" height="7" fill="#f5c542"/>
+    <ellipse cx="32" cy="9" rx="26" ry="5" fill="#12141c"/>
+    <path d="M6 56 Q32 50 58 56 L58 78 Q32 84 6 78 Z" fill="#1b1f2b"/>
+    <path d="M20 54 L32 66 L44 54 L44 78 L20 78 Z" fill="#f4f6fb"/>
+    <path d="M26 56 L32 64 L38 56 L34 54 L32 58 L30 54 Z" fill="#12141c"/>
+    <path d="M24 62 L32 68 L40 62" stroke="#12141c" stroke-width="1" fill="none"/>
+    <path d="M22 64 L32 70 L42 64 L38 74 L26 74 Z" fill="#7c3aed"/>
+    <path d="M56 6 q14 -8 22 4 q-12 5 -7 17" stroke="#f472b6" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+    <path d="M8 6 q-14 -8 -22 4 q12 5 7 17" stroke="#4ade80" stroke-width="2.6" fill="none" stroke-linecap="round"/>` },
+
+  /* a mirror ball turning above him */
+  { svg: `
+    <path d="M32 -30 v8" stroke="#8a8f9c" stroke-width="1.6"/>
+    <circle cx="32" cy="-13" r="9.5" fill="#cbd5e1"/>
+    <path d="M23 -16 h19 M23 -10 h19 M28 -22.5 v19 M36 -22.5 v19" stroke="#94a3b8" stroke-width=".9"/>
+    <circle cx="28" cy="-17" r="2" fill="#fff" opacity=".9"/>
+    <circle cx="36" cy="-9" r="1.6" fill="#fff" opacity=".7"/>
+    <g class="glow"><path d="M32 -13 l-26 20 M32 -13 l26 20 M32 -13 l-14 26 M32 -13 l14 26" stroke="#e9d5ff" stroke-width="1" opacity=".35"/></g>` },
+
+  /* a sash for the year */
+  { svg: `
+    <path d="M12 48 L56 74 L50 82 L6 56 Z" fill="#7c3aed"/>
+    <path d="M14 52 L52 74" stroke="#a78bfa" stroke-width="1.4"/>
+    <circle cx="48" cy="72" r="6" fill="#f5c542"/>` },
+
+  /* a bunch of balloons */
+  { svg: `
+    <path d="M74 44 L80 20 M82 44 L84 16 M88 44 L90 22" stroke="#8a8f9c" stroke-width="1"/>
+    <ellipse cx="80" cy="14" rx="7" ry="8.5" fill="#f472b6"/>
+    <ellipse cx="90" cy="16" rx="6.5" ry="8" fill="#7dd3fc"/>
+    <ellipse cx="84" cy="6" rx="6.5" ry="8" fill="#f5c542"/>
+    <ellipse cx="77" cy="11" rx="2" ry="2.6" fill="#fff" opacity=".4"/>` },
+
+  /* a crown of sparklers */
+  { hideAntenna: true, svg: `
+    <path d="M12 13 L16 -6 L24 4 L32 -12 L40 4 L48 -6 L52 13 Z" fill="#f5c542"/>
+    <g class="glow" fill="#fff8d6">
+    <circle cx="16" cy="-8" r="2.4"/><circle cx="32" cy="-14" r="3"/><circle cx="48" cy="-8" r="2.4"/></g>
+    <rect x="11" y="11" width="42" height="5" rx="2.5" fill="#d9a520"/>` },
+
+  /* a popper going off */
+  { svg: `
+    <path d="M66 52 L84 40 L92 50 L74 62 Z" fill="#7c3aed"/>
+    <path d="M84 40 L92 50 L104 30 Z" fill="#a78bfa" opacity=".5"/>
+    <g fill="#f5c542"><rect x="92" y="26" width="4" height="7" rx="1" transform="rotate(20 94 29)"/>
+    <rect x="99" y="18" width="4" height="7" rx="1" transform="rotate(-30 101 21)"/>
+    <rect x="88" y="14" width="4" height="7" rx="1" transform="rotate(50 90 17)"/></g>
+    <g fill="#f472b6"><rect x="97" y="33" width="3.6" height="6" rx="1" transform="rotate(-10 99 36)"/>
+    <rect x="82" y="16" width="3.6" height="6" rx="1" transform="rotate(25 84 19)"/></g>` },
 
     /* party hat and a streamer */
     { hideAntenna: true, svg: `
@@ -14658,6 +14785,48 @@ const THEME_COSTUMES = {
   ],
 
   frost: [
+  /* THE FEATURE: the snow robot, shaggy and white */
+  { hideAntenna: true, feature: true, routine: featurePlay, quarry: 'snowball', svg: `
+    <path d="M2 30 Q0 8 14 2 Q24 -3 32 -2 Q40 -3 50 2 Q64 8 62 30 Q60 18 52 12 Q42 6 32 6 Q22 6 12 12 Q4 18 2 30 Z" fill="#f4f6fb"/>
+    <path d="M4 26 q4 -6 2 -12 M12 16 q3 -7 0 -12 M32 6 q2 -8 0 -13 M52 16 q-3 -7 0 -12 M60 26 q-4 -6 -2 -12" stroke="#dbe3ee" stroke-width="2.4" stroke-linecap="round" fill="none"/>
+    <path d="M2 44 Q4 70 32 78 Q60 70 62 44 Q52 60 32 60 Q12 60 2 44 Z" fill="#f4f6fb"/>
+    <path d="M10 56 q-6 6 -4 14 M54 56 q6 6 4 14" stroke="#e3eaf5" stroke-width="3" stroke-linecap="round" fill="none"/>
+    <circle cx="20" cy="32" r="3.4" fill="#7dd3fc" class="glow"/>
+    <circle cx="44" cy="32" r="3.4" fill="#7dd3fc" class="glow"/>` },
+
+  /* mittens round a hot chocolate */
+  { svg: `
+    <path d="M70 38 h22 l-2 18 a9 9 0 0 1 -18 0 Z" fill="#f4f6fb"/>
+    <path d="M92 42 a6 6 0 0 1 0 10" stroke="#f4f6fb" stroke-width="3" fill="none"/>
+    <ellipse cx="81" cy="38" rx="11" ry="3.4" fill="#6b4423"/>
+    <circle cx="77" cy="37" r="2.4" fill="#fff"/><circle cx="84" cy="36.5" r="2" fill="#fff"/>
+    <path d="M76 28 q3 -6 0 -10 M86 28 q3 -6 0 -10" stroke="#cbd5e1" stroke-width="1.6" fill="none" opacity=".6" stroke-linecap="round"/>` },
+
+  /* a parka hood, fur and all */
+  { hideAntenna: true, svg: `
+    <path d="M0 34 Q-2 6 32 4 Q66 6 64 34 Q58 16 32 16 Q6 16 0 34 Z" fill="#1f4f8f"/>
+    <path d="M0 34 Q-2 6 32 4 Q66 6 64 34" stroke="#c9b48a" stroke-width="7" fill="none" stroke-linecap="round" opacity=".95"/>
+    <path d="M2 28 q6 -4 4 -9 M18 18 q4 -5 2 -9 M46 18 q-4 -5 -2 -9 M62 28 q-6 -4 -4 -9" stroke="#e0d3b4" stroke-width="2" fill="none" stroke-linecap="round"/>` },
+
+  /* a sledge leaning on the box */
+  { svg: `
+    <rect x="64" y="34" width="34" height="6" rx="2" fill="#a0522d" transform="rotate(-18 81 37)"/>
+    <rect x="64" y="42" width="34" height="6" rx="2" fill="#b5651d" transform="rotate(-18 81 45)"/>
+    <path d="M62 52 L98 40 q6 -2 6 4" stroke="#8a8f9c" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+    <path d="M70 34 L74 52 M90 28 L94 46" stroke="#8a5a2b" stroke-width="2" stroke-linecap="round"/>` },
+
+  /* an icicle beard */
+  { svg: `
+    <path d="M9 34 Q10 52 32 58 Q54 52 55 34 Q46 46 32 46 Q18 46 9 34 Z" fill="#dbeafe" opacity=".9"/>
+    <path d="M14 45 l2 14 l2 -14 Z M24 50 l2.4 18 l2.4 -18 Z M36 50 l2.4 16 l2.4 -16 Z M46 44 l2 13 l2 -13 Z" fill="#bfe3ff"/>` },
+
+  /* goggles and a scarf caught in the wind */
+  { svg: `
+    <path d="M4 22 h56 v4 h-56 Z" fill="#12141c"/>
+    <rect x="6" y="24" width="22" height="14" rx="6" fill="#7dd3fc" opacity=".5" stroke="#e11d48" stroke-width="2"/>
+    <rect x="36" y="24" width="22" height="14" rx="6" fill="#7dd3fc" opacity=".5" stroke="#e11d48" stroke-width="2"/>
+    <path d="M9 51 Q32 60 55 51 L55 57 Q32 65 9 57 Z" fill="#3b6ea5"/>
+    <path d="M54 54 Q76 48 96 58 L98 66 Q76 58 53 62 Z" fill="#3b6ea5"/>` },
 
     /* bobble hat pulled down */
     { hideAntenna: true, svg: `
@@ -14692,6 +14861,51 @@ const THEME_COSTUMES = {
   ],
 
   valentines: [
+  /* THE FEATURE: Cupid, wings, halo and a bow */
+  { hideAntenna: true, feature: true, routine: featurePlay, quarry: 'arrow', svg: `
+    <ellipse cx="32" cy="-14" rx="13" ry="4" fill="none" stroke="#f5c542" stroke-width="2.6" class="glow"/>
+    <path d="M6 28 Q-12 10 -18 28 Q-9 32 -15 46 Q-3 37 6 46 Z" fill="#f9d7e4" stroke="#f9a8d4" stroke-width=".9"/>
+    <path d="M58 28 Q76 10 82 28 Q73 32 79 46 Q67 37 58 46 Z" fill="#f9d7e4" stroke="#f9a8d4" stroke-width=".9"/>
+    <path d="M12 38 Q4 54 12 70" stroke="#c98a3f" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <path d="M12 38 Q22 54 12 70" stroke="#e8e0d0" stroke-width="1.2" fill="none"/>
+    <path d="M6 54 L58 54" stroke="#c98a3f" stroke-width="2" stroke-linecap="round"/>
+    <path d="M58 54 l-9 -4 l2 4 l-2 4 Z" fill="#ff5c8a"/>
+    <path d="M22 60 Q32 72 42 60 Q38 78 32 82 Q26 78 22 60 Z" fill="#ff5c8a" opacity=".85"/>` },
+
+  /* heart shaped glasses */
+  { svg: `
+    <path d="M18 24 C10 20 4 24 5 30 C6 36 14 40 18 42 C22 40 30 36 31 30 C32 24 26 20 18 24 Z" fill="none" stroke="#ff5c8a" stroke-width="2.4"/>
+    <path d="M46 24 C38 20 32 24 33 30 C34 36 42 40 46 42 C50 40 58 36 59 30 C60 24 54 20 46 24 Z" fill="none" stroke="#ff5c8a" stroke-width="2.4"/>
+    <path d="M31 30 h2" stroke="#ff5c8a" stroke-width="2.4"/>` },
+
+  /* a box of chocolates, lid off */
+  { svg: `
+    <path d="M66 36 C62 28 68 22 74 26 C76 22 84 22 86 26 C92 22 98 28 94 36 L88 52 L72 52 Z" fill="#e11d48"/>
+    <rect x="68" y="38" width="26" height="16" rx="2" fill="#7a1024"/>
+    <circle cx="74" cy="43" r="3" fill="#6b4423"/><circle cx="82" cy="43" r="3" fill="#8a5a2b"/>
+    <circle cx="90" cy="43" r="3" fill="#6b4423"/><circle cx="78" cy="49" r="3" fill="#8a5a2b"/>
+    <circle cx="86" cy="49" r="3" fill="#6b4423"/>` },
+
+  /* a letter, sealed */
+  { svg: `
+    <rect x="64" y="30" width="34" height="24" rx="2" fill="#f9f5ec"/>
+    <path d="M64 30 L81 44 L98 30" stroke="#e0d8c8" stroke-width="1.6" fill="none"/>
+    <circle cx="81" cy="48" r="5" fill="#c2181f"/>
+    <path d="M78.5 48 C77 46.5 77 44.5 78.5 44 Q80 44 80.5 45 Q81 44 82.5 44 C84 44.5 84 46.5 82.5 48 Q81 49.5 78.5 48 Z" fill="#8f0f16"/>` },
+
+  /* dressed for dinner */
+  { svg: `
+    <path d="M18 36 q6 -4 12 -1 q-6 3 -12 1 Z M46 36 q-6 -4 -12 -1 q6 3 12 1 Z" fill="#3b2a20"/>
+    <path d="M20 52 L32 58 L20 64 Z M44 52 L32 58 L44 64 Z" fill="#c2181f"/>
+    <circle cx="32" cy="58" r="3" fill="#8f0f16"/>
+    <path d="M6 62 Q32 56 58 62 L58 80 Q32 86 6 80 Z" fill="#12141c"/>
+    <path d="M24 62 L32 74 L40 62" stroke="#f4f6fb" stroke-width="2" fill="none"/>` },
+
+  /* a heart balloon on a string */
+  { svg: `
+    <path d="M84 36 L81 56" stroke="#8a8f9c" stroke-width="1"/>
+    <path d="M84 34 C72 24 71 12 79 8 C84 5.5 88 9 84 12 Q86 7 91 8 C99 12 96 24 84 34 Z" fill="#ff5c8a"/>
+    <ellipse cx="79" cy="16" rx="2.4" ry="3.4" fill="#fff" opacity=".35" transform="rotate(-25 79 16)"/>` },
 
     /* a heart on the antenna */
     { antenna: `
@@ -14722,6 +14936,52 @@ const THEME_COSTUMES = {
   ],
 
   stpatricks: [
+  /* THE FEATURE: the leprechaun, after his gold */
+  { hideAntenna: true, feature: true, routine: featurePlay, quarry: 'gold', svg: `
+    <rect x="18" y="-19" width="28" height="26" rx="2" fill="#1f7a46"/>
+    <rect x="18" y="-4" width="28" height="8" fill="#12141c"/>
+    <rect x="27" y="-3.4" width="9" height="7" rx="1" fill="none" stroke="#f5c542" stroke-width="2.2"/>
+    <ellipse cx="32" cy="9" rx="27" ry="5.2" fill="#1f7a46"/>
+    <path d="M9 36 Q10 58 32 64 Q54 58 55 36 Q47 48 32 48 Q17 48 9 36 Z" fill="#d4762a"/>
+    <path d="M21 49 Q27 60 32 61 Q37 60 43 49" stroke="#b85f1c" stroke-width="1.4" fill="none"/>
+    <path d="M6 58 Q32 52 58 58 L58 80 Q32 86 6 80 Z" fill="#1f7a46"/>
+    <path d="M24 58 L32 70 L40 58" stroke="#f4f6fb" stroke-width="2.4" fill="none"/>
+    <rect x="4" y="66" width="56" height="6" rx="1" fill="#12141c"/>
+    <rect x="28" y="65" width="8" height="8" rx="1.4" fill="#f5c542"/>` },
+
+  /* a shamrock on the antenna */
+  { antenna: `
+    <g transform="translate(-3 3) scale(.9)"><g fill="#3ec46d">
+    <ellipse cx="35" cy="-20" rx="4.4" ry="5"/><ellipse cx="30" cy="-14" rx="5" ry="4.4"/><ellipse cx="40" cy="-14" rx="5" ry="4.4"/></g>
+    <path d="M35 -14 q1 5 -2 9" stroke="#2c8f4f" stroke-width="1.8" fill="none" stroke-linecap="round"/></g>` },
+
+  /* a flag over his shoulder */
+  { svg: `
+    <path d="M56 8 L56 56" stroke="#8a5a2b" stroke-width="2.4" stroke-linecap="round"/>
+    <path d="M57 10 h36 v20 h-36 Z" fill="#1f7a46"/>
+    <path d="M69 10 h12 v20 h-12 Z" fill="#f4f6fb"/>
+    <path d="M81 10 h12 v20 h-12 Z" fill="#f28c28"/>` },
+
+  /* a fiddle for the session */
+  { svg: `
+    <path d="M78 26 q-9 1 -9 9 q0 7 7 8 q-5 3 -5 9 q0 9 10 10 q10 -1 10 -10 q0 -6 -5 -9 q7 -1 7 -8 q0 -8 -9 -9 Z" fill="#8a4a1e"/>
+    <rect x="79" y="8" width="4" height="20" rx="1" fill="#6b3512"/>
+    <path d="M81 12 v40" stroke="#e8dfc8" stroke-width=".8"/>
+    <path d="M62 50 L98 34" stroke="#c9a227" stroke-width="1.8" stroke-linecap="round"/>` },
+
+  /* a bodhran, ready for a tune */
+  { svg: `
+    <circle cx="81" cy="34" r="16" fill="#8a5a2b"/>
+    <circle cx="81" cy="34" r="12.5" fill="#e8dfc8"/>
+    <path d="M69 26 q12 6 24 0 M69 42 q12 -6 24 0" stroke="#d3c6a8" stroke-width="1" fill="none"/>
+    <path d="M96 20 l8 -8" stroke="#a0522d" stroke-width="2.6" stroke-linecap="round"/>` },
+
+  /* a lucky horseshoe */
+  { svg: `
+    <path d="M68 52 V36 a13 13 0 0 1 26 0 v16" stroke="#9aa3b2" stroke-width="7" fill="none" stroke-linecap="round"/>
+    <path d="M68 52 V36 a13 13 0 0 1 26 0 v16" stroke="#cbd5e1" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <circle cx="70" cy="36" r="1.6" fill="#5b6478"/><circle cx="92" cy="36" r="1.6" fill="#5b6478"/>
+    <circle cx="72" cy="26" r="1.6" fill="#5b6478"/><circle cx="90" cy="26" r="1.6" fill="#5b6478"/>` },
 
     /* the leprechaun's hat, buckle and all */
     { hideAntenna: true, svg: `
@@ -14754,6 +15014,61 @@ const THEME_COSTUMES = {
   ],
 
   easter: [
+  /* THE FEATURE: the Easter bunny, basket and all */
+  { hideAntenna: true, feature: true, routine: featurePlay, quarry: 'egg', svg: `
+    <path d="M21 13 Q14 -14 21 -26 Q29 -31 29 -14 Q29 0 28 13 Z" fill="#f4f6fb"/>
+    <path d="M22 7 Q19 -12 23 -21 Q26 -23 25.5 -12 Q25 -1 25 7 Z" fill="#f9a8d4"/>
+    <path d="M43 13 Q50 -14 43 -26 Q35 -31 35 -14 Q35 0 36 13 Z" fill="#f4f6fb"/>
+    <path d="M42 7 Q45 -12 41 -21 Q38 -23 38.5 -12 Q39 -1 39 7 Z" fill="#f9a8d4"/>
+    <path d="M26 40 q6 -3 12 0" stroke="#f9a8d4" stroke-width="1.6" fill="none"/>
+    <path d="M32 40 l-3 3 h6 Z" fill="#f9a8d4"/>
+    <path d="M4 42 q-10 2 -12 -2 M4 46 q-10 4 -11 0 M60 42 q10 2 12 -2 M60 46 q10 4 11 0" stroke="#dbe3ee" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+    <path d="M66 46 h30 l-3 18 a11 11 0 0 1 -24 0 Z" fill="#c9a227"/>
+    <path d="M66 46 a15 15 0 0 1 30 0" stroke="#a8861c" stroke-width="2.4" fill="none"/>
+    <ellipse cx="74" cy="48" rx="5" ry="6" fill="#7dd3fc"/><ellipse cx="84" cy="47" rx="5" ry="6" fill="#f9a8d4"/>
+    <ellipse cx="92" cy="49" rx="4.4" ry="5.4" fill="#a7f3d0"/>` },
+
+  /* a basket of eggs at his side */
+  { svg: `
+    <path d="M66 40 h30 l-3 16 a11 11 0 0 1 -24 0 Z" fill="#c9a227"/>
+    <path d="M68 44 h26 M70 50 h22" stroke="#a8861c" stroke-width="1.2"/>
+    <ellipse cx="73" cy="38" rx="5" ry="6.4" fill="#fcd34d"/>
+    <ellipse cx="83" cy="36" rx="5" ry="6.4" fill="#c4b5fd"/>
+    <ellipse cx="92" cy="38" rx="4.6" ry="6" fill="#7dd3fc"/>` },
+
+  /* a lamb come to say hello */
+  { svg: `
+    <ellipse cx="82" cy="40" rx="15" ry="11" fill="#f4f6fb"/>
+    <circle cx="70" cy="34" r="7" fill="#2b3142"/>
+    <circle cx="68" cy="32.5" r="1.3" fill="#fff"/>
+    <path d="M64 31 q-4 -2 -5 1 q2 3 5 2 Z" fill="#2b3142"/>
+    <circle cx="74" cy="31" r="5" fill="#f4f6fb"/><circle cx="86" cy="30" r="6" fill="#f4f6fb"/>
+    <circle cx="94" cy="35" r="5" fill="#f4f6fb"/>
+    <path d="M76 50 v6 M90 50 v6" stroke="#2b3142" stroke-width="2.4" stroke-linecap="round"/>` },
+
+  /* painting an egg */
+  { svg: `
+    <ellipse cx="84" cy="36" rx="11" ry="14" fill="#f4f6fb"/>
+    <path d="M73.5 32 q10.5 5 21 0" stroke="#f9a8d4" stroke-width="3" fill="none"/>
+    <path d="M75 41 q9 4 18 0" stroke="#a7f3d0" stroke-width="2.6" fill="none"/>
+    <path d="M58 60 L74 44" stroke="#c98a3f" stroke-width="2.6" stroke-linecap="round"/>
+    <path d="M74 44 l6 -5 l3 3 l-5 6 Z" fill="#7dd3fc"/>` },
+
+  /* a hot cross bun */
+  { svg: `
+    <circle cx="81" cy="38" r="14" fill="#b5651d"/>
+    <circle cx="81" cy="38" r="14" fill="#d98a3d" opacity=".5"/>
+    <path d="M67 38 h28 M81 24 v28" stroke="#f9f5ec" stroke-width="3.4"/>
+    <circle cx="74" cy="31" r="1.6" fill="#6b4423"/><circle cx="88" cy="45" r="1.6" fill="#6b4423"/>` },
+
+  /* a butterfly on the antenna */
+  { antenna: `
+    <g transform="translate(-4 2)">
+    <path d="M35 -18 q-8 -8 -12 -2 q-3 6 5 8 Z" fill="#f9a8d4"/>
+    <path d="M37 -18 q8 -8 12 -2 q3 6 -5 8 Z" fill="#c4b5fd"/>
+    <path d="M35 -18 q-7 4 -8 9 q5 2 9 -4 Z" fill="#fcd34d"/>
+    <path d="M37 -18 q7 4 8 9 q-5 2 -9 -4 Z" fill="#7dd3fc"/>
+    <rect x="35" y="-19" width="2" height="12" rx="1" fill="#3b2a20"/></g>` },
 
     /* bunny ears */
     { svg: `
@@ -14790,6 +15105,55 @@ const THEME_COSTUMES = {
   ],
 
   summer: [
+  /* THE FEATURE: the lifeguard, board under his arm */
+  { hideAntenna: true, feature: true, routine: featurePlay, quarry: 'ball', svg: `
+    <ellipse cx="32" cy="11" rx="30" ry="6.5" fill="#e6c47a"/>
+    <path d="M15 11 Q17 -8 32 -8 Q47 -8 49 11 Z" fill="#f0d79a"/>
+    <path d="M14 7 Q32 1 50 7" stroke="#e11d48" stroke-width="4" fill="none"/>
+    <path d="M6 22 h52 v3 h-52 Z" fill="#12141c"/>
+    <path d="M7 24 h20 q2 10 -8 11 q-11 1 -12 -11 Z" fill="#1d212c"/>
+    <path d="M37 24 h20 q-1 12 -12 11 q-10 -1 -8 -11 Z" fill="#1d212c"/>
+    <path d="M6 54 Q32 48 58 54 L58 80 Q32 86 6 80 Z" fill="#e11d48"/>
+    <path d="M32 54 v28" stroke="#f4f6fb" stroke-width="3"/>
+    <path d="M18 66 h28" stroke="#f4f6fb" stroke-width="3"/>
+    <path d="M92 8 q10 26 0 52 q-10 -26 0 -52 Z" fill="#fde68a" stroke="#e0a95c" stroke-width="1.2"/>
+    <path d="M92 14 v40" stroke="#e11d48" stroke-width="2.4"/>` },
+
+  /* a beach ball */
+  { svg: `
+    <circle cx="81" cy="38" r="15" fill="#f4f6fb"/>
+    <path d="M81 23 a15 15 0 0 1 13 8 l-13 7 Z" fill="#e11d48"/>
+    <path d="M94 31 a15 15 0 0 1 -6 19 l-7 -12 Z" fill="#f5c542"/>
+    <path d="M88 50 a15 15 0 0 1 -14 0 l7 -12 Z" fill="#3ec46d"/>
+    <path d="M74 50 a15 15 0 0 1 -6 -19 l13 7 Z" fill="#3b6ea5"/>` },
+
+  /* a bucket and spade */
+  { svg: `
+    <path d="M68 38 h26 l-3 16 a10 10 0 0 1 -20 0 Z" fill="#e11d48"/>
+    <path d="M68 38 a13 13 0 0 1 26 0" stroke="#b8121f" stroke-width="2.2" fill="none"/>
+    <path d="M100 12 v26" stroke="#f5c542" stroke-width="3" stroke-linecap="round"/>
+    <path d="M96 38 h9 l-2 10 h-5 Z" fill="#3b6ea5"/>` },
+
+  /* sun cream on his nose, and a visor */
+  { svg: `
+    <path d="M4 20 Q32 10 60 20 L60 25 Q32 16 4 25 Z" fill="#3ec46d"/>
+    <path d="M4 20 Q32 10 60 20" stroke="#2c8f4f" stroke-width="2" fill="none"/>
+    <rect x="26" y="36" width="12" height="5" rx="2.5" fill="#f4f6fb" transform="rotate(-8 32 38)"/>
+    <circle cx="20" cy="42" r="2.4" fill="#f4f6fb" opacity=".8"/>` },
+
+  /* a slice of watermelon */
+  { svg: `
+    <path d="M64 46 A20 20 0 0 1 98 46 Z" fill="#3ec46d"/>
+    <path d="M67 46 A17 17 0 0 1 95 46 Z" fill="#f4f6fb"/>
+    <path d="M69 46 A15 15 0 0 1 93 46 Z" fill="#e11d48"/>
+    <g fill="#2b1a14"><circle cx="76" cy="40" r="1.5"/><circle cx="86" cy="40" r="1.5"/><circle cx="81" cy="35" r="1.5"/></g>` },
+
+  /* a parasol leaning over him */
+  { svg: `
+    <path d="M60 4 L96 52" stroke="#8a5a2b" stroke-width="2.4" stroke-linecap="round"/>
+    <path d="M42 18 A28 20 0 0 1 90 -4 Z" fill="#f5c542"/>
+    <path d="M55 5 A28 20 0 0 1 72 -8 L66 12 Z" fill="#e11d48"/>
+    <path d="M72 -8 A28 20 0 0 1 90 -4 L79 10 Z" fill="#e11d48" opacity=".5"/>` },
 
     /* sunglasses */
     { svg: `
@@ -14823,6 +15187,55 @@ const THEME_COSTUMES = {
   ],
 
   bonfire: [
+  /* THE FEATURE: the one riding the rocket */
+  { hideAntenna: true, feature: true, routine: featurePlay, quarry: 'rocket', svg: `
+    <path d="M13 13 Q15 -6 32 -6 Q49 -6 51 13 Z" fill="#7c3aed"/>
+    <rect x="11" y="8" width="42" height="7.5" rx="3.7" fill="#f5c542"/>
+    <circle cx="32" cy="-10" r="6.5" fill="#f5c542"/>
+    <ellipse cx="4" cy="30" rx="7" ry="9" fill="#2b3142" stroke="#f5c542" stroke-width="1.4"/>
+    <ellipse cx="60" cy="30" rx="7" ry="9" fill="#2b3142" stroke="#f5c542" stroke-width="1.4"/>
+    <path d="M8 22 Q32 8 56 22" stroke="#2b3142" stroke-width="3.4" fill="none"/>
+    <path d="M9 52 Q32 60 55 52 L55 58 Q32 66 9 58 Z" fill="#e11d48"/>
+    <path d="M22 64 Q32 52 42 64 Q42 82 32 90 Q22 82 22 64 Z" fill="#e11d48"/>
+    <path d="M22 78 l-10 8 l8 -2 Z M42 78 l10 8 l-8 -2 Z" fill="#c2181f"/>
+    <g class="glow"><path d="M26 90 q6 14 12 0 q-2 10 -6 14 q-4 -4 -6 -14 Z" fill="#ff8a1f"/></g>` },
+
+  /* ear defenders for the bangs */
+  { svg: `
+    <path d="M6 20 Q32 4 58 20" stroke="#e11d48" stroke-width="4" fill="none"/>
+    <rect x="-4" y="22" width="14" height="19" rx="6" fill="#c2181f"/>
+    <rect x="54" y="22" width="14" height="19" rx="6" fill="#c2181f"/>
+    <rect x="-1" y="26" width="8" height="11" rx="4" fill="#2b3142"/>
+    <rect x="57" y="26" width="8" height="11" rx="4" fill="#2b3142"/>` },
+
+  /* the bonfire itself */
+  { svg: `
+    <path d="M64 56 L98 42 M64 42 L98 56" stroke="#6b4423" stroke-width="4" stroke-linecap="round"/>
+    <path d="M70 52 L92 52" stroke="#8a5a2b" stroke-width="4" stroke-linecap="round"/>
+    <g class="glow">
+    <path d="M70 46 q4 -16 11 -22 q-2 9 4 13 q4 -4 3 -10 q7 10 5 19 q-2 8 -11 10 q-11 -1 -12 -10 Z" fill="#ff8a1f"/>
+    <path d="M75 46 q3 -10 7 -14 q-1 6 2 9 q3 -3 2 -7 q5 7 3 12 q-2 5 -7 6 q-7 -1 -7 -6 Z" fill="#ffd166"/></g>` },
+
+  /* a glow stick, waved about */
+  { svg: `
+    <rect x="60" y="30" width="34" height="7" rx="3.5" fill="#3ec46d" class="glow" transform="rotate(-28 77 33)"/>
+    <rect x="63" y="32" width="28" height="3" rx="1.5" fill="#d9ffe8" opacity=".8" transform="rotate(-28 77 33)"/>` },
+
+  /* a jacket potato out of the embers */
+  { svg: `
+    <ellipse cx="81" cy="40" rx="16" ry="12" fill="#cbd5e1"/>
+    <ellipse cx="81" cy="38" rx="13" ry="9.5" fill="#8a5a2b"/>
+    <path d="M72 36 q9 -5 18 0 q-4 4 -9 4 q-5 0 -9 -4 Z" fill="#f4e4b8"/>
+    <rect x="77" y="32" width="8" height="4" rx="2" fill="#fde68a"/>
+    <path d="M74 26 q3 -6 0 -10 M88 26 q3 -6 0 -10" stroke="#cbd5e1" stroke-width="1.4" fill="none" opacity=".55" stroke-linecap="round"/>` },
+
+  /* a catherine wheel, pinned and spinning */
+  { svg: `
+    <circle cx="81" cy="34" r="17" fill="none" stroke="#c2181f" stroke-width="5"/>
+    <g class="glow" stroke="#ffd166" stroke-width="2.2" stroke-linecap="round" fill="none">
+    <path d="M81 17 q10 4 10 17 q0 13 -10 17 q-10 -4 -10 -17 q0 -13 10 -17"/></g>
+    <circle cx="81" cy="34" r="3" fill="#8a8f9c"/>
+    <g class="glow" fill="#fff8d6"><circle cx="98" cy="34" r="2.6"/><circle cx="64" cy="34" r="2"/></g>` },
 
     /* a sparkler held up */
     { svg: `
@@ -14859,6 +15272,184 @@ const THEME_COSTUMES = {
   ]
 
 };
+
+/*
+  THE FEATURE ROBOT
+
+  Every celebration has one: the star of that theme, who turns
+  up half as often again as the rest, gets the whole width of
+  the message box, takes longer over it, and is announced
+  beforehand the way the devil is announced by the storm.
+
+  One routine with three ways of playing it, so the same
+  character is not doing the same thing every time.
+*/
+async function featurePlay(bot) {
+
+  const quarry = bot.quarry || 'present';
+  const kind = featurePlay.deck && featurePlay.deck.length
+    ? featurePlay.deck.shift()
+    : (featurePlay.deck = shuffled([0, 1, 2])).shift();
+
+  /* the whole width of the message box, same as the devil gets */
+  bot.stage.style.left = '18px';
+  bot.W = Math.max(240, (bot.card.clientWidth || 300) - 36);
+  bot.stage.style.width = `${bot.W}px`;
+  bot.stage.style.height = '170px';
+  bot.tempo = 1.25;
+
+  const W = bot.W;
+  const X = f => Math.round((W - 70) * f);
+
+  if (kind === 0) return featureChase(bot, quarry, X);
+  if (kind === 1) return featureCatch(bot, quarry, X);
+  return featureParade(bot, quarry, X);
+
+}
+
+function shuffled(list) {
+  const out = list.slice();
+  for (let i = out.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}
+
+/* he chases it the full length of the box and sees it off */
+async function featureChase(bot, quarry, X) {
+  const start = X(0.02);
+  const end = X(0.86);
+  const runner = peekActor(bot, quarry, { left: Math.round(bot.W * 0.3) });
+  await bot.move([at(PEEK_HIDDEN, start), at(PEEK_EYES, start)], 440, 'cubic-bezier(.2,.8,.3,1)');
+  await bot.look(3.5);
+  await runner.go([{ transform: 'translateY(110%)' }, { transform: 'translateY(6%)' }], 340, 'cubic-bezier(.3,1.4,.5,1)');
+  bot.eyes('open');
+  await runner.go([
+    { transform: 'translateY(6%) rotate(-10deg)' },
+    { transform: 'translateY(6%) rotate(10deg)' },
+    { transform: 'translateY(6%) rotate(0deg)' }
+  ], 400, 'ease-in-out');
+  const n = 16;
+  const run = [];
+  const flee = [];
+  const away = bot.W - Math.round(bot.W * 0.3) - 44;
+  for (let i = 0; i <= n; i += 1) {
+    run.push(at(i % 2 ? PEEK_EYES - 12 : PEEK_EYES, Math.round(start + (end - start) * i / n), `rotate(${i % 2 ? 9 : 6}deg)`));
+    flee.push({ transform: `translateX(${Math.round(away * i / n)}px) translateY(${i % 2 ? -8 : 6}%)` });
+  }
+  await Promise.all([bot.move(run, 3400, 'ease-in-out'), runner.go(flee, 3400, 'ease-in-out')]);
+  await runner.go([{ transform: `translateX(${away}px) translateY(6%)` }, { transform: `translateX(${away + 90}px) translateY(0%)` }], 380, 'ease-in');
+  bot.eyes('happy');
+  await bot.look(3.5); await bot.wait(420); await bot.look(-3.5); await bot.wait(420); await bot.look(0);
+  await bot.move([at(PEEK_EYES, end), at(PEEK_HIDDEN, end)], 320, 'ease-in');
+  await bot.wait(380);
+  bot.handAt(end);
+  await bot.move([at(PEEK_HIDDEN, end), at(PEEK_HIGH, end)], 440, 'cubic-bezier(.3,1.4,.5,1)');
+  bot.eyes('wink');
+  await bot.wave(2);
+  bot.eyes('happy');
+  await bot.move([at(PEEK_HIGH, end), at(PEEK_HIDDEN, end)], 420, 'ease-in');
+}
+
+/* it drops out of the sky and he catches it */
+async function featureCatch(bot, quarry, X) {
+  const spot = X(0.46);
+  const drop = peekActor(bot, quarry, { left: spot + 18, bottom: 120, start: 'translateY(-220px)' });
+  await bot.move([at(PEEK_HIDDEN, spot), at(PEEK_EYES, spot)], 440, 'cubic-bezier(.2,.8,.3,1)');
+  await bot.look(0);
+  await bot.wait(420);
+  await Promise.all([
+    drop.go([{ transform: 'translateY(-220px)' }, { transform: 'translateY(-26px)' }], 900, 'cubic-bezier(.4,0,.8,1)'),
+    (async () => { await bot.wait(320); bot.eyes('open'); await bot.move([at(PEEK_EYES, spot), at(PEEK_HIGH, spot)], 420, 'cubic-bezier(.3,1.4,.5,1)'); })()
+  ]);
+  await drop.go([
+    { transform: 'translateY(-26px)' },
+    { transform: 'translateY(-44px)' },
+    { transform: 'translateY(-30px)' }
+  ], 520, 'ease-out');
+  bot.eyes('happy');
+  await bot.wave(2);
+  /* shows it off, left and right */
+  await bot.look(-3.5); await bot.wait(460);
+  await bot.look(3.5); await bot.wait(460);
+  await bot.look(0);
+  await bot.blink();
+  await bot.wait(400);
+  await Promise.all([
+    bot.move([at(PEEK_HIGH, spot), at(PEEK_HIDDEN, spot)], 460, 'ease-in'),
+    drop.go([{ transform: 'translateY(-30px)' }, { transform: 'translateY(120px)' }], 460, 'ease-in')
+  ]);
+}
+
+/* he carries it the whole way along, holding it up */
+async function featureParade(bot, quarry, X) {
+  const start = X(0.04);
+  const end = X(0.84);
+  const held = peekActor(bot, quarry, { left: start + 66, bottom: 78, start: 'translateY(30px)' });
+  await bot.move([at(PEEK_HIDDEN, start), at(PEEK_HIGH, start)], 520, 'cubic-bezier(.3,1.4,.5,1)');
+  await held.go([{ transform: 'translateY(30px)', opacity: 0 }, { transform: 'translateY(0px)', opacity: 1 }], 380, 'ease-out');
+  bot.eyes('happy');
+  await bot.wave(2);
+  const n = 14;
+  const walk = [];
+  const carry = [];
+  for (let i = 0; i <= n; i += 1) {
+    const x = Math.round(start + (end - start) * i / n);
+    walk.push(at(i % 2 ? PEEK_HIGH + 7 : PEEK_HIGH, x, `rotate(${i % 2 ? -4 : 4}deg)`));
+    carry.push({ transform: `translateX(${x - start}px) translateY(${i % 2 ? 5 : -3}px)` });
+  }
+  await Promise.all([bot.move(walk, 3600, 'ease-in-out'), held.go(carry, 3600, 'ease-in-out')]);
+  bot.eyes('wink');
+  await bot.wave(2);
+  bot.eyes('happy');
+  await bot.blink();
+  await bot.wait(420);
+  await Promise.all([
+    bot.move([at(PEEK_HIGH, end), at(PEEK_HIDDEN, end)], 440, 'ease-in'),
+    held.go([{ transform: `translateX(${end - start}px)`, opacity: 1 }, { transform: `translateX(${end - start}px) translateY(40px)`, opacity: 0 }], 440, 'ease-in')
+  ]);
+}
+
+/*
+  PAIRING
+
+  A costume has to suit the way he moves, or a hat ends up
+  hidden and a prop ends up off the edge. So the costume is
+  picked first and the routine is chosen to fit it.
+
+  Routines led by the antenna are no good under a hat, and a
+  costume drawn wide or low needs one of the routines that
+  brings him right up where it can be seen.
+*/
+const ANTENNA_LED = [4, 15];
+const SHOWCASE = [3, 8, 9, 14];
+
+function costumeNeeds(costume) {
+  const svg = String(costume?.svg || '');
+  /* colours and attribute names first, so only real coordinates are left */
+  const clean = svg.replace(/#[0-9a-fA-F]{3,8}/g, ' ').replace(/[A-Za-z-]+=/g, ' ');
+  let big = 0;
+  (clean.match(/-?\d+(?:\.\d+)?/g) || []).forEach(text => {
+    const value = Math.abs(Number(text));
+    if (value > big && value < 200) big = value;
+  });
+  return {
+    showcase: big >= 62,
+    noAntennaLed: !!costume?.hideAntenna
+  };
+}
+
+/* the routine this costume should be wearing */
+function routineFor(costume, wanted) {
+  const needs = costumeNeeds(costume);
+  let allowed = peekRoutines.map((unused, i) => i);
+  if (needs.showcase) allowed = SHOWCASE.slice();
+  if (needs.noAntennaLed) allowed = allowed.filter(i => !ANTENNA_LED.includes(i));
+  if (!allowed.length) allowed = SHOWCASE.slice();
+  if (allowed.includes(wanted)) return wanted;
+  return allowed[Math.floor(Math.random() * allowed.length)];
+}
 
 function halloweenOn() {
   return document.body.classList.contains('theme-halloween');
@@ -15010,7 +15601,7 @@ function createPeekBot(card) {
       if (theme === 'standard') return;
       const set = theme === 'halloween' ? PEEK_COSTUMES : THEME_COSTUMES[theme];
       if (!Array.isArray(set) || !set.length) return;
-      const costume = theme === 'halloween' ? set[pick] : set[pick % set.length];
+      const costume = set[pick];
       if (!costume) return;
       if (costume.svg) {
         bot.insertAdjacentHTML('beforeend',
@@ -15107,23 +15698,68 @@ function createPeekBot(card) {
 
       api.last = pick;
 
+      /*
+        Halloween keeps its costume for each routine. Every
+        other celebration picks the costume first, from its
+        own deck of ten, and then a routine that suits it:
+        no antenna routine under a hat, and nothing wide or
+        low unless he comes right up where it can be seen.
+      */
+      const theme = currentTheme();
+      const set = theme === 'halloween' ? PEEK_COSTUMES : THEME_COSTUMES[theme];
+
+      if (theme !== 'halloween' && Array.isArray(set) && set.length) {
+
+        if (!api.dressDeck || !api.dressDeck.length || api.dressTheme !== theme) {
+
+          api.dressTheme = theme;
+          api.dressDeck = shuffled(set.map((unused, i) => i));
+
+          /* the feature turns up half as often again as the rest */
+          api.dressRounds = (api.dressRounds || 0) + 1;
+          const star = set.findIndex(costume => costume?.feature);
+          if (star >= 0 && api.dressRounds % 2 === 0) {
+            const first = api.dressDeck.indexOf(star);
+            let spot = Math.floor(Math.random() * (api.dressDeck.length + 1));
+            while (Math.abs(spot - first) < 2) spot = (spot + 3) % (api.dressDeck.length + 1);
+            api.dressDeck.splice(spot, 0, star);
+          }
+
+          if (api.dressDeck[0] === api.lastDress && api.dressDeck.length > 1) {
+            api.dressDeck.push(api.dressDeck.shift());
+          }
+
+        }
+
+        api.costume = api.dressDeck.shift();
+        api.lastDress = api.costume;
+        if (!set[api.costume]?.routine) pick = routineFor(set[api.costume], pick);
+
+      } else {
+
+        api.costume = pick;
+
+      }
+
       /* start from a clean, hidden spot on the left */
       api.eyes('happy');
       eyes.style.transform = '';
       api.y = PEEK_HIDDEN;
       api.place('left');
 
-      /* the devil is coming: thunder and lightning, then five seconds */
-      if (halloweenOn() && PEEK_COSTUMES[pick]?.routine) {
-        strikeStorm();
+      const star = set?.[api.costume]?.routine;
+
+      /* the feature is coming: the warning, then five seconds */
+      if (star) {
+        api.quarry = set[api.costume].quarry;
+        warnFeature();
         await api.wait(STORM_ROLL_IN + 5000);
       }
 
-      api.dress(pick);
+      api.dress(api.costume);
 
       try {
-        const special = halloweenOn() && PEEK_COSTUMES[pick]?.routine;
-        await (special || peekRoutines[pick])(api);
+        await (star || peekRoutines[pick])(api);
       } finally {
         bot.getAnimations().forEach(animation => animation.cancel());
         hand.getAnimations().forEach(animation => animation.cancel());
@@ -15343,6 +15979,56 @@ paintTestFeatures();
    and the last one is remembered on this device so the
    sign in and sign up screens wear it straight away.
 ===================================================== */
+
+const SLEIGH_SVG = `
+<svg viewBox="0 0 150 46" aria-hidden="true">
+  <g fill="#8a5a2b"><path d="M96 30 q-4 12 8 12 h34 q10 0 12 -10 l-6 2 q-3 4 -8 4 h-30 q-6 0 -4 -8 Z"/></g>
+  <path d="M96 16 q-2 14 10 14 h30 q8 0 10 -8 l-8 -10 q-2 6 -8 6 h-24 q-6 0 -6 -4 Z" fill="#c2181f"/>
+  <path d="M100 18 h34" stroke="#f5c542" stroke-width="2"/>
+  <path d="M96 24 L60 18 M96 28 L60 24" stroke="#6b4423" stroke-width="1.4"/>
+  <g fill="#8a5a2b">
+    <path d="M36 14 q10 -4 18 4 q6 6 4 14 q-8 4 -16 -2 q-8 -6 -6 -16 Z"/>
+    <path d="M40 12 q-3 -10 2 -12 q2 6 6 8 M50 12 q3 -10 8 -10 q-2 6 -2 10"/>
+  </g>
+  <circle cx="44" cy="20" r="2" fill="#fff"/>
+  <circle cx="34" cy="22" r="3.4" fill="#e11d48" class="glow"/>
+</svg>`;
+
+/*
+  THE WARNING
+
+  The storm is Halloween's. Every other celebration gets its
+  own sign that the feature robot is about to arrive: it runs
+  five seconds ahead of him, and at no other time.
+*/
+function warnFeature() {
+
+  const theme = currentTheme();
+
+  if (theme === 'halloween') return strikeStorm();
+
+  const decor = document.getElementById('themeDecor');
+
+  if (theme === 'standard' || !decor ||
+      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
+
+  /* a fresh burst, in a fresh place, every time */
+  const pop = decor.querySelector('.warn .pop');
+  if (pop) {
+    pop.style.left = `${14 + Math.random() * 62}%`;
+    pop.style.top = `${4 + Math.random() * 16}%`;
+  }
+
+  decor.classList.remove('warning');
+  clearTimeout(warnFeature.timers?.[0]);
+  clearTimeout(warnFeature.timers?.[1]);
+
+  warnFeature.timers = [
+    setTimeout(() => { void decor.offsetWidth; decor.classList.add('warning'); }, 40),
+    setTimeout(() => decor.classList.remove('warning'), STORM_ROLL_IN + 3200)
+  ];
+
+}
 
 /* a jagged bolt with a branch or two, drawn fresh each strike */
 function lightningSvg() {
