@@ -14444,6 +14444,31 @@ const THEME_GROUND = {
 
 };
 
+/*
+  One flake. Near ones are bigger, brighter and come down
+  quicker; far ones drift. Nothing shares a speed with
+  anything else, and each one wanders its own way across.
+*/
+function flakeHtml(i, total) {
+
+  /* how close it is decides size, brightness and speed together */
+  const near = Math.random();
+  const size = (5.5 + near * 11).toFixed(1);
+  const fall = (17 - near * 10.5 + Math.random() * 2.4).toFixed(2);
+  const drift = Math.round((Math.random() - 0.5) * 150);
+  const sway = Math.round(14 + Math.random() * 46);
+  const spin = Math.round((Math.random() - 0.5) * 540);
+  const left = ((i / total) * 100 + (Math.random() - 0.5) * (90 / total)).toFixed(1);
+  const wait = (Math.random() * Number(fall)).toFixed(2);
+  const fade = (0.22 + near * 0.6).toFixed(2);
+
+  return '<i class="snow" style="left:' + left + '%;font-size:' + size + 'px;opacity:' + fade +
+    ';animation-duration:' + fall + 's;animation-delay:-' + wait +
+    's;--drift:' + drift + 'px;--sway:' + sway + 'px;--spin:' + spin + 'deg">' +
+    DECOR_SNOWFLAKE + '</i>';
+
+}
+
 const THEME_DECOR = {
 
   /* fireworks over the rooftops and gold falling through them */
@@ -14456,10 +14481,9 @@ const THEME_DECOR = {
 
   /* quiet snow, and frost creeping in at the corners */
   frost: () =>
-    '<div class="warn"><i class="gust"></i></div>' +
+    '<div class="warn"><i class="gust one"></i><i class="gust two"></i><i class="gust three"></i><i class="whiteout"></i></div>' +
     '<div class="frostEdge"></div>' +
-    scatter(34, i =>
-      `<i class="snow" style="left:${(i * 2.95 + 1).toFixed(1)}%;animation-delay:${(i * 0.51).toFixed(2)}s;animation-duration:${(11 + (i % 7)).toFixed(1)}s;font-size:${(7 + (i % 5) * 2.2).toFixed(1)}px;opacity:${(0.25 + (i % 4) * 0.13).toFixed(2)}">${DECOR_SNOWFLAKE}</i>`),
+    scatter(36, i => flakeHtml(i, 36)),
 
   /* hearts drifting up the screen */
   valentines: () =>
@@ -14506,8 +14530,7 @@ const THEME_DECOR = {
   christmas: () =>
     '<div class="warn"><i class="sleigh">' + SLEIGH_SVG + '</i></div>' +
     `<div class="lights">${lightStringSvg()}</div>` +
-    scatter(30, i =>
-      `<i class="snow" style="left:${(i * 3.35 + 1).toFixed(1)}%;animation-delay:${(i * 0.47).toFixed(2)}s;animation-duration:${(10 + (i % 6)).toFixed(1)}s;font-size:${(8 + (i % 5) * 2.4).toFixed(1)}px;opacity:${(0.3 + (i % 4) * 0.14).toFixed(2)}">${DECOR_SNOWFLAKE}</i>`) +
+    scatter(32, i => flakeHtml(i, 32)) +
     scatter(3, i =>
       `<i class="hanging" style="left:${[14, 52, 86][i]}%;animation-delay:${(i * 1.4).toFixed(1)}s;color:${['#e11d48', '#c9a227', '#2f7a4f'][i]}">${THEME_SPRITES.bauble}</i>`)
 
@@ -15400,13 +15423,14 @@ function shuffled(list) {
 
 /* he chases it the full length of the box and sees it off */
 async function featureChase(bot, quarry, X) {
+  bot.eyes('happy');
   const start = X(0.02);
   const end = X(0.86);
   const runner = peekActor(bot, quarry, { left: Math.round(bot.W * 0.3) });
   await bot.move([at(PEEK_HIDDEN, start), at(PEEK_HIGH + 26, start)], 460, 'cubic-bezier(.2,.8,.3,1)');
   await bot.look(3.5);
   await runner.go([{ transform: 'translateY(110%)' }, { transform: 'translateY(6%)' }], 340, 'cubic-bezier(.3,1.4,.5,1)');
-  bot.eyes('open');
+  bot.eyes('happy');
   await runner.go([
     { transform: 'translateY(6%) rotate(-10deg)' },
     { transform: 'translateY(6%) rotate(10deg)' },
@@ -15438,6 +15462,7 @@ async function featureChase(bot, quarry, X) {
 
 /* it drops out of the sky and he catches it */
 async function featureCatch(bot, quarry, X) {
+  bot.eyes('happy');
   const spot = X(0.46);
   const drop = peekActor(bot, quarry, { left: spot + 18, bottom: 120, start: 'translateY(-220px)' });
   await bot.move([at(PEEK_HIDDEN, spot), at(PEEK_HIGH + 34, spot)], 460, 'cubic-bezier(.2,.8,.3,1)');
@@ -15445,7 +15470,7 @@ async function featureCatch(bot, quarry, X) {
   await bot.wait(420);
   await Promise.all([
     drop.go([{ transform: 'translateY(-220px)' }, { transform: 'translateY(-26px)' }], 900, 'cubic-bezier(.4,0,.8,1)'),
-    (async () => { await bot.wait(320); bot.eyes('open'); await bot.move([at(PEEK_HIGH + 34, spot), at(PEEK_HIGH, spot)], 420, 'cubic-bezier(.3,1.4,.5,1)'); })()
+    (async () => { await bot.wait(320); bot.eyes('happy'); await bot.move([at(PEEK_HIGH + 34, spot), at(PEEK_HIGH, spot)], 420, 'cubic-bezier(.3,1.4,.5,1)'); })()
   ]);
   await drop.go([
     { transform: 'translateY(-26px)' },
@@ -15468,6 +15493,7 @@ async function featureCatch(bot, quarry, X) {
 
 /* he carries it the whole way along, holding it up */
 async function featureParade(bot, quarry, X) {
+  bot.eyes('happy');
   const start = X(0.04);
   const end = X(0.84);
   const held = peekActor(bot, quarry, { left: start + 66, bottom: 78, start: 'translateY(30px)' });

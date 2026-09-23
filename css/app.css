@@ -6205,12 +6205,50 @@ body.smartMode .sidebar::after {
     linear-gradient(rgba(255, 255, 255, .16), rgba(255, 255, 255, .16)) border-box;
 }
 
+/*
+  State reads off the colour without opening anything: the pin
+  lights up when the sidebar is being held open, and motion is
+  green while it runs and amber while it is held still.
+*/
 .sidebarPill[aria-pressed="true"] {
   color: #fff;
-  background:
-    linear-gradient(rgba(124, 58, 237, .22), rgba(124, 58, 237, .22)) padding-box,
-    linear-gradient(rgba(167, 139, 250, .38), rgba(167, 139, 250, .38)) border-box;
 }
+
+#pinSidebar[aria-pressed="true"] {
+  background:
+    linear-gradient(rgba(124, 58, 237, .26), rgba(124, 58, 237, .26)) padding-box,
+    linear-gradient(rgba(167, 139, 250, .5), rgba(167, 139, 250, .5)) border-box;
+  box-shadow: 0 4px 14px -8px rgba(124, 58, 237, .9);
+}
+
+#pinSidebar[aria-pressed="true"] svg { color: #c4b5fd; }
+
+#motionToggle[aria-pressed="true"] {
+  background:
+    linear-gradient(rgba(62, 196, 109, .2), rgba(62, 196, 109, .2)) padding-box,
+    linear-gradient(rgba(62, 196, 109, .46), rgba(62, 196, 109, .46)) border-box;
+  box-shadow: 0 4px 14px -8px rgba(62, 196, 109, .9);
+}
+
+#motionToggle[aria-pressed="true"] svg { color: #5fe08c; }
+
+#motionToggle.off {
+  color: #f3c165;
+  background:
+    linear-gradient(rgba(245, 178, 61, .16), rgba(245, 178, 61, .16)) padding-box,
+    linear-gradient(rgba(245, 178, 61, .38), rgba(245, 178, 61, .38)) border-box;
+}
+
+#motionToggle.off svg { color: #f5b23d; }
+
+#motionToggle.off:hover {
+  color: #ffd79a;
+  background:
+    linear-gradient(rgba(245, 178, 61, .24), rgba(245, 178, 61, .24)) padding-box,
+    linear-gradient(rgba(245, 178, 61, .55), rgba(245, 178, 61, .55)) border-box;
+}
+
+.sidebarPill:active { transform: translateY(1px); }
 
 /* the motion pill swaps its own mark */
 #motionToggle .pillPlay { display: none; }
@@ -9056,10 +9094,13 @@ body.theme-christmas .themeDecor {
 .themeDecor .ember svg { display: block; width: 100%; height: auto; }
 
 @keyframes fallSoft {
-  0% { transform: translate3d(0, 0, 0); opacity: 0; }
-  6% { opacity: 1; }
-  92% { opacity: 1; }
-  100% { transform: translate3d(22px, 118vh, 0); opacity: 0; }
+  0% { transform: translate3d(0, -4vh, 0) rotate(0deg); opacity: 0; }
+  5% { opacity: 1; }
+  25% { transform: translate3d(calc(var(--drift, 20px) * .25 + var(--sway, 20px)), 26vh, 0) rotate(calc(var(--spin, 90deg) * .25)); }
+  50% { transform: translate3d(calc(var(--drift, 20px) * .5 - var(--sway, 20px)), 55vh, 0) rotate(calc(var(--spin, 90deg) * .5)); }
+  75% { transform: translate3d(calc(var(--drift, 20px) * .75 + var(--sway, 20px) * .6), 84vh, 0) rotate(calc(var(--spin, 90deg) * .75)); }
+  93% { opacity: 1; }
+  100% { transform: translate3d(var(--drift, 20px), 118vh, 0) rotate(var(--spin, 90deg)); opacity: 0; }
 }
 
 @keyframes fallSpin {
@@ -9616,23 +9657,68 @@ body.theme-christmas .logoLarge::after {
   100% { opacity: 0; transform: translate(calc(100vw + 230px), 30px) scale(.8); }
 }
 
-/* Midwinter: a gust of snow sweeps through */
+/* Midwinter: a blizzard comes through, three depths of it */
 .themeDecor .warn .gust {
+  inset: -14% -22%;
+  display: block;
+  background-repeat: repeat;
+}
+
+.themeDecor .warn .gust.one {
+  background-image:
+    radial-gradient(circle at 10% 20%, #fff 0 1.6px, transparent 2.2px),
+    radial-gradient(circle at 38% 62%, #fff 0 1.4px, transparent 2px),
+    radial-gradient(circle at 66% 28%, #fff 0 1.8px, transparent 2.4px),
+    radial-gradient(circle at 88% 74%, #fff 0 1.5px, transparent 2.1px);
+  background-size: 170px 130px;
+  opacity: .5;
+}
+
+.themeDecor .warn .gust.two {
+  background-image:
+    radial-gradient(circle at 22% 44%, #fff 0 2.6px, transparent 3.4px),
+    radial-gradient(circle at 74% 16%, #fff 0 2.2px, transparent 3px),
+    radial-gradient(circle at 52% 82%, #fff 0 2.8px, transparent 3.6px);
+  background-size: 240px 190px;
+  opacity: .62;
+}
+
+.themeDecor .warn .gust.three {
+  background-image:
+    radial-gradient(ellipse at 30% 50%, #fff 0 4px, transparent 5.4px),
+    radial-gradient(ellipse at 80% 30%, #fff 0 3.4px, transparent 4.6px);
+  background-size: 330px 260px;
+  opacity: .5;
+  filter: blur(1px);
+}
+
+/* the far snow crawls, the near snow tears past */
+.themeDecor.warning .warn .gust.one { animation: blizzard 3.6s linear; }
+.themeDecor.warning .warn .gust.two { animation: blizzard 2.3s linear; }
+.themeDecor.warning .warn .gust.three { animation: blizzard 1.35s linear; }
+
+@keyframes blizzard {
+  0% { opacity: 0; transform: translate3d(-14%, -22%, 0); }
+  14% { opacity: 1; }
+  74% { opacity: 1; }
+  100% { opacity: 0; transform: translate3d(26%, 56%, 0); }
+}
+
+/* and a white out at the worst of it */
+.themeDecor .warn .whiteout {
   inset: 0;
   display: block;
   background:
-    repeating-linear-gradient(105deg,
-      rgba(255, 255, 255, .5) 0 2px, transparent 2px 22px),
-    radial-gradient(ellipse 70% 60% at 50% 40%, rgba(219, 234, 254, .3), transparent 70%);
+    linear-gradient(115deg, rgba(219, 234, 254, .34), rgba(255, 255, 255, .16) 45%, rgba(219, 234, 254, .3)),
+    radial-gradient(ellipse 90% 70% at 50% 40%, rgba(255, 255, 255, .28), transparent 72%);
 }
 
-.themeDecor.warning .warn .gust { animation: warnGust 3.4s ease-in-out; }
+.themeDecor.warning .warn .whiteout { animation: whiteOut 3.4s ease-in-out; }
 
-@keyframes warnGust {
-  0% { opacity: 0; transform: translateX(-30%) skewX(-6deg); }
-  22% { opacity: .8; }
-  70% { opacity: .5; }
-  100% { opacity: 0; transform: translateX(30%) skewX(-6deg); }
+@keyframes whiteOut {
+  0%, 100% { opacity: 0; }
+  30% { opacity: .85; }
+  60% { opacity: .5; }
 }
 
 /* St Patrick's: a rainbow sweeps across and the gold glints */
