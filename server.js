@@ -3594,6 +3594,56 @@ function pickCards(text) {
 
 }
 
+/*
+  HISTORY
+
+  The last ten messages go up word for word, because that is
+  what "make it shorter" and "use the second one" reach back
+  for. Older than that, what the person said is kept in full,
+  since it is short and carries what they wanted, and our own
+  older replies are cut back to their opening, since they are
+  long and the thread survives without every word of them.
+
+  Anything carrying a picture is left alone.
+*/
+const HISTORY_FULL = 10;
+const OLD_REPLY_CHARS = 220;
+
+function shortenReply(text) {
+
+  const whole = String(text || '').trim();
+
+  if (whole.length <= OLD_REPLY_CHARS) return whole;
+
+  /* cut on a sentence if there is one near enough to the end */
+  const room = whole.slice(0, OLD_REPLY_CHARS);
+  const stop = Math.max(room.lastIndexOf('. '), room.lastIndexOf('! '), room.lastIndexOf('? '));
+  const cut = stop > OLD_REPLY_CHARS * 0.5 ? room.slice(0, stop + 1) : room.replace(/\s+\S*$/, '');
+
+  return cut.trim() + ' […]';
+
+}
+
+function trimHistory(list) {
+
+  if (!Array.isArray(list) || list.length <= HISTORY_FULL) return list;
+
+  const keepFrom = list.length - HISTORY_FULL;
+
+  return list.map((message, i) => {
+
+    if (i >= keepFrom) return message;
+    if (message?.role !== 'assistant') return message;
+    if (typeof message.content !== 'string') return message;
+
+    const short = shortenReply(message.content);
+
+    return short === message.content ? message : { ...message, content: short };
+
+  });
+
+}
+
 app.post('/api/chat', async (req, res) => {
 
   try {
@@ -3762,9 +3812,11 @@ ${await (async () => {
 })()}`;
 
     const cleanMessages =
-      Array.isArray(messages)
-        ? messages.slice(-30).map(message => ({ ...message }))
-        : [];
+      trimHistory(
+        Array.isArray(messages)
+          ? messages.slice(-30).map(message => ({ ...message }))
+          : []
+      );
 
     /* rules reach the newest thing they typed */
     for (let i = cleanMessages.length - 1; i >= 0; i -= 1) {
