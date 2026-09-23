@@ -10946,17 +10946,24 @@ function paintAdmin() {
 ===================================================== */
 
 const PRICING_DEFAULT = {
-  costs: { image: 2.4, ask: 0.3, voice: 1.5, search: 0.7 },
+  /*
+    Measured, not guessed. One square medium gpt-image-2 image
+    was generated on its own and the bill moved 22 cents, so an
+    image is about 16p. Portrait and landscape are half as much
+    again. Delivered images work out dearer still, because edits
+    and retries are each a paid generation.
+  */
+  costs: { image: 16, ask: 0.3, voice: 1.5, search: 0.7 },
   fees: { percent: 1.5, fixed: 20 },
   fixedMonthly: 25,
   vat: 0,
   signups: 1000,
   freeShare: 70,
   packs: [
-    { name: 'Free',    price: 0,     images: 3,   asks: 40,  voice: 0,  share: 0 },
-    { name: 'Starter', price: 4.99,  images: 25,  asks: 150, voice: 10, share: 20 },
-    { name: 'Plus',    price: 9.99,  images: 60,  asks: 250, voice: 20, share: 8 },
-    { name: 'Pro',     price: 19.99, images: 130, asks: 500, voice: 25, share: 2 }
+    { name: 'Free',    price: 0,     images: 1,  asks: 40,  voice: 0,  share: 0 },
+    { name: 'Starter', price: 4.99,  images: 6,  asks: 60,  voice: 5,  share: 20 },
+    { name: 'Plus',    price: 9.99,  images: 12, asks: 150, voice: 10, share: 8 },
+    { name: 'Pro',     price: 19.99, images: 25, asks: 250, voice: 15, share: 2 }
   ]
 };
 
