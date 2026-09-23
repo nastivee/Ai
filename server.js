@@ -4458,15 +4458,33 @@ async function rememberExchange({ user, chatId, asked, reply }) {
 
     if (!vector) return;
 
-    const { error } = await supabaseAdmin.from('recall').insert({
+    const row = {
       user_id: user.id,
       chat_id: chatId || null,
       sealed: sealRecall(text),
       chars: text.length,
       embedding: vector
-    });
+    };
 
-    if (error) throw new Error(error.message);
+    const { error } = await supabaseAdmin.from('recall').insert(row);
+
+    /*
+      A brand new chat may not have its row saved yet, and the
+      link to chats would reject this one. Keep the memory, drop
+      the link, rather than losing it over bookkeeping.
+    */
+    if (error && /foreign key|violates/i.test(error.message)) {
+
+      const { error: second } =
+        await supabaseAdmin.from('recall').insert({ ...row, chat_id: null });
+
+      if (second) throw new Error(second.message);
+
+    } else if (error) {
+
+      throw new Error(error.message);
+
+    }
 
   } catch (error) {
 
