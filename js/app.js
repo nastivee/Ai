@@ -13716,9 +13716,23 @@ function waveDraw() {
   const still = document.body.classList.contains('motionOff');
 
   if (!still) {
+
     threadFeed(voiceWave.mine, voiceWave.level.mine, true);
     threadFeed(voiceWave.theirs, voiceWave.level.theirs, false);
+
+    /* quiet: a slow breath along it, so it waits rather than dies */
+    const quiet = Math.max(voiceWave.level.mine, voiceWave.level.theirs) < 0.05;
+
+    if (quiet && thread.grab < 0) {
+      const t = performance.now() / 1000;
+      for (let i = 1; i < THREAD_NODES - 1; i += 1) {
+        const along = i / (THREAD_NODES - 1);
+        thread.v[i] += Math.sin(t * 1.1 + along * Math.PI * 2) * Math.sin(along * Math.PI) * 0.0045;
+      }
+    }
+
     threadStep(style);
+
   }
 
   const speaking = voiceWave.level.theirs > voiceWave.level.mine + 0.02;
@@ -13727,40 +13741,107 @@ function waveDraw() {
   const yours = (css.getPropertyValue('--acc') || '').trim() || '#a78bfa';
   const his = (css.getPropertyValue('--acc2') || '').trim() || '#9fe6ff';
 
-  /* the thread is your colour at your end and his at his */
+  const swing = mid - 16;
+  const scale = 34;
+
+  /* where every point of the thread actually sits this frame */
+  const px = [];
+  const py = [];
+
+  let crest = 0;
+  let crestAt = 0;
+
+  for (let i = 0; i < THREAD_NODES; i += 1) {
+    const x = (i / (THREAD_NODES - 1)) * w;
+    const y = mid + Math.max(-swing, Math.min(swing, thread.u[i] * scale));
+    px.push(x);
+    py.push(y);
+    const lift = Math.abs(y - mid);
+    if (lift > crest) { crest = lift; crestAt = i; }
+  }
+
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+
+  /*
+    A body, not a hair. The thread and its mirror image close into
+    a shape, filled with a wash that fades out at the edges, so the
+    louder it gets the more of it there is.
+  */
+  const wash = ctx.createLinearGradient(0, 0, w, 0);
+  wash.addColorStop(0, yours);
+  wash.addColorStop(1, his);
+
+  ctx.save();
+  ctx.globalAlpha = 0.16;
+  ctx.fillStyle = wash;
+  ctx.beginPath();
+  ctx.moveTo(px[0], py[0]);
+  for (let i = 1; i < THREAD_NODES; i += 1) ctx.lineTo(px[i], py[i]);
+  for (let i = THREAD_NODES - 1; i >= 0; i -= 1) ctx.lineTo(px[i], mid - (py[i] - mid));
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+
+  /* the mirror drawn faintly as a line of its own, for depth */
+  ctx.beginPath();
+  for (let i = 0; i < THREAD_NODES; i += 1) {
+    const y = mid - (py[i] - mid);
+    if (i === 0) ctx.moveTo(px[i], y); else ctx.lineTo(px[i], y);
+  }
+  ctx.strokeStyle = wash;
+  ctx.globalAlpha = 0.3;
+  ctx.lineWidth = style.width * 0.7;
+  ctx.stroke();
+
+  /* smear of where it just was, so fast waves have a tail */
+  ctx.beginPath();
+  for (let i = 0; i < THREAD_NODES; i += 1) {
+    const y = py[i] - thread.v[i] * 3.2;
+    if (i === 0) ctx.moveTo(px[i], y); else ctx.lineTo(px[i], y);
+  }
+  ctx.strokeStyle = wash;
+  ctx.globalAlpha = 0.26;
+  ctx.lineWidth = style.width * 2.6;
+  ctx.stroke();
+
+  /* the thread itself */
   const line = ctx.createLinearGradient(0, 0, w, 0);
   line.addColorStop(0, yours);
   line.addColorStop(0.5, speaking ? his : yours);
   line.addColorStop(1, his);
 
-  const swing = mid - 14;
+  ctx.beginPath();
+  for (let i = 0; i < THREAD_NODES; i += 1) {
+    if (i === 0) ctx.moveTo(px[i], py[i]); else ctx.lineTo(px[i], py[i]);
+  }
+  ctx.strokeStyle = line;
+  ctx.globalAlpha = 1;
+  ctx.lineWidth = style.width;
+  ctx.shadowColor = speaking ? his : yours;
+  ctx.shadowBlur = style.glow;
+  ctx.stroke();
 
-  /* a soft shadow of where it just was, so fast waves smear */
-  ctx.lineCap = 'round';
-  ctx.lineJoin = 'round';
+  /* a hot white core along the loudest stretch */
+  ctx.beginPath();
+  for (let i = 0; i < THREAD_NODES; i += 1) {
+    if (i === 0) ctx.moveTo(px[i], py[i]); else ctx.lineTo(px[i], py[i]);
+  }
+  ctx.strokeStyle = '#ffffff';
+  ctx.globalAlpha = Math.min(0.5, crest / swing * 0.75);
+  ctx.lineWidth = Math.max(1, style.width * 0.4);
+  ctx.shadowBlur = 0;
+  ctx.stroke();
 
-  for (let layer = 0; layer < 2; layer += 1) {
-
-    ctx.beginPath();
-
-    for (let i = 0; i < THREAD_NODES; i += 1) {
-
-      const x = (i / (THREAD_NODES - 1)) * w;
-      const lag = layer === 0 ? thread.v[i] * 2.4 : 0;
-      const y = mid + Math.max(-swing, Math.min(swing, thread.u[i] * 26 - lag));
-
-      if (i === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
-
-    }
-
-    ctx.strokeStyle = line;
-    ctx.globalAlpha = layer === 0 ? 0.28 : 1;
-    ctx.lineWidth = layer === 0 ? style.width * 2.4 : style.width;
+  /* and a bead riding the highest point of the wave */
+  if (crest > swing * 0.12) {
+    ctx.globalAlpha = Math.min(1, crest / swing * 1.3);
+    ctx.fillStyle = speaking ? his : yours;
     ctx.shadowColor = speaking ? his : yours;
-    ctx.shadowBlur = layer === 0 ? 0 : style.glow;
-    ctx.stroke();
-
+    ctx.shadowBlur = style.glow * 1.4;
+    ctx.beginPath();
+    ctx.arc(px[crestAt], py[crestAt], style.width * 1.5, 0, Math.PI * 2);
+    ctx.fill();
   }
 
   ctx.globalAlpha = 1;
@@ -13904,6 +13985,7 @@ async function startVoiceCall() {
 
     waveAttach('mine', stream);
     waveStart();
+    watchVoiceIdle();
 
     setVoiceState('connecting', 'Microphone on...');
 
@@ -14082,6 +14164,85 @@ async function startVoiceCall() {
 }
 
 
+/*
+  AN OPEN LINE COSTS MONEY EVEN WHEN NOBODY SPEAKS
+
+  A realtime call bills the audio going up it whether or not there
+  is anything in that audio, so a call left open on a desk is the
+  single most expensive thing this app can do. Three guards:
+  silence winds it up, a backgrounded tab winds it up faster, and
+  nothing runs past the hard ceiling.
+*/
+const VOICE_IDLE_WARN = 45000;
+const VOICE_IDLE_END = 65000;
+const VOICE_HIDDEN_END = 20000;
+const VOICE_MAX_CALL = 12 * 60 * 1000;
+
+let voiceIdleTimer = null;
+
+/* say why before the screen goes, rather than closing silently */
+function closeVoiceWith(reason) {
+
+  clearInterval(voiceIdleTimer);
+  voiceIdleTimer = null;
+
+  setVoiceState('listening', reason);
+
+  setTimeout(endVoiceCall, 1600);
+
+}
+
+function watchVoiceIdle() {
+
+  clearInterval(voiceIdleTimer);
+
+  const opened = Date.now();
+  let lastHeard = Date.now();
+  let hiddenSince = 0;
+  let warned = false;
+
+  voiceIdleTimer = setInterval(() => {
+
+    if (!voiceCall) { clearInterval(voiceIdleTimer); voiceIdleTimer = null; return; }
+
+    const loud = Math.max(voiceWave.level.mine, voiceWave.level.theirs);
+
+    if (loud > 0.05) {
+      lastHeard = Date.now();
+      if (warned) { warned = false; setVoiceState('listening', 'Still here.'); }
+    }
+
+    /* a tab nobody is looking at is a tab nobody is talking into */
+    if (document.hidden) {
+      if (!hiddenSince) hiddenSince = Date.now();
+      if (Date.now() - hiddenSince > VOICE_HIDDEN_END) {
+        closeVoiceWith('Closed while you were away.');
+        return;
+      }
+    } else {
+      hiddenSince = 0;
+    }
+
+    const quietFor = Date.now() - lastHeard;
+
+    if (!warned && quietFor > VOICE_IDLE_WARN) {
+      warned = true;
+      setVoiceState('listening', 'Still there? I will close this in a moment.');
+    }
+
+    if (quietFor > VOICE_IDLE_END) {
+      closeVoiceWith('All quiet, so I will let you go.');
+      return;
+    }
+
+    if (Date.now() - opened > VOICE_MAX_CALL) {
+      closeVoiceWith('That is twelve minutes. Open it again whenever.');
+    }
+
+  }, 2000);
+
+}
+
 function endVoiceCall() {
 
   const call = voiceCall;
@@ -14098,6 +14259,9 @@ function endVoiceCall() {
   call.stream?.getTracks().forEach(track => track.stop());
 
   waveStop();
+
+  clearInterval(voiceIdleTimer);
+  voiceIdleTimer = null;
 
   if (call.audio) {
     call.audio.srcObject = null;
