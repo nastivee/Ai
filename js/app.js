@@ -13568,23 +13568,42 @@ const PEEK_SVG = `
       <stop offset="1" stop-color="#2248c9"/>
     </linearGradient>
   </defs>
+  <defs>
+    <linearGradient id="peekShell" x1="0.2" y1="0" x2="0.8" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="0.55" stop-color="#f2f6fb"/>
+      <stop offset="1" stop-color="#d7e2ee"/>
+    </linearGradient>
+    <linearGradient id="peekShellArm" x1="0" y1="0" x2="0.4" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#dbe5f0"/>
+    </linearGradient>
+  </defs>
   <g class="body">
-    <rect class="neck" x="27" y="52" width="10" height="8" rx="3" fill="#2248c9"/>
+    <!-- no neck seam: the shell runs straight up under the head -->
+    <rect class="neck" x="26" y="50" width="12" height="10" rx="6" fill="url(#peekShell)"/>
+    <!-- the arms float clear of the shell, the way that kind of robot does -->
     <g class="armL">
-      <rect class="limb" x="9" y="60" width="7" height="20" rx="3.5" fill="url(#peekEar)" transform="rotate(12 12.5 62)"/>
-      <circle class="mitt" cx="8.8" cy="81" r="4.6" fill="#58b6ff"/>
+      <rect class="limb" x="4" y="62" width="9" height="19" rx="4.5" fill="url(#peekShellArm)" transform="rotate(10 8.5 64)"/>
+      <ellipse class="mitt" cx="6.4" cy="84" rx="5.6" ry="5" fill="#ffffff"/>
     </g>
     <g class="armR">
-      <rect class="limb" x="48" y="60" width="7" height="20" rx="3.5" fill="url(#peekEar)" transform="rotate(-12 51.5 62)"/>
-      <circle class="mitt" cx="55.2" cy="81" r="4.6" fill="#58b6ff"/>
+      <rect class="limb" x="51" y="62" width="9" height="19" rx="4.5" fill="url(#peekShellArm)" transform="rotate(-10 55.5 64)"/>
+      <ellipse class="mitt" cx="57.6" cy="84" rx="5.6" ry="5" fill="#ffffff"/>
     </g>
-    <rect class="leg" x="20" y="84" width="9" height="15" rx="4" fill="url(#peekEar)"/>
-    <rect class="leg" x="35" y="84" width="9" height="15" rx="4" fill="url(#peekEar)"/>
-    <ellipse class="foot" cx="24" cy="100.5" rx="7" ry="3.5" fill="#2248c9"/>
-    <ellipse class="foot" cx="40" cy="100.5" rx="7" ry="3.5" fill="#2248c9"/>
-    <rect class="torso" x="15" y="57" width="34" height="30" rx="11" fill="url(#peekHead)"/>
-    <rect class="chest" x="23" y="63" width="18" height="12" rx="4" fill="#05060d"/>
-    <circle class="light" cx="32" cy="69" r="2.6" fill="#9fe6ff"/>
+    <rect class="leg" x="21" y="86" width="9" height="13" rx="4.5" fill="url(#peekShellArm)"/>
+    <rect class="leg" x="34" y="86" width="9" height="13" rx="4.5" fill="url(#peekShellArm)"/>
+    <ellipse class="foot" cx="25.5" cy="100" rx="7.4" ry="3.6" fill="#e6edf6"/>
+    <ellipse class="foot" cx="38.5" cy="100" rx="7.4" ry="3.6" fill="#e6edf6"/>
+    <!-- one smooth shell, narrower at the shoulders, no joins anywhere -->
+    <path class="torso" d="M32 54
+      C 44 54 50 62 50.5 72
+      C 51 82 45 89 32 89
+      C 19 89 13 82 13.5 72
+      C 14 62 20 54 32 54 Z" fill="url(#peekShell)"/>
+    <ellipse class="sheen" cx="24" cy="66" rx="6.5" ry="9" fill="#ffffff" opacity=".75"/>
+    <rect class="chest" x="25" y="68" width="14" height="4.6" rx="2.3" fill="#cfdcea"/>
+    <circle class="light" cx="32" cy="70.3" r="1.9" fill="#6cc8ff"/>
   </g>
   <g class="antenna">
     <path class="stem" d="M38 16 L40.5 6" stroke="#5ab8ff" stroke-width="3" stroke-linecap="round"/>
