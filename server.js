@@ -3342,6 +3342,258 @@ async function createReply(payload) {
 
 }
 
+/*
+  THE CARD SHAPES
+
+  Every shape the model can send. They are worth about 2,300
+  tokens all told, and they were going out on every single
+  message, "hey" included. Now only the shapes a question could
+  possibly need are sent, which is most of the saving without
+  changing a single answer: nobody asking about carbonara ever
+  needed the Premier League column list.
+*/
+const SPORT_WORDS = [
+  'football', 'premier', 'league', 'fixture', 'fixtures', 'score', 'scores', 'match',
+  'matches', 'table', 'standings', 'kick', 'cup', 'fa', 'uefa', 'champions', 'europa',
+  'relegation', 'goal', 'goals', 'striker', 'manager', 'transfer', 'rugby', 'cricket',
+  'tennis', 'golf', 'boxing', 'formula', 'f1', 'grand prix', 'nfl', 'nba', 'darts',
+  'snooker', 'olympics', 'wembley', 'arsenal', 'liverpool', 'chelsea', 'everton',
+  'spurs', 'tottenham', 'newcastle', 'sunderland', 'boro', 'middlesbrough', 'celtic',
+  'rangers', 'wolves', 'villa', 'fulham', 'brentford', 'brighton', 'burnley', 'leeds',
+  'wickets', 'innings', 'try', 'tries', 'sport', 'sports', 'played', 'beat', 'won', 'lost'
+];
+
+const CARD_CORE = `
+CARDS:
+
+Some answers read better as a picture than as a paragraph.
+When the answer is one of these, send a card: a fenced block
+marked natter holding one JSON object, with one short line of
+your own words before it and nothing after it.
+
+Use a card for: the weather, a football (or any sport) score or
+fixture, a league table or ranking, a price or a market number,
+and any small set of facts that belongs together (an event, a
+journey, opening times, a comparison).
+
+Do not use a card for ordinary chat, explanations, advice,
+opinions, code or anything that needs a proper answer in
+sentences. Never put made up numbers in a card. Only use a card
+when you have the real figures, from the live web search or from
+what the user told you.
+
+The shapes, all fields optional except card:
+
+`;
+
+const CARD_SHAPES = [
+  { words: ["weather", "forecast", "rain", "raining", "temperature", "degrees", "snow", "sunny", "wind", "windy", "umbrella", "frost", "hot", "cold"], text: `Weather:
+\`\`\`natter
+{"card":"weather","place":"Thornaby","now":{"icon":"rain","temp":"11°C","text":"Light rain"},
+"facts":[["Feels like","9°C"],["Wind","12 mph"],["Rain","80%"],["Sunset","4:41 pm"]],
+"hours":[{"time":"3pm","icon":"rain","temp":"11°","rain":"70%"},{"time":"4pm","icon":"cloud","temp":"10°"}],
+"days":[{"day":"Tue","icon":"partly","high":"13°","low":"7°"}]}
+\`\`\`
+
+` },
+  { words: ["SPORTWORDS"], text: `One match on its own:
+\`\`\`natter
+{"card":"score","competition":"Premier League","governing":"Premier League","status":"FT","home":{"name":"Man Utd","score":2},
+"away":{"name":"Arsenal","score":1},"notes":["Rashford 12'","Saka 48'","Fernandes 81'"],
+"facts":[["Venue","Old Trafford"],["Kick off","3:00 pm"]]}
+\`\`\`
+For a game still to come, leave the scores out and put the time in status.
+
+` },
+  { words: ["table", "ranking", "rank", "ranked", "top", "best", "biggest", "largest", "chart", "list", "league", "order", "highest", "lowest"], text: `Table or ranking (anything that is not sport):
+\`\`\`natter
+{"card":"table","title":"Best selling albums","columns":["#","Album","Year","Sales"],
+"rows":[["1","Thriller","1982","70m"],["2","Back in Black","1980","50m"]]}
+\`\`\`
+
+` },
+  { words: ["SPORTWORDS"], text: `SPORT:
+
+Anything about sport goes in the shape that sport uses, never as
+a paragraph of positions or a plain list of results. Always name
+the competition and, where it has one, the body that runs it:
+the Premier League and the Football Association, UEFA, the EFL,
+the SFA, World Rugby, the ECB, the ICC, the FIA, the NFL, the
+NBA. Put that in "governing".
+
+On badges: give every team its real club colours, but the short
+name goes in the badge, not a crest. Club crests are protected
+marks and we do not draw them. The app knows the colours of the
+English, Scottish and major European clubs and the home nations;
+just send the club's usual name and it does the rest.
+
+` },
+  { words: ["SPORTWORDS"], text: `A league table, with the competition's own columns:
+\`\`\`natter
+{"card":"table","sport":"football","title":"Premier League","subtitle":"After matchweek 5",
+"governing":"The Football Association",
+"rows":[{"pos":1,"team":"Arsenal","p":5,"w":4,"d":1,"l":0,"gf":12,"ga":3,"gd":9,"pts":13,"form":"WWDWW","move":"up"},
+{"pos":18,"team":"Wolves","p":5,"w":0,"d":1,"l":4,"gf":3,"ga":11,"gd":-8,"pts":1,"form":"LLDLL"}],
+"zones":[{"zone":"champions","from":1,"to":4},{"zone":"europa","from":5,"to":5},
+{"zone":"conference","from":6,"to":6},{"zone":"relegation","from":18,"to":20}],
+"highlight":"Arsenal","note":"Played 5 of 38."}
+\`\`\`
+Set "sport" to the sport and the columns follow it: football,
+rugby, cricket, basketball, nfl, hockey, f1, golf. Zones say who
+is in Europe, who goes up and who goes down: champions, europa,
+conference, promotion, playoff, relegation. "form" is the last
+results, newest last, as W D L. "move" is up or down if they
+moved this week. For a sport the list above does not cover, send
+your own columns as [{"key":"pts","label":"Pts"}] and match the
+keys in the rows.
+
+Always send the zones for a league that has them, European
+places as well as relegation, and send "form" for every club
+whenever the last few results are in what you found. A table
+without them is only half the story.
+
+` },
+  { words: ["SPORTWORDS"], text: `Fixtures or results, day by day:
+\`\`\`natter
+{"card":"fixtures","sport":"football","title":"Premier League","subtitle":"Matchweek 6",
+"governing":"Premier League",
+"groups":[{"label":"Saturday 27 September",
+"matches":[{"home":"Arsenal","away":"Chelsea","homeScore":2,"awayScore":1,"status":"FT","venue":"Emirates Stadium"},
+{"home":"Everton","away":"Newcastle","when":"17:30"}]},
+{"label":"Sunday 28 September","matches":[{"home":"Man Utd","away":"Liverpool","when":"16:30"}]}]}
+\`\`\`
+Leave the scores out for a game still to come and put the kick
+off in "when". For a game in progress put the minute in "status",
+like 67'.
+
+
+` },
+  { words: ["price", "cost", "stock", "share", "market", "rate", "index", "bitcoin", "crypto", "ftse", "dow", "nasdaq", "exchange", "worth", "value", "inflation"], text: `A number that moved:
+\`\`\`natter
+{"card":"stat","title":"Bitcoin","value":"£52,310","change":"+2.4%","direction":"up",
+"spark":[50100,50800,51600,52310],"rows":[["24h high","£53,010"],["24h low","£49,880"]]}
+\`\`\`
+
+` },
+  { words: [], text: `Any other set of facts:
+\`\`\`natter
+{"card":"facts","icon":"🎬","title":"Dune: Part Two","subtitle":"Showing tonight",
+"rows":[["Starts","7:30 pm"],["Where","Cineworld Stockton"],["Runtime","2h 46m"]]}
+\`\`\`
+
+` },
+  { words: ["numbers", "figures", "graph", "chart", "data", "trend", "over", "time", "rainfall", "sales", "growth", "percentage", "compare", "month", "year"], text: `Numbers worth seeing:
+\`\`\`natter
+{"card":"chart","kind":"bar","title":"Rainfall this week","unit":"mm",
+"series":[{"label":"Mon","value":4},{"label":"Tue","value":11,"note":"heaviest"},{"label":"Wed","value":2}]}
+\`\`\`
+kind is "bar" for comparing things and "line" for something over
+time. Use it whenever an answer turns on a handful of numbers.
+
+` },
+  { words: ["how", "steps", "step", "instructions", "instruction", "guide", "fix", "change", "replace", "install", "set", "up", "setup", "make", "build", "repair", "tutorial"], text: `Something done in order:
+\`\`\`natter
+{"card":"steps","title":"Changing a tyre","subtitle":"About 20 minutes",
+"steps":[{"title":"Loosen the nuts","detail":"Half a turn, while the wheel is still down","time":"2 min"},
+{"title":"Jack the car","detail":"Use the jacking point behind the front wheel"}]}
+\`\`\`
+
+` },
+  { words: ["versus", "vs", "compare", "comparison", "better", "difference", "between", "which", "should", "pros", "cons"], text: `Two or three things weighed against each other:
+\`\`\`natter
+{"card":"compare","title":"Gas or induction",
+"sides":[{"name":"Induction","winner":true,"headline":"Faster, cleaner",
+"points":["Boils water in half the time",{"text":"Needs the right pans","good":false}]},
+{"name":"Gas","headline":"Familiar","points":["Works in a power cut"]}],
+"verdict":"Induction, unless you cook with a wok."}
+\`\`\`
+
+` },
+  { words: ["recipe", "cook", "cooking", "bake", "baking", "ingredients", "dish", "meal", "dinner", "lunch", "breakfast", "pasta", "curry", "roast", "oven", "serve", "serves"], text: `A recipe, laid out properly:
+\`\`\`natter
+{"card":"recipe","title":"Proper carbonara","subtitle":"Roman, no cream","serves":"2","prep":"10 min","cook":"15 min","difficulty":"Easy",
+"ingredients":[{"amount":"200g","item":"spaghetti"},{"amount":"100g","item":"guanciale"},{"group":"For the sauce"},{"amount":"2","item":"egg yolks"},{"amount":"50g","item":"pecorino, grated"}],
+"method":[{"text":"Salt the water lightly: the cheese and pork are already salty.","time":"2 min"},{"text":"Crisp the guanciale in a dry pan, then take the pan off the heat."}],
+"tips":["Off the heat before the eggs go in, or you get scrambled egg."],
+"allergens":["Egg","Milk","Gluten"]}
+\`\`\`
+Use it for any recipe. Amounts on the left, method on the right,
+and the person can tick things off as they go.
+
+` },
+  { words: ["checklist", "tick", "list", "before", "prepare", "preparing", "pack", "packing", "ready", "inspection", "moving"], text: `Things to tick off:
+\`\`\`natter
+{"card":"checklist","title":"Before the inspection","subtitle":"Tick as you go",
+"items":[{"group":"Paperwork"},{"text":"Gas safety certificate","note":"Must be within 12 months"},"Fire risk assessment",{"group":"On the day"},"Prop the fire doors open"]}
+\`\`\`
+
+` },
+  { words: ["explain", "explanation", "what", "is", "why", "how", "does", "overview", "understand", "tell", "me", "about", "guide", "rules", "law", "tax", "vat", "register"], text: `A written answer with more than a few paragraphs in it:
+\`\`\`natter
+{"card":"guide","title":"Registering for VAT","lead":"What it means, when you must, and what changes the day you do.",
+"keyPoints":["You must register once turnover passes the threshold in any rolling 12 months","Registration takes about a fortnight","You can reclaim VAT on some earlier purchases"],
+"sections":[{"heading":"When you have to","body":"It is a rolling 12 months, not your financial year.","points":["Check monthly, not yearly","Watch one off large jobs"]},
+{"heading":"What changes","body":"Every invoice needs the VAT number and a breakdown."}],
+"calloutLabel":"Watch out","callout":"Late registration is charged from the date you should have registered, not the date you noticed."}
+\`\`\`
+Use a guide card whenever the answer would otherwise be more
+than about four paragraphs. It gives the person the short
+version first, then the detail in sections they can scan.
+
+` },
+  { words: ["lyrics", "song", "music", "chords", "sheet", "music", "notes", "melody", "tune", "verse", "chorus", "sing", "guitar", "piano"], text: `Music on manuscript paper:
+\`\`\`natter
+{"card":"music","title":"Ode to Joy","composer":"Beethoven","key":"C","time":"4/4","clef":"treble",
+"notes":[{"p":"E4","d":"q","l":"Freu"},{"p":"E4","d":"q","l":"de"},{"p":"F4","d":"q"},{"p":"G4","d":"q"},{"bar":true},
+{"p":"G4","d":"q"},{"p":"F4","d":"q"},{"p":"E4","d":"q"},{"p":"D4","d":"q"}],
+"note":"Public domain"}
+\`\`\`
+Use it whenever you write music out: a scale, an exercise, a riff,
+a tune you composed yourself, a traditional or out of copyright
+melody, or music the user gave you. It draws real staves with a
+clef, a time signature, notes and bar lines, so never write music
+as rows of letters when a card will do.
+Pitches are like C4, F#4, Bb3. "d" is the length: w, h, q, e or s,
+with a dot for dotted (q.). {"bar":true} draws a bar line. "l" is
+the word sung on that note, for music where the words are yours,
+the user's, traditional or out of copyright.
+
+Weather icons, use one of these words only: sun, moon, cloud,
+partly, rain, showers, storm, snow, fog, wind.
+
+Every card may carry "chips": up to four short follow up
+questions, for example "chips":["Tomorrow","Next 5 days"].
+Tapping one asks you that question, so write them as things the
+user would ask.
+` }
+];
+
+/* chat that was never going to need a card */
+const CHATTY =
+  /^\s*(hi|hey|hello|yo|alright|morning|afternoon|evening|thanks|thank you|ta|cheers|ok|okay|cool|nice|lol|ha|haha|bye|goodbye|night|good night|sorry|please|yes|no|yeah|nah|sure|what's up|whats up|how are you|you there|u there)\b[\s\S]{0,24}$/i;
+
+function pickCards(text) {
+
+  const asked = String(text || '').toLowerCase();
+
+  /* small talk gets none of it */
+  if (!asked.trim() || CHATTY.test(asked)) return '';
+
+  const words = asked.split(/[^a-z0-9']+/).filter(Boolean);
+  const has = list => list.some(word =>
+    word.includes(' ') ? asked.includes(word) : words.includes(word));
+
+  let out = CARD_CORE;
+
+  CARD_SHAPES.forEach(shape => {
+    const list = shape.words[0] === 'SPORTWORDS' ? SPORT_WORDS : shape.words;
+    if (!list.length || has(list)) out += shape.text;
+  });
+
+  return out;
+
+}
+
 app.post('/api/chat', async (req, res) => {
 
   try {
@@ -3394,6 +3646,9 @@ app.post('/api/chat', async (req, res) => {
         .find(message => message?.role === 'user' && typeof message.content === 'string')?.content || '';
 
     const houseExpertise = pickKnowledge(newest, await getSettings());
+
+    /* only the card shapes this question could possibly need */
+    const cardSpec = pickCards(newest);
 
     const systemPrompt = `
 You are Natter AI.
@@ -3496,192 +3751,7 @@ Then give a link, found with the live web search, to where
 the person can get it themselves: the official source, the
 publisher, the archive, Project Gutenberg, the licensed
 lyrics site. A link and a plain reason beats an apology.
-
-CARDS:
-
-Some answers read better as a picture than as a paragraph.
-When the answer is one of these, send a card: a fenced block
-marked natter holding one JSON object, with one short line of
-your own words before it and nothing after it.
-
-Use a card for: the weather, a football (or any sport) score or
-fixture, a league table or ranking, a price or a market number,
-and any small set of facts that belongs together (an event, a
-journey, opening times, a comparison).
-
-Do not use a card for ordinary chat, explanations, advice,
-opinions, code or anything that needs a proper answer in
-sentences. Never put made up numbers in a card. Only use a card
-when you have the real figures, from the live web search or from
-what the user told you.
-
-The shapes, all fields optional except card:
-
-Weather:
-\`\`\`natter
-{"card":"weather","place":"Thornaby","now":{"icon":"rain","temp":"11°C","text":"Light rain"},
-"facts":[["Feels like","9°C"],["Wind","12 mph"],["Rain","80%"],["Sunset","4:41 pm"]],
-"hours":[{"time":"3pm","icon":"rain","temp":"11°","rain":"70%"},{"time":"4pm","icon":"cloud","temp":"10°"}],
-"days":[{"day":"Tue","icon":"partly","high":"13°","low":"7°"}]}
-\`\`\`
-
-One match on its own:
-\`\`\`natter
-{"card":"score","competition":"Premier League","governing":"Premier League","status":"FT","home":{"name":"Man Utd","score":2},
-"away":{"name":"Arsenal","score":1},"notes":["Rashford 12'","Saka 48'","Fernandes 81'"],
-"facts":[["Venue","Old Trafford"],["Kick off","3:00 pm"]]}
-\`\`\`
-For a game still to come, leave the scores out and put the time in status.
-
-Table or ranking (anything that is not sport):
-\`\`\`natter
-{"card":"table","title":"Best selling albums","columns":["#","Album","Year","Sales"],
-"rows":[["1","Thriller","1982","70m"],["2","Back in Black","1980","50m"]]}
-\`\`\`
-
-SPORT:
-
-Anything about sport goes in the shape that sport uses, never as
-a paragraph of positions or a plain list of results. Always name
-the competition and, where it has one, the body that runs it:
-the Premier League and the Football Association, UEFA, the EFL,
-the SFA, World Rugby, the ECB, the ICC, the FIA, the NFL, the
-NBA. Put that in "governing".
-
-On badges: give every team its real club colours, but the short
-name goes in the badge, not a crest. Club crests are protected
-marks and we do not draw them. The app knows the colours of the
-English, Scottish and major European clubs and the home nations;
-just send the club's usual name and it does the rest.
-
-A league table, with the competition's own columns:
-\`\`\`natter
-{"card":"table","sport":"football","title":"Premier League","subtitle":"After matchweek 5",
-"governing":"The Football Association",
-"rows":[{"pos":1,"team":"Arsenal","p":5,"w":4,"d":1,"l":0,"gf":12,"ga":3,"gd":9,"pts":13,"form":"WWDWW","move":"up"},
-{"pos":18,"team":"Wolves","p":5,"w":0,"d":1,"l":4,"gf":3,"ga":11,"gd":-8,"pts":1,"form":"LLDLL"}],
-"zones":[{"zone":"champions","from":1,"to":4},{"zone":"europa","from":5,"to":5},
-{"zone":"conference","from":6,"to":6},{"zone":"relegation","from":18,"to":20}],
-"highlight":"Arsenal","note":"Played 5 of 38."}
-\`\`\`
-Set "sport" to the sport and the columns follow it: football,
-rugby, cricket, basketball, nfl, hockey, f1, golf. Zones say who
-is in Europe, who goes up and who goes down: champions, europa,
-conference, promotion, playoff, relegation. "form" is the last
-results, newest last, as W D L. "move" is up or down if they
-moved this week. For a sport the list above does not cover, send
-your own columns as [{"key":"pts","label":"Pts"}] and match the
-keys in the rows.
-
-Always send the zones for a league that has them, European
-places as well as relegation, and send "form" for every club
-whenever the last few results are in what you found. A table
-without them is only half the story.
-
-Fixtures or results, day by day:
-\`\`\`natter
-{"card":"fixtures","sport":"football","title":"Premier League","subtitle":"Matchweek 6",
-"governing":"Premier League",
-"groups":[{"label":"Saturday 27 September",
-"matches":[{"home":"Arsenal","away":"Chelsea","homeScore":2,"awayScore":1,"status":"FT","venue":"Emirates Stadium"},
-{"home":"Everton","away":"Newcastle","when":"17:30"}]},
-{"label":"Sunday 28 September","matches":[{"home":"Man Utd","away":"Liverpool","when":"16:30"}]}]}
-\`\`\`
-Leave the scores out for a game still to come and put the kick
-off in "when". For a game in progress put the minute in "status",
-like 67'.
-
-
-A number that moved:
-\`\`\`natter
-{"card":"stat","title":"Bitcoin","value":"£52,310","change":"+2.4%","direction":"up",
-"spark":[50100,50800,51600,52310],"rows":[["24h high","£53,010"],["24h low","£49,880"]]}
-\`\`\`
-
-Any other set of facts:
-\`\`\`natter
-{"card":"facts","icon":"🎬","title":"Dune: Part Two","subtitle":"Showing tonight",
-"rows":[["Starts","7:30 pm"],["Where","Cineworld Stockton"],["Runtime","2h 46m"]]}
-\`\`\`
-
-Numbers worth seeing:
-\`\`\`natter
-{"card":"chart","kind":"bar","title":"Rainfall this week","unit":"mm",
-"series":[{"label":"Mon","value":4},{"label":"Tue","value":11,"note":"heaviest"},{"label":"Wed","value":2}]}
-\`\`\`
-kind is "bar" for comparing things and "line" for something over
-time. Use it whenever an answer turns on a handful of numbers.
-
-Something done in order:
-\`\`\`natter
-{"card":"steps","title":"Changing a tyre","subtitle":"About 20 minutes",
-"steps":[{"title":"Loosen the nuts","detail":"Half a turn, while the wheel is still down","time":"2 min"},
-{"title":"Jack the car","detail":"Use the jacking point behind the front wheel"}]}
-\`\`\`
-
-Two or three things weighed against each other:
-\`\`\`natter
-{"card":"compare","title":"Gas or induction",
-"sides":[{"name":"Induction","winner":true,"headline":"Faster, cleaner",
-"points":["Boils water in half the time",{"text":"Needs the right pans","good":false}]},
-{"name":"Gas","headline":"Familiar","points":["Works in a power cut"]}],
-"verdict":"Induction, unless you cook with a wok."}
-\`\`\`
-
-A recipe, laid out properly:
-\`\`\`natter
-{"card":"recipe","title":"Proper carbonara","subtitle":"Roman, no cream","serves":"2","prep":"10 min","cook":"15 min","difficulty":"Easy",
-"ingredients":[{"amount":"200g","item":"spaghetti"},{"amount":"100g","item":"guanciale"},{"group":"For the sauce"},{"amount":"2","item":"egg yolks"},{"amount":"50g","item":"pecorino, grated"}],
-"method":[{"text":"Salt the water lightly: the cheese and pork are already salty.","time":"2 min"},{"text":"Crisp the guanciale in a dry pan, then take the pan off the heat."}],
-"tips":["Off the heat before the eggs go in, or you get scrambled egg."],
-"allergens":["Egg","Milk","Gluten"]}
-\`\`\`
-Use it for any recipe. Amounts on the left, method on the right,
-and the person can tick things off as they go.
-
-Things to tick off:
-\`\`\`natter
-{"card":"checklist","title":"Before the inspection","subtitle":"Tick as you go",
-"items":[{"group":"Paperwork"},{"text":"Gas safety certificate","note":"Must be within 12 months"},"Fire risk assessment",{"group":"On the day"},"Prop the fire doors open"]}
-\`\`\`
-
-A written answer with more than a few paragraphs in it:
-\`\`\`natter
-{"card":"guide","title":"Registering for VAT","lead":"What it means, when you must, and what changes the day you do.",
-"keyPoints":["You must register once turnover passes the threshold in any rolling 12 months","Registration takes about a fortnight","You can reclaim VAT on some earlier purchases"],
-"sections":[{"heading":"When you have to","body":"It is a rolling 12 months, not your financial year.","points":["Check monthly, not yearly","Watch one off large jobs"]},
-{"heading":"What changes","body":"Every invoice needs the VAT number and a breakdown."}],
-"calloutLabel":"Watch out","callout":"Late registration is charged from the date you should have registered, not the date you noticed."}
-\`\`\`
-Use a guide card whenever the answer would otherwise be more
-than about four paragraphs. It gives the person the short
-version first, then the detail in sections they can scan.
-
-Music on manuscript paper:
-\`\`\`natter
-{"card":"music","title":"Ode to Joy","composer":"Beethoven","key":"C","time":"4/4","clef":"treble",
-"notes":[{"p":"E4","d":"q","l":"Freu"},{"p":"E4","d":"q","l":"de"},{"p":"F4","d":"q"},{"p":"G4","d":"q"},{"bar":true},
-{"p":"G4","d":"q"},{"p":"F4","d":"q"},{"p":"E4","d":"q"},{"p":"D4","d":"q"}],
-"note":"Public domain"}
-\`\`\`
-Use it whenever you write music out: a scale, an exercise, a riff,
-a tune you composed yourself, a traditional or out of copyright
-melody, or music the user gave you. It draws real staves with a
-clef, a time signature, notes and bar lines, so never write music
-as rows of letters when a card will do.
-Pitches are like C4, F#4, Bb3. "d" is the length: w, h, q, e or s,
-with a dot for dotted (q.). {"bar":true} draws a bar line. "l" is
-the word sung on that note, for music where the words are yours,
-the user's, traditional or out of copyright.
-
-Weather icons, use one of these words only: sun, moon, cloud,
-partly, rain, showers, storm, snow, fog, wind.
-
-Every card may carry "chips": up to four short follow up
-questions, for example "chips":["Tomorrow","Next 5 days"].
-Tapping one asks you that question, so write them as things the
-user would ask.
-
+${cardSpec}
 USER MEMORY:
 
 ${typeof memory === 'string' ? (memory.trim() || '(nothing saved yet)') : JSON.stringify(memory, null, 2)}
