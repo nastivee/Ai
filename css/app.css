@@ -11334,3 +11334,70 @@ body.motionOff .voiceBot .ball {
   .shopItem { flex-direction: column; align-items: stretch; }
   .shopBuy { width: 100%; }
 }
+
+/* ---------- ONE GUTTER DOWN THE SIDEBAR ---------- */
+/*
+  Every section had its own padding, so nothing lined up: the
+  header at 16, the chat list at 10, the pills at 18, the bottom
+  at 15. One value now, and every outer edge sits on the same
+  vertical line.
+*/
+
+.sidebar {
+  --gutter: 14px;
+}
+
+.sidebarHeader {
+  padding: 14px var(--gutter) 12px;
+}
+
+.chatHistory {
+  padding: 8px var(--gutter);
+}
+
+.versionRow {
+  padding: 0 var(--gutter) 7px;
+}
+
+.sidebarBottom {
+  padding: var(--gutter);
+}
+
+/* the rows inside the list sit flush with everything else */
+.chatHistory .artworkButton,
+.chatHistory .historyLabel,
+.chatHistory .savedSummary {
+  margin-left: 0;
+  margin-right: 0;
+}
+
+/* ---------- THE TWO PILLS FIT THEIR LABELS ---------- */
+/*
+  Auto hide is the shorter word, so it takes only what it needs
+  and Pause motion gets the rest rather than being cut off.
+*/
+
+.versionRow .sidebarPills {
+  gap: 7px;
+}
+
+.versionRow #pinSidebar {
+  flex: 0 1 auto;
+  padding: 0 10px;
+}
+
+.versionRow #motionToggle {
+  flex: 1 1 auto;
+  padding: 0 10px;
+}
+
+/* the longer label is the one that must not be clipped */
+.versionRow #motionToggle span {
+  overflow: visible;
+  text-overflow: clip;
+}
+
+.versionRow .sidebarPill {
+  font-size: 11px;
+  letter-spacing: 0;
+}
