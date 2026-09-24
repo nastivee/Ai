@@ -15270,6 +15270,183 @@ function setVoiceState(state, label) {
    call ending.
 ===================================================== */
 
+/* =====================================================
+   FILLING THE GAP WHILE HE LOOKS
+
+   A lookup takes a few seconds, and a few seconds of
+   pure silence on a live call is indistinguishable from
+   the line dropping. People hang up.
+
+   Three things cover it, in order of how long it drags
+   on. A soft hum under everything, which only fades in
+   after a second so a quick answer stays clean. A line
+   on screen that changes as it goes. And, if it really
+   drags, him actually saying he is still on it.
+===================================================== */
+
+const VOICE_SEARCH_LINES = [
+  'Bear with me.',
+  'Still looking.',
+  'Give me one more second.',
+  'Nearly there.',
+  'Just checking something.',
+  'Right, hang on.',
+  'Coming, coming.',
+  'Almost got it.',
+  'One sec.',
+  'Still digging.',
+  'Bit slow this, sorry.',
+  'Nearly done.'
+];
+
+let searchBag = [];
+
+function nextSearchLine() {
+
+  if (!searchBag.length) {
+
+    searchBag = VOICE_SEARCH_LINES.slice();
+
+    for (let i = searchBag.length - 1; i > 0; i -= 1) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [searchBag[i], searchBag[j]] = [searchBag[j], searchBag[i]];
+    }
+
+  }
+
+  return searchBag.pop();
+
+}
+
+
+/*
+  THE HUM
+
+  Made here rather than loaded, so there is no file to
+  fetch and nothing to go wrong on a slow connection. Two
+  quiet sine waves a fifth apart with a slow wobble on
+  top, which reads as a thinking noise rather than as a
+  fault tone. It fades in over half a second and out over
+  a quarter, so it never clicks.
+*/
+let humParts = null;
+let voiceHumCtx = null;
+
+function startHum() {
+
+  if (humParts) return;
+
+  try {
+
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+
+    if (!Ctx) return;
+
+    const ctx = voiceHumCtx || (voiceHumCtx = new Ctx());
+
+    if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.045, ctx.currentTime + 0.5);
+    gain.connect(ctx.destination);
+
+    /* the wobble, so it breathes instead of sitting there */
+    const wobble = ctx.createOscillator();
+    wobble.frequency.value = 0.22;
+    const wobbleDepth = ctx.createGain();
+    wobbleDepth.gain.value = 3.5;
+    wobble.connect(wobbleDepth);
+
+    const low = ctx.createOscillator();
+    low.type = 'sine';
+    low.frequency.value = 146.8;
+
+    const fifth = ctx.createOscillator();
+    fifth.type = 'sine';
+    fifth.frequency.value = 220;
+
+    const fifthGain = ctx.createGain();
+    fifthGain.gain.value = 0.35;
+
+    wobbleDepth.connect(low.frequency);
+    low.connect(gain);
+    fifth.connect(fifthGain);
+    fifthGain.connect(gain);
+
+    low.start();
+    fifth.start();
+    wobble.start();
+
+    humParts = { ctx, gain, nodes: [low, fifth, wobble] };
+
+  } catch (error) {
+
+    console.warn('HUM FAILED:', error);
+
+  }
+
+}
+
+
+function stopHum() {
+
+  if (!humParts) return;
+
+  const { ctx, gain, nodes } = humParts;
+
+  humParts = null;
+
+  try {
+
+    gain.gain.cancelScheduledValues(ctx.currentTime);
+    gain.gain.setValueAtTime(gain.gain.value || 0.0001, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.25);
+
+    setTimeout(() => {
+      nodes.forEach(node => { try { node.stop(); } catch {} });
+      try { gain.disconnect(); } catch {}
+    }, 350);
+
+  } catch {}
+
+}
+
+
+/*
+  THE LINE ON SCREEN
+
+  Its own row in the transcript, replaced in place rather
+  than added to, so a long search leaves one line that
+  changes and not a column of them.
+*/
+function showLooking(question) {
+
+  let row = document.getElementById('voiceLooking');
+
+  if (!row) {
+    row = document.createElement('div');
+    row.id = 'voiceLooking';
+    row.className = 'voiceLine looking';
+    voiceTranscript.appendChild(row);
+  }
+
+  row.innerHTML =
+    '<span class="lookingDots" aria-hidden="true">' +
+    '<i></i><i></i><i></i></span>' +
+    `<span class="lookingWords">${escapeText(question)}</span>`;
+
+  voiceTranscript.scrollTop = voiceTranscript.scrollHeight;
+
+  return row;
+
+}
+
+function hideLooking() {
+  document.getElementById('voiceLooking')?.remove();
+}
+
+
 function addVoiceFound(text) {
 
   const found = document.createElement('div');
@@ -15291,6 +15468,20 @@ function addVoiceFound(text) {
 
 }
 
+/* resolves the moment he stops talking, or straight away if he is not */
+function whenHeStops(call) {
+
+  if (!call.speaking) return Promise.resolve();
+
+  return new Promise(done => {
+    call.waiting = call.waiting || [];
+    call.waiting.push(done);
+    /* never hang on it, a missed event must not strand the answer */
+    setTimeout(done, 8000);
+  });
+
+}
+
 async function answerVoiceTool(call, item) {
 
   const channel = call.channel;
@@ -15308,7 +15499,49 @@ async function answerVoiceTool(call, item) {
 
   if (question) {
 
+    call.looking = true;
+
     setVoiceState('speaking', 'Having a look');
+
+    showLooking(question);
+
+    /*
+      The hum waits a second. Most lookups come back faster
+      than that, and humming for half a second then stopping
+      sounds like a fault rather than like thinking.
+    */
+    const humIn = setTimeout(startHum, 1000);
+
+    /*
+      If it really drags, he says so himself. Only when he is
+      not already mid sentence, because talking over himself
+      is worse than the gap ever was.
+    */
+    const sayIn = setTimeout(() => {
+
+      if (!call.looking || call.speaking) return;
+
+      const line = nextSearchLine();
+
+      try {
+
+        channel.send(JSON.stringify({
+          type: 'response.create',
+          response: {
+            instructions:
+              'You are still looking something up. Say this out loud, ' +
+              `word for word, and nothing else: "${line}"`
+          }
+        }));
+
+      } catch {}
+
+    }, 4500);
+
+    /* and again on screen, so a long wait still looks alive */
+    const dragIn = setTimeout(() => {
+      if (call.looking) showLooking('Still looking, this one is taking a while');
+    }, 6000);
 
     try {
 
@@ -15339,11 +15572,32 @@ async function answerVoiceTool(call, item) {
 
       console.error('VOICE LOOKUP FAILED:', error);
 
+    } finally {
+
+      clearTimeout(humIn);
+      clearTimeout(sayIn);
+      clearTimeout(dragIn);
+
+      call.looking = false;
+
+      stopHum();
+
+      hideLooking();
+
     }
 
   }
 
   /* the call may have ended while we were looking */
+  if (voiceCall !== call || channel.readyState !== 'open') return;
+
+  /*
+    If he is part way through saying "bear with me", let him
+    finish it. Handing him the answer mid sentence cuts him
+    off and the first few words of the answer are lost.
+  */
+  await whenHeStops(call);
+
   if (voiceCall !== call || channel.readyState !== 'open') return;
 
   channel.send(JSON.stringify({
@@ -15791,6 +16045,10 @@ async function startVoiceCall() {
 
       switch (data.type) {
 
+        case 'response.created':
+          call.speaking = true;
+          break;
+
         case 'input_audio_buffer.speech_started':
           setVoiceState('listening', 'Listening');
           break;
@@ -15818,6 +16076,11 @@ async function startVoiceCall() {
 
         case 'response.done':
 
+          call.speaking = false;
+
+          /* anything waiting for him to stop can go now */
+          (call.waiting || []).splice(0).forEach(go => go());
+
           /* it has asked us to go and find something out */
           (data.response?.output || []).forEach(item => {
             if (item?.type === 'function_call' && item.name === 'look_it_up') {
@@ -15825,7 +16088,7 @@ async function startVoiceCall() {
             }
           });
 
-          setVoiceState('listening', 'Listening');
+          if (!call.looking) setVoiceState('listening', 'Listening');
           break;
 
         case 'error':
@@ -15903,6 +16166,201 @@ async function startVoiceCall() {
   silence winds it up, a backgrounded tab winds it up faster, and
   nothing runs past the hard ceiling.
 */
+/* =====================================================
+   WAKE UPS
+
+   Ten seconds of nothing on a call is a long time. It
+   reads as a dropped line, and people hang up rather
+   than say anything. So he says something first.
+
+   A hundred of them, because the same line twice in one
+   call is worse than silence, and three calls in a row
+   opening the same way makes him sound like a recording.
+   They are drawn from a shuffled bag, so a line cannot
+   come round again until every other one has been used.
+
+   None of them nag, none of them ask whether you are
+   still there twice, and none apologise for the quiet.
+===================================================== */
+
+const VOICE_WAKE_UPS = [
+  'Still there?',
+  'You have gone quiet on me.',
+  'Everything alright?',
+  'I am still here whenever you are.',
+  'Take your time, I am not going anywhere.',
+  'Anything else you fancy asking?',
+  'Go on then, what else?',
+  'Right, what are we doing next?',
+  'I can hear you thinking from here.',
+  'No rush, I have got all day.',
+  'Fire away whenever.',
+  'What else is on your mind?',
+  'Shall I wait, or have you wandered off?',
+  'You still with me?',
+  'Anything I can dig out for you?',
+  'Want me to look something up?',
+  'Ask me something tricky, go on.',
+  'I am all ears.',
+  'Say the word and I will get on it.',
+  'Bit quiet in here.',
+  'Did I lose you?',
+  'Hello, anyone in?',
+  'Still listening, just so you know.',
+  'Whenever you are ready.',
+  'I have not gone anywhere.',
+  'Did you want me to carry on?',
+  'Was that everything, or is there more?',
+  'Anything else, or shall I let you get on?',
+  'Do you want me to go into that a bit more?',
+  'Happy with that, or want it another way?',
+  'Should I keep going?',
+  'Did that land, or have I confused you?',
+  'Want the short version or the long one?',
+  'Any of that useful?',
+  'Was that what you were after?',
+  'Shall I dig deeper on that one?',
+  'Want me to check anything while we are here?',
+  'I can look that up properly if you like.',
+  'Fancy asking me something else?',
+  'What are you up to today then?',
+  'How is your day going?',
+  'What is the plan then?',
+  'What brought you here, out of interest?',
+  'Anything interesting happening your end?',
+  'Busy day, is it?',
+  'Are you at it all day or winding down?',
+  'What are you working on?',
+  'Got something on your mind?',
+  'Is there something you are chewing over?',
+  'You thinking, or did the line drop?',
+  'I can never tell if that is a pause or a goodbye.',
+  'If you have gone for a cuppa, fair enough.',
+  'Take your time, honestly.',
+  'That was a proper pause, that.',
+  'I will just sit here quietly then, shall I.',
+  'I am not offended by silence, for the record.',
+  'You are allowed to just think, you know.',
+  'I am happy waiting, I have nothing else on.',
+  'Do you want a minute?',
+  'I have been rehearsing something clever, if you want it.',
+  'I could fill the silence, but you would regret it.',
+  'Ask me anything, I am getting bored of my own company.',
+  'Go on, test me with something.',
+  'I am itching to be useful here.',
+  'Give me a job, any job.',
+  'I feel like I am talking to myself.',
+  'This is the bit where you say something.',
+  'I will start singing in a minute.',
+  'I have got jokes, you know. Bad ones.',
+  'Still here, still keen.',
+  'Right, where were we?',
+  'Pick up wherever you like.',
+  'Shall we carry on?',
+  'Back to it when you are.',
+  'Did you want to change the subject?',
+  'We can talk about something else entirely.',
+  'Ask me about something completely different, go on.',
+  'I am easy either way.',
+  'Your call.',
+  'Need a hand with anything?',
+  'Want me to help with something else?',
+  'Is there something you are stuck on?',
+  'Anything you want writing?',
+  'Want me to work something out for you?',
+  'I can check the weather, prices, whatever you like.',
+  'Shall I find something out for you?',
+  'Give me a question and I will go and get it.',
+  'I am quite good at the awkward questions.',
+  'Try me with something.',
+  'Are you still there, or shall I wrap this up?',
+  'I will hang on a bit longer.',
+  'Say something and I will know you are alive.',
+  'A cough would do.',
+  'Nod if you can hear me. That was a joke.',
+  'Just checking the line is still good.',
+  'Sounds like you have stepped away.',
+  'Shout up when you are back.',
+  'I will be right here.',
+  'No panic, whenever suits.',
+  'Last call from me, then I will be quiet.'
+];
+
+/* how long a hush has to last before he says something */
+const VOICE_WAKE_AFTER = 10000;
+
+/* and how long before he is allowed to again */
+const VOICE_WAKE_GAP = 22000;
+
+/* he tries a few times, then leaves it to the idle timers */
+const VOICE_WAKE_TRIES = 4;
+
+let wakeBag = [];
+
+/*
+  A shuffled bag rather than a random pick, so the same
+  line cannot come round twice until all hundred have had
+  a turn. Random picking repeats far sooner than people
+  expect it to, and one repeat inside a call is enough to
+  make him sound like a machine.
+*/
+function nextWakeUp() {
+
+  if (!wakeBag.length) {
+
+    wakeBag = VOICE_WAKE_UPS.slice();
+
+    for (let i = wakeBag.length - 1; i > 0; i -= 1) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [wakeBag[i], wakeBag[j]] = [wakeBag[j], wakeBag[i]];
+    }
+
+  }
+
+  return wakeBag.pop();
+
+}
+
+/*
+  Says one line, in his own voice, without it counting as
+  an answer to anything. If he is already mid sentence, or
+  off looking something up, it is skipped: talking over
+  himself is worse than a gap.
+*/
+function sayWakeUp(call) {
+
+  const channel = call?.channel;
+
+  if (!channel || channel.readyState !== 'open') return false;
+
+  if (call.speaking || call.looking) return false;
+
+  const line = nextWakeUp();
+
+  try {
+
+    channel.send(JSON.stringify({
+      type: 'response.create',
+      response: {
+        instructions:
+          'Say this out loud, word for word, and nothing else, ' +
+          `in your usual voice: "${line}"`
+      }
+    }));
+
+  } catch (error) {
+
+    console.warn('WAKE UP FAILED:', error);
+
+    return false;
+
+  }
+
+  return true;
+
+}
+
+
 const VOICE_IDLE_WARN = 150000;
 const VOICE_IDLE_END = 195000;
 const VOICE_HIDDEN_END = 120000;
@@ -15934,19 +16392,66 @@ function watchVoiceIdle() {
   clearInterval(voiceIdleTimer);
 
   const opened = Date.now();
-  let lastHeard = Date.now();
+
+  /*
+    Two clocks, and they are not the same clock.
+
+    One follows the room, either of them making a noise,
+    and decides when the quiet is worth saying something
+    into. The other follows the person only, and decides
+    when to wind the call up.
+
+    They have to be separate. A call bills for the audio
+    going up it whether anybody is there or not, so if his
+    own wake ups reset the closing clock, a call left on a
+    desk would keep nudging itself alive and run until the
+    hard ceiling, which is the most expensive thing this
+    app can do.
+  */
+  let lastSound = Date.now();
+  let lastPerson = Date.now();
+
   let hiddenSince = 0;
   let warned = false;
+  let wokeAt = 0;
+  let wakes = 0;
 
   voiceIdleTimer = setInterval(() => {
 
     if (!voiceCall) { clearInterval(voiceIdleTimer); voiceIdleTimer = null; return; }
 
-    const loud = Math.max(voiceWave.level.mine, voiceWave.level.theirs);
+    const mine = voiceWave.level.mine;
+    const loud = Math.max(mine, voiceWave.level.theirs);
 
     if (loud > VOICE_HEARD) {
-      lastHeard = Date.now();
+      lastSound = Date.now();
+    }
+
+    if (mine > VOICE_HEARD) {
+      lastPerson = Date.now();
+      /* they are back, so he starts his wake ups over */
+      wakes = 0;
       if (warned) { warned = false; setVoiceState('listening', 'Still here.'); }
+    }
+
+    /*
+      A hush in the room, so he says something. Not while
+      he is talking, not while he is looking something up,
+      and not twice in quick succession.
+    */
+    if (canHear &&
+        wakes < VOICE_WAKE_TRIES &&
+        Date.now() - lastSound > VOICE_WAKE_AFTER &&
+        Date.now() - wokeAt > VOICE_WAKE_GAP &&
+        !voiceCall.speaking &&
+        !voiceCall.looking) {
+
+      if (sayWakeUp(voiceCall)) {
+        wakes += 1;
+        wokeAt = Date.now();
+        lastSound = Date.now();
+      }
+
     }
 
     /* a tab nobody is looking at is a tab nobody is talking into */
@@ -15960,7 +16465,8 @@ function watchVoiceIdle() {
       hiddenSince = 0;
     }
 
-    const quietFor = canHear ? Date.now() - lastHeard : 0;
+    /* winding up is measured on their silence, never on his */
+    const quietFor = canHear ? Date.now() - lastPerson : 0;
 
     if (!warned && quietFor > VOICE_IDLE_WARN) {
       warned = true;
@@ -16057,6 +16563,16 @@ function endVoiceCall() {
   const call = voiceCall;
 
   voiceCall = null;
+
+  /* nothing should still be humming once the line has gone */
+  stopHum();
+  hideLooking();
+
+  if (call) {
+    call.looking = false;
+    call.speaking = false;
+    (call.waiting || []).splice(0).forEach(go => go());
+  }
 
   /* a voice swap reopens the line underneath, so the screen stays */
   voiceScreen.classList.remove('listening', 'speaking');
