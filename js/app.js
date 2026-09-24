@@ -10548,14 +10548,25 @@ function shopTile(item, mine, best) {
 
   const onThis = item.kind === 'plan' && item.id === mine;
 
-  /* what they get, in the two numbers that matter */
-  const gives = [];
+  /*
+    The line under the price. Where the name already says what
+    they get, repeating it teaches nobody anything, so it shows
+    the unit price instead, which is the thing you cannot work
+    out in your head while comparing five tiles.
+  */
+  const pennies = n => n < 100 ? `${Math.round(n)}p` : `£${(n / 100).toFixed(2)}`;
 
-  if (item.images) gives.push(`${item.images} picture${item.images === 1 ? '' : 's'}`);
-  if (item.voice) {
-    gives.push(item.voice >= 60
-      ? `${(item.voice / 60) % 1 === 0 ? item.voice / 60 : (item.voice / 60).toFixed(1)} hour${item.voice >= 120 ? 's' : ''} of talking`
-      : `${item.voice} minutes of talking`);
+  let gives;
+
+  if (item.voice && !item.images) {
+    gives = `${pennies(item.pence / item.voice)} a minute`;
+  } else if (item.images && !item.voice) {
+    gives = `${pennies(item.pence / item.images)} a picture`;
+  } else if (item.images && item.voice) {
+    gives = `${item.images} picture${item.images === 1 ? '' : 's'} and ` +
+      `${item.voice} minute${item.voice === 1 ? '' : 's'} of talking`;
+  } else {
+    gives = '';
   }
 
   tile.innerHTML =
@@ -10564,7 +10575,7 @@ function shopTile(item, mine, best) {
     `<div class="shopTileName">${item.name}</div>` +
     `<div class="shopTilePrice">${priceTag(item.pence)}` +
     `${item.kind === 'plan' ? '<span class="shopPer">a month</span>' : ''}</div>` +
-    `<div class="shopTileGives">${gives.join(' and ')}</div>` +
+    (gives ? `<div class="shopTileGives">${gives}</div>` : '') +
     `<div class="shopTileBlurb">${item.blurb}</div>`;
 
   const buy = document.createElement('button');

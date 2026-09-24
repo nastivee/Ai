@@ -11972,3 +11972,88 @@ body.motionOff .walkerDrops .drop {
   .shopGrid { grid-template-columns: 1fr; }
   .shopPager .pagerStep { max-width: 36%; font-size: 10.5px; }
 }
+
+/* ---------- THE WAY IN, AND THE WAY TO BUY ---------- */
+/*
+  These are the two buttons that earn money, so they are the two
+  that should look like it. Both take the themed edge the New
+  chat button uses, and both lift slightly when a cursor is on
+  them, which the flat ones do not.
+*/
+
+.shopOpen {
+  --nc-edge: var(--edge);
+  --nc-fill: var(--edge-fill);
+  height: 48px;
+  border: 1.5px solid transparent;
+  border-radius: 14px;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,0)) padding-box,
+    linear-gradient(var(--nc-fill), var(--nc-fill)) padding-box,
+    var(--nc-edge) border-box;
+  color: #f3eefa;
+  font-size: 14px;
+  letter-spacing: .2px;
+  transition: transform .3s var(--ease), filter .3s var(--ease);
+}
+
+.shopOpen:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.1);
+}
+
+.shopOpen svg {
+  color: var(--acc, #cbb6ff);
+}
+
+/* the buy buttons themselves */
+.shopTile .shopBuy {
+  --nc-edge: var(--edge);
+  --nc-fill: var(--edge-fill);
+  border: 1.5px solid transparent;
+  border-radius: 13px;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,0)) padding-box,
+    linear-gradient(var(--nc-fill), var(--nc-fill)) padding-box,
+    var(--nc-edge) border-box;
+  color: #f3eefa;
+  font-size: 14.5px;
+  letter-spacing: .2px;
+  transition: transform .25s var(--ease), filter .25s var(--ease);
+}
+
+.shopTile .shopBuy:hover:not(:disabled) {
+  transform: translateY(-1px);
+  filter: brightness(1.12);
+}
+
+.shopTile .shopBuy:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+/* the best value tile's button leads, in the occasion's colour */
+.shopTile.best .shopBuy {
+  background: var(--acc, #a78bfa);
+  border-color: transparent;
+  color: #17112a;
+  font-weight: 800;
+}
+
+.shopTile.best .shopBuy:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+/* a plan already held is stated, not sold */
+.shopTile.mine .shopBuy {
+  background: none;
+  border: 1px solid #2f6b45;
+  color: #b9f2c6;
+  opacity: 1;
+}
+
+/* the steps between pages read as controls, not links */
+.shopPager .pagerStep {
+  min-height: 38px;
+  border-radius: 12px;
+  font-size: 12px;
+}
