@@ -4154,14 +4154,8 @@ async function streamWithSearch({ model, effort, cap, instructions, messages, se
     await openai.responses.create({
       model,
       reasoning: { effort },
-      /*
-        This cap covers the thinking as well as the words, so
-        it gets headroom the chat one does not need. Without
-        it a short cap can be spent entirely on reasoning and
-        the person gets nothing at all, which is the one
-        outcome worse than a long answer.
-      */
-      max_output_tokens: (cap || 2200) + 600,
+      /* the same ceiling, which already clears the thinking */
+      max_output_tokens: cap || 3200,
       instructions,
       input: toResponsesInput(messages),
       tools:
@@ -5605,9 +5599,34 @@ ${await (async () => {
     const response =
       await createReply(payload);
 
-    const reply =
-      response.choices?.[0]?.message?.content ||
-      'Sorry, I could not generate a response.';
+    let reply =
+      String(response.choices?.[0]?.message?.content || '').trim();
+
+    /*
+      An empty reply almost always means the ceiling was spent
+      on thinking. Rather than hand back a shrug, try once more
+      with room to breathe and nothing held back on length.
+    */
+    if (!reply) {
+
+      console.warn(
+        `EMPTY REPLY from ${model} (${response.choices?.[0]?.finish_reason}), retrying`
+      );
+
+      const again =
+        await createReply({
+          ...payload,
+          max_completion_tokens: (cap || 2000) * 3
+        });
+
+      reply =
+        String(again.choices?.[0]?.message?.content || '').trim();
+
+    }
+
+    if (!reply) {
+      reply = 'Sorry, I could not generate a response.';
+    }
 
     if (looksLikeRefusal(reply)) {
       const asked = [...cleanMessages].reverse()
@@ -5969,12 +5988,27 @@ const FREE_MODEL = process.env.FREE_MODEL || 'gpt-5-nano';
 */
 const FREE_BETTER = process.env.FREE_BETTER_MODEL || 'gpt-5.6-luna';
 
-/* how long a reply may run, per tier */
+/*
+  The ceiling, not the target.
+
+  On these models the cap counts the thinking as well as
+  the words, so a cap set to the length you actually want
+  gets spent on reasoning and the person is handed an empty
+  reply. That is exactly what happened when free was set to
+  320: nano thought its way through the whole budget and
+  said nothing at all.
+
+  So the cap is a safety net set well clear of the thinking,
+  and the length is controlled by telling it the word count,
+  which is what was saving the money anyway. A model that
+  writes 150 words costs the same whether the ceiling above
+  it is 320 or 900.
+*/
 const REPLY_CAP = {
-  free: Number(process.env.FREE_MAX_TOKENS || 320),
-  freeBetter: Number(process.env.FREE_BETTER_MAX_TOKENS || 700),
-  everyday: Number(process.env.SETTLED_MAX_TOKENS || 1100),
-  better: Number(process.env.SMART_MAX_TOKENS || 2200)
+  free: Number(process.env.FREE_MAX_TOKENS || 1000),
+  freeBetter: Number(process.env.FREE_BETTER_MAX_TOKENS || 1500),
+  everyday: Number(process.env.SETTLED_MAX_TOKENS || 2000),
+  better: Number(process.env.SMART_MAX_TOKENS || 3200)
 };
 
 /* how much of the conversation goes back up with each ask */
