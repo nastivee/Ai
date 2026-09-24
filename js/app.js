@@ -11789,7 +11789,7 @@ const TWICE_DELETE = [
 
 const TWICE_SAVE = [
   'adminSaveSettings', 'adminSavePeek', 'saveRules', 'pricingSave',
-  'profileSave', 'pwSave'
+  'profileSave', 'pwSave', 'saleSave'
 ];
 
 function askTwiceEverywhere() {
