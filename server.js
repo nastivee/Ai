@@ -2165,20 +2165,20 @@ const PACKS = [
   {
     id: 'starter', kind: 'plan', plan: 'starter',
     name: 'Starter', pence: 499,
-    blurb: '8 pictures, 60 messages a day and 15 minutes of talking.',
+    blurb: '8 pictures, 150 messages a day and 15 minutes of talking.',
     images: 8, voice: 15
   },
   {
     id: 'plus', kind: 'plan', plan: 'plus',
     name: 'Plus', pence: 999,
-    blurb: '15 sharper pictures in any shape, 150 messages a day and 45 minutes of talking.',
+    blurb: '15 sharper pictures in any shape, 400 messages a day and 45 minutes of talking.',
     images: 15, voice: 45
   },
   {
     id: 'pro', kind: 'plan', plan: 'pro',
     name: 'Pro', pence: 1999,
-    blurb: '25 best quality pictures, 300 messages a day and 90 minutes of talking.',
-    images: 25, voice: 90
+    blurb: '20 best quality pictures, 800 messages a day and 2 hours of talking.',
+    images: 20, voice: 120
   },
 
   /* ---- top ups ----
@@ -4126,32 +4126,36 @@ back empty every time: say it is blocked at their end.
 const PLAN_LIMITS = {
 
   free: {
-    /* 30 a day, and a month of average use lands nowhere near 300 */
-    texts: 30,
-    textsMonth: 300,
-    searches: 3,
-    searchesMonth: 20
+    texts: 50,
+    textsMonth: 600,
+    searches: 4,
+    searchesMonth: 25,
+    /* free never reaches Smart, its hard questions go to Luna */
+    smartMonth: 0
   },
 
   starter: {
-    texts: 60,
-    textsMonth: 700,
-    searches: 10,
-    searchesMonth: 60
+    texts: 150,
+    textsMonth: 1800,
+    searches: 12,
+    searchesMonth: 75,
+    smartMonth: 40
   },
 
   plus: {
-    texts: 150,
-    textsMonth: 1800,
-    searches: 25,
-    searchesMonth: 200
+    texts: 400,
+    textsMonth: 3000,
+    searches: 30,
+    searchesMonth: 180,
+    smartMonth: 120
   },
 
   pro: {
-    texts: 300,
-    textsMonth: 3000,
-    searches: 50,
-    searchesMonth: 400
+    texts: 800,
+    textsMonth: 5000,
+    searches: 60,
+    searchesMonth: 400,
+    smartMonth: 300
   }
 
 };
@@ -4191,7 +4195,8 @@ function rolled(raw) {
     texts: held.day === day ? Number(held.texts) || 0 : 0,
     searches: held.day === day ? Number(held.searches) || 0 : 0,
     textsMonth: held.month === month ? Number(held.textsMonth) || 0 : 0,
-    searchesMonth: held.month === month ? Number(held.searchesMonth) || 0 : 0
+    searchesMonth: held.month === month ? Number(held.searchesMonth) || 0 : 0,
+    smartMonth: held.month === month ? Number(held.smartMonth) || 0 : 0
   };
 
 }
@@ -4240,6 +4245,34 @@ async function saveTally(userId, tally) {
 }
 
 /*
+  Takes one Smart reply off the allowance. Returns false
+  rather than refusing, because running out of Smart is not
+  a wall: the question still gets answered, on the everyday
+  model, which is perfectly capable. Nobody is told off for
+  asking a hard question.
+*/
+async function takeSmart(user, account) {
+
+  if (isAdmin(user) || account?.unmetered) return true;
+
+  const caps = limitsFor(account?.plan);
+
+  if (!caps.smartMonth) return false;
+
+  const tally = await tallyFor(user.id);
+
+  if (tally.smartMonth >= caps.smartMonth) return false;
+
+  tally.smartMonth += 1;
+
+  saveTally(user.id, tally);
+
+  return true;
+
+}
+
+
+/*
   What is left, without spending anything. Admins and
   anybody unmetered are simply not counted.
 */
@@ -4265,7 +4298,8 @@ async function allowanceFor(user, account) {
     textsLeftToday: Math.max(0, caps.texts - tally.texts),
     textsLeftThisMonth: Math.max(0, caps.textsMonth - tally.textsMonth),
     searchesLeftToday: Math.max(0, caps.searches - tally.searches),
-    searchesLeftThisMonth: Math.max(0, caps.searchesMonth - tally.searchesMonth)
+    searchesLeftThisMonth: Math.max(0, caps.searchesMonth - tally.searchesMonth),
+    smartLeftThisMonth: Math.max(0, (caps.smartMonth || 0) - tally.smartMonth)
   };
 
 }
@@ -5673,7 +5707,8 @@ ${await (async () => {
       briefly so replies start quickly, Smart thinks harder.
       Both can be changed on Render without a deploy.
     */
-    const picked = await pickModel({ user, mode, newest, messages });
+    const picked =
+      await pickModel({ user, account: askingAccount, mode, newest, messages });
 
     const model = picked.model;
     const effort = picked.effort;
@@ -6338,9 +6373,16 @@ const HISTORY_KEPT = {
 };
 
 
-async function pickModel({ user, mode, newest, messages }) {
+async function pickModel({ user, account, mode, newest, messages }) {
 
-  const everyday = process.env.SETTLED_MODEL || 'gpt-5.4-mini';
+  /*
+    Luna, not gpt-5.4-mini. The old one was a generation
+    older AND nearly four times the price, 0.75 and 4.50
+    per million against 0.20 and 1.20, so it was losing on
+    both counts at once. A paid message went from 0.25p to
+    0.07p by changing one string.
+  */
+  const everyday = process.env.SETTLED_MODEL || 'gpt-5.6-luna';
   const better = process.env.SMART_MODEL || 'gpt-5.6';
 
   const said = String(newest || '');
@@ -6400,6 +6442,22 @@ async function pickModel({ user, mode, newest, messages }) {
       effort: process.env.FREE_EFFORT || 'low',
       tier: 'freeBetter',
       why: 'free account, harder question'
+    };
+  }
+
+  /*
+    Smart is fifteen times an everyday reply, so it has its
+    own monthly allowance. Past it the question is still
+    answered, on the everyday model, which handles almost
+    everything anyway. Running out of Smart should feel like
+    nothing, not like a wall.
+  */
+  if (!(await takeSmart(user, account))) {
+    return {
+      model: everyday,
+      effort: process.env.SETTLED_EFFORT || 'low',
+      tier: 'everyday',
+      why: 'smart allowance spent'
     };
   }
 
