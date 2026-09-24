@@ -2168,6 +2168,8 @@ function renderChatHistory() {
         deleteButton
       );
 
+      armSwipe(row, chatItem);
+
       chatHistoryList.appendChild(
         row
       );
@@ -2176,6 +2178,202 @@ function renderChatHistory() {
   );
 
   drawChatPager(visible);
+
+}
+
+
+/* =====================================================
+   SWIPE A CHAT AWAY
+
+   Drag a row to the left and a delete panel comes out
+   from under it. Let go short of the mark and it springs
+   back. Let go past the mark and the panel stays open so
+   it can be tapped. Keep going and it opens the same
+   confirmation the bin button opens, because a swipe is
+   easy to do by accident and nothing should vanish on
+   one movement alone.
+
+   Only one row is ever open, and scrolling the sidebar
+   shuts it, so an open row cannot be left behind and
+   forgotten.
+===================================================== */
+
+const SWIPE_OPEN = 96;      /* how far the panel comes out */
+const SWIPE_CATCH = 12;     /* before then it might still be a scroll */
+const SWIPE_KEEP = 56;      /* let go past here and it stays open */
+
+let swipeOpenRow = null;
+
+function closeSwipe(row) {
+
+  const one = row || swipeOpenRow;
+
+  if (!one) return;
+
+  one.style.setProperty('--slide', '0px');
+  one.classList.remove('swiped');
+
+  if (swipeOpenRow === one) swipeOpenRow = null;
+
+}
+
+function armSwipe(row, chatItem) {
+
+  const back =
+    document.createElement('div');
+
+  back.className = 'swipeBack';
+
+  back.setAttribute('aria-hidden', 'true');
+
+  back.innerHTML =
+    '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4.5A1.5 1.5 0 0 1 9.5 3h5A1.5 1.5 0 0 1 16 4.5V6"/><path d="M5.5 6l1 13.2A2 2 0 0 0 8.5 21h7a2 2 0 0 0 2-1.8L18.5 6"/><path d="M10 11v6M14 11v6"/></svg>' +
+    '<span>Delete</span>';
+
+  back.addEventListener('click', event => {
+
+    event.stopPropagation();
+
+    closeSwipe(row);
+
+    askToDelete(row, chatItem);
+
+  });
+
+  row.appendChild(back);
+
+  let startX = 0;
+  let startY = 0;
+  let from = 0;
+  let decided = '';
+  let pointer = null;
+
+  const slide = value => {
+    row.style.setProperty('--slide', `${value}px`);
+  };
+
+  row.addEventListener('pointerdown', event => {
+
+    if (event.button && event.button !== 0) return;
+
+    /* a tap on the panel itself is a tap, not a drag */
+    if (event.target.closest('.swipeBack')) return;
+
+    pointer = event.pointerId;
+    startX = event.clientX;
+    startY = event.clientY;
+    from = row.classList.contains('swiped') ? -SWIPE_OPEN : 0;
+    decided = '';
+
+    row.classList.add('dragging');
+
+  });
+
+  row.addEventListener('pointermove', event => {
+
+    if (pointer === null || event.pointerId !== pointer) return;
+
+    const dx = event.clientX - startX;
+    const dy = event.clientY - startY;
+
+    if (!decided) {
+
+      if (Math.abs(dx) < SWIPE_CATCH && Math.abs(dy) < SWIPE_CATCH) return;
+
+      /* up and down belongs to the list, not to us */
+      decided = Math.abs(dx) > Math.abs(dy) ? 'side' : 'scroll';
+
+      if (decided === 'side') {
+        closeSwipe(swipeOpenRow === row ? null : swipeOpenRow);
+        try { row.setPointerCapture(pointer); } catch {}
+      }
+
+    }
+
+    if (decided !== 'side') return;
+
+    event.preventDefault();
+
+    const width = row.offsetWidth || 260;
+
+    /* rightward pull past closed gets heavy, so it feels like a wall */
+    let next = from + dx;
+
+    if (next > 0) next = next * 0.25;
+
+    row.style.setProperty(
+      '--slide',
+      `${Math.max(next, -width)}px`
+    );
+
+  });
+
+  const letGo = event => {
+
+    if (pointer === null || (event && event.pointerId !== pointer)) return;
+
+    pointer = null;
+
+    row.classList.remove('dragging');
+
+    if (decided !== 'side') {
+      decided = '';
+      return;
+    }
+
+    decided = '';
+
+    const width = row.offsetWidth || 260;
+
+    const now =
+      parseFloat(row.style.getPropertyValue('--slide')) || 0;
+
+    /* all the way across means get on with it */
+    if (now <= -Math.max(140, width * 0.55)) {
+
+      closeSwipe(row);
+
+      askToDelete(row, chatItem);
+
+      return;
+
+    }
+
+    if (now <= -SWIPE_KEEP) {
+
+      closeSwipe(swipeOpenRow === row ? null : swipeOpenRow);
+
+      slide(-SWIPE_OPEN);
+
+      row.classList.add('swiped');
+
+      swipeOpenRow = row;
+
+      return;
+
+    }
+
+    closeSwipe(row);
+
+  };
+
+  row.addEventListener('pointerup', letGo);
+  row.addEventListener('pointercancel', letGo);
+
+  /* opening a chat closes the panel rather than leaving it out */
+  row.addEventListener('click', event => {
+
+    if (row.classList.contains('swiped') &&
+        !event.target.closest('.swipeBack')) {
+
+      event.preventDefault();
+      event.stopPropagation();
+
+      closeSwipe(row);
+
+    }
+
+  }, true);
 
 }
 
@@ -6891,7 +7089,7 @@ async function generateVideo(prompt, requestChatId, image = null) {
 
     if (started.status === 402 || job?.needsCredit) {
       await refreshAccount();
-      openPaywall('empty');
+      openShop('video');
     }
 
     if (!started.ok || !job.id) {
@@ -7100,7 +7298,7 @@ async function generateImage(
 
       await refreshAccount();
 
-      openPaywall('empty');
+      openShop('image');
 
       throw new Error(
         data?.error ||
@@ -7300,7 +7498,7 @@ async function editImage(
 
       await refreshAccount();
 
-      openPaywall('empty');
+      openShop('image');
 
       throw new Error(
         data?.error ||
@@ -10681,11 +10879,47 @@ function paintShop() {
 
 }
 
-async function openShop() {
+/*
+  Which shop page answers which refusal. Somebody stopped
+  from making a picture should land on the picture packs,
+  not on page one and a hunt. The word can be the page's
+  own name or the thing they were trying to do.
+*/
+const SHOP_FOR = {
+  image: 'pictures',
+  images: 'pictures',
+  picture: 'pictures',
+  pictures: 'pictures',
+  empty: 'pictures',
+  topup: 'pictures',
+  voice: 'voice',
+  no_voice: 'voice',
+  talk: 'voice',
+  video: 'plans',
+  plan: 'plans',
+  plans: 'plans'
+};
+
+function shopPageFor(want) {
+
+  if (!want) return 0;
+
+  const id = SHOP_FOR[String(want)] || String(want);
+
+  const at =
+    SHOP_GROUPS.findIndex(group => group.id === id);
+
+  return at < 0 ? 0 : at;
+
+}
+
+async function openShop(want) {
 
   const overlay = document.getElementById('shopOverlay');
 
   if (!overlay) return;
+
+  shopPage = shopPageFor(want);
 
   overlay.classList.add('show');
 
@@ -10725,7 +10959,7 @@ async function openShop() {
 
 }
 
-document.getElementById('shopOpen')?.addEventListener('click', openShop);
+document.getElementById('shopOpen')?.addEventListener('click', () => openShop());
 
 document.getElementById('shopClose')?.addEventListener('click', () => {
   document.getElementById('shopOverlay')?.classList.remove('show');
@@ -10832,6 +11066,18 @@ async function applyCoupon() {
 document
   .getElementById('payCouponButton')
   ?.addEventListener('click', applyCoupon);
+
+/*
+  The coupon box lives on the older overlay. The shop
+  keeps a way through to it so nothing was lost when
+  refusals started landing on the shop instead.
+*/
+document
+  .getElementById('shopCoupon')
+  ?.addEventListener('click', () => {
+    document.getElementById('shopOverlay')?.classList.remove('show');
+    openPaywall('topup');
+  });
 
 payCoupon?.addEventListener('keydown', event => {
   if (event.key === 'Enter') {
@@ -12748,8 +12994,8 @@ function spendTiles(where, tiles) {
   box.innerHTML =
     tiles.map(([label, value, tone]) =>
       '<div class="statTile">' +
-      `<span>${escapeText(label)}</span>` +
-      `<strong class="${tone || ''}">${escapeText(String(value))}</strong>` +
+      `<div class="statLabel">${escapeText(label)}</div>` +
+      `<div class="statValue ${tone || ''}">${escapeText(String(value))}</div>` +
       '</div>'
     ).join('');
 
@@ -15054,7 +15300,7 @@ async function startVoiceCall() {
       /* out of minutes is not a fault, it is a shop trip */
       if (session.reason === 'no_voice') {
         endVoiceCall();
-        openShop();
+        openShop('voice');
         return;
       }
 

@@ -12684,8 +12684,14 @@ body.motionOff *::after {
   margin-top: 0;
 }
 
-#adminSpend .statTile strong {
-  font-variant-numeric: tabular-nums;
+/* the value sits clear of its heading, never welded to it */
+#adminSpend .statValue {
+  margin-top: 6px;
+  white-space: normal;
+}
+
+#adminSpend .statLabel {
+  display: block;
 }
 
 #adminSpend .adminHint {
@@ -12702,4 +12708,310 @@ body.motionOff *::after {
 
 .spendOut {
   color: #ef6b6b;
+}
+
+/* =====================================================
+   VOICE: REACHABLE ON EVERY SCREEN
+
+   The voice screen centred its contents with no way to
+   scroll, so on a short screen, which mostly means a
+   phone turned on its side, the robot pushed the Done
+   and Mute buttons past the bottom edge and the close
+   mark past the top. Centred overflow cannot be scrolled
+   back to, so those buttons were simply gone.
+
+   Three things fix it. The screen scrolls. The stage
+   centres with automatic margins instead of alignment,
+   so it still sits in the middle when it fits and starts
+   at the top when it does not. And the controls stay
+   stuck to the bottom of the screen, so the buttons are
+   in reach before you have scrolled anywhere.
+===================================================== */
+
+.voiceScreen.show {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  padding: 24px 16px calc(24px + env(safe-area-inset-bottom));
+}
+
+.voiceScreen.show .voiceStage {
+  margin: auto;
+  min-height: calc(100% - 4px);
+  justify-content: center;
+}
+
+.voiceScreen .voiceControls {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  flex-wrap: wrap;
+  justify-content: center;
+  /* its own backing, so buttons never sit on top of text */
+  padding: 10px 12px;
+  margin: 0 -12px -6px;
+  border-radius: 16px;
+  background: rgba(8, 5, 14, .92);
+  backdrop-filter: blur(4px);
+}
+
+/* the close mark keeps clear of a notch or a rounded corner */
+.voiceScreen .voiceClose {
+  top: calc(8px + env(safe-area-inset-top));
+  right: calc(8px + env(safe-area-inset-right));
+}
+
+/*
+  Short screens, which is a phone on its side. The robot
+  and the words sit next to each other rather than stacked,
+  and everything shrinks a step, so the whole thing fits
+  without scrolling at all.
+*/
+@media (max-height: 560px) {
+
+  .voiceScreen.show .voiceStage {
+    width: min(100%, 780px);
+    display: grid;
+    grid-template-columns: minmax(0, 190px) minmax(0, 1fr);
+    grid-template-areas:
+      "bot words"
+      "bot controls";
+    align-content: center;
+    gap: 10px 20px;
+    text-align: left;
+  }
+
+  .voiceScreen.show .voiceBot {
+    grid-area: bot;
+    align-self: center;
+    width: min(190px, 26vw);
+    padding: 6px 0 0;
+  }
+
+  .voiceScreen.show .botArt {
+    width: min(104px, 20vw);
+  }
+
+  .voiceScreen.show .voiceStatus {
+    grid-area: words;
+    align-self: end;
+    font-size: 16px;
+  }
+
+  .voiceScreen.show .voiceTranscript {
+    grid-area: words;
+    align-self: start;
+    margin-top: 26px;
+    max-height: 30vh;
+  }
+
+  .voiceScreen.show .voiceControls {
+    grid-area: controls;
+    justify-content: flex-start;
+    align-self: end;
+  }
+
+  .voiceScreen.show .voiceControl {
+    height: 40px;
+    padding: 0 16px;
+    font-size: 13.5px;
+  }
+
+  .voiceScreen.show .voiceWho,
+  .voiceScreen.show .voiceNote {
+    display: none;
+  }
+
+}
+
+/*
+  Very short, or a very narrow phone on its side. Back to
+  one column, scrolling, with the controls still pinned.
+*/
+@media (max-height: 380px), (max-height: 560px) and (max-width: 560px) {
+
+  .voiceScreen.show .voiceStage {
+    display: flex;
+    grid-template-columns: none;
+    text-align: center;
+    gap: 10px;
+  }
+
+  .voiceScreen.show .voiceBot {
+    width: min(150px, 34vw);
+  }
+
+  .voiceScreen.show .botArt {
+    width: min(84px, 22vw);
+  }
+
+  .voiceScreen.show .voiceTranscript {
+    margin-top: 0;
+    max-height: 26vh;
+  }
+
+  .voiceScreen.show .voiceControls {
+    justify-content: center;
+  }
+
+}
+
+
+/* =====================================================
+   THE MIC BUTTON IN THE COMPOSER
+
+   It shares its row with the text box and the send
+   button. The text box was allowed to shrink to nothing
+   but not told to give way first, so on the narrowest
+   phones the row could run past the right edge and take
+   the mic with it. Now the text box yields, the buttons
+   never shrink, and the row wraps rather than overflows.
+===================================================== */
+
+.composerBottom {
+  flex-wrap: wrap;
+}
+
+.composerBottom .messageInput {
+  flex: 1 1 140px;
+  min-width: 0;
+}
+
+.composerBottom .composerButton {
+  flex: 0 0 auto;
+}
+
+@media (max-width: 380px) {
+
+  .composerBottom .messageInput {
+    flex-basis: 100%;
+  }
+
+  /* the buttons then share one row of their own */
+  .composerBottom .wordButton,
+  .composerBottom .voiceButton,
+  .composerBottom .sendButton,
+  .composerBottom .stopButton {
+    flex: 1 1 0;
+  }
+
+}
+
+/* =====================================================
+   SWIPE A CHAT AWAY
+
+   The delete panel lives under the row and is uncovered
+   as the row slides left, rather than sliding in over the
+   top, which is what makes it feel like the row is being
+   pulled back rather than something landing on it.
+===================================================== */
+
+.chatHistoryItem {
+  --slide: 0px;
+  overflow: hidden;
+  touch-action: pan-y;
+}
+
+.chatHistoryItem > button,
+.chatHistoryItem > .deleteChatButton,
+.chatHistoryItem > .confirmDelete {
+  transform: translate3d(var(--slide), 0, 0);
+  transition: transform .26s var(--ease);
+}
+
+.chatHistoryItem.dragging > button,
+.chatHistoryItem.dragging > .deleteChatButton {
+  transition: none;
+}
+
+.swipeBack {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 96px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  /* a button, so it keeps its horizontal room */
+  padding: 0 12px;
+  border: 0;
+  border-radius: 0 13px 13px 0;
+  background: #7f1d2d;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  /* only reachable once the row has actually moved */
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .18s var(--ease);
+}
+
+.chatHistoryItem.dragging .swipeBack,
+.chatHistoryItem.swiped .swipeBack {
+  opacity: 1;
+}
+
+.chatHistoryItem.swiped .swipeBack {
+  pointer-events: auto;
+}
+
+.swipeBack:hover {
+  background: #932235;
+}
+
+.swipeBack svg {
+  flex-shrink: 0;
+}
+
+/* a swipe is a touch idea, so on a mouse the bin stays the way in */
+@media (hover: hover) and (pointer: fine) {
+
+  .chatHistoryItem {
+    touch-action: auto;
+  }
+
+}
+
+body.motionOff .chatHistoryItem > button,
+body.motionOff .chatHistoryItem > .deleteChatButton,
+body.motionOff .swipeBack {
+  transition: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+  .chatHistoryItem > button,
+  .chatHistoryItem > .deleteChatButton,
+  .swipeBack {
+    transition: none;
+  }
+
+}
+
+/* the way through to the coupon box, quiet, under the packs */
+.shopCoupon {
+  display: block;
+  width: 100%;
+  margin-top: var(--s3);
+  padding: 12px 16px;
+  border: 1px dashed #3d2c58;
+  border-radius: var(--r2);
+  background: transparent;
+  color: var(--ink-2);
+  font-size: var(--t-sm);
+  font-weight: 650;
+  cursor: pointer;
+  transition: border-color var(--quick) var(--ease), color var(--quick) var(--ease);
+}
+
+.shopCoupon:hover {
+  border-color: var(--mode-acc, #a78bfa);
+  color: var(--ink);
 }
