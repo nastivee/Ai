@@ -1,8 +1,8 @@
 {
   "id": "/Ai/",
-  "name": "Natter AI",
-  "short_name": "Natter",
-  "description": "Chat and image generation with Natter AI.",
+  "name": "Atla",
+  "short_name": "Atla",
+  "description": "Chat and image generation with Atla.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

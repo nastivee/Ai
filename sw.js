@@ -1,5 +1,5 @@
 /*
-  Natter AI service worker
+  Atla service worker
 
   The old version served index.html from the cache for ever,
   so people kept running an out of date app. This one asks
@@ -19,7 +19,7 @@
 const VERSION =
   new URL(self.location.href).searchParams.get('v') || 'v3';
 
-const CACHE = `nastivee-${VERSION}`;
+const CACHE = `atla-${VERSION}`;
 
 const ASSETS = [
   './',
@@ -36,8 +36,8 @@ const ASSETS = [
   './icon-192-maskable.png',
   './icon-512-maskable.png',
   './og-image.png',
-  './NAI-Logo.webp',
-  './NAI-Logo-512.png'
+  './ATLA-Logo.webp',
+  './ATLA-Logo-512.png'
 ];
 
 self.addEventListener('install', event => {

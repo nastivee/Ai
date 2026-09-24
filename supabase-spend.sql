@@ -1,5 +1,5 @@
 -- =========================================================
--- NATTER AI, THE SPEND PAGE
+-- ATLA, THE SPEND PAGE
 --
 -- Run this once in the Supabase SQL editor.
 --

@@ -1,5 +1,5 @@
 -- =========================================================
--- NATTER AI, GIFTS
+-- ATLA, GIFTS
 --
 -- Run this once in the Supabase SQL editor.
 --

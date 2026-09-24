@@ -1,4 +1,4 @@
--- Nastivee AI: row level security policies
+-- Atla: row level security policies
 --
 -- Run in Supabase > SQL Editor.
 --

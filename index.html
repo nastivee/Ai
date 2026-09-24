@@ -4,40 +4,55 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#09051a">
-<title>Natter AI</title>
-<meta name="description" content="Natter AI — chat and image generation, in one place.">
+<title>Atla</title>
+<meta name="description" content="Atla — chat and image generation, in one place.">
 
 <!-- Installable app -->
 <link rel="manifest" href="./manifest.webmanifest">
-<meta name="application-name" content="Natter AI">
+<meta name="application-name" content="Atla">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Natter">
+<meta name="apple-mobile-web-app-title" content="Atla">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
 <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
 <link rel="icon" type="image/png" sizes="512x512" href="./icon-512.png">
 <link rel="icon" type="image/svg+xml" href="./icon.svg">
-<link rel="icon" type="image/webp" href="./NAI-Logo.webp">
+<link rel="icon" type="image/webp" href="./ATLA-Logo.webp">
 <link rel="apple-touch-icon" sizes="180x180" href="./icon-192-maskable.png">
 
 <!-- Share card -->
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="Natter AI">
-<meta property="og:title" content="Natter AI">
+<meta property="og:site_name" content="Atla">
+<meta property="og:title" content="Atla">
 <meta property="og:description" content="Chat and image generation, in one place.">
+<!--
+  WHEN THE DOMAIN GOES LIVE
+
+  These four addresses still point at the GitHub Pages
+  origin, on purpose. A sharing image has to be a real
+  address a scraper can fetch, so pointing them at
+  heyatla.co.uk before its DNS reaches this site would
+  leave every shared link with a blank preview.
+
+  On the day heyatla.co.uk points here: swap
+  nastivee.github.io/Ai for heyatla.co.uk in the four
+  lines below, add a file called CNAME containing
+  heyatla.co.uk, and set LIVE_SITE_URL on Render to match.
+-->
+<link rel="canonical" href="https://heyatla.co.uk/">
 <meta property="og:url" content="https://nastivee.github.io/Ai/">
 <meta property="og:image" content="https://nastivee.github.io/Ai/og-image.png">
 <meta property="og:image:secure_url" content="https://nastivee.github.io/Ai/og-image.png">
 <meta property="og:image:type" content="image/png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="Natter AI">
+<meta property="og:image:alt" content="Atla">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Natter AI">
+<meta name="twitter:title" content="Atla">
 <meta name="twitter:description" content="Chat and image generation, in one place.">
 <meta name="twitter:image" content="https://nastivee.github.io/Ai/og-image.png">
-<meta name="twitter:image:alt" content="Natter AI">
+<meta name="twitter:image:alt" content="Atla">
 
 <!-- open the connections early, and wake the server while the page loads -->
 <link rel="preconnect" href="https://ai-8vlt.onrender.com" crossorigin>
@@ -51,11 +66,11 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-<link rel="stylesheet" href="./css/app.css?v=2026-09-24-58">
+<link rel="stylesheet" href="./css/app.css?v=2026-09-24-59">
 </head>
 
 <body>
-<script>try{var t=localStorage.getItem('natter_theme');if(t&&/^(newyear|frost|valentines|stpatricks|easter|summer|halloween|bonfire|christmas)$/.test(t))document.body.classList.add('theme-'+t)}catch(e){}</script>
+<script>try{var t=localStorage.getItem('atla_theme');if(t&&/^(newyear|frost|valentines|stpatricks|easter|summer|halloween|bonfire|christmas)$/.test(t))document.body.classList.add('theme-'+t)}catch(e){}</script>
 
 <div class="bootOverlay show" id="bootOverlay" role="status" aria-live="polite">
   <div class="bootInner">
@@ -97,8 +112,8 @@
 
     <div class="logoLarge">
       <picture class="logoMark">
-        <source srcset="./NAI-Logo.webp" type="image/webp">
-        <img src="./NAI-Logo-512.png" alt="N" width="512" height="512">
+        <source srcset="./ATLA-Logo.webp" type="image/webp">
+        <img src="./ATLA-Logo-512.png" alt="N" width="512" height="512">
       </picture><span class="logoRest">atter</span><span>AI</span>
     </div>
 
@@ -163,7 +178,7 @@
     ></div>
 
     <div class="authStatus">
-      <div class="headerStatus" title="People using Natter AI right now">
+      <div class="headerStatus" title="People using Atla right now">
         <span class="statusDot" id="authStatusDot"></span>
         <span id="authOnlineCount">Connecting</span>
       </div>
@@ -203,8 +218,8 @@
 
     <div class="logoLarge">
       <picture class="logoMark">
-        <source srcset="./NAI-Logo.webp" type="image/webp">
-        <img src="./NAI-Logo-512.png" alt="N" width="512" height="512">
+        <source srcset="./ATLA-Logo.webp" type="image/webp">
+        <img src="./ATLA-Logo-512.png" alt="N" width="512" height="512">
       </picture><span class="logoRest">atter</span><span>AI</span>
     </div>
 
@@ -280,7 +295,7 @@
 
 
 <div class="offlineBar" id="offlineBar">
-  You are offline. Natter will pick up where you left off.
+  You are offline. Atla will pick up where you left off.
 </div>
 
 
@@ -292,7 +307,7 @@
 
   <div class="lockCard">
 
-    <img class="lockMark" src="./NAI-Logo.webp" alt="">
+    <img class="lockMark" src="./ATLA-Logo.webp" alt="">
 
     <div class="lockTitle">Unlock your chats</div>
 
@@ -352,9 +367,9 @@
 
   <div class="lockCard">
 
-    <img class="lockMark" src="./NAI-Logo.webp" alt="">
+    <img class="lockMark" src="./ATLA-Logo.webp" alt="">
 
-    <div class="lockTitle">Natter AI</div>
+    <div class="lockTitle">Atla</div>
 
     <p class="lockText">
       We are putting the finishing touches to this. It will
@@ -858,7 +873,7 @@
       <div class="adminBody">
 
         <div class="adminHint">
-          House lessons teach Natter how to answer well, for
+          House lessons teach Atla how to answer well, for
           everyone. When someone asks for a reply again, or saves
           one, it may suggest a general lesson. Nothing goes live
           until you approve it here, and lessons never contain
@@ -895,7 +910,7 @@
       <button class="adminSummary" type="button" data-section="adminKnowledge">
         <span class="adminDot" aria-hidden="true"></span>
         <span class="adminSummaryText">
-          What Natter knows
+          What Atla knows
           <span class="adminSummaryNote" id="adminKnowledgeNote">Checking...</span>
         </span>
         <svg class="adminChevron" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
@@ -904,7 +919,7 @@
       <div class="adminBody">
 
         <div class="adminHint">
-          Trade knowledge Natter carries with it: how the work is
+          Trade knowledge Atla carries with it: how the work is
           actually done in each of these. The two or three that fit
           a question are used for that answer, so replies come out
           like somebody who does the job. Switch one off if you
@@ -1116,7 +1131,7 @@
       <div class="adminBody">
 
         <div class="adminHint">
-          Things Natter decided not to do, with the person's
+          Things Atla decided not to do, with the person's
           name: chat refusals, and pictures the safety checks
           blocked. Each one names what happened and what would
           work instead. Things that broke rather than being
@@ -1375,7 +1390,7 @@
     </button>
 
     <div class="paySecure">
-      Card details are handled by Stripe, never by Natter.
+      Card details are handled by Stripe, never by Atla.
     </div>
 
     <div class="payDivider">OR</div>
@@ -1426,7 +1441,7 @@
         </span>
 
         <div>
-          <div class="installName">Natter AI</div>
+          <div class="installName">Atla</div>
           <div class="installHost" id="installHost"></div>
         </div>
 
@@ -1448,7 +1463,7 @@
     <ul class="installSteps" id="installSteps"></ul>
 
     <div class="installWhy">
-      Installed, Natter opens full screen from your home
+      Installed, Atla opens full screen from your home
       screen or dock, with no address bar, and your chats
       carry on exactly where you left them.
     </div>
@@ -1500,7 +1515,7 @@
       class="installButton"
       id="installButton"
       type="button"
-      title="Install Natter AI as an app"
+      title="Install Atla as an app"
     >
       <svg class="icon" width="17" height="17" viewBox="0 0 24 24"
            fill="none" stroke="currentColor" stroke-width="2"
@@ -1510,7 +1525,7 @@
         <polyline points="7 10 12 15 17 10"></polyline>
         <line x1="12" y1="15" x2="12" y2="3"></line>
       </svg>
-      Install Natter as an app
+      Install Atla as an app
     </button>
 
     <div class="adminDrawerShade profileShade" id="profileShade"></div>
@@ -1534,7 +1549,7 @@
 
     <div class="foldCard profileAbout" id="foldAbout" data-title="About you">
 
-      <span class="foldNote" id="foldAboutNote" hidden>Who you are and what Natter remembers</span>
+      <span class="foldNote" id="foldAboutNote" hidden>Who you are and what Atla remembers</span>
 
     <div class="profileRow">
       <div class="profileLabel">Signed in as</div>
@@ -1544,7 +1559,7 @@
     <div class="profileRow">
 
       <div class="profileLabel">
-        What Natter remembers about you
+        What Atla remembers about you
       </div>
 
       <textarea
@@ -1807,7 +1822,7 @@
 
   <div class="lockCard">
 
-    <img class="lockMark" src="./NAI-Logo.webp" alt="">
+    <img class="lockMark" src="./ATLA-Logo.webp" alt="">
 
     <div class="lockTitle">Your chats are still locked</div>
 
@@ -1881,8 +1896,8 @@
         <div class="logo">
           <img
             class="logoMark"
-            src="./NAI-Logo.webp"
-            alt="Natter AI"
+            src="./ATLA-Logo.webp"
+            alt="Atla"
             width="36"
             height="36"
           >
@@ -2157,7 +2172,7 @@
 
       </div>
 
-      <div class="headerStatus" id="headerStatus" title="People using Natter AI right now">
+      <div class="headerStatus" id="headerStatus" title="People using Atla right now">
 
         <span class="statusDot" id="statusDot"></span>
 
@@ -2374,7 +2389,7 @@
             id="messageInput"
             class="messageInput"
             rows="1"
-            placeholder="Message Natter..."
+            placeholder="Message Atla..."
           ></textarea>
 
           <button
@@ -2391,7 +2406,7 @@
             id="voiceButton"
             class="composerButton voiceButton"
             type="button"
-            title="Talk to Natter"
+            title="Talk to Atla"
             aria-label="Start a voice conversation"
           >
             <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"></rect><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"></path></svg>
@@ -2629,8 +2644,8 @@
   </div>
 </div>
 
-<script>window.NASTIVEE_VERSION = '2026-09-24-58';</script>
-<script src="./js/app.js?v=2026-09-24-58"></script>
+<script>window.NASTIVEE_VERSION = '2026-09-24-59';</script>
+<script src="./js/app.js?v=2026-09-24-59"></script>
 
 </body>
 </html>

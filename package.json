@@ -1,7 +1,7 @@
 {
-  "name": "nastivee-ai-bot",
+  "name": "atla-ai",
   "version": "1.0.0",
-  "description": "Nastivee AI Bot",
+  "description": "Atla Bot",
   "type": "module",
   "scripts": {
     "start": "node server.js"

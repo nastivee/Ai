@@ -1,5 +1,5 @@
 -- =========================================================
--- NATTER AI, THE ALLOWANCE TALLY
+-- ATLA, THE ALLOWANCE TALLY
 --
 -- Run this once in the Supabase SQL editor.
 --

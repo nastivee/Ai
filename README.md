@@ -1,4 +1,4 @@
-# Natter AI Bot - Connected Frontend
+# Atla Bot - Connected Frontend
 
 This version is already configured to call the deployed backend:
 https://ai-8vlt.onrender.com

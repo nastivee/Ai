@@ -1,5 +1,5 @@
 -- =========================================================
--- NASTIVEE AI, IMAGE CREDITS
+-- ATLA, IMAGE CREDITS
 --
 -- Run this once in the Supabase SQL editor.
 --
@@ -412,7 +412,7 @@ alter table public.app_settings
 alter table public.app_settings
   add column if not exists admin_theme text not null default 'match';
 
--- Requests Natter turned down, shown in the admin page
+-- Requests Atla turned down, shown in the admin page
 create table if not exists public.refusals (
   id uuid primary key default gen_random_uuid(),
   created_at timestamptz not null default now(),

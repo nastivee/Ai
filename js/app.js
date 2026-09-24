@@ -1,5 +1,5 @@
 /*
-  Natter AI app code. Moved out of index.html so the page is
+  Atla app code. Moved out of index.html so the page is
   easier to work on. It is one classic script on purpose: it
   runs after the page markup, exactly as it did inline.
 */
@@ -2973,7 +2973,7 @@ function clearChatUI() {
 
    The blank chat greets the person by name, knows what
    time of day it is, and offers a few openers drawn from
-   what Natter remembers about them.
+   what Atla remembers about them.
 ===================================================== */
 
 function timeOfDay() {
@@ -3577,7 +3577,7 @@ async function loadChat(
         note.innerHTML = '<div class="learnedNote problem"></div>';
         note.firstChild.textContent =
           `${lockedCount} message${lockedCount === 1 ? ' was' : 's were'} sealed on another device. ` +
-          'Open Natter once on that device and they will be moved across so you can read them here.';
+          'Open Atla once on that device and they will be moved across so you can read them here.';
         chat.prepend(note);
       }, 0);
     }
@@ -4686,7 +4686,7 @@ function escapeHtml(text) {
 
    Some things read far better as a picture than as a
    paragraph: the weather, a football score, a league
-   table, a price. Natter sends those as a small block of
+   table, a price. Atla sends those as a small block of
    data and the app draws them as a card.
 ===================================================== */
 
@@ -6095,13 +6095,13 @@ function renderMarkdown(text) {
     may be half written, so an unfinished one is held back
     rather than shown as raw text.
   */
-  const unfinished = source.lastIndexOf('```natter');
+  const unfinished = source.lastIndexOf('```atla');
 
   if (unfinished > -1 && !/```/.test(source.slice(unfinished + 9))) {
     source = source.slice(0, unfinished);
   }
 
-  source = source.replace(/```natter\s*\n?([\s\S]*?)```/g, (match, body) => {
+  source = source.replace(/```atla\s*\n?([\s\S]*?)```/g, (match, body) => {
     try {
       const card = JSON.parse(body);
       CARD_QUEUE.push(card);
@@ -6529,7 +6529,7 @@ function addImageMessage(
   setImageSource(image, imageData);
 
   image.alt =
-    'Natter AI generated image';
+    'Atla generated image';
 
 
   wrap.appendChild(
@@ -6614,7 +6614,7 @@ function addImageMessage(
     iconLabel('pencil', 'Change this', 'Change');
 
   continueButton.title =
-    'Describe a change and Natter edits this picture';
+    'Describe a change and Atla edits this picture';
 
   continueButton.dataset.hint =
     'Attaches this picture so your next message edits it.';
@@ -6692,7 +6692,7 @@ function addImageMessage(
           : await (await fetch(source)).blob();
 
       const file =
-        new File([blob], 'natter.png', {
+        new File([blob], 'atla.png', {
           type: blob.type || 'image/png'
         });
 
@@ -6700,7 +6700,7 @@ function addImageMessage(
 
         await navigator.share({
           files: [file],
-          text: prompt || 'Made with Natter AI'
+          text: prompt || 'Made with Atla'
         });
 
         return;
@@ -6708,8 +6708,8 @@ function addImageMessage(
       }
 
       await navigator.share({
-        title: 'Natter AI',
-        text: prompt || 'Made with Natter AI',
+        title: 'Atla',
+        text: prompt || 'Made with Atla',
         url: source.startsWith('http') ? source : location.href
       });
 
@@ -7060,7 +7060,7 @@ function addVideoMessage(ref, prompt = '') {
 
       const link = document.createElement('a');
       link.href = url;
-      link.download = `natter-video-${Date.now()}.mp4`;
+      link.download = `atla-video-${Date.now()}.mp4`;
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -7230,7 +7230,7 @@ function setVideoMode(enabled) {
           ? 'Describe how this photo should come to life...'
           : 'Describe the video you want me to create...') +
         (account?.videoCost ? ` (uses ${account.videoCost} images)` : '')
-      : (selectedImageData ? 'Ask about it, or say what to change...' : 'Message Natter...');
+      : (selectedImageData ? 'Ask about it, or say what to change...' : 'Message Atla...');
 
 }
 
@@ -9775,7 +9775,7 @@ document
   ?.addEventListener('click', () => {
 
     const text =
-      'Natter AI recovery code\n\n' +
+      'Atla recovery code\n\n' +
       `${shownRecoveryCode}\n\n` +
       `Account: ${currentUser?.email || ''}\n` +
       `Made: ${new Date().toLocaleString('en-GB')}\n\n` +
@@ -9791,7 +9791,7 @@ document
         new Blob([text], { type: 'text/plain' })
       );
 
-    link.download = 'natter-recovery-code.txt';
+    link.download = 'atla-recovery-code.txt';
 
     document.body.appendChild(link);
     link.click();
@@ -10182,7 +10182,7 @@ async function exportAllChats(button) {
         : '';
 
     const lines = [
-      '# Natter AI, all chats',
+      '# Atla, all chats',
       '',
       `Exported ${when(new Date())}` +
         (currentUser?.email ? ` for ${currentUser.email}` : ''),
@@ -10206,7 +10206,7 @@ async function exportAllChats(button) {
         .forEach(message => {
 
           const who =
-            message.role === 'user' ? 'You' : 'Natter';
+            message.role === 'user' ? 'You' : 'Atla';
 
           const picture =
             message.image_url ? ' _[picture]_' : '';
@@ -10231,7 +10231,7 @@ async function exportAllChats(button) {
       );
 
     link.download =
-      `natter-all-chats-${new Date()
+      `atla-all-chats-${new Date()
         .toISOString()
         .slice(0, 10)}.md`;
 
@@ -13741,7 +13741,7 @@ const INSTALL_GUIDES = {
         'Safari, the square with the arrow coming out of it.',
       `Scroll down the list and tap ${PLUS_GLYPH} ` +
         '<strong>Add to Home Screen</strong>.',
-      'Tap <strong>Add</strong> in the top right, and Natter ' +
+      'Tap <strong>Add</strong> in the top right, and Atla ' +
         'lands on your home screen with its own icon.'
     ]
   },
@@ -13765,7 +13765,7 @@ const INSTALL_GUIDES = {
       `Click the Share button ${SHARE_GLYPH} in the toolbar, ` +
         'or open the <strong>File</strong> menu.',
       'Choose <strong>Add to Dock</strong>.',
-      'Click <strong>Add</strong>, and Natter sits in your ' +
+      'Click <strong>Add</strong>, and Atla sits in your ' +
         'Dock like any other app.'
     ]
   },
@@ -13776,7 +13776,7 @@ const INSTALL_GUIDES = {
       'route is a pinned tab or a desktop shortcut.',
     steps: [
       'Right click this tab and choose <strong>Pin Tab</strong> ' +
-        'so Natter is always open.',
+        'so Atla is always open.',
       'Or drag the padlock in the address bar onto your ' +
         'desktop to drop a shortcut there.',
       'Chrome, Edge and Safari can install it properly if ' +
@@ -13791,7 +13791,7 @@ const INSTALL_GUIDES = {
     steps: [
       `Open the browser menu ${DOTS_GLYPH} in the top right.`,
       'Look for <strong>Install app</strong>, <strong>Install ' +
-        'Natter AI</strong> or <strong>Add to Home ' +
+        'Atla</strong> or <strong>Add to Home ' +
         'screen</strong>.',
       'Confirm, and it opens in its own window from then on.'
     ]
@@ -14318,7 +14318,7 @@ async function exportCurrentChat() {
   const title =
     chats.find(
       item => String(item.id) === String(currentChatId)
-    )?.title || 'Natter chat';
+    )?.title || 'Atla chat';
 
   const lines = [
     `# ${title}`,
@@ -14330,7 +14330,7 @@ async function exportCurrentChat() {
   rows.forEach(row => {
 
     lines.push(
-      row.role === 'user' ? '## You' : '## Natter'
+      row.role === 'user' ? '## You' : '## Atla'
     );
 
     if (row.content) {
@@ -14361,7 +14361,7 @@ async function exportCurrentChat() {
   link.href = url;
 
   link.download =
-    `${title.replace(/[^\w\s-]/g, '').trim().slice(0, 40) || 'natter-chat'}.md`;
+    `${title.replace(/[^\w\s-]/g, '').trim().slice(0, 40) || 'atla-chat'}.md`;
 
   document.body.appendChild(link);
 
@@ -14662,7 +14662,7 @@ async function sendNormalMessage(
   const jobId =
     startJob(
       requestChatId,
-      'Natter is replying...'
+      'Atla is replying...'
     );
 
 
@@ -15127,7 +15127,7 @@ async function sendMessage() {
     /*
       ASK ABOUT IT
 
-      The photo goes with the question, so Natter can
+      The photo goes with the question, so Atla can
       answer about what is in it instead of editing it.
     */
 
@@ -15265,7 +15265,7 @@ async function sendMessage() {
 /* =====================================================
    VOICE CONVERSATION
 
-   A live call with Natter through OpenAI's Realtime API.
+   A live call with Atla through OpenAI's Realtime API.
    The server hands over a short lived key; the browser
    then talks to OpenAI directly over WebRTC, so audio
    never passes through our server. What each side says
@@ -15825,7 +15825,7 @@ function recentChatText() {
   return [...document.querySelectorAll('#chat .messageRow:not(.learnedRow)')]
     .slice(-12)
     .map(row => {
-      const who = row.classList.contains('user') ? 'User' : 'Natter';
+      const who = row.classList.contains('user') ? 'User' : 'Atla';
       const text = (row.querySelector('.messageBubble, .bubble')?.innerText || row.innerText || '').trim();
       return text ? `${who}: ${text.slice(0, 300)}` : '';
     })
@@ -16006,7 +16006,7 @@ function waveDraw() {
   const who = document.getElementById('voiceWho');
 
   if (who) {
-    who.textContent = talking ? 'Natter' : (hearing ? 'Listening' : '');
+    who.textContent = talking ? 'Atla' : (hearing ? 'Listening' : '');
     who.classList.toggle('them', talking);
   }
 
@@ -16299,12 +16299,12 @@ async function startVoiceCall() {
           /* he is audible, so the gap is over */
           call.speaking = 'audio';
           gapEnds();
-          setVoiceState('speaking', 'Natter is talking');
+          setVoiceState('speaking', 'Atla is talking');
           break;
 
         case 'response.output_audio_transcript.delta':
         case 'response.audio_transcript.delta':
-          setVoiceState('speaking', 'Natter is talking');
+          setVoiceState('speaking', 'Atla is talking');
           /* the words themselves, as he says them */
           botHears(data.delta || data.transcript || '');
           break;
@@ -16388,7 +16388,7 @@ async function startVoiceCall() {
 
     const message =
       error?.name === 'NotAllowedError'
-        ? 'Natter needs permission to use your microphone. Allow it in your browser and try again.'
+        ? 'Atla needs permission to use your microphone. Allow it in your browser and try again.'
         : (error?.message || 'Could not start listening.');
 
     endVoiceCall();
@@ -17984,7 +17984,7 @@ const PEEK_MUMMY_HAND_SVG = `
 /* how long the storm clouds take to roll in before the lightning */
 const STORM_ROLL_IN = 1400;
 
-const THEME_KEY = 'natter_theme';
+const THEME_KEY = 'atla_theme';
 
 /*
   THE CELEBRATIONS
@@ -19681,7 +19681,7 @@ let restartPeeking = null;
   };
 
   /* lets an admin (or a test) call up any routine by number */
-  window.natterPeek = peekBot;
+  window.atlaPeek = peekBot;
 
   restartPeeking = () => {
     const next = gap();
@@ -20877,7 +20877,7 @@ document.getElementById('lessonAdd')?.addEventListener('click', async event => {
 /* =====================================================
    MY ARTWORK
 
-   Every picture and clip Natter has made for you, from
+   Every picture and clip Atla has made for you, from
    all your chats, newest first. Thumbnails load as they
    scroll into view, sixty at a time.
 ===================================================== */
@@ -21185,7 +21185,7 @@ document.getElementById('artworkDownload')?.addEventListener('click', async () =
 
     const link = document.createElement('a');
     link.href = url;
-    link.download = `natter-${Date.now()}.${ext}`;
+    link.download = `atla-${Date.now()}.${ext}`;
     document.body.appendChild(link);
     link.click();
     link.remove();
@@ -21266,7 +21266,7 @@ let adminUploadOffset = 0;
 let adminUploadViewing = null;
 
 /* =====================================================
-   WHAT NATTER KNOWS
+   WHAT ATLA KNOWS
 
    The trade knowledge packs, and a switch for each.
 ===================================================== */
@@ -21285,7 +21285,7 @@ async function loadKnowledge() {
 
     const data = await response.json();
 
-    if (!response.ok) throw new Error(data?.error || 'Could not load what Natter knows.');
+    if (!response.ok) throw new Error(data?.error || 'Could not load what Atla knows.');
 
     const packs = data.packs || [];
     const on = packs.filter(pack => pack.on);
@@ -21376,7 +21376,7 @@ async function loadKnowledge() {
 /* =====================================================
    BLOCKED REQUESTS
 
-   Everything Natter turned down, with the line it crossed
+   Everything Atla turned down, with the line it crossed
    and what the person could have asked instead.
 ===================================================== */
 
@@ -21620,7 +21620,7 @@ async function loadRefusals() {
     if (!items.length) {
       const empty = document.createElement('div');
       empty.className = 'adminHint';
-      empty.textContent = 'Natter has not turned anything down yet.';
+      empty.textContent = 'Atla has not turned anything down yet.';
       list.appendChild(empty);
       paintAdminMenu();
       return;
@@ -21697,7 +21697,7 @@ async function loadRefusals() {
       row('Who', [item.name, item.email].filter(Boolean).join(' · ') || 'A guest, not signed in');
       row('What crossed the line', item.rule, 'breach');
       row('What would be fine to ask instead', item.avoid, 'fix');
-      row('Natter replied', item.reply);
+      row('Atla replied', item.reply);
 
       const tools = document.createElement('div');
       tools.className = 'refusalTools';
@@ -22326,7 +22326,7 @@ document.addEventListener('pointerdown', event => {
 sidebar.addEventListener('mouseleave', () => sidebar.classList.remove('peekOpen'));
 
 /* each computer chooses: keep the sidebar open, or let it tuck away */
-const PIN_KEY = 'natter_sidebar_pinned';
+const PIN_KEY = 'atla_sidebar_pinned';
 
 function paintPin() {
   const pinned = document.body.classList.contains('sidebarPinned');
@@ -22351,7 +22351,7 @@ paintPin();
   starts off for anyone who asks their computer for less
   movement.
 */
-const MOTION_KEY = 'natter_motion';
+const MOTION_KEY = 'atla_motion';
 
 function motionOn() {
   return !document.body.classList.contains('motionOff');
@@ -22467,7 +22467,7 @@ function setImageMode(
     messageInput.placeholder =
       selectedImageData
         ? 'Ask about it, or say what to change...'
-        : 'Message Natter...';
+        : 'Message Atla...';
 
 
     imageButton.classList.remove(
@@ -22954,7 +22954,7 @@ async function downloadImage(
     imageData;
 
   link.download =
-    `natter-image-${Date.now()}.png`;
+    `atla-image-${Date.now()}.png`;
 
 
   document.body.appendChild(
@@ -23114,7 +23114,7 @@ function startPresence() {
 
     presenceChannel =
       supabaseClient.channel(
-        'nastivee-online',
+        'atla-online',
         {
           config: {
             presence: { key: who }

@@ -1,5 +1,5 @@
 /*
-  Natter AI styles. Moved out of index.html so the page is
+  Atla styles. Moved out of index.html so the page is
   easier to work on. Order matters: later rules win.
 */
 
@@ -3061,11 +3061,11 @@ body.smartMode {
   height: min(46vmin, 360px);
   transform: translate(-50%, -50%);
   /* Fallback first, then the lighter webp where it is supported */
-  background: url('./NAI-Logo-512.png') center / contain no-repeat;
+  background: url('./ATLA-Logo-512.png') center / contain no-repeat;
   background-image:
     image-set(
-      url('./NAI-Logo.webp') type('image/webp'),
-      url('./NAI-Logo-512.png') type('image/png')
+      url('./ATLA-Logo.webp') type('image/webp'),
+      url('./ATLA-Logo-512.png') type('image/png')
     );
   opacity: .07;
   pointer-events: none;
@@ -8429,7 +8429,7 @@ body.theme-halloween .logoLarge::after {
 }
 
 /* =====================================================
-   WHAT NATTER KNOWS
+   WHAT ATLA KNOWS
 ===================================================== */
 
 .knowledgeList {

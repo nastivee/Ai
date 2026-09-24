@@ -1,4 +1,4 @@
-# Before opening Natter to the public
+# Before opening Atla to the public
 
 Checked 21 September 2026. In order of how badly each would hurt.
 
@@ -16,13 +16,13 @@ and cannot get in. They will not know why.
 Emails, SMTP Settings. Resend, Postmark and Brevo all have free
 tiers big enough for a launch. You will need:
 
-- **`nastiv.ee` to exist first.** Checked 21 September 2026 against
+- **`heyatla.co.uk` to exist first.** Checked 21 September 2026 against
   two public resolvers: the domain does not resolve at all, so it is
   either not registered, or registered with no nameservers set. Until
-  that is fixed, nothing can be sent from `hello@nastiv.ee`, and
-  `privacy@nastiv.ee` in the legal pages cannot receive mail either
-- then to verify `nastiv.ee` with the provider (a few DNS records,
-  they walk you through it), so mail comes from `hello@nastiv.ee`
+  that is fixed, nothing can be sent from `hello@heyatla.co.uk`, and
+  `privacy@heyatla.co.uk` in the legal pages cannot receive mail either
+- then to verify `heyatla.co.uk` with the provider (a few DNS records,
+  they walk you through it), so mail comes from `hello@heyatla.co.uk`
   rather than landing in spam
 - the provider's SMTP host, port, username and password, pasted
   into that Supabase screen

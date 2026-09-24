@@ -1,4 +1,4 @@
--- Nastivee AI: a bucket for generated images
+-- Atla: a bucket for generated images
 --
 -- Run in Supabase > SQL Editor.
 

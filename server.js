@@ -30,6 +30,15 @@ const openai = new OpenAI({
 */
 const ALLOWED_ORIGINS =
   (process.env.ALLOWED_ORIGINS ||
+   /*
+     The new addresses are allowed from today, so on the day
+     heyatla.co.uk starts pointing at the site nothing here
+     has to change and nothing breaks in the meantime. The
+     old one stays until it is retired, or everybody loses
+     the app the moment the domain moves.
+   */
+   'https://heyatla.co.uk,https://www.heyatla.co.uk,' +
+   'https://heyatla.app,https://www.heyatla.app,' +
    'https://nastivee.github.io,http://localhost:5500,http://127.0.0.1:5500')
     .split(',')
     .map(one => one.trim())
@@ -682,7 +691,7 @@ async function pushAlert(severity, kind, message) {
   if (!ALERT_WEBHOOK_URL) return;
 
   const text =
-    `[${severity === 'high' ? 'URGENT' : 'Problem'}] Natter AI, ${kind}: ${message}`;
+    `[${severity === 'high' ? 'URGENT' : 'Problem'}] Atla, ${kind}: ${message}`;
 
   const controller = new AbortController();
 
@@ -1299,7 +1308,7 @@ async function requireUser(req, res) {
 
     res.status(503).json({
       error:
-        'Natter is being prepared and is not open yet.'
+        'Atla is being prepared and is not open yet.'
     });
 
     return null;
@@ -1722,7 +1731,7 @@ app.use(
 app.get('/api/health', (req, res) => {
   res.json({
     ok: true,
-    service: 'Natter AI',
+    service: 'Atla',
     status: 'online'
   });
 });
@@ -2178,7 +2187,7 @@ app.post('/api/account/delete', async (req, res) => {
       error:
         'Part of your account could not be deleted. Nothing ' +
         'is half gone that you cannot reach, try again, and ' +
-        'if it keeps failing, email privacy@nastiv.ee.'
+        'if it keeps failing, email privacy@heyatla.co.uk.'
     });
 
   }
@@ -2370,10 +2379,10 @@ app.post('/api/checkout', async (req, res) => {
     const buying = pack || {
       id: 'legacy',
       kind: 'topup',
-      name: `${settings.pack_images} Natter images`,
+      name: `${settings.pack_images} Atla images`,
       blurb:
         `${settings.pack_images} image generations on your ` +
-        'Natter AI account. They do not expire.',
+        'Atla account. They do not expire.',
       pence: settings.pack_price_pence,
       images: settings.pack_images,
       voice: 0
@@ -2420,7 +2429,7 @@ app.post('/api/checkout', async (req, res) => {
               unit_amount: buying.pence,
               recurring: recurring ? { interval: 'month' } : undefined,
               product_data: {
-                name: `Natter ${buying.name}`,
+                name: `Atla ${buying.name}`,
                 description: buying.blurb
               }
             }
@@ -2942,7 +2951,7 @@ app.get('/api/admin/alerts', async (req, res) => {
 /*
   Requests that were turned down, newest first.
 */
-/* the subjects Natter knows in depth, and which are on */
+/* the subjects Atla knows in depth, and which are on */
 app.get('/api/admin/knowledge', async (req, res) => {
 
   const user = await requireAdmin(req, res);
@@ -4917,7 +4926,7 @@ async function noteRefusal({ user, request, reply, kind = 'Declined', category, 
 
    Short, practical playbooks, one per discipline. The two
    or three that fit what the person just asked are added
-   to the instructions for that reply, so Natter answers
+   to the instructions for that reply, so Atla answers
    like somebody who does the work rather than somebody
    who has read about it. Switched on and off in the admin
    page.
@@ -5228,7 +5237,7 @@ CARDS:
 
 Some answers read better as a picture than as a paragraph.
 When the answer is one of these, send a card: a fenced block
-marked natter holding one JSON object, with one short line of
+marked atla holding one JSON object, with one short line of
 your own words before it and nothing after it.
 
 Use a card for: the weather, a football (or any sport) score or
@@ -5248,7 +5257,7 @@ The shapes, all fields optional except card:
 
 const CARD_SHAPES = [
   { words: ["weather", "forecast", "rain", "raining", "temperature", "degrees", "snow", "sunny", "wind", "windy", "umbrella", "frost", "hot", "cold"], text: `Weather:
-\`\`\`natter
+\`\`\`atla
 {"card":"weather","place":"Thornaby","now":{"icon":"rain","temp":"11°C","text":"Light rain"},
 "facts":[["Feels like","9°C"],["Wind","12 mph"],["Rain","80%"],["Sunset","4:41 pm"]],
 "hours":[{"time":"3pm","icon":"rain","temp":"11°","rain":"70%"},{"time":"4pm","icon":"cloud","temp":"10°"}],
@@ -5257,7 +5266,7 @@ const CARD_SHAPES = [
 
 ` },
   { words: ["SPORTWORDS"], text: `One match on its own:
-\`\`\`natter
+\`\`\`atla
 {"card":"score","competition":"Premier League","governing":"Premier League","status":"FT","home":{"name":"Man Utd","score":2},
 "away":{"name":"Arsenal","score":1},"notes":["Rashford 12'","Saka 48'","Fernandes 81'"],
 "facts":[["Venue","Old Trafford"],["Kick off","3:00 pm"]]}
@@ -5266,7 +5275,7 @@ For a game still to come, leave the scores out and put the time in status.
 
 ` },
   { words: ["table", "ranking", "rank", "ranked", "top", "best", "biggest", "largest", "chart", "list", "league", "order", "highest", "lowest"], text: `Table or ranking (anything that is not sport):
-\`\`\`natter
+\`\`\`atla
 {"card":"table","title":"Best selling albums","columns":["#","Album","Year","Sales"],
 "rows":[["1","Thriller","1982","70m"],["2","Back in Black","1980","50m"]]}
 \`\`\`
@@ -5289,7 +5298,7 @@ just send the club's usual name and it does the rest.
 
 ` },
   { words: ["SPORTWORDS"], text: `A league table, with the competition's own columns:
-\`\`\`natter
+\`\`\`atla
 {"card":"table","sport":"football","title":"Premier League","subtitle":"After matchweek 5",
 "governing":"The Football Association",
 "rows":[{"pos":1,"team":"Arsenal","p":5,"w":4,"d":1,"l":0,"gf":12,"ga":3,"gd":9,"pts":13,"form":"WWDWW","move":"up"},
@@ -5314,7 +5323,7 @@ without them is only half the story.
 
 ` },
   { words: ["SPORTWORDS"], text: `Fixtures or results, day by day:
-\`\`\`natter
+\`\`\`atla
 {"card":"fixtures","sport":"football","title":"Premier League","subtitle":"Matchweek 6",
 "governing":"Premier League",
 "groups":[{"label":"Saturday 27 September",
@@ -5329,21 +5338,21 @@ like 67'.
 
 ` },
   { words: ["price", "cost", "stock", "share", "market", "rate", "index", "bitcoin", "crypto", "ftse", "dow", "nasdaq", "exchange", "worth", "value", "inflation"], text: `A number that moved:
-\`\`\`natter
+\`\`\`atla
 {"card":"stat","title":"Bitcoin","value":"£52,310","change":"+2.4%","direction":"up",
 "spark":[50100,50800,51600,52310],"rows":[["24h high","£53,010"],["24h low","£49,880"]]}
 \`\`\`
 
 ` },
   { words: [], text: `Any other set of facts:
-\`\`\`natter
+\`\`\`atla
 {"card":"facts","icon":"🎬","title":"Dune: Part Two","subtitle":"Showing tonight",
 "rows":[["Starts","7:30 pm"],["Where","Cineworld Stockton"],["Runtime","2h 46m"]]}
 \`\`\`
 
 ` },
   { words: ["numbers", "figures", "graph", "chart", "data", "trend", "over", "time", "rainfall", "sales", "growth", "percentage", "compare", "month", "year"], text: `Numbers worth seeing:
-\`\`\`natter
+\`\`\`atla
 {"card":"chart","kind":"bar","title":"Rainfall this week","unit":"mm",
 "series":[{"label":"Mon","value":4},{"label":"Tue","value":11,"note":"heaviest"},{"label":"Wed","value":2}]}
 \`\`\`
@@ -5352,7 +5361,7 @@ time. Use it whenever an answer turns on a handful of numbers.
 
 ` },
   { words: ["how", "steps", "step", "instructions", "instruction", "guide", "fix", "change", "replace", "install", "set", "up", "setup", "make", "build", "repair", "tutorial"], text: `Something done in order:
-\`\`\`natter
+\`\`\`atla
 {"card":"steps","title":"Changing a tyre","subtitle":"About 20 minutes",
 "steps":[{"title":"Loosen the nuts","detail":"Half a turn, while the wheel is still down","time":"2 min"},
 {"title":"Jack the car","detail":"Use the jacking point behind the front wheel"}]}
@@ -5360,7 +5369,7 @@ time. Use it whenever an answer turns on a handful of numbers.
 
 ` },
   { words: ["versus", "vs", "compare", "comparison", "better", "difference", "between", "which", "should", "pros", "cons"], text: `Two or three things weighed against each other:
-\`\`\`natter
+\`\`\`atla
 {"card":"compare","title":"Gas or induction",
 "sides":[{"name":"Induction","winner":true,"headline":"Faster, cleaner",
 "points":["Boils water in half the time",{"text":"Needs the right pans","good":false}]},
@@ -5370,7 +5379,7 @@ time. Use it whenever an answer turns on a handful of numbers.
 
 ` },
   { words: ["recipe", "cook", "cooking", "bake", "baking", "ingredients", "dish", "meal", "dinner", "lunch", "breakfast", "pasta", "curry", "roast", "oven", "serve", "serves"], text: `A recipe, laid out properly:
-\`\`\`natter
+\`\`\`atla
 {"card":"recipe","title":"Proper carbonara","subtitle":"Roman, no cream","serves":"2","prep":"10 min","cook":"15 min","difficulty":"Easy",
 "ingredients":[{"amount":"200g","item":"spaghetti"},{"amount":"100g","item":"guanciale"},{"group":"For the sauce"},{"amount":"2","item":"egg yolks"},{"amount":"50g","item":"pecorino, grated"}],
 "method":[{"text":"Salt the water lightly: the cheese and pork are already salty.","time":"2 min"},{"text":"Crisp the guanciale in a dry pan, then take the pan off the heat."}],
@@ -5382,14 +5391,14 @@ and the person can tick things off as they go.
 
 ` },
   { words: ["checklist", "tick", "list", "before", "prepare", "preparing", "pack", "packing", "ready", "inspection", "moving"], text: `Things to tick off:
-\`\`\`natter
+\`\`\`atla
 {"card":"checklist","title":"Before the inspection","subtitle":"Tick as you go",
 "items":[{"group":"Paperwork"},{"text":"Gas safety certificate","note":"Must be within 12 months"},"Fire risk assessment",{"group":"On the day"},"Prop the fire doors open"]}
 \`\`\`
 
 ` },
   { words: ["explain", "explanation", "what", "is", "why", "how", "does", "overview", "understand", "tell", "me", "about", "guide", "rules", "law", "tax", "vat", "register"], text: `A written answer with more than a few paragraphs in it:
-\`\`\`natter
+\`\`\`atla
 {"card":"guide","title":"Registering for VAT","lead":"What it means, when you must, and what changes the day you do.",
 "keyPoints":["You must register once turnover passes the threshold in any rolling 12 months","Registration takes about a fortnight","You can reclaim VAT on some earlier purchases"],
 "sections":[{"heading":"When you have to","body":"It is a rolling 12 months, not your financial year.","points":["Check monthly, not yearly","Watch one off large jobs"]},
@@ -5402,7 +5411,7 @@ version first, then the detail in sections they can scan.
 
 ` },
   { words: ["lyrics", "song", "music", "chords", "sheet", "music", "notes", "melody", "tune", "verse", "chorus", "sing", "guitar", "piano"], text: `Music on manuscript paper:
-\`\`\`natter
+\`\`\`atla
 {"card":"music","title":"Ode to Joy","composer":"Beethoven","key":"C","time":"4/4","clef":"treble",
 "notes":[{"p":"E4","d":"q","l":"Freu"},{"p":"E4","d":"q","l":"de"},{"p":"F4","d":"q"},{"p":"G4","d":"q"},{"bar":true},
 {"p":"G4","d":"q"},{"p":"F4","d":"q"},{"p":"E4","d":"q"},{"p":"D4","d":"q"}],
@@ -5572,7 +5581,7 @@ app.post('/api/chat', async (req, res) => {
 
       return res.status(503).json({
         error:
-          'Natter is being prepared and is not open yet.'
+          'Atla is being prepared and is not open yet.'
       });
 
     }
@@ -5663,7 +5672,7 @@ app.post('/api/chat', async (req, res) => {
     const cardSpec = pickCards(newest);
 
     const systemPrompt = `
-You are Natter AI.
+You are Atla.
 
 You are a friendly, intelligent personal AI assistant.
 
@@ -5786,7 +5795,7 @@ ${cardSpec}${houseExpertise}${await recallFor({ user, asked: newest, skipChat: c
       VISION
 
       With a photo attached, the last message carries both
-      the question and the picture, so Natter can answer
+      the question and the picture, so Atla can answer
       about what is in it.
     */
 
@@ -6868,7 +6877,7 @@ app.post('/api/memory/learn', async (req, res) => {
   HOUSE RULES FROM ADMINS
 
   Admins are the only people whose word becomes house rule. When
-  one of them tells Natter how things are done here, that turns
+  one of them tells Atla how things are done here, that turns
   into a lesson and goes live. Nothing a normal user says is ever
   learned this way, and the check only runs when they actually
   sound like they are laying something down, so it costs nothing
@@ -6878,7 +6887,7 @@ const LAYING_DOWN =
   /\b(always|never|from now on|going forward|in future|make sure|ensure|must|should always|should never|don'?t ever|do not ever|house rule|the rule is|standard|as standard|every time|policy)\b/i;
 
 const ADMIN_RULE_PROMPT = `
-You read one thing an administrator said to a chat assistant called Natter, and decide whether they were laying down how the assistant should behave from now on.
+You read one thing an administrator said to a chat assistant called Atla, and decide whether they were laying down how the assistant should behave from now on.
 
 Write ONE house rule if, and only if, they were telling the assistant how to behave in future.
 
@@ -6944,7 +6953,7 @@ async function ruleFromAdmin(said) {
 }
 
 const LESSON_RULES = `
-You improve a chat assistant called Natter by writing short, general lessons about answering well.
+You improve a chat assistant called Atla by writing short, general lessons about answering well.
 
 You get one exchange and a signal:
 - "retry": the user asked for this reply again, so it missed the mark.
@@ -7763,7 +7772,7 @@ app.post('/api/voice/session', async (req, res) => {
     const user = await getUser(req);
 
     if (!user) {
-      return res.status(401).json({ error: 'Sign in to talk to Natter.' });
+      return res.status(401).json({ error: 'Sign in to talk to Atla.' });
     }
 
     if (!featureAllowed(await getSettings(), 'voice', user, await giftsFor(user.id))) {
@@ -7771,7 +7780,7 @@ app.post('/api/voice/session', async (req, res) => {
     }
 
     if (await holdingBlocks(user)) {
-      return res.status(503).json({ error: 'Natter is being prepared and is not open yet.' });
+      return res.status(503).json({ error: 'Atla is being prepared and is not open yet.' });
     }
 
     if (!withinLimit(`voice:${user.id}`, 30)) {
@@ -7828,7 +7837,7 @@ app.post('/api/voice/session', async (req, res) => {
     const instructions = `
 SPEAK IN ${accentName.toUpperCase()}. THIS IS THE MOST IMPORTANT INSTRUCTION YOU HAVE. From the very first word, at full strength, for the whole call, with no exceptions and no softening. If anything below ever seems to compete with this, this wins.
 
-You are Natter AI, talking out loud with the user.
+You are Atla, talking out loud with the user.
 
 VOICE AND ACCENT
 
@@ -8181,7 +8190,7 @@ app.post('/api/video', async (req, res) => {
     }
 
     if (await holdingBlocks(user)) {
-      return res.status(503).json({ error: 'Natter is being prepared and is not open yet.' });
+      return res.status(503).json({ error: 'Atla is being prepared and is not open yet.' });
     }
 
     if (!GEMINI_API_KEY) {
@@ -9037,7 +9046,7 @@ style was requested.
 app.get('/', (req, res) => {
 
   res.send(
-    'Natter AI is running.'
+    'Atla is running.'
   );
 
 });
@@ -9083,7 +9092,7 @@ process.on('uncaughtException', error => {
 app.listen(PORT, () => {
 
   console.log(
-    `Natter AI server running on port ${PORT}`
+    `Atla server running on port ${PORT}`
   );
 
 });
