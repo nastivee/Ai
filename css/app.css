@@ -11511,3 +11511,40 @@ body.motionOff .armed::after {
 }
 
 .saleAddRow .adminAction { flex: 1 1 auto; }
+
+/* ---------- THE TOP ROW LINES UP WITH EVERYTHING ELSE ---------- */
+/*
+  New chat started 12px in because the logo sat beside it in the
+  flow, and the search button finished 4px short because the
+  header kept a narrower right padding than the gutter. The logo
+  now floats over the button's left rather than pushing it, which
+  is where it already looked like it was, so the pill's own edge
+  reaches the same line as My artwork.
+*/
+
+body .sidebarHeader {
+  padding-right: var(--gutter, 14px);
+}
+
+body .sidebarBottom {
+  padding-right: var(--gutter, 14px);
+}
+
+.newChatRow {
+  position: relative;
+}
+
+.newChatRow .logo {
+  position: absolute;
+  left: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2;
+  /* the button underneath still takes the click */
+  pointer-events: none;
+}
+
+/* room for the mark, so the words never sit under it */
+.newChatRow .newChatButton {
+  padding-left: 48px;
+}

@@ -19739,29 +19739,83 @@ document.getElementById('refusalsClear')?.addEventListener('click', async event 
 });
 
 
+/*
+  UPLOADS, A PAGE AT A TIME
+
+  Show more piled every photo ever uploaded into one scrolling
+  wall, which got slower with every page and lost your place the
+  moment you opened one. Forty eight at a time now, with the page
+  replaced rather than added to.
+*/
+const UPLOADS_PER_PAGE = 48;
+
+let adminUploadPage = 0;
+
+function drawUploadPager(total) {
+
+  const holder = document.getElementById('adminUploadsPager');
+
+  if (!holder) return;
+
+  holder.innerHTML = '';
+
+  const pages =
+    Math.max(1, Math.ceil(Number(total || 0) / UPLOADS_PER_PAGE));
+
+  if (pages < 2) return;
+
+  const step = (label, to, off) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'pagerStep';
+    button.textContent = label;
+    button.disabled = off;
+    button.addEventListener('click', () => {
+      adminUploadPage = to;
+      loadAdminUploads();
+    });
+    return button;
+  };
+
+  const where = document.createElement('span');
+  where.className = 'pagerWhere';
+  where.textContent = `${adminUploadPage + 1} of ${pages}`;
+
+  holder.append(
+    step('Back', adminUploadPage - 1, adminUploadPage < 1),
+    where,
+    step('More', adminUploadPage + 1, adminUploadPage >= pages - 1)
+  );
+
+}
+
 async function loadAdminUploads(reset = false) {
 
   const grid = document.getElementById('adminUploadGrid');
   const more = document.getElementById('adminUploadsMore');
 
-  if (reset) {
-    adminUploadOffset = 0;
-    grid.innerHTML = '';
-  }
+  if (reset) adminUploadPage = 0;
 
-  more.disabled = true;
-  more.textContent = 'Loading...';
+  /* a page replaces the one before it */
+  grid.innerHTML = '';
+
+  if (more) {
+    more.disabled = true;
+    more.textContent = 'Loading...';
+  }
 
   try {
 
+    const offset = adminUploadPage * UPLOADS_PER_PAGE;
+
     const response =
-      await fetch(`${API_BASE}/api/admin/uploads?offset=${adminUploadOffset}`, { headers: await apiHeaders() });
+      await fetch(`${API_BASE}/api/admin/uploads?offset=${offset}`, { headers: await apiHeaders() });
 
     const data = await response.json();
 
     if (!response.ok) throw new Error(data?.error || 'Could not load uploads.');
 
-    adminUploadOffset += data.items.length;
+    adminUploadOffset = offset + (data.items?.length || 0);
 
     data.items.forEach(item => {
 
@@ -19808,7 +19862,10 @@ async function loadAdminUploads(reset = false) {
     document.getElementById('adminUploadsNote').textContent =
       data.total !== null && data.total !== undefined ? `${data.total} kept` : 'Every photo people upload';
 
-    more.style.display = data.done ? 'none' : '';
+    drawUploadPager(data.total);
+
+    /* the pager does this job now */
+    if (more) more.style.display = 'none';
 
   } catch (error) {
 
@@ -19816,14 +19873,14 @@ async function loadAdminUploads(reset = false) {
 
   } finally {
 
-    more.disabled = false;
-    more.textContent = 'Show more';
+    if (more) {
+      more.disabled = false;
+      more.textContent = 'Show more';
+    }
 
   }
 
 }
-
-document.getElementById('adminUploadsMore')?.addEventListener('click', () => loadAdminUploads(false));
 
 document.getElementById('adminUploadViewerClose')?.addEventListener('click', () => {
   document.getElementById('adminUploadViewer').classList.remove('show');
