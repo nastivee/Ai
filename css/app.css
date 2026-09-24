@@ -13272,3 +13272,39 @@ body.motionOff .voiceLine.looking .lookingDots i {
 @media (prefers-reduced-motion: reduce) {
   .lookingDots i { animation: none; opacity: .7; }
 }
+
+/* =====================================================
+   THE ACCENT BUTTON
+
+   Sits with the other call controls and says which accent
+   is on rather than only showing a flag, because a flag
+   alone is a guess and this one changes how he sounds.
+===================================================== */
+
+.voiceControl.accent {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 16px;
+  white-space: nowrap;
+}
+
+.accentFlag {
+  font-size: 16px;
+  line-height: 1;
+}
+
+.voiceControl.accent:hover {
+  border-color: var(--mode-acc, #a78bfa);
+  color: #fff;
+}
+
+/* on a short screen the row wraps, so keep it compact */
+@media (max-height: 560px) {
+
+  .voiceControl.accent {
+    padding: 0 12px;
+    gap: 6px;
+  }
+
+}

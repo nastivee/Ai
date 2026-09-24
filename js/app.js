@@ -15277,183 +15277,18 @@ function setVoiceState(state, label) {
    pure silence on a live call is indistinguishable from
    the line dropping. People hang up.
 
-   Three things cover it, in order of how long it drags
-   on. A soft hum under everything, which only fades in
-   after a second so a quick answer stays clean. A line
-   on screen that changes as it goes. And, if it really
-   drags, him actually saying he is still on it.
+   A noise was the first answer to this and it was the
+   wrong one: it only tells somebody the line is alive,
+   and on a phone speaker it was barely there anyway. What
+   people want in a wait is to know what is happening.
+
+   So the lookup reports its real stages as it goes, the
+   server telling the app when it is searching, when it
+   has gone back for a second search, which sites it is
+   reading and when it has started writing. The screen
+   shows each one and he says it out loud. Nothing here is
+   invented: if he says he is on the second search, he is.
 ===================================================== */
-
-const VOICE_SEARCH_LINES = [
-  'Bear with me.',
-  'Still looking.',
-  'Give me one more second.',
-  'Nearly there.',
-  'Just checking something.',
-  'Right, hang on.',
-  'Coming, coming.',
-  'Almost got it.',
-  'One sec.',
-  'Still digging.',
-  'Bit slow this, sorry.',
-  'Nearly done.'
-];
-
-let searchBag = [];
-
-function nextSearchLine() {
-
-  if (!searchBag.length) {
-
-    searchBag = VOICE_SEARCH_LINES.slice();
-
-    for (let i = searchBag.length - 1; i > 0; i -= 1) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [searchBag[i], searchBag[j]] = [searchBag[j], searchBag[i]];
-    }
-
-  }
-
-  return searchBag.pop();
-
-}
-
-
-/*
-  THE HUM
-
-  Made here rather than loaded, so there is no file to
-  fetch and nothing to go wrong on a slow connection. Two
-  quiet sine waves a fifth apart with a slow wobble on
-  top, which reads as a thinking noise rather than as a
-  fault tone. It fades in over half a second and out over
-  a quarter, so it never clicks.
-*/
-let humParts = null;
-let voiceHumCtx = null;
-
-/*
-  Opened while the person's tap still counts, so it is ready
-  and allowed long before there is any silence to cover.
-*/
-function wakeAudio() {
-
-  try {
-
-    const Ctx = window.AudioContext || window.webkitAudioContext;
-
-    if (!Ctx) return null;
-
-    if (!voiceHumCtx) voiceHumCtx = new Ctx();
-
-    if (voiceHumCtx.state === 'suspended') {
-      voiceHumCtx.resume().catch(() => {});
-    }
-
-    return voiceHumCtx;
-
-  } catch (error) {
-
-    console.warn('AUDIO WOULD NOT OPEN:', error);
-
-    return null;
-
-  }
-
-}
-
-function startHum() {
-
-  if (humParts) return;
-
-  try {
-
-    const ctx = wakeAudio();
-
-    if (!ctx) return;
-
-    const gain = ctx.createGain();
-    gain.gain.setValueAtTime(0.0001, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.09, ctx.currentTime + 0.4);
-    gain.connect(ctx.destination);
-
-    /* the wobble, so it breathes instead of sitting there */
-    const wobble = ctx.createOscillator();
-    wobble.frequency.value = 0.22;
-    const wobbleDepth = ctx.createGain();
-    wobbleDepth.gain.value = 3.5;
-    wobble.connect(wobbleDepth);
-
-    const low = ctx.createOscillator();
-    low.type = 'sine';
-    low.frequency.value = 146.8;
-
-    const fifth = ctx.createOscillator();
-    fifth.type = 'sine';
-    fifth.frequency.value = 220;
-
-    const fifthGain = ctx.createGain();
-    fifthGain.gain.value = 0.4;
-
-    /*
-      A phone speaker cannot really produce 147Hz, so on a mobile
-      a hum built only from the low notes is felt as nothing at
-      all. This one sits in the range a small speaker actually
-      reproduces, quiet enough not to talk over him.
-    */
-    const carry = ctx.createOscillator();
-    carry.type = 'triangle';
-    carry.frequency.value = 440;
-
-    const carryGain = ctx.createGain();
-    carryGain.gain.value = 0.16;
-
-    wobbleDepth.connect(low.frequency);
-    low.connect(gain);
-    fifth.connect(fifthGain);
-    fifthGain.connect(gain);
-    carry.connect(carryGain);
-    carryGain.connect(gain);
-
-    low.start();
-    fifth.start();
-    carry.start();
-    wobble.start();
-
-    humParts = { ctx, gain, nodes: [low, fifth, carry, wobble] };
-
-  } catch (error) {
-
-    console.warn('HUM FAILED:', error);
-
-  }
-
-}
-
-
-function stopHum() {
-
-  if (!humParts) return;
-
-  const { ctx, gain, nodes } = humParts;
-
-  humParts = null;
-
-  try {
-
-    gain.gain.cancelScheduledValues(ctx.currentTime);
-    gain.gain.setValueAtTime(gain.gain.value || 0.0001, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.25);
-
-    setTimeout(() => {
-      nodes.forEach(node => { try { node.stop(); } catch {} });
-      try { gain.disconnect(); } catch {}
-    }, 350);
-
-  } catch {}
-
-}
-
 
 /*
   THE LINE ON SCREEN
@@ -15527,17 +15362,14 @@ function addVoiceFound(text) {
    the hum comes up. The instant his voice arrives it goes.
 ===================================================== */
 
-/* how long a gap is allowed to be before anything covers it */
-const GAP_BEFORE_HUM = 700;
+/* how long a gap is allowed before the screen admits to it */
+const GAP_BEFORE_WORDS = 700;
 
 let gapTimer = null;
-let gapSince = 0;
 
 function gapStarts(call) {
 
   if (!call || call !== voiceCall) return;
-
-  gapSince = Date.now();
 
   clearTimeout(gapTimer);
 
@@ -15545,8 +15377,6 @@ function gapStarts(call) {
 
     /* he may have started while the clock was running */
     if (voiceCall !== call || call.speaking === 'audio') return;
-
-    startHum();
 
     /*
       The words change but the robot does not start mouthing
@@ -15557,7 +15387,7 @@ function gapStarts(call) {
       voiceStatus.textContent = 'Thinking';
     }
 
-  }, GAP_BEFORE_HUM);
+  }, GAP_BEFORE_WORDS);
 
 }
 
@@ -15566,18 +15396,6 @@ function gapEnds() {
   clearTimeout(gapTimer);
 
   gapTimer = null;
-
-  gapSince = 0;
-
-  /*
-    A lookup keeps its own hum going. He says "bear with me"
-    part way through one, and that is audio arriving, but the
-    wait is not over and cutting the hum there would make it
-    sound like the line had dropped again.
-  */
-  if (voiceCall?.looking) return;
-
-  stopHum();
 
 }
 
@@ -15595,6 +15413,107 @@ function whenHeStops(call) {
   });
 
 }
+
+/*
+  WHAT TO SAY AT EACH STAGE
+
+  The server reports where it has actually got to, so none
+  of these are invented. Each stage has a few ways of being
+  said so a second lookup in one call does not come out
+  word for word the same as the first.
+*/
+const STAGE_TALK = {
+  thinking: [
+    'Right, let me have a look.',
+    'Hang on, I will find out.',
+    'Give me a second, I am on it.'
+  ],
+  searching: [
+    'Searching now.',
+    'Having a look through the results.',
+    'Just going through what has come back.'
+  ],
+  searchingAgain: [
+    'First lot was no good, trying again.',
+    'That did not have it, having another go.',
+    'Going back for a better answer.'
+  ],
+  writing: [
+    'Right, got it. Let me get this straight.',
+    'Found it, just reading through.',
+    'That is it, one second while I make sense of it.'
+  ],
+  slow: [
+    'Still going, the sites are being slow.',
+    'Bear with me, this one is taking a bit.',
+    'Nearly there, sorry.'
+  ]
+};
+
+/* what the screen says, which can be longer than anything spoken */
+const STAGE_WORDS = {
+  thinking: q => `Working out where to look for ${q}`,
+  searching: q => `Searching the web for ${q}`,
+  searchingAgain: q => `Nothing useful yet, searching again for ${q}`,
+  writing: () => 'Reading the results and writing it up',
+  sources: sites => `Reading ${sites.join(', ')}`,
+  tidying: () => 'Putting it into something worth saying',
+  slow: () => 'Still going, this one is slow'
+};
+
+const stageBags = {};
+
+function stageLine(stage) {
+
+  const all = STAGE_TALK[stage];
+
+  if (!all) return '';
+
+  if (!stageBags[stage]?.length) {
+    stageBags[stage] = all.slice().sort(() => Math.random() - 0.5);
+  }
+
+  return stageBags[stage].pop();
+
+}
+
+/*
+  Says one stage out loud. Skipped whenever he is already
+  mid sentence, because cutting himself off to announce
+  progress is worse than the progress being unannounced.
+*/
+function speakStage(call, stage) {
+
+  const line = stageLine(stage);
+
+  if (!line) return;
+
+  const channel = call?.channel;
+
+  if (!channel || channel.readyState !== 'open') return;
+
+  if (call.speaking) return;
+
+  try {
+
+    channel.send(JSON.stringify({
+      type: 'response.create',
+      response: {
+        instructions:
+          'You are part way through looking something up for them. ' +
+          'Say this out loud, word for word, and nothing else, in ' +
+          `your usual accent: "${line}"`
+      }
+    }));
+
+  } catch (error) {
+
+    console.warn('STAGE LINE FAILED:', error);
+
+  }
+
+}
+
 
 async function answerVoiceTool(call, item) {
 
@@ -15615,46 +15534,30 @@ async function answerVoiceTool(call, item) {
 
     call.looking = true;
 
-    setVoiceState('speaking', 'Having a look');
+    const short =
+      question.length > 60 ? question.slice(0, 57) + '...' : question;
 
-    showLooking(question);
-
-    /* the gap watcher may already have it going, this makes sure */
-    startHum();
+    showLooking(STAGE_WORDS.thinking(short));
 
     /*
-      He says it himself, which is the one thing certain to be
-      heard: it comes down the call's own audio, so nothing
-      about phone speakers or audio permissions can swallow it
-      the way they can swallow the hum. Only when he is not
-      already mid sentence, because talking over himself is
-      worse than the gap ever was.
+      If a stage has not changed in a while, say so. The
+      server reports what it is doing, but it cannot report
+      that a site is simply being slow, and that is exactly
+      the wait that feels longest.
     */
-    const sayIn = setTimeout(() => {
+    let lastMove = Date.now();
 
-      if (!call.looking || call.speaking) return;
+    const slowWatch = setInterval(() => {
 
-      const line = nextSearchLine();
+      if (!call.looking) return;
 
-      try {
+      if (Date.now() - lastMove > 5000) {
+        lastMove = Date.now();
+        showLooking(STAGE_WORDS.slow());
+        speakStage(call, 'slow');
+      }
 
-        channel.send(JSON.stringify({
-          type: 'response.create',
-          response: {
-            instructions:
-              'You are still looking something up. Say this out loud, ' +
-              `word for word, and nothing else: "${line}"`
-          }
-        }));
-
-      } catch {}
-
-    }, 1800);
-
-    /* and again on screen, so a long wait still looks alive */
-    const dragIn = setTimeout(() => {
-      if (call.looking) showLooking('Still looking, this one is taking a while');
-    }, 6000);
+    }, 1500);
 
     try {
 
@@ -15668,16 +15571,88 @@ async function answerVoiceTool(call, item) {
           body: JSON.stringify({ question })
         });
 
-      const data = await response.json().catch(() => ({}));
+      /*
+        Read it as it comes rather than waiting for the lot.
+        The whole point is knowing where it has got to while
+        it is still getting there.
+      */
+      const reader = response.body?.getReader();
 
-      if (data.spoken) spoken = data.spoken;
+      if (!reader) throw new Error('No stream to read.');
+
+      const decoder = new TextDecoder();
+
+      let buffer = '';
+      let finished = null;
+
+      while (true) {
+
+        const { value, done } = await reader.read();
+
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+
+        const lines = buffer.split('\n');
+
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+
+          if (!line.trim()) continue;
+
+          let event;
+
+          try { event = JSON.parse(line); } catch { continue; }
+
+          if (event.done) { finished = event; continue; }
+
+          lastMove = Date.now();
+
+          if (event.stage === 'searching') {
+
+            const again = (event.round || 1) > 1;
+
+            showLooking(
+              again
+                ? STAGE_WORDS.searchingAgain(short)
+                : STAGE_WORDS.searching(short)
+            );
+
+            speakStage(call, again ? 'searchingAgain' : 'searching');
+
+          } else if (event.stage === 'sources') {
+
+            showLooking(STAGE_WORDS.sources(event.sites || []));
+
+          } else if (event.stage === 'writing') {
+
+            showLooking(STAGE_WORDS.writing());
+            speakStage(call, 'writing');
+
+          } else if (event.stage === 'tidying') {
+
+            showLooking(STAGE_WORDS.tidying());
+
+          } else if (event.stage === 'thinking') {
+
+            showLooking(STAGE_WORDS.thinking(short));
+            speakStage(call, 'thinking');
+
+          }
+
+        }
+
+      }
+
+      if (finished?.spoken) spoken = finished.spoken;
 
       /* the written answer is the point: on screen, and kept */
-      if (data.written) {
+      if (finished?.written) {
 
-        addVoiceFound(data.written);
+        addVoiceFound(finished.written);
 
-        keepVoiceLine('assistant', data.written, { silent: true });
+        keepVoiceLine('assistant', finished.written, { silent: true });
 
       }
 
@@ -15687,12 +15662,9 @@ async function answerVoiceTool(call, item) {
 
     } finally {
 
-      clearTimeout(sayIn);
-      clearTimeout(dragIn);
+      clearInterval(slowWatch);
 
       call.looking = false;
-
-      stopHum();
 
       hideLooking();
 
@@ -15704,9 +15676,9 @@ async function answerVoiceTool(call, item) {
   if (voiceCall !== call || channel.readyState !== 'open') return;
 
   /*
-    If he is part way through saying "bear with me", let him
-    finish it. Handing him the answer mid sentence cuts him
-    off and the first few words of the answer are lost.
+    If he is part way through saying where he has got to,
+    let him finish it. Handing him the answer mid sentence
+    cuts him off and the first words of it are lost.
   */
   await whenHeStops(call);
 
@@ -16041,7 +16013,6 @@ async function startVoiceCall() {
     permission has long gone. Opening it now and leaving it
     running means the hum can start the instant it is needed.
   */
-  wakeAudio();
 
   voiceCall = {
     pc: null,
@@ -16084,7 +16055,8 @@ async function startVoiceCall() {
         body: JSON.stringify({
           memory: typeof memory === 'string' ? memory : '',
           recent: recentChatText(),
-          voice: voiceChoice()
+          voice: voiceChoice(),
+          accent: accentChoice()
         })
       });
 
@@ -16656,6 +16628,110 @@ function paintVoiceChoice() {
 
 }
 
+/* =====================================================
+   THE ACCENT
+
+   OpenAI has no British voice and no accent setting. Ten
+   voices, all of them neutral, and the accent comes from
+   what the model is told. So this button is real, it is
+   just doing it the only way there is: it changes the
+   instruction the call is opened with.
+
+   British is the default and the one it holds best. The
+   accent is fixed when the line opens, same as the voice,
+   so changing it reopens the line and keeps the
+   transcript, rather than asking somebody to hang up and
+   start again.
+===================================================== */
+
+const ACCENT_KEY = 'natter.accent';
+
+const ACCENTS = [
+  { id: 'british',   name: 'British',   flag: '\u{1F1EC}\u{1F1E7}' },
+  { id: 'scottish',  name: 'Scottish',  flag: '\u{1F3F4}\u{E0067}\u{E0062}\u{E0073}\u{E0063}\u{E0074}\u{E007F}' },
+  { id: 'irish',     name: 'Irish',     flag: '\u{1F1EE}\u{1F1EA}' },
+  { id: 'american',  name: 'American',  flag: '\u{1F1FA}\u{1F1F8}' },
+  { id: 'australian', name: 'Australian', flag: '\u{1F1E6}\u{1F1FA}' }
+];
+
+function accentChoice() {
+
+  try {
+
+    const saved = localStorage.getItem(ACCENT_KEY);
+
+    if (ACCENTS.some(one => one.id === saved)) return saved;
+
+  } catch {}
+
+  return 'british';
+
+}
+
+function paintAccent() {
+
+  const now =
+    ACCENTS.find(one => one.id === accentChoice()) || ACCENTS[0];
+
+  const flag = document.getElementById('voiceAccentFlag');
+  const name = document.getElementById('voiceAccentName');
+  const button = document.getElementById('voiceAccent');
+
+  if (flag) flag.textContent = now.flag;
+  if (name) name.textContent = now.name;
+
+  if (button) {
+    button.setAttribute('title', `${now.name} accent, tap to change`);
+    button.setAttribute('aria-label', `Accent: ${now.name}. Tap to change.`);
+  }
+
+}
+
+function chooseAccent(next) {
+
+  if (!ACCENTS.some(one => one.id === next)) return;
+
+  if (next === accentChoice()) return;
+
+  try { localStorage.setItem(ACCENT_KEY, next); } catch {}
+
+  paintAccent();
+
+  const named =
+    ACCENTS.find(one => one.id === next)?.name || next;
+
+  /*
+    Fixed when the line opens, so switch it the way the voice
+    switch does: reopen underneath, keeping what was said.
+  */
+  if (voiceCall) {
+
+    setVoiceState('connecting', `Switching to ${named}...`);
+
+    voiceSwitching = true;
+
+    endVoiceCall();
+
+    setTimeout(() => { startVoiceCall(); }, 400);
+
+  }
+
+}
+
+document
+  .getElementById('voiceAccent')
+  ?.addEventListener('click', () => {
+
+    const at =
+      ACCENTS.findIndex(one => one.id === accentChoice());
+
+    chooseAccent(ACCENTS[(at + 1) % ACCENTS.length].id);
+
+  });
+
+paintAccent();
+
+
 function chooseVoice(next) {
 
   if (next === voiceChoice()) return;
@@ -16700,11 +16776,10 @@ function endVoiceCall() {
 
   voiceCall = null;
 
-  /* nothing should still be humming once the line has gone */
+  /* nothing should still be reporting progress once the line has gone */
   clearTimeout(gapTimer);
   gapTimer = null;
   if (call) call.looking = false;
-  stopHum();
   hideLooking();
 
   if (call) {

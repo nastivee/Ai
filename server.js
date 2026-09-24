@@ -6479,6 +6479,56 @@ function voiceNameFor(asked) {
 
 const VOICE_NAME = VOICE_HIM;
 
+
+/*
+  ACCENTS
+
+  There is no accent setting on the realtime API and none
+  of its ten voices is British, so an accent is a matter of
+  what the model is told to do with the voice it has. That
+  is what this is: the words that go into the instructions.
+
+  Anything the browser sends that is not one of these is
+  ignored and it falls back to British, so the accent can
+  never be set to something arbitrary from outside.
+*/
+const ACCENTS = {
+
+  british: `
+- Speak in a casual British accent. Everyday modern British English, the way a mate in their thirties actually talks, not a newsreader and not a posh period drama.
+- Use the contractions and fillers real speech has: yeah, nah, right, mate, honestly, to be fair, bit of a, loads, proper, cheers. Do not lay it on thick, just let it sound British.
+- British spellings and British references throughout. Never Americanisms: no gotten, no awesome, no buddy, no "you guys".
+- Money in pounds, temperature in Celsius, distance in miles, dates day first. Say "maths", "queue", "whilst" if it fits, "bin" not "trash", "mobile" not "cell", "petrol" not "gas", "autumn" not "fall", "post" not "mail", "lift" not "elevator", "pavement" not "sidewalk".`,
+
+  scottish: `
+- Speak in a warm, everyday Scottish accent. Central belt, modern, the way somebody from Glasgow or Edinburgh actually talks. Not a shortbread tin and not Braveheart.
+- Let the odd natural word in: aye, wee, ken, bonnie, dinnae, cannae. Sparingly, so it sounds like a person and not an impression.
+- British spellings and references. Money in pounds, temperature in Celsius, distance in miles, dates day first.`,
+
+  irish: `
+- Speak in a warm, everyday Irish accent. Modern Dublin or thereabouts, the way somebody actually talks, not a tourist advert.
+- Let the odd natural turn in: grand, your man, sure look, deadly, fair play. Lightly, so it sounds like a person.
+- Irish and British spellings and references. Money in euro unless they are clearly in the UK, temperature in Celsius, dates day first.`,
+
+  american: `
+- Speak in a natural, everyday American accent. General American, the way somebody in their thirties actually talks.
+- American spellings and references throughout. Money in dollars, temperature in Fahrenheit, distance in miles, dates month first.`,
+
+  australian: `
+- Speak in a relaxed, everyday Australian accent. Modern, the way somebody actually talks, not Crocodile Dundee.
+- Let the odd natural word in: yeah nah, reckon, heaps, mate, no worries. Lightly, so it sounds like a person.
+- British spellings. Money in Australian dollars, temperature in Celsius, distance in kilometres, dates day first.`
+
+};
+
+function accentFor(asked) {
+
+  const want = String(asked || '').toLowerCase();
+
+  return ACCENTS[want] ? want : 'british';
+
+}
+
 if (VOICE_HIM === VOICE_HER) {
   console.warn(
     `VOICE_NAME_M and VOICE_NAME_F are both "${VOICE_HIM}", ` +
@@ -6612,16 +6662,37 @@ app.post('/api/voice/lookup', async (req, res) => {
 
   const who = `voicelook:${user.id}`;
 
+  /*
+    Line by line rather than one answer at the end, so the app
+    can say where it has actually got to instead of guessing.
+    Each line is one JSON object: a stage while it works, then
+    the answer.
+  */
+  res.setHeader('Content-Type', 'application/x-ndjson; charset=utf-8');
+  res.setHeader('Cache-Control', 'no-cache, no-transform');
+  res.setHeader('X-Accel-Buffering', 'no');
+  res.flushHeaders?.();
+
+  const say = one => {
+    try { res.write(JSON.stringify(one) + '\n'); } catch {}
+  };
+
   if (!withinLimit(who, 40)) {
-    return res.status(429).json({
+    say({
+      done: true,
       spoken: 'I have looked a lot of things up this hour, give it a bit.',
       written: ''
     });
+    return res.end();
   }
 
   try {
 
     let written = '';
+    let searched = 0;
+    let started = false;
+
+    say({ stage: 'thinking' });
 
     await streamWithSearch({
       model: process.env.SETTLED_MODEL || 'gpt-5.4-mini',
@@ -6642,18 +6713,40 @@ app.post('/api/voice/lookup', async (req, res) => {
           return;
         }
 
-        if (piece && typeof piece.text === 'string') {
-          written += piece.text;
+        if (piece?.status === 'searching') {
+          searched += 1;
+          say({ stage: 'searching', round: searched });
           return;
         }
 
+        if (typeof piece?.text === 'string') {
+
+          written += piece.text;
+
+          /* the first words mean it has stopped looking and started answering */
+          if (!started) {
+            started = true;
+            say({ stage: 'writing', searched });
+          }
+
+          return;
+
+        }
+
         /* anything cited but not linked in the words themselves */
-        if (piece && Array.isArray(piece.sources) && piece.sources.length) {
+        if (Array.isArray(piece?.sources) && piece.sources.length) {
+
+          say({
+            stage: 'sources',
+            sites: piece.sources.map(one => one.site || one.title).slice(0, 4)
+          });
+
           written +=
             '\n\n' +
             piece.sources
               .map(one => `[${one.site || one.title}](${one.url})`)
-              .join(' · ');
+              .join(' \u00b7 ');
+
         }
 
       }
@@ -6662,11 +6755,15 @@ app.post('/api/voice/lookup', async (req, res) => {
     written = written.trim();
 
     if (!written) {
-      return res.json({
+      say({
+        done: true,
         spoken: 'I could not get a straight answer on that just now.',
         written: ''
       });
+      return res.end();
     }
+
+    say({ stage: 'tidying' });
 
     /* a sentence worth saying out loud, made from the same answer */
 
@@ -6705,10 +6802,13 @@ app.post('/api/voice/lookup', async (req, res) => {
       spoken = 'I have found it, it is on screen for you.';
     }
 
-    res.json({
+    say({
+      done: true,
       spoken: spoken.slice(0, 600),
       written: written.slice(0, 4000)
     });
+
+    res.end();
 
   } catch (error) {
 
@@ -6723,10 +6823,13 @@ app.post('/api/voice/lookup', async (req, res) => {
       recovered: false
     });
 
-    res.json({
+    say({
+      done: true,
       spoken: 'That did not come back to me, sorry. Ask me again in a moment.',
       written: ''
     });
+
+    res.end();
 
   }
 
@@ -6792,6 +6895,8 @@ app.post('/api/voice/session', async (req, res) => {
 
     const chosenVoice = voiceNameFor(req.body?.voice);
 
+    const chosenAccent = accentFor(req.body?.accent);
+
     const today =
       new Date().toLocaleDateString('en-GB', {
         weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
@@ -6801,11 +6906,7 @@ app.post('/api/voice/session', async (req, res) => {
     const instructions = `
 You are Natter AI, talking out loud with the user.
 
-VOICE AND ACCENT
-- Speak in a casual British accent. Everyday modern British English, the way a mate in their thirties actually talks, not a newsreader and not a posh period drama.
-- Use the contractions and fillers real speech has: yeah, nah, right, mate, honestly, to be fair, bit of a, loads, proper, cheers. Do not lay it on thick, just let it sound British.
-- British spellings and British references throughout. Never Americanisms: no gotten, no awesome, no buddy, no "you guys".
-- Money in pounds, temperature in Celsius, distance in miles, dates day first. Say "maths", "queue", "whilst" if it fits, "bin" not "trash", "mobile" not "cell", "petrol" not "gas", "autumn" not "fall", "post" not "mail", "lift" not "elevator", "pavement" not "sidewalk".
+VOICE AND ACCENT${ACCENTS[chosenAccent]}
 - HOLD THE ACCENT ALL THE WAY THROUGH. It slips most easily in three places, so watch them: reading back something you looked up, saying a place name or a brand, and the first words after a pause. If you catch yourself drifting, come back to it mid sentence rather than carrying on.
 - Every single thing you say is in that accent, including one word answers, the noises you make while you are thinking, and anything you are told to repeat word for word.
 
