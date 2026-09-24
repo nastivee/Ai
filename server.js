@@ -6666,10 +6666,18 @@ app.post('/api/chat/title', async (req, res) => {
 
     if (text.length < 3) return res.json({ title: '' });
 
+    /*
+      The cap has to clear the thinking, not just the words.
+      Twenty tokens is plenty for a title and nowhere near
+      enough for nano to reach one, so it thought its way
+      through the budget and returned nothing. Same trap as
+      the empty replies.
+    */
     const completion =
       await createReply({
         model: process.env.TITLE_MODEL || FREE_MODEL,
-        max_completion_tokens: 220,
+        reasoning_effort: 'low',
+        max_completion_tokens: 900,
         messages: [
           {
             role: 'system',
@@ -6688,6 +6696,13 @@ app.post('/api/chat/title', async (req, res) => {
         .replace(/\s+/g, ' ')
         .trim()
         .slice(0, 55);
+
+    if (!title) {
+      console.warn(
+        'EMPTY TITLE, finish:',
+        completion.choices?.[0]?.finish_reason
+      );
+    }
 
     res.json({ title });
 
