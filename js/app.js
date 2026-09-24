@@ -16217,6 +16217,8 @@ async function startVoiceCall() {
           break;
 
         case 'conversation.item.input_audio_transcription.completed':
+          /* words came back, so words were said */
+          if (String(data.transcript || '').trim()) call.heardThem = true;
           keepVoiceLine('user', data.transcript);
           break;
 
@@ -16643,7 +16645,17 @@ function watchVoiceIdle() {
 
   voiceIdleTimer = setInterval(() => {
 
+   try {
+
     if (!voiceCall) { clearInterval(voiceIdleTimer); voiceIdleTimer = null; return; }
+
+    /*
+      Is there any point measuring silence at all. A muted
+      call or one with no microphone is silent by design and
+      nothing here should act on that.
+    */
+    const canHear =
+      Boolean(voiceCall.stream) && !voiceCall.muted;
 
     const mine = voiceWave.level.mine;
     const loud = Math.max(mine, voiceWave.level.theirs);
@@ -16654,11 +16666,20 @@ function watchVoiceIdle() {
 
     if (mine > VOICE_HEARD) {
       lastPerson = Date.now();
-      spokeYet = true;
       /* they are back, so he starts his wake ups over */
       wakes = 0;
       if (warned) { warned = false; setVoiceState('listening', 'Still here.'); }
     }
+
+    /*
+      Whether they have ever actually SPOKEN is a different
+      question from whether the microphone has picked
+      anything up, and it has to be, because the threshold
+      that catches a quiet voice also catches a fridge. The
+      only trustworthy answer is the transcript: words came
+      back, so words were said.
+    */
+    if (voiceCall.heardThem) spokeYet = true;
 
     /*
       Nobody has said a word since the line opened. That is
@@ -16729,7 +16750,20 @@ function watchVoiceIdle() {
       closeVoiceWith('That is twelve minutes. Open it again whenever.');
     }
 
-  }, 2000);
+   } catch (error) {
+
+    /*
+      One bad line in here used to take the whole check down
+      silently, and with it the guard that winds an idle call
+      up. A call that never winds up is the most expensive
+      thing this app can do, so nothing in here is allowed to
+      fail quietly ever again.
+    */
+    console.error('VOICE WATCH FAILED:', error);
+
+   }
+
+  }, 1000);
 
 }
 
