@@ -11612,3 +11612,131 @@ body.motionOff .progressWalker,
 body.motionOff .walkerBot {
   animation: none;
 }
+
+/* ---------- HE PACES, AND LEAVES DOTS BEHIND HIM ---------- */
+/*
+  No card, no rail, nothing to read as progress. Just him, in the
+  middle, pacing, with three dots trailing behind that fade out
+  before he turns so they are never left on the wrong side.
+
+  The dots live inside him, so when he flips at the end of a
+  length they flip too and land behind him again automatically.
+*/
+
+.imageProgress {
+  border: 0;
+  background: none;
+  padding: 6px 0 2px;
+  text-align: center;
+}
+
+.imageProgress .progressText {
+  text-align: center;
+}
+
+.imageProgress .progressTrack {
+  justify-content: center;
+  overflow: visible;
+  clip-path: none;
+}
+
+.progressWalker {
+  margin: 0;
+}
+
+.walkerDrops {
+  display: flex;
+  position: absolute;
+  top: 50%;
+  right: 100%;
+  margin: -2px 8px 0 0;
+  gap: 5px;
+  align-items: center;
+  pointer-events: none;
+  animation: trailFade 2.8s ease-in-out infinite;
+}
+
+.walkerDrops .drop {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--acc, #a78bfa);
+  box-shadow: 0 0 6px var(--accGlow, rgba(167, 139, 250, .7));
+  opacity: .9;
+  animation: dropBreathe 1.1s ease-in-out infinite;
+}
+
+.walkerDrops .drop.d2 { animation-delay: .14s; }
+.walkerDrops .drop.d3 { animation-delay: .28s; }
+
+/* clear before each turn, back once he is walking again */
+@keyframes trailFade {
+  0%   { opacity: 0; }
+  14%  { opacity: 1; }
+  36%  { opacity: 1; }
+  44%  { opacity: 0; }
+  56%  { opacity: 0; }
+  66%  { opacity: 1; }
+  86%  { opacity: 1; }
+  94%  { opacity: 0; }
+  100% { opacity: 0; }
+}
+
+@keyframes dropBreathe {
+  0%, 100% { transform: scale(.7); }
+  50% { transform: scale(1); }
+}
+
+body.motionOff .walkerDrops,
+body.motionOff .walkerDrops .drop {
+  animation: none;
+  opacity: .6;
+}
+
+/* ---------- THE SHOP, ONE SECTION TO A PAGE ---------- */
+
+.shopPageHead {
+  padding: 4px 2px 12px;
+}
+
+.shopPageTitle {
+  font-size: 16px;
+  font-weight: 800;
+  color: #f3eefa;
+}
+
+.shopPageNote {
+  margin-top: 4px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: #a396b4;
+}
+
+.shopList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.shopList .shopItem {
+  border: 1px solid #2f2447;
+  background: rgba(255, 255, 255, .02);
+}
+
+.shopList .shopItem + .shopItem {
+  border-top: 1px solid #2f2447;
+}
+
+.shopPager {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid #241b38;
+}
+
+/* the steps name where they go rather than just pointing */
+.shopPager .pagerStep {
+  max-width: 45%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

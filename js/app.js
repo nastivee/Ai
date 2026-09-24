@@ -10461,28 +10461,18 @@ const SHOP_GROUPS = [
   {
     id: 'plans',
     title: 'Every month',
-    note: 'A plan that renews. Better pictures the higher you go.',
+    note: 'A plan that renews, and better pictures the higher you go.',
     of: pack => pack.kind === 'plan'
   },
   {
-    id: 'voice',
-    title: 'Talking',
-    note: 'Minutes of voice chat. They never expire.',
-    of: pack => pack.kind === 'topup' && pack.voice > 0 && !pack.images
-  },
-  {
-    id: 'pictures',
-    title: 'Pictures',
-    note: 'Image credits. They never expire.',
-    of: pack => pack.kind === 'topup' && pack.images > 0 && !pack.voice
-  },
-  {
-    id: 'bundles',
-    title: 'Both together',
-    note: 'Pictures and talking in one, usually cheaper than separately.',
-    of: pack => pack.kind === 'topup' && pack.images > 0 && pack.voice > 0
+    id: 'addons',
+    title: 'Add ons',
+    note: 'Bought once, never expires. Top up whenever you run low.',
+    of: pack => pack.kind !== 'plan'
   }
 ];
+
+let shopPage = 0;
 
 let shopPacks = [];
 
@@ -10545,79 +10535,97 @@ function paintShop() {
 
   const mine = String(account?.plan || '');
 
-  SHOP_GROUPS.forEach(group => {
+  /* one section to a page, so nothing competes for the eye */
+  if (shopPage > SHOP_GROUPS.length - 1) shopPage = SHOP_GROUPS.length - 1;
+  if (shopPage < 0) shopPage = 0;
 
-    const items = shopPacks.filter(group.of);
+  const group = SHOP_GROUPS[shopPage];
+  const items = shopPacks.filter(group.of);
 
-    if (!items.length) return;
+  const head = document.createElement('div');
+  head.className = 'shopPageHead';
+  head.innerHTML =
+    `<div class="shopPageTitle">${group.title}</div>` +
+    `<div class="shopPageNote">${group.note}</div>`;
 
-    const cheapest = Math.min(...items.map(item => item.pence));
+  holder.appendChild(head);
 
-    const card = document.createElement('div');
+  const list = document.createElement('div');
+  list.className = 'shopList';
 
-    card.className = 'shopGroup';
-    /* so opening one brings it back to the same place next time */
-    card.id = `shop-${group.id}`;
+  items.forEach(item => {
 
-    const summary = document.createElement('button');
-    summary.type = 'button';
-    summary.className = 'shopSummary';
-    summary.innerHTML =
-      '<span class="shopDot" aria-hidden="true"></span>' +
-      `<span>${group.title}` +
-      `<span class="shopSummaryNote">${items.length} to choose from, ` +
-      `from ${priceTag(cheapest)}. ${group.note}</span></span>` +
-      '<svg class="shopChevron" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>';
+    const row = document.createElement('div');
 
-    summary.addEventListener('click', () => {
-      card.classList.toggle('open');
-      if (card.classList.contains('open')) {
-        card.scrollIntoView({ block: 'start', behavior: 'smooth' });
-      }
-    });
+    row.className =
+      'shopItem' + (item.kind === 'plan' && item.id === mine ? ' mine' : '');
 
-    const body = document.createElement('div');
-    body.className = 'shopBody';
+    const text = document.createElement('div');
+    text.className = 'shopItemText';
+    text.innerHTML =
+      `<div class="shopItemName">${item.name}</div>` +
+      `<div class="shopItemBlurb">${item.blurb}</div>`;
 
-    items.forEach(item => {
+    const buy = document.createElement('button');
+    buy.type = 'button';
+    buy.className = 'shopBuy';
 
-      const row = document.createElement('div');
+    const onThis = item.kind === 'plan' && item.id === mine;
 
-      row.className =
-        'shopItem' + (item.kind === 'plan' && item.id === mine ? ' mine' : '');
+    buy.textContent =
+      onThis
+        ? 'Your plan'
+        : `${priceTag(item.pence)}${item.kind === 'plan' ? ' a month' : ''}`;
 
-      const text = document.createElement('div');
-      text.className = 'shopItemText';
-      text.innerHTML =
-        `<div class="shopItemName">${item.name}</div>` +
-        `<div class="shopItemBlurb">${item.blurb}</div>`;
+    buy.disabled = onThis;
 
-      const buy = document.createElement('button');
-      buy.type = 'button';
-      buy.className = 'shopBuy';
+    if (!onThis) {
+      buy.addEventListener('click', () => buyPack(item.id, buy));
+    }
 
-      const onThis = item.kind === 'plan' && item.id === mine;
-
-      buy.textContent =
-        onThis
-          ? 'Your plan'
-          : `${priceTag(item.pence)}${item.kind === 'plan' ? ' a month' : ''}`;
-
-      buy.disabled = onThis;
-
-      if (!onThis) {
-        buy.addEventListener('click', () => buyPack(item.id, buy));
-      }
-
-      row.append(text, buy);
-      body.appendChild(row);
-
-    });
-
-    card.append(summary, body);
-    holder.appendChild(card);
+    row.append(text, buy);
+    list.appendChild(row);
 
   });
+
+  if (!items.length) {
+    const empty = document.createElement('div');
+    empty.className = 'shopItemBlurb';
+    empty.textContent = 'Nothing here at the moment.';
+    list.appendChild(empty);
+  }
+
+  holder.appendChild(list);
+
+  /* moving between the pages */
+  const pager = document.createElement('div');
+  pager.className = 'chatPager shopPager';
+
+  const step = (label, to, off) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'pagerStep';
+    button.textContent = label;
+    button.disabled = off;
+    button.addEventListener('click', () => {
+      shopPage = to;
+      paintShop();
+      document.querySelector('.shopCard')?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    });
+    return button;
+  };
+
+  const where = document.createElement('span');
+  where.className = 'pagerWhere';
+  where.textContent = `${shopPage + 1} of ${SHOP_GROUPS.length}`;
+
+  pager.append(
+    step(SHOP_GROUPS[shopPage - 1]?.title || 'Back', shopPage - 1, shopPage < 1),
+    where,
+    step(SHOP_GROUPS[shopPage + 1]?.title || 'Next', shopPage + 1, shopPage >= SHOP_GROUPS.length - 1)
+  );
+
+  holder.appendChild(pager);
 
 }
 
