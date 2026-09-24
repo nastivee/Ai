@@ -12095,7 +12095,7 @@ const TWICE_DELETE = [
 
 const TWICE_SAVE = [
   'adminSaveSettings', 'adminSavePeek', 'saveRules', 'pricingSave',
-  'profileSave', 'pwSave', 'saleSave', 'saveTopUp'
+  'profileSave', 'pwSave', 'saleSave', 'saveTopUp', 'giftGive'
 ];
 
 function askTwiceEverywhere() {
@@ -13065,12 +13065,38 @@ function paintSpend() {
         ? 'spendLow'
         : '';
 
+    const ageDays =
+      Math.max(0, Math.round(
+        (Date.now() - Date.parse(`${left.topUpAt}T00:00:00Z`)) / 86400000
+      ));
+
     spendTiles('spendLeftGrid', [
       ['Left on the account', dollars(left.leftCents), low],
-      ['Top up recorded', dollars(left.topUpCents)],
+      ['Balance you entered', dollars(left.topUpCents)],
       ['Billed since then', dollars(left.spentCents)],
-      ['Top up date', left.topUpAt]
+      [
+        'Checked',
+        ageDays === 0
+          ? 'today'
+          : ageDays === 1
+            ? 'yesterday'
+            : `${ageDays} days ago`,
+        ageDays > 30 ? 'spendLow' : ''
+      ]
     ]);
+
+    if (ageDays > 30) {
+
+      const note = document.getElementById('spendStale');
+
+      if (note) {
+        note.textContent =
+          'Worth looking at the billing page again and re-entering ' +
+          'the figure, this one was anchored more than a month ago.';
+        note.className = 'adminHint spendLow';
+      }
+
+    }
 
   } else {
 
@@ -13210,6 +13236,275 @@ function paintSpend() {
 
 }
 
+
+/* =====================================================
+   ADMIN PAGE: GIFTS
+
+   Look somebody up, see what they already have, then
+   hand them something. Anything with a last day on it
+   shows with the day it runs out and a way to stop it
+   early, because a gift given by mistake should not have
+   to be waited out.
+===================================================== */
+
+const GIFT_COUNTED = ['pictures', 'minutes'];
+
+const GIFT_NAMES = {
+  plan: 'Plan',
+  unlimited: 'Unlimited pictures',
+  voice: 'Voice chat',
+  video: 'Video'
+};
+
+let giftLast = null;
+
+function paintGiftFields() {
+
+  const what =
+    document.getElementById('giftWhat')?.value || 'pictures';
+
+  const counted = GIFT_COUNTED.includes(what);
+
+  const show = (id, on) => {
+    const box = document.getElementById(id);
+    if (box) box.hidden = !on;
+  };
+
+  show('giftAmountField', counted);
+  show('giftDaysField', !counted);
+  show('giftPlanField', what === 'plan');
+
+  const amount = document.getElementById('giftAmount');
+
+  if (amount && counted) {
+    amount.placeholder = what === 'minutes' ? '30' : '10';
+  }
+
+}
+
+function paintGiftHeld(gifts) {
+
+  const box = document.getElementById('giftHeld');
+
+  if (!box) return;
+
+  const held = gifts && typeof gifts === 'object' ? gifts : {};
+
+  const names = Object.keys(held);
+
+  if (!names.length) {
+
+    box.innerHTML =
+      '<p class="adminHint">Nothing given to them at the moment.</p>';
+
+    return;
+
+  }
+
+  box.innerHTML = '';
+
+  names.forEach(name => {
+
+    const one = held[name];
+
+    const row = document.createElement('div');
+
+    row.className = 'giftRow';
+
+    const text = document.createElement('div');
+
+    text.className = 'giftRowText';
+
+    text.innerHTML =
+      `<strong>${escapeText(
+        name === 'plan'
+          ? `${one.name} plan`
+          : GIFT_NAMES[name] || name
+      )}</strong>` +
+      `<span>until the end of ${escapeText(one.until)}</span>`;
+
+    const stop = document.createElement('button');
+
+    stop.className = 'adminAction adminQuiet giftStop';
+
+    stop.textContent = 'Stop it';
+
+    stop.addEventListener('click', async () => {
+
+      stop.disabled = true;
+
+      try {
+
+        const response =
+          await fetch(`${API_BASE}/api/admin/gift/stop`, {
+            method: 'POST',
+            headers: {
+              ...(await apiHeaders()),
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              email: document.getElementById('giftEmail')?.value?.trim(),
+              what: name
+            })
+          });
+
+        const data = await response.json();
+
+        if (!response.ok) throw new Error(data?.error);
+
+        adminSay('giftResult', data.said, true);
+
+        paintGiftHeld(data.gifts);
+
+      } catch (error) {
+
+        adminSay('giftResult', error.message, false);
+
+        stop.disabled = false;
+
+      }
+
+    });
+
+    armTwice(stop, 'Tap again to stop');
+
+    row.appendChild(text);
+    row.appendChild(stop);
+
+    box.appendChild(row);
+
+  });
+
+}
+
+async function lookUpForGift() {
+
+  const email =
+    String(document.getElementById('giftEmail')?.value || '').trim();
+
+  if (!email) {
+    adminSay('giftResult', 'Put an email in first.', false);
+    return;
+  }
+
+  const button = document.getElementById('giftLook');
+
+  if (button) button.disabled = true;
+
+  try {
+
+    const response =
+      await fetch(
+        `${API_BASE}/api/admin/user?email=${encodeURIComponent(email)}`,
+        { headers: await apiHeaders() }
+      );
+
+    const data = await response.json();
+
+    if (!response.ok) throw new Error(data?.error);
+
+    giftLast = data;
+
+    spendTiles('giftHas', [
+      ['Pictures', compact(data.credits ?? data.image_credits ?? 0)],
+      ['Voice minutes', compact(Math.round((data.voiceSeconds || 0) / 60))],
+      ['Plan', String(data.plan || 'free')],
+      ['Unlimited', data.unlimited ? 'yes' : 'no']
+    ]);
+
+    paintGiftHeld(data.gifts);
+
+    adminSay('giftResult', `Found ${email}.`, true);
+
+    setSectionState('adminGifts', null, `Last looked at ${email}`);
+
+    paintAdminMenu();
+
+  } catch (error) {
+
+    spendTiles('giftHas', []);
+
+    paintGiftHeld(null);
+
+    adminSay('giftResult', error.message, false);
+
+  } finally {
+
+    if (button) button.disabled = false;
+
+  }
+
+}
+
+document
+  .getElementById('giftWhat')
+  ?.addEventListener('change', paintGiftFields);
+
+document
+  .getElementById('giftLook')
+  ?.addEventListener('click', lookUpForGift);
+
+document
+  .getElementById('giftGive')
+  ?.addEventListener('click', async event => {
+
+    const button = event.currentTarget;
+
+    const email =
+      String(document.getElementById('giftEmail')?.value || '').trim();
+
+    const what =
+      document.getElementById('giftWhat')?.value || 'pictures';
+
+    if (!email) {
+      adminSay('giftResult', 'Who is it for?', false);
+      return;
+    }
+
+    button.disabled = true;
+
+    try {
+
+      const response =
+        await fetch(`${API_BASE}/api/admin/gift`, {
+          method: 'POST',
+          headers: {
+            ...(await apiHeaders()),
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            email,
+            what,
+            amount: Number(document.getElementById('giftAmount')?.value || 0),
+            days: Number(document.getElementById('giftDays')?.value || 0),
+            plan: document.getElementById('giftPlan')?.value || 'plus'
+          })
+        });
+
+      const data = await response.json();
+
+      if (!response.ok) throw new Error(data?.error);
+
+      adminSay('giftResult', data.said, true);
+
+      /* show them again, so what changed is on screen */
+      await lookUpForGift();
+
+    } catch (error) {
+
+      adminSay('giftResult', error.message, false);
+
+    } finally {
+
+      button.disabled = false;
+
+    }
+
+  });
+
+paintGiftFields();
+
+
 document
   .getElementById('spendRangeRow')
   ?.addEventListener('click', event => {
@@ -13239,7 +13534,7 @@ document
 
       adminSay(
         'topUpResult',
-        'Put in how much went on, and the day it went on.',
+        'Put in the balance you saw, and the day you saw it.',
         false
       );
 
@@ -13268,7 +13563,7 @@ document
 
       if (!response.ok) throw new Error(data?.error);
 
-      adminSay('topUpResult', 'Saved. Working out what is left.', true);
+      adminSay('topUpResult', 'Saved. Working out what is left now.', true);
 
       await loadSpend(spendDays);
 

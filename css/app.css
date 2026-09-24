@@ -13015,3 +13015,68 @@ body.motionOff .swipeBack {
   border-color: var(--mode-acc, #a78bfa);
   color: var(--ink);
 }
+
+/* =====================================================
+   ADMIN: GIFTS
+
+   One row per thing somebody has been given, with the
+   day it runs out beside it and a way to stop it early.
+===================================================== */
+
+.giftHeld {
+  margin: var(--s3) 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+}
+
+.giftRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s3);
+  flex-wrap: wrap;
+  padding: 12px 14px;
+  border: 1px solid #241b38;
+  border-radius: var(--r2);
+  background: var(--lift-1, #150f23);
+}
+
+.giftRowText {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.giftRowText strong {
+  color: var(--ink);
+  font-size: var(--t-sm);
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.giftRowText span {
+  color: var(--ink-3);
+  font-size: var(--t-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+.giftStop {
+  flex-shrink: 0;
+  margin: 0;
+}
+
+#adminGifts .statGrid {
+  margin-bottom: var(--s2);
+}
+
+#adminGifts .statValue {
+  margin-top: 6px;
+  white-space: normal;
+  text-transform: capitalize;
+}
+
+#adminGifts select.adminInput {
+  width: 100%;
+}

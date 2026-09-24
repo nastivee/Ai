@@ -51,7 +51,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-<link rel="stylesheet" href="./css/app.css?v=2026-09-24-36">
+<link rel="stylesheet" href="./css/app.css?v=2026-09-24-37">
 </head>
 
 <body>
@@ -483,27 +483,37 @@
 
         <h4 class="adminSubTitle">What is left</h4>
         <p class="adminHint">
-          No provider publishes a way to read the credit left on an
-          account, so nothing can fetch it. Record a top up here and
-          this works out what is left by taking the real billed spend
-          off it.
+          OpenAI publish no way to read the balance, so nothing can
+          fetch it. Read it off your billing page, put it in here with
+          the date, and from then on this takes the real billed spend
+          off it. Re-anchor it whenever you happen to look again.
+        </p>
+
+        <p class="adminHint">
+          <a class="adminLink" id="billingLink"
+             href="https://platform.openai.com/settings/organization/billing/overview"
+             target="_blank" rel="noopener noreferrer">
+            Open your OpenAI billing page
+          </a>
         </p>
 
         <div class="statGrid" id="spendLeftGrid"></div>
 
+        <p class="adminHint" id="spendStale"></p>
+
         <div class="adminField">
-          <label class="adminLabel" for="topUpAmount">Top up added, in dollars</label>
+          <label class="adminLabel" for="topUpAmount">Balance when you last looked, in dollars</label>
           <input class="adminInput" id="topUpAmount" type="number"
                  min="0" step="0.01" inputmode="decimal" placeholder="100">
         </div>
 
         <div class="adminField">
-          <label class="adminLabel" for="topUpDate">Date it went on</label>
+          <label class="adminLabel" for="topUpDate">The day you looked</label>
           <input class="adminInput" id="topUpDate" type="date">
         </div>
 
         <button class="adminAction" id="saveTopUp" type="button">
-          Save the top up
+          Save the balance
         </button>
 
         <div class="adminResult" id="topUpResult"></div>
@@ -523,6 +533,92 @@
         <div class="statGrid" id="spendUsedGrid"></div>
 
         <div class="statTableWrap" id="spendTable"></div>
+
+      </div>
+
+    </div>
+    <div class="adminSection" id="adminGifts">
+
+      <button class="adminSummary" type="button" data-section="adminGifts">
+        <span class="adminDot" aria-hidden="true"></span>
+        <span class="adminSummaryText">
+          Gifts
+          <span class="adminSummaryNote" id="adminGiftsNote">Give somebody something</span>
+        </span>
+        <svg class="adminChevron" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
+      </button>
+
+      <div class="adminBody">
+
+        <p class="adminHint">
+          Pictures and minutes go straight onto the balance and stay,
+          the same as if they had been bought. A plan, unlimited
+          pictures, or the use of voice or video are given for a
+          number of days and stop on their own when the time is up.
+        </p>
+
+        <div class="adminField">
+          <label class="adminLabel" for="giftEmail">Who is it for</label>
+          <input class="adminInput" id="giftEmail" type="email"
+                 autocomplete="off" placeholder="them@example.com">
+        </div>
+
+        <button class="adminAction adminQuiet" id="giftLook" type="button">
+          See what they have
+        </button>
+
+        <div class="statGrid" id="giftHas"></div>
+
+        <div class="giftHeld" id="giftHeld"></div>
+
+        <h4 class="adminSubTitle">Give something</h4>
+
+        <div class="adminField">
+          <label class="adminLabel" for="giftWhat">What</label>
+          <select class="adminInput" id="giftWhat">
+            <option value="pictures">Pictures</option>
+            <option value="minutes">Voice minutes</option>
+            <option value="plan">A plan</option>
+            <option value="unlimited">Unlimited pictures</option>
+            <option value="voice">Voice chat</option>
+            <option value="video">Video</option>
+          </select>
+        </div>
+
+        <div class="adminField" id="giftPlanField" hidden>
+          <label class="adminLabel" for="giftPlan">Which plan</label>
+          <select class="adminInput" id="giftPlan">
+            <option value="starter">Starter</option>
+            <option value="plus" selected>Plus</option>
+            <option value="pro">Pro</option>
+          </select>
+        </div>
+
+        <div class="adminField" id="giftAmountField">
+          <label class="adminLabel" for="giftAmount">How many</label>
+          <input class="adminInput" id="giftAmount" type="number"
+                 min="1" max="10000" step="1" inputmode="numeric" value="10">
+        </div>
+
+        <div class="adminField" id="giftDaysField" hidden>
+          <label class="adminLabel" for="giftDays">For how long</label>
+          <select class="adminInput" id="giftDays">
+            <option value="1">1 day</option>
+            <option value="7">7 days</option>
+            <option value="14">14 days</option>
+            <option value="30" selected>30 days</option>
+            <option value="60">60 days</option>
+            <option value="90">90 days</option>
+            <option value="180">180 days</option>
+            <option value="365">A year</option>
+          </select>
+        </div>
+
+        <button class="adminAction" id="giftGive" type="button">
+          Give it
+        </button>
+
+        <div class="adminResult" id="giftResult"></div>
 
       </div>
 
@@ -2525,8 +2621,8 @@
   </div>
 </div>
 
-<script>window.NASTIVEE_VERSION = '2026-09-24-36';</script>
-<script src="./js/app.js?v=2026-09-24-36"></script>
+<script>window.NASTIVEE_VERSION = '2026-09-24-37';</script>
+<script src="./js/app.js?v=2026-09-24-37"></script>
 
 </body>
 </html>

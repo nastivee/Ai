@@ -331,12 +331,85 @@ function featureAccess(settings, name) {
   return ACCESS_LEVELS.includes(value) ? value : 'admins';
 }
 
-/* can this person use it, given who it is switched on for */
-function featureAllowed(settings, name, user) {
+/*
+  Can this person use it, given who it is switched on for
+  and anything they have been given. A gift opens the door
+  even while the feature is still admins only, which is the
+  whole point of being able to hand it out.
+*/
+function featureAllowed(settings, name, user, gifts) {
   const access = featureAccess(settings, name);
   if (access === 'everyone') return Boolean(user);
-  if (access === 'admins') return isAdmin(user);
+  if (isAdmin(user)) return true;
+  if (gifts && gifts[name]) return true;
   return false;
+}
+
+
+/*
+  GIFTS
+
+  An admin can hand somebody a plan, unlimited pictures, or
+  the use of voice or video, for a set number of days. Each
+  one carries its own last day and simply stops counting
+  once that day is behind us, so nothing has to be taken
+  back by hand and a forgotten gift cannot run forever.
+
+  Counted gifts, pictures and minutes, are not kept here.
+  They go straight onto the balance like a purchase would,
+  because a picture somebody already has is theirs.
+*/
+const GIFTABLE = ['unlimited', 'plan', 'voice', 'video'];
+
+function endOfDay(day) {
+  const at = Date.parse(`${day}T23:59:59Z`);
+  return Number.isFinite(at) ? at : 0;
+}
+
+/* only the gifts that have not run out yet */
+function liveGifts(raw) {
+
+  const held = raw && typeof raw === 'object' ? raw : {};
+
+  const now = Date.now();
+
+  const live = {};
+
+  GIFTABLE.forEach(name => {
+
+    const one = held[name];
+
+    if (!one) return;
+
+    const until =
+      typeof one === 'string' ? one : one.until;
+
+    if (!until || endOfDay(until) < now) return;
+
+    live[name] =
+      name === 'plan'
+        ? { name: String(one.name || 'plus').toLowerCase(), until }
+        : { until };
+
+  });
+
+  return live;
+
+}
+
+async function giftsFor(userId) {
+
+  if (!supabaseAdmin || !userId) return {};
+
+  const { data } =
+    await supabaseAdmin
+      .from('profiles')
+      .select('gifts')
+      .eq('id', userId)
+      .maybeSingle();
+
+  return liveGifts(data?.gifts);
+
 }
 
 /*
@@ -795,7 +868,7 @@ async function readAccount(userId) {
   const { data, error } =
     await supabaseAdmin
       .from('profiles')
-      .select('image_credits, unlimited, plan, voice_seconds')
+      .select('image_credits, unlimited, plan, voice_seconds, gifts')
       .eq('id', userId)
       .maybeSingle();
 
@@ -839,12 +912,15 @@ async function readAccount(userId) {
 
   }
 
+  const gifts = liveGifts(data?.gifts);
+
   return {
     credits,
-    unlimited: data?.unlimited === true,
-    plan: data?.plan || null,
+    unlimited: data?.unlimited === true || Boolean(gifts.unlimited),
+    plan: gifts.plan?.name || data?.plan || null,
     voiceSeconds: Number(data?.voice_seconds || 0),
-    unmetered: settings.paywall_enabled === false
+    unmetered: settings.paywall_enabled === false,
+    gifts
   };
 
 }
@@ -1663,8 +1739,9 @@ app.get('/api/account', async (req, res) => {
     liveTheme: resolvedTheme(settings),
     videoAccess: featureAccess(settings, 'video'),
     voiceAccess: featureAccess(settings, 'voice'),
-    canVideo: featureAllowed(settings, 'video', user),
-    canVoice: featureAllowed(settings, 'voice', user),
+    canVideo: featureAllowed(settings, 'video', user, account.gifts),
+    canVoice: featureAllowed(settings, 'voice', user, account.gifts),
+    gifts: account.gifts || {},
     videoCost: unlimitedReason ? 0 : VIDEO_CREDIT_COST
   });
 
@@ -2597,7 +2674,7 @@ app.post('/api/admin/settings', async (req, res) => {
     if (!Number.isFinite(amount) || amount < 0 || amount > 1000000) {
 
       return res.status(400).json({
-        error: 'A top up must be between 0 and 1,000,000 dollars.'
+        error: 'A balance must be between 0 and 1,000,000 dollars.'
       });
 
     }
@@ -2613,7 +2690,7 @@ app.post('/api/admin/settings', async (req, res) => {
     if (when && !/^\d{4}-\d{2}-\d{2}$/.test(when)) {
 
       return res.status(400).json({
-        error: 'The top up date should look like 2026-09-24.'
+        error: 'The date should look like 2026-09-24.'
       });
 
     }
@@ -2621,7 +2698,7 @@ app.post('/api/admin/settings', async (req, res) => {
     if (when && Date.parse(`${when}T00:00:00Z`) > Date.now()) {
 
       return res.status(400).json({
-        error: 'That top up date is in the future.'
+        error: 'That date is in the future.'
       });
 
     }
@@ -3353,7 +3430,7 @@ app.get('/api/admin/spend', async (req, res) => {
     const topUpUsd = Number(settings.credit_topup_usd) || 0;
     const topUpAt = settings.credit_topup_at || '';
 
-    let left = { ready: false, why: 'No top up recorded yet.' };
+    let left = { ready: false, why: 'No balance recorded yet.' };
 
     if (topUpUsd > 0 && topUpAt) {
 
@@ -3409,6 +3486,271 @@ app.get('/api/admin/spend', async (req, res) => {
 
 
 /*
+  GIVING SOMETHING AWAY
+
+  Two kinds of gift, and they behave differently on
+  purpose.
+
+  Counted things, pictures and minutes, go straight onto
+  the balance. Once given they are theirs and no date
+  takes them back, the same as if they had paid.
+
+  Held things, a plan, unlimited pictures, the use of
+  voice or video, carry a last day. They work until that
+  day is past and then quietly stop. Nothing has to be
+  remembered or taken back by hand.
+
+  Every gift is written into the ledger under the name of
+  the admin who gave it, so there is always an answer to
+  who gave what and when.
+*/
+app.post('/api/admin/gift', async (req, res) => {
+
+  const admin = await requireAdmin(req, res);
+
+  if (!admin) return;
+
+  if (!supabaseAdmin) {
+    return res.status(503).json({ error: 'No database configured.' });
+  }
+
+  const email =
+    String(req.body?.email || '').trim().toLowerCase();
+
+  const what =
+    String(req.body?.what || '').trim().toLowerCase();
+
+  const days =
+    Math.round(Number(req.body?.days) || 0);
+
+  const amount =
+    Math.round(Number(req.body?.amount) || 0);
+
+  const plan =
+    String(req.body?.plan || 'plus').trim().toLowerCase();
+
+  if (!email) {
+    return res.status(400).json({ error: 'Which email?' });
+  }
+
+  const counted = ['pictures', 'minutes'];
+
+  if (!counted.includes(what) && !GIFTABLE.includes(what)) {
+    return res.status(400).json({ error: 'That is not something I can give.' });
+  }
+
+  if (counted.includes(what) && (!Number.isFinite(amount) || amount < 1 || amount > 10000)) {
+    return res.status(400).json({ error: 'Give between 1 and 10000.' });
+  }
+
+  if (!counted.includes(what) && (!Number.isFinite(days) || days < 1 || days > 730)) {
+    return res.status(400).json({ error: 'A gift lasts between 1 and 730 days.' });
+  }
+
+  if (what === 'plan' && !PLAN_IMAGES[plan]) {
+    return res.status(400).json({ error: 'No such plan.' });
+  }
+
+  try {
+
+    const found = await findUserByEmail(email);
+
+    if (!found) {
+      return res.status(404).json({ error: 'No account with that email.' });
+    }
+
+    const reference =
+      `gift:${found.id}:${what}:${Date.now()}`;
+
+    /* the counted ones, straight onto the balance */
+
+    if (what === 'pictures') {
+
+      const balance =
+        await addCredits(
+          found.id,
+          amount,
+          `gift from ${admin.email}: ${amount} pictures`,
+          reference
+        );
+
+      return res.json({
+        ok: true,
+        said: `${amount} picture${amount === 1 ? '' : 's'} given to ${email}.`,
+        credits: balance
+      });
+
+    }
+
+    if (what === 'minutes') {
+
+      const seconds =
+        await addVoiceMinutes(found.id, amount, reference);
+
+      await supabaseAdmin
+        .from('credit_events')
+        .insert({
+          user_id: found.id,
+          amount: 0,
+          reason: `gift from ${admin.email}: ${amount} voice minutes`,
+          reference: `${reference}:note`
+        });
+
+      return res.json({
+        ok: true,
+        said: `${amount} minute${amount === 1 ? '' : 's'} given to ${email}.`,
+        voiceSeconds: seconds
+      });
+
+    }
+
+    /* the held ones, with a last day */
+
+    const until =
+      new Date(Date.now() + (days - 1) * 86400000)
+        .toISOString().slice(0, 10);
+
+    const { data: row } =
+      await supabaseAdmin
+        .from('profiles')
+        .select('gifts')
+        .eq('id', found.id)
+        .maybeSingle();
+
+    const held = liveGifts(row?.gifts);
+
+    held[what] =
+      what === 'plan'
+        ? { name: plan, until }
+        : { until };
+
+    const { error } =
+      await supabaseAdmin
+        .from('profiles')
+        .upsert(
+          { id: found.id, gifts: held },
+          { onConflict: 'id' }
+        );
+
+    if (error) throw new Error(error.message);
+
+    await supabaseAdmin
+      .from('credit_events')
+      .insert({
+        user_id: found.id,
+        amount: 0,
+        reason:
+          `gift from ${admin.email}: ` +
+          `${what === 'plan' ? `${plan} plan` : what} ` +
+          `for ${days} day${days === 1 ? '' : 's'}`,
+        reference
+      });
+
+    console.log(`GIFT: ${admin.email} gave ${email} ${what} until ${until}`);
+
+    res.json({
+      ok: true,
+      said:
+        `${email} has ${what === 'plan' ? `the ${plan} plan` : what === 'unlimited' ? 'unlimited pictures' : `${what} chat`} ` +
+        `until the end of ${until}.`,
+      gifts: held
+    });
+
+  } catch (error) {
+
+    console.error('GIFT ERROR:', error);
+
+    res.status(500).json({
+      error: 'Could not give that: ' + error.message
+    });
+
+  }
+
+});
+
+
+/*
+  Taking one back before its day, for when something was
+  given by mistake.
+*/
+app.post('/api/admin/gift/stop', async (req, res) => {
+
+  const admin = await requireAdmin(req, res);
+
+  if (!admin) return;
+
+  if (!supabaseAdmin) {
+    return res.status(503).json({ error: 'No database configured.' });
+  }
+
+  const email =
+    String(req.body?.email || '').trim().toLowerCase();
+
+  const what =
+    String(req.body?.what || '').trim().toLowerCase();
+
+  if (!email || !GIFTABLE.includes(what)) {
+    return res.status(400).json({ error: 'Which gift, for which email?' });
+  }
+
+  try {
+
+    const found = await findUserByEmail(email);
+
+    if (!found) {
+      return res.status(404).json({ error: 'No account with that email.' });
+    }
+
+    const { data: row } =
+      await supabaseAdmin
+        .from('profiles')
+        .select('gifts')
+        .eq('id', found.id)
+        .maybeSingle();
+
+    const held = liveGifts(row?.gifts);
+
+    delete held[what];
+
+    const { error } =
+      await supabaseAdmin
+        .from('profiles')
+        .upsert(
+          { id: found.id, gifts: held },
+          { onConflict: 'id' }
+        );
+
+    if (error) throw new Error(error.message);
+
+    await supabaseAdmin
+      .from('credit_events')
+      .insert({
+        user_id: found.id,
+        amount: 0,
+        reason: `gift stopped by ${admin.email}: ${what}`,
+        reference: `giftstop:${found.id}:${what}:${Date.now()}`
+      });
+
+    res.json({
+      ok: true,
+      said: `Stopped. ${email} no longer has that.`,
+      gifts: held
+    });
+
+  } catch (error) {
+
+    console.error('GIFT STOP ERROR:', error);
+
+    res.status(500).json({
+      error: 'Could not stop that: ' + error.message
+    });
+
+  }
+
+});
+
+
+/*
   Look somebody up by email, with their balance.
 */
 app.get('/api/admin/user', async (req, res) => {
@@ -3444,7 +3786,7 @@ app.get('/api/admin/user', async (req, res) => {
     const { data } =
       await supabaseAdmin
         .from('profiles')
-        .select('image_credits, unlimited, credits_updated_at')
+        .select('image_credits, unlimited, credits_updated_at, plan, voice_seconds, gifts')
         .eq('id', found.id)
         .maybeSingle();
 
@@ -3464,6 +3806,9 @@ app.get('/api/admin/user', async (req, res) => {
 
       credits: data?.image_credits || 0,
       unlimited: data?.unlimited === true,
+      plan: data?.plan || 'free',
+      voiceSeconds: Number(data?.voice_seconds || 0),
+      gifts: liveGifts(data?.gifts),
 
       recent: events || []
 
@@ -6213,7 +6558,7 @@ app.post('/api/voice/session', async (req, res) => {
       return res.status(401).json({ error: 'Sign in to talk to Natter.' });
     }
 
-    if (!featureAllowed(await getSettings(), 'voice', user)) {
+    if (!featureAllowed(await getSettings(), 'voice', user, await giftsFor(user.id))) {
       return res.status(403).json({ error: 'Voice chat is not switched on at the moment.' });
     }
 
@@ -6548,7 +6893,7 @@ app.post('/api/video', async (req, res) => {
 
     const settingsNow = await getSettings();
 
-    if (!featureAllowed(settingsNow, 'video', user)) {
+    if (!featureAllowed(settingsNow, 'video', user, await giftsFor(user.id))) {
       return res.status(403).json({ error: 'Video is not switched on at the moment.' });
     }
 
