@@ -6548,6 +6548,157 @@ app.post('/api/voice/trouble', async (req, res) => {
 
 });
 
+/*
+  LOOKING SOMETHING UP DURING A CALL
+
+  The voice model cannot reach the web. Rather than telling
+  somebody to go and find it themselves, which is the one
+  thing an assistant should never do, the call hands the
+  question here. This runs it through the same search the
+  text chat uses and sends back two things: a sentence short
+  enough to say out loud, and the full written answer with
+  its links, which the app puts on screen.
+
+  So the call stays a call, and anything that reads badly
+  aloud, a list of figures, a link, a table, is read rather
+  than spoken.
+*/
+app.post('/api/voice/lookup', async (req, res) => {
+
+  const user = await getUser(req);
+
+  if (!user) return res.status(401).json({ error: 'Not signed in.' });
+
+  const question =
+    String(req.body?.question || '').trim().slice(0, 500);
+
+  if (!question) {
+    return res.status(400).json({ error: 'Nothing to look up.' });
+  }
+
+  const who = `voicelook:${user.id}`;
+
+  if (!withinLimit(who, 40)) {
+    return res.status(429).json({
+      spoken: 'I have looked a lot of things up this hour, give it a bit.',
+      written: ''
+    });
+  }
+
+  try {
+
+    let written = '';
+
+    await streamWithSearch({
+      model: process.env.SETTLED_MODEL || 'gpt-5.4-mini',
+      effort: 'low',
+      instructions:
+        'You are answering a question asked out loud, mid conversation. ' +
+        'Answer it directly and fully in British English, in at most ' +
+        'four short sentences or a handful of bullets if it is genuinely ' +
+        'a list. Include the actual figures, times, names or prices. ' +
+        'Cite with short inline markdown links. Never tell the person to ' +
+        'go and look somewhere themselves, you are the one looking.' +
+        liveWebNote(),
+      messages: [{ role: 'user', content: question }],
+      send: piece => {
+
+        if (typeof piece === 'string') {
+          written += piece;
+          return;
+        }
+
+        if (piece && typeof piece.text === 'string') {
+          written += piece.text;
+          return;
+        }
+
+        /* anything cited but not linked in the words themselves */
+        if (piece && Array.isArray(piece.sources) && piece.sources.length) {
+          written +=
+            '\n\n' +
+            piece.sources
+              .map(one => `[${one.site || one.title}](${one.url})`)
+              .join(' · ');
+        }
+
+      }
+    });
+
+    written = written.trim();
+
+    if (!written) {
+      return res.json({
+        spoken: 'I could not get a straight answer on that just now.',
+        written: ''
+      });
+    }
+
+    /* a sentence worth saying out loud, made from the same answer */
+
+    let spoken = '';
+
+    try {
+
+      const said =
+        await createReply({
+          model: MEMORY_MODEL,
+          reasoning_effort: 'low',
+          messages: [
+            {
+              role: 'system',
+              content:
+                'Turn this written answer into one or two sentences to say ' +
+                'out loud in a casual British accent. Keep the key figure or ' +
+                'fact in. No links, no markdown, no lists, no reading out ' +
+                'numbers longer than a few digits. If the detail is too much ' +
+                'to say, give the headline and add that the rest is on screen.'
+            },
+            { role: 'user', content: written.slice(0, 2000) }
+          ]
+        });
+
+      spoken =
+        String(said.choices?.[0]?.message?.content || '').trim();
+
+    } catch (error) {
+
+      console.warn('VOICE LOOKUP SPOKEN FAILED:', error?.message);
+
+    }
+
+    if (!spoken) {
+      spoken = 'I have found it, it is on screen for you.';
+    }
+
+    res.json({
+      spoken: spoken.slice(0, 600),
+      written: written.slice(0, 4000)
+    });
+
+  } catch (error) {
+
+    console.error('VOICE LOOKUP ERROR:', error?.message);
+
+    noteFailure({
+      user,
+      area: 'voice',
+      stage: 'lookup',
+      error,
+      model: VOICE_MODEL,
+      recovered: false
+    });
+
+    res.json({
+      spoken: 'That did not come back to me, sorry. Ask me again in a moment.',
+      written: ''
+    });
+
+  }
+
+});
+
+
 app.post('/api/voice/session', async (req, res) => {
 
   try {
@@ -6630,7 +6781,19 @@ PERSONALITY
 - No lists, no markdown, no reading out links or long numbers.
 - If they interrupt, stop and listen.
 - Be helpful and direct. Only get flirty or cheeky if they clearly start it.
-- Today is ${today}. You cannot browse the web in a call; if they need something current, say so and suggest asking in the text chat.
+
+NEVER SEND THEM AWAY
+- You are the one who finds things out. Never tell them to check a website, look it up, ask somewhere else, try the text chat, or open an app. Not for the weather, not for prices, not for opening times, not for news, not for anything.
+- Do not say you cannot browse, cannot check, or do not have access. Just go and get it.
+- Today is ${today}.
+
+LOOKING THINGS UP
+- You have look_it_up. Use it the moment a question needs anything you cannot already be sure of: today's weather, news, scores, prices, times, what is open, who holds a job, what has just come out, or anything they call current, latest or today.
+- Also use it when you half know something but would be guessing at the detail. Guessing is worse than taking two seconds.
+- Before you call it, say one short natural thing so the silence is not dead air: "hang on", "let me have a look", "two seconds". Then call it.
+- When it comes back you are given words to say and a fuller answer that has already gone onto their screen. Say the spoken part in your own voice, then, only if there is real detail in it, add that the rest is on screen. Do not read out links, long numbers or lists.
+- Do not use it for maths, writing, code, advice, explanations, history, or anything you would answer the same way whatever today's date is. Just answer those.
+- If it genuinely comes back with nothing, say plainly that you could not find it. Still do not send them somewhere else.
 
 SAVED MEMORY (things they told you before):
 ${memory || '(none)'}
@@ -6663,10 +6826,43 @@ ${(await houseLessonLines()) || '(none yet)'}
       extras and open the call anyway: a slightly dearer call beats
       no call at all.
     */
+    /*
+      The one thing the call can reach out for. The browser
+      answers it by asking our own lookup endpoint, which has
+      the web search the call itself has not got.
+    */
+    const VOICE_TOOLS = [
+      {
+        type: 'function',
+        name: 'look_it_up',
+        description:
+          'Look up anything current or factual you cannot be certain of: ' +
+          'weather, news, scores, prices, opening times, who holds a job, ' +
+          'what has just been released, or any detail you would otherwise ' +
+          'be guessing at. The full written answer is shown on the ' +
+          "person's screen automatically.",
+        parameters: {
+          type: 'object',
+          properties: {
+            question: {
+              type: 'string',
+              description:
+                'The question to look up, written out in full as a ' +
+                'standalone question, including any place or date the ' +
+                'person meant.'
+            }
+          },
+          required: ['question']
+        }
+      }
+    ];
+
     const plain = {
       type: 'realtime',
       model: VOICE_MODEL,
       instructions,
+      tools: VOICE_TOOLS,
+      tool_choice: 'auto',
       audio: {
         input: {
           transcription: { model: 'gpt-4o-mini-transcribe' },

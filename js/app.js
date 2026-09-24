@@ -2130,43 +2130,7 @@ function renderChatHistory() {
       );
 
 
-      const deleteButton =
-        document.createElement(
-          'button'
-        );
-
-      deleteButton.className =
-        'deleteChatButton';
-
-      deleteButton.innerHTML =
-        '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4.5A1.5 1.5 0 0 1 9.5 3h5A1.5 1.5 0 0 1 16 4.5V6"/><path d="M5.5 6l1 13.2A2 2 0 0 0 8.5 21h7a2 2 0 0 0 2-1.8L18.5 6"/><path d="M10 11v6M14 11v6"/></svg>';
-
-      deleteButton.title =
-        'Delete chat';
-
-      deleteButton.setAttribute(
-        'aria-label',
-        `Delete ${chatItem.title || 'chat'}`
-      );
-
-
-      deleteButton.addEventListener(
-        'click',
-        event => {
-
-          event.stopPropagation();
-
-          askToDelete(row, chatItem);
-
-        }
-      );
-
-
       row.appendChild(button);
-
-      row.appendChild(
-        deleteButton
-      );
 
       armSwipe(row, chatItem);
 
@@ -15237,6 +15201,108 @@ function setVoiceState(state, label) {
 }
 
 
+/* =====================================================
+   LOOKING SOMETHING UP MID CALL
+
+   The call cannot reach the web itself, so when it asks
+   for a lookup we run it through our own search and hand
+   the answer back. Two things come back: a sentence for
+   it to say, and the full written answer, which goes on
+   screen and into the chat so the detail survives the
+   call ending.
+===================================================== */
+
+function addVoiceFound(text) {
+
+  const found = document.createElement('div');
+
+  found.className = 'voiceLine found';
+
+  found.innerHTML =
+    '<span class="voiceFoundTag">Looked up</span>' +
+    renderMarkdown(String(text || ''));
+
+  /* links open away from the call, never in place of it */
+  found.querySelectorAll('a').forEach(link => {
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+  });
+
+  voiceTranscript.appendChild(found);
+  voiceTranscript.scrollTop = voiceTranscript.scrollHeight;
+
+}
+
+async function answerVoiceTool(call, item) {
+
+  const channel = call.channel;
+
+  if (!channel || channel.readyState !== 'open') return;
+
+  let question = '';
+
+  try {
+    question =
+      String(JSON.parse(item.arguments || '{}').question || '').trim();
+  } catch {}
+
+  let spoken = 'I could not get that one, sorry.';
+
+  if (question) {
+
+    setVoiceState('speaking', 'Having a look');
+
+    try {
+
+      const response =
+        await fetch(`${API_BASE}/api/voice/lookup`, {
+          method: 'POST',
+          headers: {
+            ...(await apiHeaders()),
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ question })
+        });
+
+      const data = await response.json().catch(() => ({}));
+
+      if (data.spoken) spoken = data.spoken;
+
+      /* the written answer is the point: on screen, and kept */
+      if (data.written) {
+
+        addVoiceFound(data.written);
+
+        keepVoiceLine('assistant', data.written, { silent: true });
+
+      }
+
+    } catch (error) {
+
+      console.error('VOICE LOOKUP FAILED:', error);
+
+    }
+
+  }
+
+  /* the call may have ended while we were looking */
+  if (voiceCall !== call || channel.readyState !== 'open') return;
+
+  channel.send(JSON.stringify({
+    type: 'conversation.item.create',
+    item: {
+      type: 'function_call_output',
+      call_id: item.call_id,
+      output: JSON.stringify({ say: spoken, shown_on_screen: true })
+    }
+  }));
+
+  channel.send(JSON.stringify({ type: 'response.create' }));
+
+}
+
+
+
 function addVoiceLine(role, text) {
 
   const line = document.createElement('div');
@@ -15250,13 +15316,14 @@ function addVoiceLine(role, text) {
 
 
 /* each finished line goes into the chat straight away, so hanging up loses nothing */
-async function keepVoiceLine(role, text) {
+async function keepVoiceLine(role, text, options) {
 
   const clean = String(text || '').trim();
 
   if (!clean || !voiceCall) return;
 
-  addVoiceLine(role, clean);
+  /* a looked up answer is already on screen in its own shape */
+  if (!options?.silent) addVoiceLine(role, clean);
 
   const call = voiceCall;
 
@@ -15692,6 +15759,14 @@ async function startVoiceCall() {
           break;
 
         case 'response.done':
+
+          /* it has asked us to go and find something out */
+          (data.response?.output || []).forEach(item => {
+            if (item?.type === 'function_call' && item.name === 'look_it_up') {
+              answerVoiceTool(call, item);
+            }
+          });
+
           setVoiceState('listening', 'Listening');
           break;
 
