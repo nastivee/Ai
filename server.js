@@ -5927,6 +5927,37 @@ const VIDEO_QUICK_MODEL =
 const VIDEO_SOUND_MODEL =
   process.env.VIDEO_SOUND_MODEL || VIDEO_MODEL;
 
+/*
+  Each one can sit behind its own key and its own address. Set
+  neither and both use GEMINI_API_KEY on the standard endpoint,
+  which is the usual case.
+*/
+const VIDEO_QUICK_KEY =
+  cleanKey(process.env.VIDEO_QUICK_KEY) || GEMINI_API_KEY;
+
+const VIDEO_SOUND_KEY =
+  cleanKey(process.env.VIDEO_SOUND_KEY) || GEMINI_API_KEY;
+
+const VIDEO_QUICK_BASE =
+  process.env.VIDEO_QUICK_BASE || '';
+
+const VIDEO_SOUND_BASE =
+  process.env.VIDEO_SOUND_BASE || '';
+
+function videoAuthFor(model) {
+
+  if (model === VIDEO_QUICK_MODEL) {
+    return { key: VIDEO_QUICK_KEY, base: VIDEO_QUICK_BASE };
+  }
+
+  if (model === VIDEO_SOUND_MODEL) {
+    return { key: VIDEO_SOUND_KEY, base: VIDEO_SOUND_BASE };
+  }
+
+  return { key: GEMINI_API_KEY, base: '' };
+
+}
+
 /* asking for something you are meant to hear */
 const WANTS_SOUND = new RegExp([
   '\\bwith (?:sound|audio|music|dialogue|narration)\\b',
@@ -5969,14 +6000,17 @@ function tidyVideoJobs() {
   }
 }
 
-async function geminiFetch(path, options = {}) {
+async function geminiFetch(path, options = {}, auth = null) {
+
+  const base = auth?.base || GEMINI_BASE;
+  const key = auth?.key || GEMINI_API_KEY;
 
   const response =
-    await fetch(`${GEMINI_BASE}/${path}`, {
+    await fetch(`${base}/${path}`, {
       ...options,
       headers: {
         'Content-Type': 'application/json',
-        'x-goog-api-key': GEMINI_API_KEY,
+        'x-goog-api-key': key,
         ...(options.headers || {})
       }
     });
@@ -6123,7 +6157,7 @@ app.post('/api/video', async (req, res) => {
               await geminiFetch(`models/${model}:predictLongRunning`, {
                 method: 'POST',
                 body: JSON.stringify({ instances: [instance], parameters })
-              });
+              }, videoAuthFor(model));
 
           } catch (error) {
 
@@ -6134,7 +6168,7 @@ app.post('/api/video', async (req, res) => {
                 await geminiFetch(`models/${model}:predictLongRunning`, {
                   method: 'POST',
                   body: JSON.stringify({ instances: [instance], parameters })
-                });
+                }, videoAuthFor(model));
             } else {
               throw error;
             }
