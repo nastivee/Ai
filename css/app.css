@@ -12057,3 +12057,38 @@ body.motionOff .walkerDrops .drop {
   border-radius: 12px;
   font-size: 12px;
 }
+
+/* ---------- THE WAY IN LOOKS LIKE THE WAY IN ---------- */
+/*
+  The same solid gradient the Log in button uses, because this is
+  the other button on the site whose whole job is to be pressed.
+  It falls back to the edge gradient when the auth palette is not
+  in scope, so it is filled either way rather than outlined.
+*/
+
+.shopOpen {
+  border: 0;
+  border-radius: 13px;
+  height: 48px;
+  padding: 0 18px;
+  background: var(--a-edge, linear-gradient(135deg, #a78bfa, #7c3aed 45%, #38bdf8));
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: .2px;
+  box-shadow: 0 6px 18px var(--a-glow, rgba(124, 58, 237, .28));
+  transition: filter .2s var(--ease), transform .3s var(--ease);
+}
+
+.shopOpen:hover {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+}
+
+.shopOpen:active {
+  transform: translateY(0);
+}
+
+.shopOpen svg {
+  color: #ffffff;
+}
