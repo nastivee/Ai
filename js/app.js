@@ -15478,11 +15478,30 @@ function stageLine(stage) {
 }
 
 /*
-  Says one stage out loud. Skipped whenever he is already
-  mid sentence, because cutting himself off to announce
-  progress is worse than the progress being unannounced.
+  Says one stage out loud.
+
+  Most lookups finish in a couple of seconds, and narrating
+  a two second wait is worse than not narrating it: he
+  announces he is searching and then immediately answers,
+  which sounds fussy and makes a fast answer feel slow. So
+  nothing is said out loud until the wait is actually long
+  enough to be worth explaining, and the stages after that
+  are spaced out rather than fired off as they arrive.
+
+  The screen is different and updates straight away, because
+  reading a line change costs nobody anything.
 */
+const STAGE_QUIET_FIRST = 3000;   /* say nothing at all before this */
+const STAGE_GAP = 4000;           /* and leave this long between */
+
 function speakStage(call, stage) {
+
+  const now = Date.now();
+
+  /* a short wait explains itself by simply ending */
+  if (now - (call.lookStart || now) < STAGE_QUIET_FIRST) return;
+
+  if (now - (call.stageSaid || 0) < STAGE_GAP) return;
 
   const line = stageLine(stage);
 
@@ -15493,6 +15512,8 @@ function speakStage(call, stage) {
   if (!channel || channel.readyState !== 'open') return;
 
   if (call.speaking) return;
+
+  call.stageSaid = now;
 
   try {
 
@@ -15533,6 +15554,8 @@ async function answerVoiceTool(call, item) {
   if (question) {
 
     call.looking = true;
+    call.lookStart = Date.now();
+    call.stageSaid = 0;
 
     const short =
       question.length > 60 ? question.slice(0, 57) + '...' : question;
@@ -15551,13 +15574,14 @@ async function answerVoiceTool(call, item) {
 
       if (!call.looking) return;
 
-      if (Date.now() - lastMove > 5000) {
+      /* a stage that has not moved in a while is the long wait */
+      if (Date.now() - lastMove > 7000) {
         lastMove = Date.now();
         showLooking(STAGE_WORDS.slow());
         speakStage(call, 'slow');
       }
 
-    }, 1500);
+    }, 2000);
 
     try {
 
@@ -16394,6 +16418,42 @@ const VOICE_WAKE_UPS = [
   'Last call from me, then I will be quiet.'
 ];
 
+/*
+  The opening is its own moment. Somebody who has just
+  pressed the button and said nothing is usually working
+  out whether it is even listening, so five seconds of
+  nothing at the start is worth breaking, and it wants a
+  different sort of line from the ones for a lull halfway
+  through a conversation.
+*/
+const VOICE_OPENERS = [
+  'Still there?',
+  'Hello, can you hear me?',
+  'You there? I am listening.',
+  'I am here whenever you are ready.',
+  'Say something and I will know it is working.',
+  'All set this end, whenever you are.',
+  'I can hear you fine, go ahead.',
+  'Right, I am listening. What is on your mind?',
+  'Go on then, what can I do for you?',
+  'Ready when you are.'
+];
+
+let openerBag = [];
+
+function nextOpener() {
+
+  if (!openerBag.length) {
+    openerBag = VOICE_OPENERS.slice().sort(() => Math.random() - 0.5);
+  }
+
+  return openerBag.pop();
+
+}
+
+/* how long the start of a call can stay silent */
+const VOICE_OPEN_ASK = 5000;
+
 /* how long a hush has to last before he says something */
 const VOICE_WAKE_AFTER = 10000;
 
@@ -16435,7 +16495,7 @@ function nextWakeUp() {
   off looking something up, it is skipped: talking over
   himself is worse than a gap.
 */
-function sayWakeUp(call) {
+function sayWakeUp(call, which) {
 
   const channel = call?.channel;
 
@@ -16443,7 +16503,7 @@ function sayWakeUp(call) {
 
   if (call.speaking || call.looking) return false;
 
-  const line = nextWakeUp();
+  const line = which || nextWakeUp();
 
   try {
 
@@ -16523,6 +16583,8 @@ function watchVoiceIdle() {
   let warned = false;
   let wokeAt = 0;
   let wakes = 0;
+  let spokeYet = false;
+  let askedAtStart = false;
 
   voiceIdleTimer = setInterval(() => {
 
@@ -16537,9 +16599,31 @@ function watchVoiceIdle() {
 
     if (mine > VOICE_HEARD) {
       lastPerson = Date.now();
+      spokeYet = true;
       /* they are back, so he starts his wake ups over */
       wakes = 0;
       if (warned) { warned = false; setVoiceState('listening', 'Still here.'); }
+    }
+
+    /*
+      Nobody has said a word since the line opened. That is
+      not a lull, it is somebody wondering whether the thing
+      is on, so it gets its own line and its own shorter
+      clock. Once only.
+    */
+    if (canHear &&
+        !spokeYet &&
+        !askedAtStart &&
+        Date.now() - opened > VOICE_OPEN_ASK &&
+        !voiceCall.speaking &&
+        !voiceCall.looking) {
+
+      if (sayWakeUp(voiceCall, nextOpener())) {
+        askedAtStart = true;
+        wokeAt = Date.now();
+        lastSound = Date.now();
+      }
+
     }
 
     /*
