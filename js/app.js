@@ -10677,30 +10677,27 @@ payOverlay?.addEventListener('click', event => {
    honour.
 ===================================================== */
 
+/*
+  Two pages, not four.
+
+  The old shop had eleven top ups spread over three pages,
+  which is the sort of choice that makes people close the
+  tab. One page of plans, one page of top ups, four of
+  those, and one of them is obviously the right one for
+  whatever brought you here.
+*/
 const SHOP_GROUPS = [
   {
     id: 'plans',
     title: 'Every month',
-    note: 'Renews each month, and buys a better picture the higher you go.',
+    note: 'Renews monthly. The higher you go, the better the pictures get.',
     of: pack => pack.kind === 'plan'
   },
   {
-    id: 'voice',
-    title: 'Voice add ons',
-    note: 'Time to talk. Bought once, never expires.',
-    of: pack => pack.kind !== 'plan' && pack.voice > 0 && !pack.images
-  },
-  {
-    id: 'pictures',
-    title: 'Picture add ons',
-    note: 'Image credits. Bought once, never expires.',
-    of: pack => pack.kind !== 'plan' && pack.images > 0 && !pack.voice
-  },
-  {
-    id: 'mixed',
-    title: 'Mixed add ons',
-    note: 'Pictures and talking together, cheaper than buying each.',
-    of: pack => pack.kind !== 'plan' && pack.images > 0 && pack.voice > 0
+    id: 'topups',
+    title: 'One off top ups',
+    note: 'Bought once, never expires, no subscription.',
+    of: pack => pack.kind !== 'plan'
   }
 ];
 
@@ -10908,15 +10905,15 @@ function paintShop() {
   own name or the thing they were trying to do.
 */
 const SHOP_FOR = {
-  image: 'pictures',
-  images: 'pictures',
-  picture: 'pictures',
-  pictures: 'pictures',
-  empty: 'pictures',
-  topup: 'pictures',
-  voice: 'voice',
-  no_voice: 'voice',
-  talk: 'voice',
+  image: 'topups',
+  images: 'topups',
+  picture: 'topups',
+  pictures: 'topups',
+  empty: 'topups',
+  topup: 'topups',
+  voice: 'topups',
+  no_voice: 'topups',
+  talk: 'topups',
   video: 'plans',
   plan: 'plans',
   plans: 'plans'

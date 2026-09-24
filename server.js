@@ -2134,52 +2134,79 @@ app.post('/api/account/delete', async (req, res) => {
   Top ups are bought once and never expire, which is the whole
   point of them: nobody likes a clock on something they paid for.
 */
+/*
+  WHAT IS FOR SALE
+
+  Rebuilt around what things actually cost us, which is not
+  what the old list assumed.
+
+  A picture is 16p. A message is a fraction of a penny. A
+  minute of talking is 1.5p. So pictures are the only thing
+  here with a real cost behind it, and the old list was
+  giving them away: twenty pictures in a 499p plan is 320p
+  of it gone, and the 349p twenty picture pack netted about
+  5p once Stripe took its cut.
+
+  It was also upside down. Starter gave twenty pictures and
+  Plus gave twelve, so the cheaper plan won the comparison
+  and nobody had a reason to move up.
+
+  Now it ladders: each step up is more of everything, and
+  the thing that goes up fastest is messages and talking,
+  because those cost us almost nothing and are what people
+  actually feel they are getting.
+
+  Four top ups rather than eleven. Eleven meant nobody could
+  choose; four means one of them is obviously the right one.
+*/
 const PACKS = [
 
   /* ---- monthly plans ---- */
   {
     id: 'starter', kind: 'plan', plan: 'starter',
     name: 'Starter', pence: 499,
-    blurb: '20 pictures, 60 messages a day and 5 minutes of talking, every month.',
-    images: 20, voice: 5
+    blurb: '8 pictures, 60 messages a day and 15 minutes of talking.',
+    images: 8, voice: 15
   },
   {
     id: 'plus', kind: 'plan', plan: 'plus',
     name: 'Plus', pence: 999,
-    blurb: '12 better quality pictures in any shape, 120 messages a day and 15 minutes of talking, every month.',
-    images: 12, voice: 15
+    blurb: '15 sharper pictures in any shape, 150 messages a day and 45 minutes of talking.',
+    images: 15, voice: 45
   },
   {
     id: 'pro', kind: 'plan', plan: 'pro',
     name: 'Pro', pence: 1999,
-    blurb: '30 best quality pictures, 250 messages a day and 30 minutes of talking, every month.',
-    images: 30, voice: 30
+    blurb: '25 best quality pictures, 300 messages a day and 90 minutes of talking.',
+    images: 25, voice: 90
   },
 
-  /* ---- voice ---- */
-  { id: 'voice15',  kind: 'topup', name: '15 minutes of talking',  pence: 199,  blurb: 'Fifteen minutes of voice chat. Never expires.', voice: 15 },
-  { id: 'voice45',  kind: 'topup', name: '45 minutes of talking',  pence: 499,  blurb: 'Three quarters of an hour of voice chat. Never expires.', voice: 45 },
-  { id: 'voice120', kind: 'topup', name: '2 hours of talking',     pence: 999,  blurb: 'Two hours of voice chat. Never expires.', voice: 120 },
-  { id: 'voice300', kind: 'topup', name: '5 hours of talking',     pence: 1999, blurb: 'Five hours of voice chat. Never expires.', voice: 300 },
+  /* ---- top ups ----
 
-  /* ---- pictures ---- */
-  /*
-    Three rungs of the same ladder, named so the difference is
-    the first thing read rather than something to work out from
-    the price. Dearer per picture is the point, not a mistake.
+     One of each thing, plus one of both. Priced so the
+     margin is real: pictures at about 35p each against 16p
+     to make, talking at about 5p a minute against 1.5p.
   */
-  { id: 'img20',  kind: 'topup', name: '20 pictures',
-    pence: 349,  blurb: 'Twenty pictures at standard quality. Never expires.', images: 20 },
-  { id: 'img15b', kind: 'topup', name: '15 better quality pictures',
-    pence: 899,  blurb: 'Sharper, more detailed, and any shape you like. Never expires.', images: 15 },
-  { id: 'img8',   kind: 'topup', name: '8 best quality pictures',
-    pence: 1499, blurb: 'The best the model can do, for the ones that matter. Never expires.', images: 8 },
-
-  /* ---- combinations ---- */
-  { id: 'daypass',    kind: 'topup', name: 'Day pass',   pence: 299,  blurb: '5 pictures and 10 minutes of talking.', images: 5, voice: 10 },
-  { id: 'chatterbox', kind: 'topup', name: 'Chatterbox', pence: 799,  blurb: 'An hour and a half of talking, no pictures.', voice: 90 },
-  { id: 'weekend',    kind: 'topup', name: 'Weekend',    pence: 699,  blurb: '10 pictures and half an hour of talking.', images: 10, voice: 30 },
-  { id: 'creator',    kind: 'topup', name: 'Creator',    pence: 1699, blurb: '25 pictures and 45 minutes of talking.', images: 25, voice: 45 }
+  {
+    id: 'pics10', kind: 'topup', name: '10 pictures', pence: 349,
+    blurb: 'Ten more pictures. Bought once, never expires.',
+    images: 10
+  },
+  {
+    id: 'pics30', kind: 'topup', name: '30 pictures', pence: 899,
+    blurb: 'Thirty more pictures, cheaper each. Never expires.',
+    images: 30
+  },
+  {
+    id: 'talk60', kind: 'topup', name: 'An hour of talking', pence: 299,
+    blurb: 'Sixty minutes of voice chat. Never expires.',
+    voice: 60
+  },
+  {
+    id: 'both', kind: 'topup', name: 'Pictures and talking', pence: 699,
+    blurb: '20 pictures and an hour of talking, cheaper than buying both.',
+    images: 20, voice: 60
+  }
 
 ];
 
@@ -4108,22 +4135,22 @@ const PLAN_LIMITS = {
 
   starter: {
     texts: 60,
-    textsMonth: 600,
+    textsMonth: 700,
     searches: 10,
     searchesMonth: 60
   },
 
   plus: {
-    texts: 120,
-    textsMonth: 1200,
-    searches: 20,
-    searchesMonth: 150
+    texts: 150,
+    textsMonth: 1800,
+    searches: 25,
+    searchesMonth: 200
   },
 
   pro: {
-    texts: 250,
-    textsMonth: 2000,
-    searches: 40,
+    texts: 300,
+    textsMonth: 3000,
+    searches: 50,
     searchesMonth: 400
   }
 
