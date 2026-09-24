@@ -190,6 +190,9 @@ const SETTINGS_FALLBACK = {
   starter_credits: Number(process.env.STARTER_CREDITS || 0),
   /* how often the robot peeks over the message box, 0 is never */
   peek_seconds: 30,
+  /* a credit top up an admin recorded, so we can show what is left */
+  credit_topup_usd: 0,
+  credit_topup_at: '',
   /* who gets New Video and voice chat: off, admins or everyone */
   video_access: 'admins',
   voice_access: 'admins',
@@ -2587,6 +2590,46 @@ app.post('/api/admin/settings', async (req, res) => {
 
   }
 
+  if (body.credit_topup_usd !== undefined) {
+
+    const amount = Number(body.credit_topup_usd);
+
+    if (!Number.isFinite(amount) || amount < 0 || amount > 1000000) {
+
+      return res.status(400).json({
+        error: 'A top up must be between 0 and 1,000,000 dollars.'
+      });
+
+    }
+
+    patch.credit_topup_usd = Math.round(amount * 100) / 100;
+
+  }
+
+  if (body.credit_topup_at !== undefined) {
+
+    const when = String(body.credit_topup_at || '').trim();
+
+    if (when && !/^\d{4}-\d{2}-\d{2}$/.test(when)) {
+
+      return res.status(400).json({
+        error: 'The top up date should look like 2026-09-24.'
+      });
+
+    }
+
+    if (when && Date.parse(`${when}T00:00:00Z`) > Date.now()) {
+
+      return res.status(400).json({
+        error: 'That top up date is in the future.'
+      });
+
+    }
+
+    patch.credit_topup_at = when;
+
+  }
+
   if (body.rules !== undefined) {
 
     const rules = cleanRules(body.rules);
@@ -3070,6 +3113,294 @@ app.get('/api/admin/stats', async (req, res) => {
 
     res.status(500).json({
       error: 'Could not build the numbers: ' + error.message
+    });
+
+  }
+
+});
+
+
+/*
+  What the app is costing us, and what is left in the pot.
+
+  Three separate things live here, and it matters which is
+  which:
+
+    1. Our own tally. Counted from rows we already keep, so
+       it is exact about HOW MUCH was used, and only as good
+       as the unit prices in the pricing model about what
+       that cost.
+
+    2. What OpenAI actually billed. Read from their costs
+       API, so it is the real number, not our arithmetic.
+       Needs an admin key, which is a different key from the
+       one the app talks to the models with.
+
+    3. What is left. OpenAI publishes no endpoint for the
+       remaining credit, so nothing can read it. Instead an
+       admin records a top up here, and we subtract the real
+       spend since that day. It is an estimate and it says so.
+*/
+
+const OPENAI_COSTS = 'https://api.openai.com/v1/organization/costs';
+
+
+async function openAiSpend(sinceMs) {
+
+  const key = cleanKey(process.env.OPENAI_ADMIN_KEY);
+
+  if (!key) {
+    return { ready: false, why: 'No admin key set on the server.' };
+  }
+
+  const days = [];
+
+  let page = '';
+
+  try {
+
+    for (let round = 0; round < 6; round += 1) {
+
+      const url =
+        `${OPENAI_COSTS}?start_time=${Math.floor(sinceMs / 1000)}` +
+        `&bucket_width=1d&limit=180` +
+        (page ? `&page=${encodeURIComponent(page)}` : '');
+
+      const reply =
+        await fetch(url, {
+          headers: { Authorization: `Bearer ${key}` }
+        });
+
+      if (!reply.ok) {
+
+        const text = (await reply.text()).slice(0, 300);
+
+        return {
+          ready: false,
+          why:
+            reply.status === 401
+              ? 'That admin key was refused.'
+              : `OpenAI said ${reply.status}. ${text}`
+        };
+
+      }
+
+      const body = await reply.json();
+
+      (body.data || []).forEach(bucket => {
+
+        const day =
+          new Date(bucket.start_time * 1000)
+            .toISOString().slice(0, 10);
+
+        let cents = 0;
+
+        (bucket.results || []).forEach(row => {
+          cents += Math.round(Number(row.amount?.value || 0) * 100);
+        });
+
+        days.push({ day, cents });
+
+      });
+
+      if (!body.has_more || !body.next_page) break;
+
+      page = body.next_page;
+
+    }
+
+    return {
+      ready: true,
+      days,
+      cents: days.reduce((total, one) => total + one.cents, 0)
+    };
+
+  } catch (error) {
+
+    return {
+      ready: false,
+      why: 'Could not reach OpenAI: ' + error.message
+    };
+
+  }
+
+}
+
+
+app.get('/api/admin/spend', async (req, res) => {
+
+  const user = await requireAdmin(req, res);
+
+  if (!user) return;
+
+  const days =
+    Math.min(90, Math.max(7, Number(req.query.days) || 30));
+
+  const since =
+    new Date(Date.now() - (days - 1) * 86400000);
+
+  since.setUTCHours(0, 0, 0, 0);
+
+  try {
+
+    const settings = await getSettings();
+
+    /* the unit prices the pricing page is working from */
+
+    const costs =
+      (settings.pricing_model && settings.pricing_model.costs) || {};
+
+    const penceFor = (name, fallback) => {
+      const value = Number(costs[name]);
+      return Number.isFinite(value) && value > 0 ? value : fallback;
+    };
+
+    const unit = {
+      image: penceFor('image', 16),
+      message: penceFor('ask', 0.3),
+      voiceMinute: penceFor('voice', 1.5),
+      video: penceFor('video', 25)
+    };
+
+    /* our own tally, counted from rows we already keep */
+
+    const used = {
+      images: 0,
+      messages: 0,
+      voiceSeconds: 0,
+      videos: 0,
+      soldPence: 0
+    };
+
+    if (supabaseAdmin) {
+
+      for (let from = 0; from < 200000; from += 1000) {
+
+        const { data, error } =
+          await supabaseAdmin
+            .from('messages')
+            .select('id')
+            .gte('created_at', since.toISOString())
+            .range(from, from + 999);
+
+        if (error) throw new Error(error.message);
+
+        used.messages += (data || []).length;
+
+        if (!data || data.length < 1000) break;
+
+      }
+
+      for (let from = 0; from < 200000; from += 1000) {
+
+        const { data, error } =
+          await supabaseAdmin
+            .from('credit_events')
+            .select('reason, pence')
+            .gte('created_at', since.toISOString())
+            .range(from, from + 999);
+
+        if (error) throw new Error(error.message);
+
+        (data || []).forEach(row => {
+
+          const reason = String(row.reason || '');
+
+          if (reason === 'image') {
+
+            used.images += 1;
+
+          } else if (reason === 'video') {
+
+            used.videos += 1;
+
+          } else if (reason.startsWith('voice_used:')) {
+
+            used.voiceSeconds +=
+              Math.max(0, Number(reason.slice(11)) || 0);
+
+          } else if (reason === 'stripe') {
+
+            used.soldPence +=
+              Number(row.pence) || settings.pack_price_pence || 0;
+
+          }
+
+        });
+
+        if (!data || data.length < 1000) break;
+
+      }
+
+    }
+
+    const ours = {
+      images: Math.round(used.images * unit.image),
+      messages: Math.round(used.messages * unit.message),
+      voice: Math.round((used.voiceSeconds / 60) * unit.voiceMinute),
+      videos: Math.round(used.videos * unit.video)
+    };
+
+    ours.total =
+      ours.images + ours.messages + ours.voice + ours.videos;
+
+    /* what OpenAI actually billed */
+
+    const openai = await openAiSpend(since.getTime());
+
+    /* what is left, from a top up an admin recorded */
+
+    const topUpUsd = Number(settings.credit_topup_usd) || 0;
+    const topUpAt = settings.credit_topup_at || '';
+
+    let left = { ready: false, why: 'No top up recorded yet.' };
+
+    if (topUpUsd > 0 && topUpAt) {
+
+      const fromMs = Date.parse(topUpAt);
+
+      if (Number.isFinite(fromMs)) {
+
+        const sinceTopUp = await openAiSpend(fromMs);
+
+        left =
+          sinceTopUp.ready
+            ? {
+                ready: true,
+                topUpCents: Math.round(topUpUsd * 100),
+                spentCents: sinceTopUp.cents,
+                leftCents:
+                  Math.round(topUpUsd * 100) - sinceTopUp.cents,
+                topUpAt
+              }
+            : { ready: false, why: sinceTopUp.why };
+
+      }
+
+    }
+
+    res.json({
+      days,
+      since: since.toISOString().slice(0, 10),
+      unit,
+      used: {
+        images: used.images,
+        messages: used.messages,
+        voiceMinutes: Math.round(used.voiceSeconds / 60),
+        videos: used.videos
+      },
+      ours,
+      soldPence: used.soldPence,
+      openai,
+      left
+    });
+
+  } catch (error) {
+
+    console.error('SPEND ERROR:', error);
+
+    res.status(500).json({
+      error: 'Could not build the spend figures: ' + error.message
     });
 
   }
@@ -5817,6 +6148,21 @@ app.post('/api/voice/used', async (req, res) => {
       .from('profiles')
       .update({ voice_seconds: left })
       .eq('id', user.id);
+
+    /*
+      A line in the ledger so the admin spend page can see
+      how much voice was actually used. The amount is zero
+      because no image credit changed hands, the seconds
+      ride along in the reason.
+    */
+    await supabaseAdmin
+      .from('credit_events')
+      .insert({
+        user_id: user.id,
+        amount: 0,
+        reason: `voice_used:${seconds}`,
+        reference: null
+      });
 
     res.json({ ok: true, left });
 

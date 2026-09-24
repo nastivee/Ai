@@ -12663,3 +12663,43 @@ body.motionOff *::after {
     transition-duration: .001ms !important;
   }
 }
+
+/* =====================================================
+   ADMIN: SPEND AND BALANCE
+
+   A small heading to break the three parts of the spend
+   page apart, and a wider tile for the money figures so
+   a four figure sum is not squeezed onto two lines.
+===================================================== */
+
+.adminSubTitle {
+  margin: var(--s4) 0 var(--s1);
+  font-size: var(--t-md);
+  font-weight: 650;
+  color: var(--ink);
+  letter-spacing: .01em;
+}
+
+.adminSubTitle:first-child {
+  margin-top: 0;
+}
+
+#adminSpend .statTile strong {
+  font-variant-numeric: tabular-nums;
+}
+
+#adminSpend .adminHint {
+  margin: 0 0 var(--s3);
+}
+
+#adminSpend .statGrid {
+  margin-bottom: var(--s3);
+}
+
+.spendLow {
+  color: #f0a04b;
+}
+
+.spendOut {
+  color: #ef6b6b;
+}

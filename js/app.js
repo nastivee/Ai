@@ -11849,7 +11849,7 @@ const TWICE_DELETE = [
 
 const TWICE_SAVE = [
   'adminSaveSettings', 'adminSavePeek', 'saveRules', 'pricingSave',
-  'profileSave', 'pwSave', 'saleSave'
+  'profileSave', 'pwSave', 'saleSave', 'saveTopUp'
 ];
 
 function askTwiceEverywhere() {
@@ -11912,6 +11912,8 @@ adminButton?.addEventListener('click', async () => {
   loadKnowledge();
 
   loadStats(statDays);
+
+  loadSpend(spendDays);
 
   await loadAdmin();
 
@@ -12710,6 +12712,333 @@ window.addEventListener('resize', () => {
   }
 
 });
+
+/* =====================================================
+   ADMIN PAGE: SPEND AND BALANCE
+
+   Three questions, kept apart on purpose because they have
+   very different confidence behind them. What is left is an
+   estimate from a top up somebody typed in. What was billed
+   is the provider's own figure. What was used is counted
+   exactly, then priced with our own unit costs.
+===================================================== */
+
+let spendDays = 30;
+let spendData = null;
+
+function dollars(cents) {
+
+  const value = cents / 100;
+
+  return value % 1 === 0
+    ? `$${value.toLocaleString('en-GB')}`
+    : `$${value.toLocaleString('en-GB', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      })}`;
+
+}
+
+function spendTiles(where, tiles) {
+
+  const box = document.getElementById(where);
+
+  if (!box) return;
+
+  box.innerHTML =
+    tiles.map(([label, value, tone]) =>
+      '<div class="statTile">' +
+      `<span>${escapeText(label)}</span>` +
+      `<strong class="${tone || ''}">${escapeText(String(value))}</strong>` +
+      '</div>'
+    ).join('');
+
+}
+
+async function loadSpend(days) {
+
+  spendDays = days;
+
+  document
+    .querySelectorAll('#spendRangeRow .rangeButton')
+    .forEach(button => {
+      button.classList.toggle(
+        'active',
+        Number(button.dataset.days) === days
+      );
+    });
+
+  try {
+
+    const response =
+      await fetch(`${API_BASE}/api/admin/spend?days=${days}`, {
+        headers: await apiHeaders()
+      });
+
+    const data = await response.json();
+
+    if (!response.ok) throw new Error(data?.error);
+
+    spendData = data;
+
+    paintSpend();
+
+  } catch (error) {
+
+    spendTiles('spendLeftGrid', []);
+    spendTiles('spendBilledGrid', []);
+    spendTiles('spendUsedGrid', []);
+
+    const table = document.getElementById('spendTable');
+
+    if (table) {
+      table.innerHTML =
+        `<p class="adminHint">${escapeText(error.message || 'Could not load the spend figures.')}</p>`;
+    }
+
+    setSectionState('adminSpend', 'warn', 'Could not load the figures');
+
+  }
+
+}
+
+function paintSpend() {
+
+  if (!spendData) return;
+
+  const left = spendData.left || {};
+  const billed = spendData.openai || {};
+
+  /* 1. what is left */
+
+  if (left.ready) {
+
+    const low = left.leftCents <= 0
+      ? 'spendOut'
+      : left.leftCents < left.topUpCents * 0.15
+        ? 'spendLow'
+        : '';
+
+    spendTiles('spendLeftGrid', [
+      ['Left on the account', dollars(left.leftCents), low],
+      ['Top up recorded', dollars(left.topUpCents)],
+      ['Billed since then', dollars(left.spentCents)],
+      ['Top up date', left.topUpAt]
+    ]);
+
+  } else {
+
+    spendTiles('spendLeftGrid', [
+      ['Left on the account', 'Not known yet']
+    ]);
+
+  }
+
+  /* 2. what was actually billed */
+
+  const note = document.getElementById('spendBilledNote');
+
+  if (note) {
+    note.textContent =
+      billed.ready
+        ? `OpenAI's own figure for the last ${spendData.days} days, ` +
+          `read straight from their billing.`
+        : `${billed.why || 'Not available.'} ` +
+          `Set OPENAI_ADMIN_KEY on the server to switch this on. ` +
+          `It has to be an admin key, not the key the app talks to ` +
+          `the models with.`;
+  }
+
+  spendTiles(
+    'spendBilledGrid',
+    billed.ready
+      ? [
+          [`Billed, last ${spendData.days} days`, dollars(billed.cents)],
+          ['A day, on average',
+            dollars(Math.round(billed.cents / spendData.days))],
+          ['At this rate, a month',
+            dollars(Math.round((billed.cents / spendData.days) * 30))]
+        ]
+      : []
+  );
+
+  /* 3. what was used */
+
+  const used = spendData.used || {};
+  const ours = spendData.ours || {};
+
+  spendTiles('spendUsedGrid', [
+    ['Pictures made', compact(used.images)],
+    ['Text replies', compact(used.messages)],
+    ['Voice minutes', compact(used.voiceMinutes)],
+    ['Videos made', compact(used.videos)],
+    ['Our estimate of the cost', money(ours.total || 0)],
+    ['Taken in sales', money(spendData.soldPence || 0)]
+  ]);
+
+  /* the breakdown, line by line */
+
+  const unit = spendData.unit || {};
+
+  const rows = [
+    ['Pictures', used.images, `${unit.image}p each`, ours.images],
+    ['Text replies', used.messages, `${unit.message}p each`, ours.messages],
+    ['Voice', used.voiceMinutes, `${unit.voiceMinute}p a minute`, ours.voice],
+    ['Videos', used.videos, `${unit.video}p each`, ours.videos]
+  ];
+
+  const table = document.getElementById('spendTable');
+
+  if (table) {
+
+    table.innerHTML =
+      '<table><thead><tr>' +
+      '<th>What</th><th>How many</th><th>Unit cost</th><th>Cost</th>' +
+      '</tr></thead><tbody>' +
+      rows.map(([name, count, price, cost]) =>
+        '<tr>' +
+        `<td>${escapeText(name)}</td>` +
+        `<td>${compact(count || 0)}</td>` +
+        `<td>${escapeText(price)}</td>` +
+        `<td>${money(cost || 0)}</td>` +
+        '</tr>'
+      ).join('') +
+      '<tr><td><strong>Altogether</strong></td><td></td><td></td>' +
+      `<td><strong>${money(ours.total || 0)}</strong></td></tr>` +
+      '</tbody></table>';
+
+  }
+
+  /* the summary line on the closed card, and its colour */
+
+  const profit = (spendData.soldPence || 0) - (ours.total || 0);
+
+  let state = null;
+  let line = '';
+
+  if (left.ready && left.leftCents <= 0) {
+
+    state = 'bad';
+    line = 'The recorded top up has run out';
+
+  } else if (left.ready && left.leftCents < left.topUpCents * 0.15) {
+
+    state = 'warn';
+    line = `${dollars(left.leftCents)} left, running low`;
+
+  } else if (left.ready) {
+
+    state = 'good';
+    line = `${dollars(left.leftCents)} left`;
+
+  } else if (billed.ready) {
+
+    line = `${dollars(billed.cents)} billed in ${spendData.days} days`;
+
+  } else {
+
+    line = `Costing us about ${money(ours.total || 0)} in ${spendData.days} days`;
+
+  }
+
+  setSectionState(
+    'adminSpend',
+    state,
+    `${line}, ${profit >= 0 ? 'up' : 'down'} ${money(Math.abs(profit))} on sales`
+  );
+
+  /* keep the boxes showing what is stored */
+
+  const amount = document.getElementById('topUpAmount');
+  const date = document.getElementById('topUpDate');
+
+  if (amount && document.activeElement !== amount && left.ready) {
+    amount.value = (left.topUpCents / 100).toFixed(2);
+  }
+
+  if (date && document.activeElement !== date && left.topUpAt) {
+    date.value = left.topUpAt;
+  }
+
+  paintAdminMenu();
+
+}
+
+document
+  .getElementById('spendRangeRow')
+  ?.addEventListener('click', event => {
+
+    const button =
+      event.target.closest?.('.rangeButton');
+
+    if (button) {
+      loadSpend(Number(button.dataset.days));
+    }
+
+  });
+
+document
+  .getElementById('saveTopUp')
+  ?.addEventListener('click', async event => {
+
+    const button = event.currentTarget;
+
+    const amount =
+      Number(document.getElementById('topUpAmount')?.value || 0);
+
+    const when =
+      String(document.getElementById('topUpDate')?.value || '').trim();
+
+    if (!(amount > 0) || !when) {
+
+      adminSay(
+        'topUpResult',
+        'Put in how much went on, and the day it went on.',
+        false
+      );
+
+      return;
+
+    }
+
+    button.disabled = true;
+
+    try {
+
+      const response =
+        await fetch(`${API_BASE}/api/admin/settings`, {
+          method: 'POST',
+          headers: {
+            ...(await apiHeaders()),
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            credit_topup_usd: amount,
+            credit_topup_at: when
+          })
+        });
+
+      const data = await response.json();
+
+      if (!response.ok) throw new Error(data?.error);
+
+      adminSay('topUpResult', 'Saved. Working out what is left.', true);
+
+      await loadSpend(spendDays);
+
+    } catch (error) {
+
+      adminSay('topUpResult', error.message, false);
+
+    } finally {
+
+      button.disabled = false;
+
+    }
+
+  });
+
+
 
 
 /* =====================================================
