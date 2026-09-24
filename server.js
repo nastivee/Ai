@@ -1352,7 +1352,85 @@ app.post(
 
     try {
 
-      if (event.type === 'checkout.session.completed') {
+      /*
+        A subscription renewing. Stripe does not send the checkout
+        event again, so without this a plan pays for one month of
+        allowance and then quietly gives nothing.
+      */
+      if (event.type === 'invoice.payment_succeeded' ||
+          event.type === 'invoice.paid') {
+
+        const invoice = event.data.object;
+
+        /* the first invoice is the checkout, already handled below */
+        const renewal =
+          invoice.billing_reason === 'subscription_cycle' ||
+          invoice.billing_reason === 'subscription_update';
+
+        const meta = invoice.subscription_details?.metadata || invoice.lines?.data?.[0]?.metadata || {};
+
+        const who = meta.user_id;
+
+        if (renewal && who) {
+
+          const monthImages = Number(meta.images || 0);
+          const monthVoice = Number(meta.voice || 0);
+
+          if (monthImages > 0) {
+            await addCredits(who, monthImages, 'plan renewal', `stripe:${invoice.id}`);
+          }
+
+          if (monthVoice > 0) {
+            await addVoiceMinutes(who, monthVoice, `stripe:${invoice.id}`);
+          }
+
+          if (meta.plan && supabaseAdmin) {
+            await supabaseAdmin
+              .from('profiles')
+              .update({ plan: String(meta.plan) })
+              .eq('id', who);
+          }
+
+          noteWebhook(
+            true,
+            `Renewal: ${monthImages} images and ${monthVoice} minutes back on ${meta.plan || 'their plan'}.`,
+            { type: event.type }
+          );
+
+        } else {
+
+          noteWebhook(
+            true,
+            renewal
+              ? 'A renewal arrived with no account on it, so nothing was given.'
+              : 'First invoice of a subscription, handled by the checkout event.',
+            { type: event.type }
+          );
+
+        }
+
+      } else if (event.type === 'customer.subscription.deleted') {
+
+        /* the plan ends, so the better pictures end with it */
+        const sub = event.data.object;
+        const who = sub.metadata?.user_id;
+
+        if (who && supabaseAdmin) {
+
+          await supabaseAdmin
+            .from('profiles')
+            .update({ plan: 'free' })
+            .eq('id', who);
+
+          noteWebhook(true, 'Subscription ended, back to free.', { type: event.type });
+
+        } else {
+
+          noteWebhook(true, 'Subscription ended but no account was named.', { type: event.type });
+
+        }
+
+      } else if (event.type === 'checkout.session.completed') {
 
         const session = event.data.object;
 
@@ -5757,6 +5835,35 @@ app.post('/api/voice/session', async (req, res) => {
 
     if (!withinLimit(`voice:${user.id}`, 30)) {
       return res.status(429).json({ error: 'Lots of calls this hour. Give it a little while.' });
+    }
+
+    /*
+      Minutes have to be there before the line opens. Without this
+      the packs are decoration: somebody could buy fifteen minutes,
+      use five hours, and nothing would stop them.
+    */
+    const voiceSettings = await getSettings();
+
+    if (voiceSettings.paywall_enabled !== false && !isAdmin(user)) {
+
+      const account = await readAccount(user.id);
+
+      if (!account.unlimited && !account.unmetered) {
+
+        const secondsLeft = Number(account.voiceSeconds || 0);
+
+        /* a minute is the least worth opening a line for */
+        if (secondsLeft < 60) {
+
+          return res.status(402).json({
+            error: 'You have no talking time left. Top up in Plans and packs.',
+            reason: 'no_voice'
+          });
+
+        }
+
+      }
+
     }
 
     const memory =

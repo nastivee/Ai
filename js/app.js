@@ -14661,6 +14661,14 @@ async function startVoiceCall() {
     const session = await started.json().catch(() => ({}));
 
     if (!started.ok || !session.key) {
+
+      /* out of minutes is not a fault, it is a shop trip */
+      if (session.reason === 'no_voice') {
+        endVoiceCall();
+        openShop();
+        return;
+      }
+
       voiceTrouble('session refused', `${started.status} ${session.error || ''}`);
       throw new Error(session.error || 'Could not start listening.');
     }
