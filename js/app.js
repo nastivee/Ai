@@ -15332,19 +15332,45 @@ function nextSearchLine() {
 let humParts = null;
 let voiceHumCtx = null;
 
+/*
+  Opened while the person's tap still counts, so it is ready
+  and allowed long before there is any silence to cover.
+*/
+function wakeAudio() {
+
+  try {
+
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+
+    if (!Ctx) return null;
+
+    if (!voiceHumCtx) voiceHumCtx = new Ctx();
+
+    if (voiceHumCtx.state === 'suspended') {
+      voiceHumCtx.resume().catch(() => {});
+    }
+
+    return voiceHumCtx;
+
+  } catch (error) {
+
+    console.warn('AUDIO WOULD NOT OPEN:', error);
+
+    return null;
+
+  }
+
+}
+
 function startHum() {
 
   if (humParts) return;
 
   try {
 
-    const Ctx = window.AudioContext || window.webkitAudioContext;
+    const ctx = wakeAudio();
 
-    if (!Ctx) return;
-
-    const ctx = voiceHumCtx || (voiceHumCtx = new Ctx());
-
-    if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+    if (!ctx) return;
 
     const gain = ctx.createGain();
     gain.gain.setValueAtTime(0.0001, ctx.currentTime);
@@ -15468,6 +15494,78 @@ function addVoiceFound(text) {
 
 }
 
+/* =====================================================
+   ANY GAP, NOT JUST A LOOKUP
+
+   The first go at this only covered the seconds while a
+   lookup was running, which left every other gap exactly
+   as silent as before: the pause after you stop talking
+   and before he starts, a slow reply, a lookup that never
+   happened because he answered from memory instead.
+
+   Dead air is dead air. The person cannot tell which kind
+   they are sitting in and does not care. So this watches
+   for silence itself rather than for the reason behind
+   it: the moment you stop speaking a clock starts, and if
+   nothing has come out of him by the time it runs down,
+   the hum comes up. The instant his voice arrives it goes.
+===================================================== */
+
+/* how long a gap is allowed to be before anything covers it */
+const GAP_BEFORE_HUM = 700;
+
+let gapTimer = null;
+let gapSince = 0;
+
+function gapStarts(call) {
+
+  if (!call || call !== voiceCall) return;
+
+  gapSince = Date.now();
+
+  clearTimeout(gapTimer);
+
+  gapTimer = setTimeout(() => {
+
+    /* he may have started while the clock was running */
+    if (voiceCall !== call || call.speaking === 'audio') return;
+
+    startHum();
+
+    /*
+      The words change but the robot does not start mouthing
+      along, because there is no audio to mouth along to and a
+      moving mouth over silence looks broken rather than busy.
+    */
+    if (!call.looking) {
+      voiceStatus.textContent = 'Thinking';
+    }
+
+  }, GAP_BEFORE_HUM);
+
+}
+
+function gapEnds() {
+
+  clearTimeout(gapTimer);
+
+  gapTimer = null;
+
+  gapSince = 0;
+
+  /*
+    A lookup keeps its own hum going. He says "bear with me"
+    part way through one, and that is audio arriving, but the
+    wait is not over and cutting the hum there would make it
+    sound like the line had dropped again.
+  */
+  if (voiceCall?.looking) return;
+
+  stopHum();
+
+}
+
+
 /* resolves the moment he stops talking, or straight away if he is not */
 function whenHeStops(call) {
 
@@ -15505,12 +15603,8 @@ async function answerVoiceTool(call, item) {
 
     showLooking(question);
 
-    /*
-      The hum waits a second. Most lookups come back faster
-      than that, and humming for half a second then stopping
-      sounds like a fault rather than like thinking.
-    */
-    const humIn = setTimeout(startHum, 1000);
+    /* the gap watcher may already have it going, this makes sure */
+    startHum();
 
     /*
       If it really drags, he says so himself. Only when he is
@@ -15574,7 +15668,6 @@ async function answerVoiceTool(call, item) {
 
     } finally {
 
-      clearTimeout(humIn);
       clearTimeout(sayIn);
       clearTimeout(dragIn);
 
@@ -15922,6 +16015,15 @@ async function startVoiceCall() {
   setVoiceState('connecting', 'Starting up...');
   voiceScreen.classList.add('show');
 
+  /*
+    Open the audio here, inside the tap. A browser will only
+    let a page make a noise off the back of something the
+    person did, and by the time there is a gap to fill that
+    permission has long gone. Opening it now and leaving it
+    running means the hum can start the instant it is needed.
+  */
+  wakeAudio();
+
   voiceCall = {
     pc: null,
     stream: null,
@@ -16047,10 +16149,19 @@ async function startVoiceCall() {
 
         case 'response.created':
           call.speaking = true;
+          /* asked and answered is the gap, not the speaking */
+          gapStarts(call);
           break;
 
         case 'input_audio_buffer.speech_started':
+          /* they are talking, so nothing needs covering */
+          gapEnds();
           setVoiceState('listening', 'Listening');
+          break;
+
+        case 'input_audio_buffer.speech_stopped':
+          /* they have finished, and the wait begins here */
+          gapStarts(call);
           break;
 
         case 'conversation.item.input_audio_transcription.completed':
@@ -16059,6 +16170,9 @@ async function startVoiceCall() {
 
         case 'response.output_audio.delta':
         case 'response.audio.delta':
+          /* he is audible, so the gap is over */
+          call.speaking = 'audio';
+          gapEnds();
           setVoiceState('speaking', 'Natter is talking');
           break;
 
@@ -16077,6 +16191,9 @@ async function startVoiceCall() {
         case 'response.done':
 
           call.speaking = false;
+
+          /* nothing more is coming, so stop covering for it */
+          if (!call.looking) gapEnds();
 
           /* anything waiting for him to stop can go now */
           (call.waiting || []).splice(0).forEach(go => go());
@@ -16565,6 +16682,9 @@ function endVoiceCall() {
   voiceCall = null;
 
   /* nothing should still be humming once the line has gone */
+  clearTimeout(gapTimer);
+  gapTimer = null;
+  if (call) call.looking = false;
   stopHum();
   hideLooking();
 
