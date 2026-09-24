@@ -5907,8 +5907,55 @@ ${(await houseLessonLines()) || '(none yet)'}
 
 const GEMINI_API_KEY = cleanKey(process.env.GEMINI_API_KEY);
 
+/*
+  WHICH MODEL MAKES THE VIDEO
+
+  The quick one first, because most clips are a few seconds of
+  something moving and it is a fraction of the price. Veo is the
+  one that can actually record sound, so anything that needs to
+  be heard goes straight there rather than being made twice.
+
+  If the quick one refuses or falls over, Veo picks it up, so a
+  video is never lost to the attempt.
+*/
 const VIDEO_MODEL =
   process.env.VIDEO_MODEL || 'veo-3.1-lite-generate-preview';
+
+const VIDEO_QUICK_MODEL =
+  process.env.VIDEO_QUICK_MODEL || 'gemini-omni-flash';
+
+const VIDEO_SOUND_MODEL =
+  process.env.VIDEO_SOUND_MODEL || VIDEO_MODEL;
+
+/* asking for something you are meant to hear */
+const WANTS_SOUND = new RegExp([
+  '\\bwith (?:sound|audio|music|dialogue|narration)\\b',
+  '\\bsound ?effects?\\b', '\\bvoice ?over\\b', '\\bnarrat(?:e|ed|ion|ing)\\b',
+  '\\bspeak(?:s|ing)?\\b', '\\btalk(?:s|ing)\\b', '\\bsing(?:s|ing)\\b',
+  '\\bsays?\\b', '\\bdialogue\\b', '\\bmusic\\b', '\\bsound ?track\\b',
+  '\\baudio\\b', '\\bwhisper(?:s|ing)?\\b', '\\bshout(?:s|ing)?\\b',
+  '\\bbark(?:s|ing)?\\b', '\\broar(?:s|ing)?\\b', '\\blaugh(?:s|ing|ter)?\\b'
+].join('|'), 'i');
+
+function needsSound(prompt) {
+  return WANTS_SOUND.test(String(prompt || ''));
+}
+
+/*
+  The order to try, for this prompt. Sound means one option and
+  one only, because a silent clip of something that was meant to
+  speak is not a cheaper version of the right answer, it is the
+  wrong answer.
+*/
+function videoModelsFor(prompt) {
+
+  if (needsSound(prompt)) return [VIDEO_SOUND_MODEL];
+
+  return VIDEO_QUICK_MODEL === VIDEO_MODEL
+    ? [VIDEO_MODEL]
+    : [VIDEO_QUICK_MODEL, VIDEO_MODEL];
+
+}
 
 const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta';
 
@@ -6058,36 +6105,76 @@ app.post('/api/video', async (req, res) => {
     };
 
     let operation;
+    let usedModel = null;
 
     try {
 
-      try {
+      const order = videoModelsFor(finalPrompt);
 
-      operation =
-        await geminiFetch(`models/${VIDEO_MODEL}:predictLongRunning`, {
-          method: 'POST',
-          body: JSON.stringify({ instances: [instance], parameters })
-        });
+      let lastError = null;
 
-    } catch (error) {
+      for (const model of order) {
 
-      /* some regions and models refuse the people setting, so try once without it */
-      if (error.status === 400 && /person/i.test(error.message)) {
-        delete parameters.personGeneration;
-        operation =
-          await geminiFetch(`models/${VIDEO_MODEL}:predictLongRunning`, {
-            method: 'POST',
-            body: JSON.stringify({ instances: [instance], parameters })
+        try {
+
+          try {
+
+            operation =
+              await geminiFetch(`models/${model}:predictLongRunning`, {
+                method: 'POST',
+                body: JSON.stringify({ instances: [instance], parameters })
+              });
+
+          } catch (error) {
+
+            /* some regions and models refuse the people setting, so try once without it */
+            if (error.status === 400 && /person/i.test(error.message)) {
+              delete parameters.personGeneration;
+              operation =
+                await geminiFetch(`models/${model}:predictLongRunning`, {
+                  method: 'POST',
+                  body: JSON.stringify({ instances: [instance], parameters })
+                });
+            } else {
+              throw error;
+            }
+
+          }
+
+          if (operation?.name) {
+            usedModel = model;
+            break;
+          }
+
+          throw new Error('The video service did not start a job.');
+
+        } catch (error) {
+
+          lastError = error;
+
+          console.warn(`VIDEO START FAILED ON ${model}:`, error?.message);
+
+          /* the last one in the list is the last word */
+          if (model === order[order.length - 1]) throw error;
+
+          noteFailure({
+            user,
+            area: 'video',
+            stage: `start on ${model}`,
+            error: String(error?.message || '').slice(0, 300),
+            model,
+            recovered: true
           });
-      } else {
-        throw error;
+
+        }
+
       }
 
-    }
+      if (!operation?.name) {
+        throw lastError || new Error('The video service did not start a job.');
+      }
 
-    if (!operation?.name) {
-      throw new Error('The video service did not start a job.');
-    }
+      console.log(`VIDEO STARTED ON ${usedModel}`);
 
     } catch (startError) {
 
