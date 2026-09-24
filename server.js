@@ -4082,12 +4082,20 @@ than leaving them guessing.
   list at the end for anything cited but not linked inline.
   Resolves true once something was sent.
 */
-async function streamWithSearch({ model, effort, instructions, messages, send }) {
+async function streamWithSearch({ model, effort, cap, instructions, messages, send }) {
 
   const stream =
     await openai.responses.create({
       model,
       reasoning: { effort },
+      /*
+        This cap covers the thinking as well as the words, so
+        it gets headroom the chat one does not need. Without
+        it a short cap can be spent entirely on reasoning and
+        the person gets nothing at all, which is the one
+        outcome worse than a long answer.
+      */
+      max_output_tokens: (cap || 2200) + 600,
       instructions,
       input: toResponsesInput(messages),
       tools: [
@@ -5324,7 +5332,49 @@ ${await (async () => {
 
     const model = picked.model;
     const effort = picked.effort;
+    const tier = picked.tier || 'everyday';
 
+    const cap = REPLY_CAP[tier] || REPLY_CAP.everyday;
+
+    /*
+      TRIMMING WHAT GOES UP
+
+      Output is six times the price of input, so a shorter
+      reply saves more than a cheaper model does, but the
+      conversation going back up every single time is the
+      quiet one: by the twentieth message a free account
+      would be re-sending nineteen of them on every ask.
+
+      So each tier carries a different amount of it. The
+      recall we built handles the rest: anything older that
+      actually matters comes back through that instead, for
+      a fraction of a penny rather than the whole history.
+    */
+    const keep = HISTORY_KEPT[tier] || HISTORY_KEPT.everyday;
+
+    const trimmed =
+      cleanMessages.length > keep
+        ? cleanMessages.slice(-keep)
+        : cleanMessages;
+
+    /*
+      And tell it the budget rather than just cutting it off
+      there. A reply that stops mid sentence reads as broken;
+      one that was written to fit reads as brisk, and brisk
+      is what most people want anyway.
+    */
+    const budget =
+      tier === 'free'
+        ? '\n\nLENGTH: keep this reply under 250 words. Answer properly ' +
+          'and completely within that, do not trail off and do not say ' +
+          'you are keeping it short. If something genuinely needs more ' +
+          'room, give the useful part and offer to go deeper.'
+        : tier === 'everyday'
+          ? '\n\nLENGTH: aim for under 500 words unless the question ' +
+            'plainly needs more.'
+          : '';
+
+    const askedWith = systemPrompt + budget;
 
     const payload = {
 
@@ -5332,12 +5382,14 @@ ${await (async () => {
 
       reasoning_effort: effort,
 
+      max_completion_tokens: cap,
+
       messages: [
         {
           role: 'system',
-          content: systemPrompt
+          content: askedWith
         },
-        ...cleanMessages
+        ...trimmed
       ]
 
     };
@@ -5389,8 +5441,9 @@ ${await (async () => {
             sent = await streamWithSearch({
               model,
               effort,
-              instructions: systemPrompt + liveWebNote(),
-              messages: cleanMessages,
+              cap,
+              instructions: askedWith + liveWebNote(),
+              messages: trimmed,
               send
             });
 
@@ -5824,6 +5877,45 @@ async function canAffordBetter(user) {
 
 }
 
+/*
+  THE THREE TIERS, AND WHAT THEY COST US
+
+  Measured per reply on a normal question, roughly a
+  thousand tokens in and four hundred out:
+
+    free     gpt-5.6-luna    0.20 / 1.20 per million   0.05p
+    everyday gpt-5.4-mini    0.75 / 4.50 per million   0.20p
+    better   gpt-5.6         2.00 / 12.00 per million  0.54p
+
+  So a free reply is about a quarter of what it was, and a
+  twelfth of a Smart one. Luna rather than gpt-4o-mini
+  because it is newer and noticeably better for almost the
+  same money; set FREE_MODEL to gpt-4o-mini on Render if
+  you want the last sliver of it, at 0.03p and a visible
+  drop in quality.
+
+  A free reply is also capped shorter, which is where most
+  of the rest of the saving comes from: output is six times
+  the price of input, so length is the real cost, not the
+  model.
+*/
+const FREE_MODEL = process.env.FREE_MODEL || 'gpt-5.6-luna';
+
+/* how long a reply may run, per tier */
+const REPLY_CAP = {
+  free: Number(process.env.FREE_MAX_TOKENS || 500),
+  everyday: Number(process.env.SETTLED_MAX_TOKENS || 1100),
+  better: Number(process.env.SMART_MAX_TOKENS || 2200)
+};
+
+/* how much of the conversation goes back up with each ask */
+const HISTORY_KEPT = {
+  free: 4,
+  everyday: 8,
+  better: 14
+};
+
+
 async function pickModel({ user, mode, newest, messages }) {
 
   const everyday = process.env.SETTLED_MODEL || 'gpt-5.4-mini';
@@ -5847,20 +5939,63 @@ async function pickModel({ user, mode, newest, messages }) {
     said.length > 600 ||
     NEEDS_MORE.test(said);
 
+  /*
+    Who is this. Admins and anybody on a plan are on the
+    everyday model as before; everybody else is on the free
+    one, which is cheaper and shorter but perfectly able to
+    answer an ordinary question well.
+  */
+  const paying = await canAffordBetter(user);
+
   if (!needsIt && !asksForIt) {
-    return { model: everyday, effort: process.env.SETTLED_EFFORT || 'low', why: 'everyday' };
+
+    return paying
+      ? {
+          model: everyday,
+          effort: process.env.SETTLED_EFFORT || 'low',
+          tier: 'everyday',
+          why: 'everyday'
+        }
+      : {
+          model: FREE_MODEL,
+          effort: process.env.FREE_EFFORT || 'low',
+          tier: 'free',
+          why: 'free account'
+        };
+
   }
 
-  /* it would help. Is this someone who is paying for it? */
-  if (!(await canAffordBetter(user))) {
-    return { model: everyday, effort: process.env.SETTLED_EFFORT || 'low', why: 'not paid' };
+  /*
+    It would help. A free account still gets the question
+    answered, on the everyday model rather than the free
+    one, because this is the sort of question where the
+    cheapest model actually falls short and a bad answer
+    costs more than the model did.
+  */
+  if (!paying) {
+    return {
+      model: everyday,
+      effort: process.env.SETTLED_EFFORT || 'low',
+      tier: 'everyday',
+      why: 'free account, harder question'
+    };
   }
 
   if (needsIt) {
-    return { model: better, effort: process.env.SMART_EFFORT || 'medium', why: 'needed' };
+    return {
+      model: better,
+      effort: process.env.SMART_EFFORT || 'medium',
+      tier: 'better',
+      why: 'needed'
+    };
   }
 
-  return { model: better, effort: process.env.FAST_EFFORT || 'low', why: 'chosen' };
+  return {
+    model: better,
+    effort: process.env.FAST_EFFORT || 'low',
+    tier: 'better',
+    why: 'chosen'
+  };
 
 }
 
@@ -6731,8 +6866,10 @@ app.post('/api/voice/lookup', async (req, res) => {
     say({ stage: 'thinking' });
 
     await streamWithSearch({
-      model: process.env.SETTLED_MODEL || 'gpt-5.4-mini',
+      /* a spoken lookup is short by nature, so the cheap model does it */
+      model: process.env.LOOKUP_MODEL || FREE_MODEL,
       effort: 'low',
+      cap: 700,
       instructions:
         'You are answering a question asked out loud, mid conversation. ' +
         'Answer it directly and fully in British English, in at most ' +
