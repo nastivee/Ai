@@ -11906,8 +11906,8 @@ body.motionOff .walkerDrops .drop {
 
 .shopTile .shopBuy {
   width: 100%;
-  margin-top: 14px;
-  min-height: 42px;
+  margin-top: var(--s3);
+  min-height: var(--h-md);
   padding: 0 16px;
 }
 
@@ -12011,7 +12011,7 @@ body.motionOff .walkerDrops .drop {
   --nc-edge: var(--edge);
   --nc-fill: var(--edge-fill);
   border: 1.5px solid transparent;
-  border-radius: 13px;
+  border-radius: var(--r2);
   background:
     linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,0)) padding-box,
     linear-gradient(var(--nc-fill), var(--nc-fill)) padding-box,
@@ -12053,8 +12053,8 @@ body.motionOff .walkerDrops .drop {
 
 /* the steps between pages read as controls, not links */
 .shopPager .pagerStep {
-  min-height: 38px;
-  border-radius: 12px;
+  min-height: var(--h-sm);
+  border-radius: var(--r1);
   font-size: 12px;
 }
 
@@ -12342,4 +12342,50 @@ body.smartMode {
 .packRow input {
   min-height: var(--h-sm);
   border-radius: var(--r1);
+}
+
+/* ---------- THINGS THAT BROKE: ROOM TO BREATHE ---------- */
+/*
+  Title, tag and the line of detail underneath were two pixels
+  apart, so a failure read as one run-on string. The same inside
+  an opened card, where every label sat directly on its value.
+*/
+
+.refusalSummaryText {
+  gap: var(--s1);
+}
+
+.refusalTitle {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--s2);
+  line-height: 1.35;
+}
+
+.refusalSub {
+  line-height: 1.5;
+  letter-spacing: .1px;
+}
+
+.refusalRow {
+  padding: var(--s2) 12px;
+  margin-top: var(--s2);
+  border-radius: var(--r1);
+}
+
+/* the label is a heading for the value, not part of it */
+.refusalLabel {
+  display: block;
+  margin-bottom: var(--s1);
+  letter-spacing: .6px;
+  text-transform: uppercase;
+}
+
+.refusalText {
+  line-height: 1.6;
+}
+
+.refusalBody {
+  padding: var(--s1) 16px 16px;
 }
