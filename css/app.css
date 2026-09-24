@@ -11740,3 +11740,97 @@ body.motionOff .walkerDrops .drop {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* ---------- A LONGER WALK, AND A LONGER TRAIL ---------- */
+/*
+  Eighteen pixels read as fidgeting rather than pacing. He now
+  covers a proper length of the row, and the trail behind him
+  grows to match, fading from the dot nearest him to the one
+  furthest back so it reads as something he has left rather than
+  a row of beads.
+*/
+
+.imageProgress .progressTrack {
+  --pace: 90px;
+  height: 40px;
+}
+
+@keyframes walkPace {
+  0%   { transform: translateX(calc(var(--pace) * -1)) scaleX(1); }
+  44%  { transform: translateX(var(--pace)) scaleX(1); }
+  52%  { transform: translateX(var(--pace)) scaleX(-1); }
+  96%  { transform: translateX(calc(var(--pace) * -1)) scaleX(-1); }
+  100% { transform: translateX(calc(var(--pace) * -1)) scaleX(1); }
+}
+
+.progressWalker {
+  animation-duration: 4.2s;
+}
+
+.walkerDrops {
+  gap: 9px;
+  margin-right: 10px;
+  animation-duration: 4.2s;
+}
+
+/* furthest back is faintest, so it reads as a wake */
+.walkerDrops .drop { opacity: .95; }
+.walkerDrops .drop.d2 { opacity: .75; }
+.walkerDrops .drop.d3 { opacity: .55; }
+.walkerDrops .drop.d4 { opacity: .38; animation-delay: .42s; }
+.walkerDrops .drop.d5 { opacity: .22; animation-delay: .56s; }
+
+/* a phone has less room to pace in */
+@media (max-width: 560px) {
+  .imageProgress .progressTrack { --pace: 54px; }
+  .walkerDrops { gap: 7px; }
+  .walkerDrops .drop.d5 { display: none; }
+}
+
+/* ---------- FOOTPRINTS ---------- */
+/*
+  Not beads on a string: prints he has left. They sit low, they
+  alternate left and right foot the way a walk does, and they go
+  out one at a time starting with the oldest, so the trail is
+  always shortening behind him while he adds to the front of it.
+*/
+
+.walkerDrops {
+  align-items: flex-end;
+  margin-bottom: -2px;
+  /* the whole trail still clears before he turns */
+  animation: trailFade 4.2s ease-in-out infinite;
+}
+
+.walkerDrops .drop {
+  width: 6px;
+  height: 4px;
+  border-radius: 50% 50% 45% 45%;
+  background: var(--acc, #a78bfa);
+  box-shadow: 0 0 5px var(--accGlow, rgba(167, 139, 250, .55));
+  /* oldest first, so they wink out away from him */
+  animation: printFade 1.6s linear infinite;
+}
+
+/* one foot then the other */
+.walkerDrops .drop.d2,
+.walkerDrops .drop.d4 {
+  transform: translateY(-4px);
+}
+
+.walkerDrops .drop.d1 { animation-delay: 1.28s; }
+.walkerDrops .drop.d2 { animation-delay: .96s; }
+.walkerDrops .drop.d3 { animation-delay: .64s; }
+.walkerDrops .drop.d4 { animation-delay: .32s; }
+.walkerDrops .drop.d5 { animation-delay: 0s; }
+
+@keyframes printFade {
+  0%   { opacity: .95; }
+  35%  { opacity: 0; }
+  100% { opacity: 0; }
+}
+
+body.motionOff .walkerDrops .drop {
+  animation: none;
+  opacity: .5;
+}
