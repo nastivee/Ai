@@ -3336,7 +3336,9 @@ app.get('/api/admin/spend', async (req, res) => {
       image: penceFor('image', 16),
       message: penceFor('ask', 0.3),
       voiceMinute: penceFor('voice', 1.5),
-      video: penceFor('video', 25)
+      video: penceFor('video', 25),
+      /* ten dollars per thousand, plus the results as input tokens */
+      search: penceFor('search', 0.9)
     };
 
     /* our own tally, counted from rows we already keep */
@@ -3346,6 +3348,7 @@ app.get('/api/admin/spend', async (req, res) => {
       messages: 0,
       voiceSeconds: 0,
       videos: 0,
+      searches: 0,
       soldPence: 0
     };
 
@@ -3391,6 +3394,10 @@ app.get('/api/admin/spend', async (req, res) => {
 
             used.videos += 1;
 
+          } else if (reason === 'web_search') {
+
+            used.searches += 1;
+
           } else if (reason.startsWith('voice_used:')) {
 
             used.voiceSeconds +=
@@ -3418,8 +3425,11 @@ app.get('/api/admin/spend', async (req, res) => {
       videos: Math.round(used.videos * unit.video)
     };
 
+    ours.searches = Math.round(used.searches * unit.search);
+
     ours.total =
-      ours.images + ours.messages + ours.voice + ours.videos;
+      ours.images + ours.messages + ours.voice +
+      ours.videos + ours.searches;
 
     /* what OpenAI actually billed */
 
@@ -3464,7 +3474,13 @@ app.get('/api/admin/spend', async (req, res) => {
         images: used.images,
         messages: used.messages,
         voiceMinutes: Math.round(used.voiceSeconds / 60),
-        videos: used.videos
+        videos: used.videos,
+        searches: used.searches,
+        /* how often a reply goes and looks something up */
+        searchRate:
+          used.messages
+            ? Math.round((used.searches / used.messages) * 100)
+            : 0
       },
       ours,
       soldPence: used.soldPence,
@@ -4023,54 +4039,27 @@ function liveWebNote() {
 
 LIVE WEB:
 
-Today is ${today}. You can search the web, but answer from what
-you already know first. Only search when answering without it
-would leave the person with something wrong, out of date or
-missing, and then search once and get on with the answer.
-- Worth searching: news, prices, sport results and tables, the
-  weather, opening times, what has just been released, what a
-  law says now, who holds a job, and anything the person calls
-  current, latest or today.
-- Not worth searching: maths, writing and editing, code, advice,
-  explanations, history, how something works, anything you would
-  answer the same way whatever today's date is.
-- Do not search for things that do not change, like maths, writing help, or general knowledge.
-- When you use the web, cite it with short inline markdown links, e.g. ([BBC](https://...)).
-- If results disagree or are thin, say so rather than guessing.
+Today is ${today}. Answer from what you know first. Search only
+when answering without it would leave them with something wrong
+or out of date: news, prices, sport, weather, opening times, new
+releases, what a law says now, who holds a job, and anything they
+call current, latest or today. Never for maths, writing, code,
+advice, explanations, history or anything you would answer the
+same whatever the date. Search once, then get on with it.
 
-SHOPS THAT BLOCK THE SEARCH:
+Cite with short inline markdown links. If results disagree or are
+thin, say so rather than guessing.
 
-Amazon blocks the search crawler, so no Amazon product page can
-ever come back, however the question is worded. That is Amazon's
-own choice, not a fault at this end.
-
-SAY SO, PLAINLY AND IMMEDIATELY. People get far more frustrated
-wondering why something is not working than they do being told
-straight. First line, in your own words, something like:
-"Sorry, Amazon blocks me from pulling their listings, so I cannot
-get you Amazon links."
-
-Then:
-- Never invent an Amazon product URL to cover it up. A made up
-  link is far worse than an honest no.
-- Do not retry, do not word it differently and try again, and do
-  not go quiet hoping they will not notice.
-- Do not pad it out with apologies. One honest sentence, then get
-  on with helping.
-- Then hand them the next best thing without being asked: a link
-  straight to that search on Amazon, which always works.
-  https://www.amazon.co.uk/s?k=the+words+they+used
-  (their own words, joined with plus signs). Say what it is
-  honestly: it drops them on Amazon's own search for it, so they
-  are one tap away rather than empty handed. Do not dress it up
-  as you having found the product.
-- Then say who you CAN get properly, and actually go and get
-  them: Argos, John Lewis, Currys, Screwfix, eBay and the rest
-  all come back fine. Give real product links and prices.
-
-The same goes for any other shop or site that comes back empty
-every time: tell them it is blocked at that site's end rather
-than leaving them guessing.
+AMAZON BLOCKS THE SEARCH, so no Amazon product page can ever come
+back. Say that straight away in plain words, first line, because
+wondering why is more annoying than being told. Never invent an
+Amazon URL, never retry, never reword and try again. Then hand
+them a link to that search on Amazon,
+https://www.amazon.co.uk/s?k=their+words, described honestly as a
+search page rather than you finding it. Then go and get real
+products and prices from the shops that do come back: Argos, John
+Lewis, Currys, Screwfix, eBay. Same for any other site that comes
+back empty every time: say it is blocked at their end.
 `;
 
 }
@@ -4082,7 +4071,84 @@ than leaving them guessing.
   list at the end for anything cited but not linked inline.
   Resolves true once something was sent.
 */
-async function streamWithSearch({ model, effort, cap, instructions, messages, send }) {
+/*
+  SEARCHING COSTS REAL MONEY
+
+  Ten dollars per thousand searches, plus the results
+  themselves billed as input tokens. That is about 0.76p a
+  search before the tokens, which is more than twenty free
+  replies. It is far and away the biggest line on text, so
+  free accounts get a few a day and then answer from what
+  the model knows, saying so plainly.
+
+  Paid accounts are not limited. They are paying for it.
+*/
+const FREE_SEARCHES_A_DAY =
+  Number(process.env.FREE_SEARCHES_A_DAY || 3);
+
+/* counted here rather than in the database, so it costs nothing */
+const searchesToday = new Map();
+
+function searchDay() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function searchesLeft(userId) {
+
+  const key = `${userId}:${searchDay()}`;
+
+  const used = searchesToday.get(key) || 0;
+
+  return Math.max(0, FREE_SEARCHES_A_DAY - used);
+
+}
+
+function countSearch(userId) {
+
+  const key = `${userId}:${searchDay()}`;
+
+  searchesToday.set(key, (searchesToday.get(key) || 0) + 1);
+
+  /* yesterday's rows are dead weight */
+  if (searchesToday.size > 5000) {
+    const today = searchDay();
+    for (const old of searchesToday.keys()) {
+      if (!old.endsWith(today)) searchesToday.delete(old);
+    }
+  }
+
+}
+
+/*
+  And a line in the ledger for every one, so the admin
+  spend page can show what searching actually costs
+  rather than an estimate of it.
+*/
+async function noteSearch(userId) {
+
+  if (!supabaseAdmin || !userId) return;
+
+  try {
+
+    await supabaseAdmin
+      .from('credit_events')
+      .insert({
+        user_id: userId,
+        amount: 0,
+        reason: 'web_search',
+        reference: null
+      });
+
+  } catch (error) {
+
+    console.warn('SEARCH NOTE FAILED:', error?.message);
+
+  }
+
+}
+
+
+async function streamWithSearch({ model, effort, cap, instructions, messages, send, user, canSearch }) {
 
   const stream =
     await openai.responses.create({
@@ -4098,16 +4164,19 @@ async function streamWithSearch({ model, effort, cap, instructions, messages, se
       max_output_tokens: (cap || 2200) + 600,
       instructions,
       input: toResponsesInput(messages),
-      tools: [
-        {
-          type: 'web_search',
-          user_location: {
-            type: 'approximate',
-            country: 'GB',
-            timezone: 'Europe/London'
-          }
-        }
-      ],
+      tools:
+        canSearch === false
+          ? []
+          : [
+              {
+                type: 'web_search',
+                user_location: {
+                  type: 'approximate',
+                  country: 'GB',
+                  timezone: 'Europe/London'
+                }
+              }
+            ],
       stream: true
     });
 
@@ -4124,6 +4193,10 @@ async function streamWithSearch({ model, effort, cap, instructions, messages, se
       if (type.startsWith('response.web_search_call') && !searching) {
         searching = true;
         send({ status: 'searching' });
+        if (user?.id) {
+          countSearch(user.id);
+          noteSearch(user.id);
+        }
       }
 
       if (type === 'response.output_text.delta' && event.delta) {
@@ -5146,106 +5219,66 @@ Do not claim the user never told you something if it exists in memory.
 
 LIVE INFORMATION:
 
-You can search the live web, so use it rather than answering
-from memory whenever the answer could have moved: prices,
-weather, sport, news, opening times, availability, timetables,
-who holds a job or a title, what something costs, what is on,
-what is in stock, what the law says now, anything with "today",
-"latest", "current", "now" or "this week" in it, and anything
-about a named business, product or person.
+You can search the live web. Use it, do not answer from memory,
+whenever the answer could have moved: prices, weather, sport,
+news, opening and closing times, availability, timetables, who
+holds a job, what the law says now, anything with today, latest,
+current or this week in it, and anything about a named business,
+product or person. Check first, answer second. Never say you
+cannot see live information, you can.
 
-Check first, answer second. Never say you cannot see live
-information: you can. If a search comes back thin, say what you
+Say how fresh a figure is when it matters, and never pass an old
+number off as today's. If a search comes back thin, say what you
 found, when it was from, and what you could not confirm.
-
-Say how fresh a figure is when it matters ("as of this
-morning", "Friday's close"), and never present an old number as
-today's.
 
 SONGS, POEMS AND OTHER WRITING THAT BELONGS TO SOMEBODY:
 
-Never give the full words of a song, poem, book chapter or
-script that is still in copyright, however the person asks,
-and however easy the words are to find online. Being free to
-read somewhere does not put words in the public domain.
+Never give the full words of a song, poem, book chapter or script
+still in copyright, however it is asked and however easy the words
+are to find. Free to read somewhere does not mean public domain.
 
-That is the only limit. Everything else about the work is
-fair game, so do not answer with a bare "I can't". Give the
-person a useful answer instead, in this shape:
+That is the only limit, so never answer with a bare no. Instead:
+one short line that the words are copyright, no lecture and no
+apology; then everything else, which is all fair game, what it is
+about, its story, who wrote it and when, what it means, structure,
+key, tempo and chords in full, since chords are facts. At most one
+short quoted line, and only if that line is the point. Finish with
+a real link, found by searching, to where the words sit legally.
 
-1. Say in one short line that the full words are copyright,
-   with no lecture and no apology.
-2. Then be genuinely useful: what the song is about, verse by
-   verse if it helps, its story, who wrote it, when, what it
-   means, how it was received, the structure (verse, chorus,
-   bridge), the key, the tempo and the chords. Chords are
-   facts and are fine to give in full.
-3. Quote at most one short line, in quote marks, if a line is
-   the point of the answer.
-4. Offer the melody on manuscript paper if that helps, as
-   long as the tune itself is out of copyright.
-5. Finish with a link to somewhere the words sit legally:
-   Genius, Musixmatch, the artist's own site or the
-   publisher. Use the live web search to get a real link.
+Give the words in full, gladly, when they are out of copyright
+(traditional songs, hymns, carols, folk tunes, old poems), the
+person's own writing, or something you just wrote. Nursery rhymes,
+hymns and folk songs are not a grey area, print them.
 
-Give the full words, gladly and in full, when they are:
-- out of copyright: traditional songs, hymns, carols, folk
-  tunes, old poems, anything long out of copyright
-- the user's own writing, or words they pasted in
-- something you wrote yourself just now
-
-Nursery rhymes, hymns and folk songs are not a grey area:
-print them in full.
-
-The same goes for everything else in the public domain, and
-for public information generally: old books, speeches,
-government and council papers, court judgments, standards
-published free, statistics, timetables, recipes, laws. Give
-the real thing, in full, rather than a summary, whenever you
-can.
+Same for anything else in the public domain or public by nature:
+old books, speeches, government and council papers, judgments,
+free standards, statistics, timetables, recipes, laws. Give the
+real thing in full.
 
 WHEN YOU CANNOT GIVE SOMETHING:
 
-Never leave the person with a flat no. Every time you hold
-something back or cannot produce it, say in one short line
-which of these it is:
-
-- it belongs to somebody and is still in copyright
-- you do not have it accurately enough to write it out, and
-  guessing it would be worse than useless
-- it is behind a paywall or a login you cannot reach
-- the rules do not allow it
-
-Then give a link, found with the live web search, to where
-the person can get it themselves: the official source, the
-publisher, the archive, Project Gutenberg, the licensed
-lyrics site. A link and a plain reason beats an apology.
+Never leave a flat no. Say in one line which it is: copyright,
+you do not have it accurately enough to write out, it is behind a
+paywall or login you cannot reach, or the rules do not allow it.
+Then a real link to where they can get it themselves. A link and
+a plain reason beats an apology.
 
 WHEN A PICTURE OR VIDEO IS REFUSED:
 
-Say which of these it actually was, because the four are
-not the same problem and the person cannot tell them apart
-from a generic refusal:
+Say which of the four it was, because a generic refusal tells them
+nothing: a real person, an owned character or a brand; the subject
+itself, however worded; one word read as something it was not; or
+nothing was wrong and the service simply failed.
 
-- a real person, a character somebody owns, or a brand
-- the subject itself is not allowed, however it is worded
-- one word in the request was read as something it was not
-- nothing was wrong, the service simply failed
+For the third only, name the word and let them decide: "X reads as
+Y here, did you mean Z?" Ask, never substitute, so the second
+attempt is theirs.
 
-For the third only, say which word tripped it and let them
-decide: "the word X reads as Y here, did you mean Z?" Ask,
-do not substitute. They rewrite it, or they tell you what
-they meant, and the second attempt is theirs rather than
-yours.
-
-For the first two, do not hunt for wording that gets it
-through. Offer something genuinely different that meets the
-same need: an original character rather than the owned one,
-a scene that carries the same mood, a composition of their
-own. Never suggest a rephrasing whose only purpose is to
-slip the same request past the check, and never imply one
-exists. If they ask you how to get round it, tell them
-plainly that you will not help with that and say why.
+For the first two, do not hunt for wording that gets it through.
+Offer something genuinely different that meets the same need. Never
+suggest a rephrasing whose only purpose is slipping the same
+request past the check, and never imply one exists. If they ask how
+to get round it, say plainly that you will not help with that.
 
 WHEN A REQUEST IS AMBIGUOUS:
 
@@ -5365,14 +5398,17 @@ ${await (async () => {
     */
     const budget =
       tier === 'free'
-        ? '\n\nLENGTH: keep this reply under 250 words. Answer properly ' +
-          'and completely within that, do not trail off and do not say ' +
-          'you are keeping it short. If something genuinely needs more ' +
-          'room, give the useful part and offer to go deeper.'
-        : tier === 'everyday'
-          ? '\n\nLENGTH: aim for under 500 words unless the question ' +
-            'plainly needs more.'
-          : '';
+        ? '\n\nLENGTH: under 150 words. Answer properly and completely ' +
+          'within that, do not trail off and never say you are keeping ' +
+          'it short. Most questions do not need more. If one genuinely ' +
+          'does, give the useful part and offer to go further.'
+        : tier === 'freeBetter'
+          ? '\n\nLENGTH: under 300 words. Complete and to the point, ' +
+            'no padding, no restating the question.'
+          : tier === 'everyday'
+            ? '\n\nLENGTH: aim for under 500 words unless the question ' +
+              'plainly needs more.'
+            : '';
 
     const askedWith = systemPrompt + budget;
 
@@ -5438,11 +5474,34 @@ ${await (async () => {
 
           try {
 
+            /*
+              A free account gets a few searches a day. Once
+              they are gone the reply still happens, just
+              from what the model knows, and it is told to
+              say so rather than quietly answering from an
+              old memory as though it had checked.
+            */
+            const freeTier = tier === 'free' || tier === 'freeBetter';
+
+            const canSearch =
+              !freeTier || searchesLeft(user.id) > 0;
+
             sent = await streamWithSearch({
               model,
               effort,
               cap,
-              instructions: askedWith + liveWebNote(),
+              user,
+              canSearch,
+              instructions:
+                askedWith +
+                (canSearch
+                  ? liveWebNote()
+                  : '\n\nNO LIVE WEB RIGHT NOW: you cannot search on this ' +
+                    'reply. Answer from what you know. If the answer could ' +
+                    'have changed since you last knew it, say so in one ' +
+                    'line, say roughly how old your answer is, and tell ' +
+                    'them a plan gets live checking on every question. No ' +
+                    'apology and no pretending you checked.'),
               messages: trimmed,
               send
             });
@@ -5899,11 +5958,21 @@ async function canAffordBetter(user) {
   the price of input, so length is the real cost, not the
   model.
 */
-const FREE_MODEL = process.env.FREE_MODEL || 'gpt-5.6-luna';
+const FREE_MODEL = process.env.FREE_MODEL || 'gpt-5-nano';
+
+/*
+  Where a free account goes when the question is too much
+  for nano. Not the everyday model: that is four times the
+  price and at a tenth of replies it would cost more than
+  everything nano saved. Luna is capable enough for the
+  hard ones and cheap enough not to undo the point.
+*/
+const FREE_BETTER = process.env.FREE_BETTER_MODEL || 'gpt-5.6-luna';
 
 /* how long a reply may run, per tier */
 const REPLY_CAP = {
-  free: Number(process.env.FREE_MAX_TOKENS || 500),
+  free: Number(process.env.FREE_MAX_TOKENS || 320),
+  freeBetter: Number(process.env.FREE_BETTER_MAX_TOKENS || 700),
   everyday: Number(process.env.SETTLED_MAX_TOKENS || 1100),
   better: Number(process.env.SMART_MAX_TOKENS || 2200)
 };
@@ -5911,6 +5980,7 @@ const REPLY_CAP = {
 /* how much of the conversation goes back up with each ask */
 const HISTORY_KEPT = {
   free: 4,
+  freeBetter: 6,
   everyday: 8,
   better: 14
 };
@@ -5974,9 +6044,9 @@ async function pickModel({ user, mode, newest, messages }) {
   */
   if (!paying) {
     return {
-      model: everyday,
-      effort: process.env.SETTLED_EFFORT || 'low',
-      tier: 'everyday',
+      model: FREE_BETTER,
+      effort: process.env.FREE_EFFORT || 'low',
+      tier: 'freeBetter',
       why: 'free account, harder question'
     };
   }
@@ -6870,6 +6940,7 @@ app.post('/api/voice/lookup', async (req, res) => {
       model: process.env.LOOKUP_MODEL || FREE_MODEL,
       effort: 'low',
       cap: 700,
+      user,
       instructions:
         'You are answering a question asked out loud, mid conversation. ' +
         'Answer it directly and fully in British English, in at most ' +

@@ -13164,6 +13164,8 @@ function paintSpend() {
   spendTiles('spendUsedGrid', [
     ['Pictures made', compact(used.images)],
     ['Text replies', compact(used.messages)],
+    ['Web searches', `${compact(used.searches || 0)} (${used.searchRate || 0}% of replies)`,
+      (used.searchRate || 0) > 25 ? 'spendLow' : ''],
     ['Voice minutes', compact(used.voiceMinutes)],
     ['Videos made', compact(used.videos)],
     ['Our estimate of the cost', money(ours.total || 0)],
@@ -13177,6 +13179,7 @@ function paintSpend() {
   const rows = [
     ['Pictures', used.images, `${unit.image}p each`, ours.images],
     ['Text replies', used.messages, `${unit.message}p each`, ours.messages],
+    ['Web searches', used.searches, `${unit.search}p each`, ours.searches],
     ['Voice', used.voiceMinutes, `${unit.voiceMinute}p a minute`, ours.voice],
     ['Videos', used.videos, `${unit.video}p each`, ours.videos]
   ];
