@@ -1742,6 +1742,7 @@ app.get('/api/account', async (req, res) => {
     canVideo: featureAllowed(settings, 'video', user, account.gifts),
     canVoice: featureAllowed(settings, 'voice', user, account.gifts),
     gifts: account.gifts || {},
+    allowance: await allowanceFor(user, account),
     videoCost: unlimitedReason ? 0 : VIDEO_CREDIT_COST
   });
 
@@ -2139,19 +2140,19 @@ const PACKS = [
   {
     id: 'starter', kind: 'plan', plan: 'starter',
     name: 'Starter', pence: 499,
-    blurb: '20 pictures, 120 text chat responses and 5 minutes of talking, every month.',
+    blurb: '20 pictures, 60 messages a day and 5 minutes of talking, every month.',
     images: 20, voice: 5
   },
   {
     id: 'plus', kind: 'plan', plan: 'plus',
     name: 'Plus', pence: 999,
-    blurb: '12 better quality pictures in any shape, 250 text chat responses and 15 minutes of talking, every month.',
+    blurb: '12 better quality pictures in any shape, 120 messages a day and 15 minutes of talking, every month.',
     images: 12, voice: 15
   },
   {
     id: 'pro', kind: 'plan', plan: 'pro',
     name: 'Pro', pence: 1999,
-    blurb: '30 best quality pictures, 500 text chat responses and 30 minutes of talking, every month.',
+    blurb: '30 best quality pictures, 250 messages a day and 30 minutes of talking, every month.',
     images: 30, voice: 30
   },
 
@@ -4072,6 +4073,225 @@ back empty every time: say it is blocked at their end.
   Resolves true once something was sent.
 */
 /*
+  WHAT EACH PLAN GETS, AND WHY THESE NUMBERS
+
+  Two limits on text, not one. The daily number stops a
+  single bad day emptying a month; the monthly number is
+  what actually protects the margin. Somebody has to be
+  trying to hit either.
+
+  The monthly numbers were worked backwards from what is
+  left of each plan after the pictures, the talking and
+  Stripe's cut, which on Starter is not much: twenty
+  pictures at 16p is already 320p of a 499p plan.
+
+  Costs per reply, measured, blended for prompt caching:
+    free      nano          0.011p
+    paid      gpt-5.4-mini  0.25p
+    Smart     gpt-5.6       1.0p
+    a search                0.9p, whoever asks
+
+  A search costs eighty times a reply, so it gets its own
+  cap on every plan. Without one, a paying customer who
+  asks a hundred live questions a month costs more than
+  they pay, however few replies they use.
+*/
+const PLAN_LIMITS = {
+
+  free: {
+    /* 30 a day, and a month of average use lands nowhere near 300 */
+    texts: 30,
+    textsMonth: 300,
+    searches: 3,
+    searchesMonth: 20
+  },
+
+  starter: {
+    texts: 60,
+    textsMonth: 600,
+    searches: 10,
+    searchesMonth: 60
+  },
+
+  plus: {
+    texts: 120,
+    textsMonth: 1200,
+    searches: 20,
+    searchesMonth: 150
+  },
+
+  pro: {
+    texts: 250,
+    textsMonth: 2000,
+    searches: 40,
+    searchesMonth: 400
+  }
+
+};
+
+function limitsFor(plan) {
+  return PLAN_LIMITS[String(plan || 'free').toLowerCase()] || PLAN_LIMITS.free;
+}
+
+function todayKey() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function monthKey() {
+  return new Date().toISOString().slice(0, 7);
+}
+
+/*
+  The tally lives in one jsonb box on the profile, so
+  checking an allowance is one read and spending it is one
+  write. Counting rows in the ledger would have been tidier
+  and far too slow to sit in front of every reply.
+
+  It rolls itself over: a different day or month simply
+  starts from nothing, so nothing has to be reset on a
+  schedule and a dormant account costs nothing to keep.
+*/
+function rolled(raw) {
+
+  const held = raw && typeof raw === 'object' ? raw : {};
+
+  const day = todayKey();
+  const month = monthKey();
+
+  return {
+    day,
+    month,
+    texts: held.day === day ? Number(held.texts) || 0 : 0,
+    searches: held.day === day ? Number(held.searches) || 0 : 0,
+    textsMonth: held.month === month ? Number(held.textsMonth) || 0 : 0,
+    searchesMonth: held.month === month ? Number(held.searchesMonth) || 0 : 0
+  };
+
+}
+
+async function tallyFor(userId) {
+
+  if (!supabaseAdmin || !userId) return rolled(null);
+
+  try {
+
+    const { data } =
+      await supabaseAdmin
+        .from('profiles')
+        .select('tally')
+        .eq('id', userId)
+        .maybeSingle();
+
+    return rolled(data?.tally);
+
+  } catch (error) {
+
+    console.warn('TALLY READ FAILED:', error?.message);
+
+    return rolled(null);
+
+  }
+
+}
+
+async function saveTally(userId, tally) {
+
+  if (!supabaseAdmin || !userId) return;
+
+  try {
+
+    await supabaseAdmin
+      .from('profiles')
+      .upsert({ id: userId, tally }, { onConflict: 'id' });
+
+  } catch (error) {
+
+    console.warn('TALLY WRITE FAILED:', error?.message);
+
+  }
+
+}
+
+/*
+  What is left, without spending anything. Admins and
+  anybody unmetered are simply not counted.
+*/
+async function allowanceFor(user, account) {
+
+  const free = isAdmin(user) || account?.unlimited || account?.unmetered;
+
+  const plan = account?.plan || 'free';
+
+  const caps = limitsFor(plan);
+
+  if (free) {
+    return { plan, unlimited: true, caps };
+  }
+
+  const tally = await tallyFor(user.id);
+
+  return {
+    plan,
+    unlimited: false,
+    caps,
+    used: tally,
+    textsLeftToday: Math.max(0, caps.texts - tally.texts),
+    textsLeftThisMonth: Math.max(0, caps.textsMonth - tally.textsMonth),
+    searchesLeftToday: Math.max(0, caps.searches - tally.searches),
+    searchesLeftThisMonth: Math.max(0, caps.searchesMonth - tally.searchesMonth)
+  };
+
+}
+
+/*
+  Takes one reply off the allowance. Returns why not,
+  rather than a bare false, so the person can be told
+  which limit they met and when it comes back.
+*/
+async function takeText(user, account) {
+
+  if (isAdmin(user) || account?.unlimited || account?.unmetered) {
+    return { ok: true, unlimited: true };
+  }
+
+  const caps = limitsFor(account?.plan);
+
+  const tally = await tallyFor(user.id);
+
+  if (tally.textsMonth >= caps.textsMonth) {
+    return {
+      ok: false,
+      which: 'month',
+      cap: caps.textsMonth,
+      plan: account?.plan || 'free'
+    };
+  }
+
+  if (tally.texts >= caps.texts) {
+    return {
+      ok: false,
+      which: 'day',
+      cap: caps.texts,
+      plan: account?.plan || 'free'
+    };
+  }
+
+  tally.texts += 1;
+  tally.textsMonth += 1;
+
+  /* written without waiting: a slow database must not hold up a reply */
+  saveTally(user.id, tally);
+
+  return {
+    ok: true,
+    leftToday: caps.texts - tally.texts,
+    leftThisMonth: caps.textsMonth - tally.textsMonth
+  };
+
+}
+
+
+/*
   SEARCHING COSTS REAL MONEY
 
   Ten dollars per thousand searches, plus the results
@@ -4083,41 +4303,74 @@ back empty every time: say it is blocked at their end.
 
   Paid accounts are not limited. They are paying for it.
 */
-const FREE_SEARCHES_A_DAY =
-  Number(process.env.FREE_SEARCHES_A_DAY || 3);
+/*
+  Counted in the same box as the replies, so a search
+  taken in voice chat comes off the same allowance as one
+  taken in text and there is no second set of books.
 
-/* counted here rather than in the database, so it costs nothing */
-const searchesToday = new Map();
+  Kept in memory as well, because the count happens part
+  way through a stream where waiting on a write would
+  stall the reply. The memory copy is what a check reads;
+  the database copy is what survives a restart.
+*/
+const searchMemo = new Map();
 
-function searchDay() {
-  return new Date().toISOString().slice(0, 10);
+function memoKey(userId) {
+  return `${userId}:${todayKey()}`;
 }
 
-function searchesLeft(userId) {
+async function searchesLeft(user, account) {
 
-  const key = `${userId}:${searchDay()}`;
+  if (isAdmin(user) || account?.unmetered) return 999;
 
-  const used = searchesToday.get(key) || 0;
+  const caps = limitsFor(account?.plan);
 
-  return Math.max(0, FREE_SEARCHES_A_DAY - used);
+  const tally = await tallyFor(user.id);
+
+  const extra = searchMemo.get(memoKey(user.id)) || 0;
+
+  return Math.min(
+    caps.searches - tally.searches - extra,
+    caps.searchesMonth - tally.searchesMonth - extra
+  );
 
 }
 
-function countSearch(userId) {
+async function countSearch(userId) {
 
-  const key = `${userId}:${searchDay()}`;
+  if (!userId) return;
 
-  searchesToday.set(key, (searchesToday.get(key) || 0) + 1);
+  const key = memoKey(userId);
 
-  /* yesterday's rows are dead weight */
-  if (searchesToday.size > 5000) {
-    const today = searchDay();
-    for (const old of searchesToday.keys()) {
-      if (!old.endsWith(today)) searchesToday.delete(old);
+  searchMemo.set(key, (searchMemo.get(key) || 0) + 1);
+
+  if (searchMemo.size > 5000) {
+    const today = todayKey();
+    for (const old of searchMemo.keys()) {
+      if (!old.endsWith(today)) searchMemo.delete(old);
     }
   }
 
+  try {
+
+    const tally = await tallyFor(userId);
+
+    tally.searches += 1;
+    tally.searchesMonth += 1;
+
+    await saveTally(userId, tally);
+
+    /* the database now holds it, so the memory copy can go */
+    searchMemo.set(key, Math.max(0, (searchMemo.get(key) || 1) - 1));
+
+  } catch (error) {
+
+    console.warn('SEARCH COUNT FAILED:', error?.message);
+
+  }
+
 }
+
 
 /*
   And a line in the ledger for every one, so the admin
@@ -5144,6 +5397,44 @@ app.post('/api/chat', async (req, res) => {
 
     }
 
+    /*
+      THE ALLOWANCE
+
+      Taken before any of the work, because refusing after
+      the model has answered means paying for a reply
+      nobody is allowed to read. Admins, anybody unlimited
+      and everybody while the paywall is off are not
+      counted at all.
+    */
+    const askingAccount =
+      user ? await readAccount(user.id) : { unmetered: true };
+
+    const allowed =
+      user
+        ? await takeText(user, askingAccount)
+        : { ok: true };
+
+    if (!allowed.ok) {
+
+      const caps = limitsFor(allowed.plan);
+
+      return res.status(402).json({
+        error:
+          allowed.which === 'day'
+            ? `That is your ${caps.texts} messages for today. ` +
+              (allowed.plan === 'free'
+                ? 'It starts again tomorrow, or a plan gives you a lot more.'
+                : 'It starts again tomorrow.')
+            : `That is your ${caps.textsMonth} messages for this month. ` +
+              (allowed.plan === 'free'
+                ? 'It starts again next month, or a plan gives you a lot more.'
+                : 'It starts again when your plan renews.'),
+        reason: allowed.which === 'day' ? 'no_texts_today' : 'no_texts_month',
+        plan: allowed.plan
+      });
+
+    }
+
     const {
       messages = [],
       memory = {},
@@ -5475,10 +5766,10 @@ ${await (async () => {
               say so rather than quietly answering from an
               old memory as though it had checked.
             */
-            const freeTier = tier === 'free' || tier === 'freeBetter';
-
             const canSearch =
-              !freeTier || searchesLeft(user.id) > 0;
+              user
+                ? (await searchesLeft(user, askingAccount)) > 0
+                : true;
 
             sent = await streamWithSearch({
               model,

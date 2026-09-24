@@ -14753,14 +14753,27 @@ async function sendNormalMessage(
     if (!response.ok) {
 
       let message = 'Chat request failed.';
+      let failed = null;
 
       try {
-        const failed = await response.json();
+        failed = await response.json();
         message =
           failed?.details ||
           failed?.error ||
           message;
       } catch {}
+
+      /* out of messages is a shop trip, not an error to throw */
+      if (response.status === 402 &&
+          String(failed?.reason || '').startsWith('no_texts')) {
+
+        await refreshAccount();
+
+        outOfMessages(failed);
+
+        return;
+
+      }
 
       throw new Error(message);
 
@@ -15727,6 +15740,20 @@ async function answerVoiceTool(call, item) {
 }
 
 
+
+/*
+  Out of messages is not a fault, it is a shop trip. It
+  lands on the plans page, because more messages is what a
+  plan buys, and the message itself already says which
+  limit it was and when it comes back.
+*/
+function outOfMessages(data) {
+
+  addTextMessage('assistant', data?.error || 'That is your messages for now.');
+
+  openShop('plan');
+
+}
 
 function addVoiceLine(role, text) {
 
