@@ -15521,9 +15521,11 @@ function speakStage(call, stage) {
       type: 'response.create',
       response: {
         instructions:
-          'You are part way through looking something up for them. ' +
-          'Say this out loud, word for word, and nothing else, in ' +
-          `your usual accent: "${line}"`
+          inAccent(
+            call,
+            line,
+            'You are part way through looking something up for them.'
+          )
       }
     }));
 
@@ -16099,6 +16101,9 @@ async function startVoiceCall() {
       throw new Error(session.error || 'Could not start listening.');
     }
 
+    call.accentName =
+      session.accentName || 'a thick British accent';
+
     setVoiceState('connecting', 'Almost there...');
 
     const pc = new RTCPeerConnection();
@@ -16151,7 +16156,39 @@ async function startVoiceCall() {
     call.channel = channel;
 
     channel.addEventListener('open', () => {
+
       setVoiceState('listening', 'Listening');
+
+      /*
+        The first thing out of him sets the voice for the rest
+        of the call: these models stay consistent with their
+        own earlier audio far more reliably than they follow a
+        written instruction buried in a long prompt. So the
+        greeting is asked for explicitly, in the accent, at
+        full strength, and everything after it has that to
+        match rather than a paragraph to interpret.
+      */
+      try {
+
+        channel.send(JSON.stringify({
+          type: 'response.create',
+          response: {
+            instructions:
+              `SPEAK IN ${(call.accentName || 'a thick British accent').toUpperCase()}. ` +
+              'As thick as it goes, from the very first sound. This ' +
+              'greeting sets how you sound for the whole call, so do ' +
+              'not hold any of it back. ' +
+              'Say one short, warm hello and ask what they are after. ' +
+              'One sentence, no more.'
+          }
+        }));
+
+      } catch (error) {
+
+        console.warn('OPENING LINE FAILED:', error);
+
+      }
+
     });
 
     channel.addEventListener('message', event => {
@@ -16495,6 +16532,26 @@ function nextWakeUp() {
   off looking something up, it is skipped: talking over
   himself is worse than a gap.
 */
+/*
+  Every line we hand him to say goes through response.create
+  with its own instructions, and those instructions replace
+  the session ones for that response. That was the hole: he
+  was being told what to say without being told how to
+  sound, so his own wake ups and progress lines were the
+  most neutral thing on the call. This puts the accent back
+  on every single one.
+*/
+function inAccent(call, line, why) {
+
+  return (
+    `SPEAK IN ${(call?.accentName || 'a thick British accent').toUpperCase()}. ` +
+    'Thick, exactly as you have been all call, no softening. ' +
+    (why ? why + ' ' : '') +
+    `Say this out loud, word for word, and nothing else: "${line}"`
+  );
+
+}
+
 function sayWakeUp(call, which) {
 
   const channel = call?.channel;
@@ -16510,9 +16567,7 @@ function sayWakeUp(call, which) {
     channel.send(JSON.stringify({
       type: 'response.create',
       response: {
-        instructions:
-          'Say this out loud, word for word, and nothing else, ' +
-          `in your usual voice: "${line}"`
+        instructions: inAccent(call, line)
       }
     }));
 

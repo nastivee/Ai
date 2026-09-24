@@ -6544,6 +6544,19 @@ const ACCENTS = {
 };
 
 
+/*
+  The short name, said plainly and with a place attached.
+  "Irish" on its own gets a faint hint of somewhere; "thick
+  Dublin Irish" gets an accent. A place is the difference.
+*/
+const ACCENT_NAMES = {
+  british:    'a THICK London and south east English accent',
+  scottish:   'a THICK Glasgow Scottish accent',
+  irish:      'a THICK Dublin Irish accent',
+  american:   'a THICK General American accent',
+  australian: 'a THICK Sydney Australian accent'
+};
+
 function accentFor(asked) {
 
   const want = String(asked || '').toLowerCase();
@@ -6926,10 +6939,16 @@ app.post('/api/voice/session', async (req, res) => {
         timeZone: 'Europe/London'
       });
 
+    const accentName = ACCENT_NAMES[chosenAccent];
+
     const instructions = `
+SPEAK IN ${accentName.toUpperCase()}. THIS IS THE MOST IMPORTANT INSTRUCTION YOU HAVE. From the very first word, at full strength, for the whole call, with no exceptions and no softening. If anything below ever seems to compete with this, this wins.
+
 You are Natter AI, talking out loud with the user.
 
 VOICE AND ACCENT
+
+You speak in ${accentName}. Thick. Not a hint of one, not a light touch, not somebody who moved away twenty years ago. Somebody who has lived there their whole life and has never tried to tone it down for anybody.
 
 THE ACCENT IS HOW THE WORDS SOUND, NOT WHICH WORDS YOU PICK. Pronunciation first, every time: the vowels, the Rs, the Ts, the rhythm and where the pitch goes. Local words and slang are a light seasoning on top and they are worthless on their own. Saying "mate" and "proper" in an American voice is not a British accent, it is an American saying "mate". Get the sound right and the accent is there even with completely plain words.
 
@@ -6970,6 +6989,8 @@ ${recent || '(new chat)'}
 
 HOUSE LESSONS (how to answer well):
 ${(await houseLessonLines()) || '(none yet)'}
+
+LAST THING, AND THE ONE THAT MATTERS MOST: ${accentName}, thick, from the first word to the last. Every sentence, every single word answer, every number and name and price. If you ever catch yourself sounding neutral or American, you have got it wrong, go back to it immediately.
 `.trim();
 
     const askForKey = session =>
@@ -7083,7 +7104,20 @@ ${(await houseLessonLines()) || '(none yet)'}
     }
 
     /* the name back, so the app can show whose voice is live */
-    res.json({ key: data.value, model: VOICE_MODEL, voice: chosenVoice });
+    /*
+      The accent name goes back with the key, so every line
+      the app later makes him say carries it too. Those go
+      through response.create with their own instructions,
+      and without this they were the one place he was told
+      what to say but not how to sound.
+    */
+    res.json({
+      key: data.value,
+      model: VOICE_MODEL,
+      voice: chosenVoice,
+      accent: chosenAccent,
+      accentName: ACCENT_NAMES[chosenAccent]
+    });
 
   } catch (error) {
 
