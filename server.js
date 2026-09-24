@@ -5432,6 +5432,59 @@ user would ask.
 const CHATTY =
   /^\s*(hi|hey|hello|yo|alright|morning|afternoon|evening|thanks|thank you|ta|cheers|ok|okay|cool|nice|lol|ha|haha|bye|goodbye|night|good night|sorry|please|yes|no|yeah|nah|sure|what's up|whats up|how are you|you there|u there)\b[\s\S]{0,24}$/i;
 
+/*
+  MEMORY, TRIMMED
+
+  The whole memory file went up with every single message,
+  and it is allowed to reach eighty lines. Most of it is
+  never relevant to the question in front of it.
+
+  Two things fix it without losing anything that matters.
+  It is capped at the most recent lines, since memory is
+  written newest last and the oldest lines are the ones
+  most likely to be stale. And each line is capped in
+  length, because a memory line that runs to a paragraph is
+  a note somebody should have written shorter.
+
+  It also sits in the cached part of the prompt now, so
+  from the second message of a conversation it is billed at
+  a tenth anyway. This is about the first message and about
+  not carrying eighty lines of noise into the answer.
+*/
+const MEMORY_LINES = Number(process.env.MEMORY_LINES || 45);
+const MEMORY_LINE_CHARS = 160;
+
+function shortMemory(memory) {
+
+  const text =
+    typeof memory === 'string'
+      ? memory
+      : JSON.stringify(memory || {}, null, 2);
+
+  const lines =
+    String(text || '')
+      .split('\n')
+      .map(one => one.trim())
+      .filter(Boolean);
+
+  if (!lines.length) return '(nothing saved yet)';
+
+  const kept =
+    lines.length > MEMORY_LINES
+      ? lines.slice(-MEMORY_LINES)
+      : lines;
+
+  return kept
+    .map(one =>
+      one.length > MEMORY_LINE_CHARS
+        ? one.slice(0, MEMORY_LINE_CHARS - 1) + '\u2026'
+        : one
+    )
+    .join('\n');
+
+}
+
+
 function pickCards(text) {
 
   const asked = String(text || '').toLowerCase();
@@ -5614,14 +5667,6 @@ You are Natter AI.
 
 You are a friendly, intelligent personal AI assistant.
 
-LENGTH:
-
-Keep answers under about 500 tokens, roughly 350 words. Say the
-whole thing, just say it tightly: no restating the question, no
-summing up at the end, no offering three ways to do it when one
-is right. Go longer only when the person asks for detail, a full
-guide, a long piece of writing, or a lot of code.
-
 PERSONALITY:
 
 - Speak naturally and conversationally.
@@ -5712,15 +5757,14 @@ one reading is obviously fine while the other is not, ask
 which they meant rather than assuming either. One short
 question, then do the work. Most of the time it is an
 accident of wording and they will tell you in four words.
-${cardSpec}${await recallFor({ user, asked: newest, skipChat: chatId })}
-USER MEMORY:
-
-${typeof memory === 'string' ? (memory.trim() || '(nothing saved yet)') : JSON.stringify(memory, null, 2)}
-${houseExpertise}
 ${await (async () => {
   const lines = await houseLessonLines();
   return lines ? `\nHOUSE LESSONS (how to answer well, learned from feedback):\n${lines}\n` : '';
-})()}`;
+})()}
+USER MEMORY:
+
+${shortMemory(memory)}
+${cardSpec}${houseExpertise}${await recallFor({ user, asked: newest, skipChat: chatId })}`;
 
     const cleanMessages =
       trimHistory(
@@ -6582,9 +6626,80 @@ Rules:
 - Keep each line short, plain and in the third person, e.g. "Name is Aaron", "Runs a pizza takeaway in Thornaby".
 - Keep existing lines unless they are wrong, duplicated, or asked to be forgotten. At most 80 lines.
 
-Reply with JSON only:
-{"changed": true|false, "memory": ["every line of the updated memory"], "added": ["new or changed lines"], "removed": ["lines taken out"]}
+Reply with JSON only, and ONLY the changes, never the whole file:
+{"changed": true|false, "added": ["lines to add, already worded as they should be stored"], "removed": ["existing lines to take out, copied exactly as they appear"]}
+
+To correct a fact, put the old line in "removed" and the new one in "added".
+If nothing durable was said, reply {"changed": false}. Do not repeat back lines that are staying.
 `.trim();
+
+
+/*
+  NAMING A CHAT
+
+  This used to go through the ordinary chat route, which
+  meant the whole system prompt, the memory, the house
+  rules and the model tiering, roughly eleven hundred
+  tokens of instructions, all to get three words back. It
+  also spent one of the person's messages, so starting five
+  chats cost them five replies they never saw.
+
+  Its own route, on the cheapest model, with no system
+  prompt worth the name and a cap of twenty tokens. It does
+  not touch anybody's allowance, because naming a chat is
+  not a thing they asked for.
+*/
+app.post('/api/chat/title', async (req, res) => {
+
+  try {
+
+    const user = await getUser(req);
+
+    const who = user ? `title:${user.id}` : `title:${req.ip}`;
+
+    if (!withinLimit(who, 60)) {
+      return res.json({ title: '' });
+    }
+
+    const text =
+      String(req.body?.text || '').trim().slice(0, 600);
+
+    if (text.length < 3) return res.json({ title: '' });
+
+    const completion =
+      await createReply({
+        model: process.env.TITLE_MODEL || FREE_MODEL,
+        max_completion_tokens: 220,
+        messages: [
+          {
+            role: 'system',
+            content:
+              'Name this chat in two to five words. British English. ' +
+              'Reply with the name only: no quotes, no full stop, no ' +
+              'preamble.'
+          },
+          { role: 'user', content: text }
+        ]
+      });
+
+    const title =
+      String(completion.choices?.[0]?.message?.content || '')
+        .replace(/["\'`]/g, '')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .slice(0, 55);
+
+    res.json({ title });
+
+  } catch (error) {
+
+    console.warn('TITLE FAILED:', error?.message);
+
+    res.json({ title: '' });
+
+  }
+
+});
 
 
 app.post('/api/memory/learn', async (req, res) => {
@@ -6604,6 +6719,36 @@ app.post('/api/memory/learn', async (req, res) => {
     const reply = String(req.body?.reply || '').slice(0, 2000);
 
     if (said.trim().length < 3) {
+      return res.json({ changed: false });
+    }
+
+    /*
+      THE GATE
+
+      This ran on every single message, and it is not a cheap
+      call: it sends the whole memory file up and gets the
+      whole memory file back, which was costing more per
+      message than the reply itself did.
+
+      Most messages contain nothing to remember. "What is 17
+      percent of 240", "draw me a cat", "carry on" are not
+      facts about anybody. So the model is only asked when
+      the words actually look like somebody talking about
+      themselves, their people, their work or what they want.
+
+      Erring towards asking: a missed fact is worse than a
+      wasted call, so anything with I, my, we, our, a name
+      for somebody, or a direct instruction to remember, goes
+      through. What gets skipped is the plain task.
+    */
+    const worthLearning =
+      /\bremember\b|\bforget\b|\bcall me\b|\bmy name\b/i.test(said) ||
+      (
+        /\b(i|i'm|im|i've|ive|my|mine|me|we|we're|our|us)\b/i.test(said) &&
+        !/^\s*(draw|make|create|generate|paint|render|show me a|picture of|image of|video of)\b/i.test(said)
+      );
+
+    if (!worthLearning) {
       return res.json({ changed: false });
     }
 
@@ -6632,19 +6777,46 @@ app.post('/api/memory/learn', async (req, res) => {
       return res.json({ changed: false });
     }
 
-    const lines =
-      Array.isArray(result.memory)
-        ? result.memory.map(line => String(line).trim()).filter(Boolean).slice(0, 80)
-        : null;
+    const clean = list =>
+      (Array.isArray(list) ? list : [])
+        .map(line => String(line).trim())
+        .filter(Boolean)
+        .slice(0, 10);
 
-    if (!result.changed || !lines) {
+    const added = clean(result.added);
+    const removed = clean(result.removed);
+
+    if (!result.changed || (!added.length && !removed.length)) {
       return res.json({ changed: false });
     }
 
-    /* a safety net: never wipe a long memory in one go */
-    const before = memory.split('\n').filter(line => line.trim()).length;
+    /*
+      The merge is done here rather than by the model.
 
-    if (before >= 4 && lines.length < before / 2) {
+      It used to send the whole file back, every line of it,
+      just to change one. Output is six times the price of
+      input, so that one habit was most of what memory cost.
+      Now it sends back what changed and the joining up
+      happens here, where it is free and where a line cannot
+      quietly go missing in the retyping.
+    */
+    const was =
+      memory.split('\n').map(line => line.trim()).filter(Boolean);
+
+    const gone = new Set(removed.map(line => line.toLowerCase()));
+
+    const lines = was.filter(line => !gone.has(line.toLowerCase()));
+
+    added.forEach(line => {
+      if (!lines.some(kept => kept.toLowerCase() === line.toLowerCase())) {
+        lines.push(line);
+      }
+    });
+
+    while (lines.length > 80) lines.shift();
+
+    /* a safety net: never wipe a long memory in one go */
+    if (was.length >= 4 && lines.length < was.length / 2) {
       console.warn('MEMORY SHRANK TOO FAR, IGNORED');
       return res.json({ changed: false });
     }
@@ -6652,8 +6824,8 @@ app.post('/api/memory/learn', async (req, res) => {
     res.json({
       changed: true,
       memory: lines.join('\n'),
-      added: (result.added || []).map(String).slice(0, 10),
-      removed: (result.removed || []).map(String).slice(0, 10)
+      added,
+      removed
     });
 
   } catch (error) {

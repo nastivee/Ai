@@ -14954,24 +14954,19 @@ async function nameChatFromContent(chatId) {
     }
 
 
+    /*
+      Its own route now. This was going through the ordinary
+      chat one, which sent the entire system prompt and the
+      memory up to get three words back, and spent one of
+      the person's messages doing it.
+    */
     const response =
       await fetch(
-        `${API_BASE}/api/chat`,
+        `${API_BASE}/api/chat/title`,
         {
           method: 'POST',
           headers: await apiHeaders(),
-          body: JSON.stringify({
-            messages: [
-              {
-                role: 'user',
-                content:
-                  'Read this conversation and reply with a title of ' +
-                  'two to five words describing what it is about. ' +
-                  'Reply with the title only, no quotes, no full stop.' +
-                  '\n\n' + conversation
-              }
-            ]
-          })
+          body: JSON.stringify({ text: conversation })
         }
       );
 
@@ -14983,12 +14978,7 @@ async function nameChatFromContent(chatId) {
     }
 
 
-    const title =
-      (data?.reply || '')
-        .replace(/["'`]/g, '')
-        .replace(/\s+/g, ' ')
-        .trim()
-        .slice(0, 55);
+    const title = String(data?.title || '').slice(0, 55);
 
 
     if (title) {
