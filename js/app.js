@@ -7391,12 +7391,19 @@ async function generateImage(
     */
     if (data.taster) {
 
+      const left = Number(data.tasterLeft);
+
       addTextMessageTo(
         requestChatId,
         'assistant',
-        'That first one was made on the better model, on the house. ' +
-        'The rest of your free pictures use the quicker one, which is ' +
-        'decent but not the same. A plan keeps you on the better one.'
+        left > 0
+          ? `That was made on the better model, on the house. You have ` +
+            `${left} more like that, then your free pictures move to the ` +
+            `quicker one. A plan keeps you on the better one.`
+          : `That was the last of your ${data.tasterOf || 3} on the better ` +
+            `model. From here your free pictures use the quicker one, ` +
+            `which is decent but not the same. A plan keeps you on the ` +
+            `better one.`
       );
 
     }

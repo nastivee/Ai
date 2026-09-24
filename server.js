@@ -1174,21 +1174,23 @@ function planOf(user) {
 /*
   THE TASTER
 
-  A free account's very first picture is made on the good
-  model at medium quality. Everything after it is made on
-  the cheap one.
+  A free account's first three pictures are made on the
+  good model at medium quality. Everything after that is
+  made on the cheap one.
 
-  The reasoning is plain: somebody's first picture is the
-  only one that decides whether they come back, and the gap
-  between the two models is obvious the moment you see them
-  side by side. Showing the good one once and then the
-  cheap one is a far better argument for a plan than
-  describing the difference ever could be.
+  The reasoning is plain: the first few pictures are what
+  decide whether somebody comes back, and the gap between
+  the two models is obvious the moment you see them side by
+  side. Three is enough to get past a bad prompt, which one
+  is not: somebody whose single good one came out wrong
+  would judge the whole thing on it and leave.
 
-  It costs about 4p, once, per account, and it never comes
-  round again, which is what makes it a taster rather than
-  an allowance.
+  About 12p per account, once, and it never comes round
+  again, which is what keeps it a taster rather than an
+  allowance.
 */
+const FREE_TASTERS = Number(process.env.FREE_TASTERS || 3);
+
 const IMAGE_MODEL_CHEAP =
   process.env.IMAGE_MODEL_CHEAP || 'gpt-image-1-mini';
 
@@ -1213,29 +1215,36 @@ function imageSpecFor(user, shape, taster) {
 }
 
 /*
-  Has this free account had its one good picture yet, and
-  if not, mark it as having had it now. Marked before the
-  picture is made rather than after, because a second
-  request arriving while the first is still running would
-  otherwise get one too.
+  Takes one of the good pictures, if this free account has
+  any left. Counted before the picture is made rather than
+  after, because two requests arriving together would
+  otherwise both find one going spare.
+
+  Returns how many are left as well as whether this one
+  counted, so the app can say so underneath.
 */
 async function takeTaster(user, account) {
 
-  if (!user || isAdmin(user)) return false;
+  if (!user || isAdmin(user)) return { good: false };
 
-  if (account?.unlimited || account?.unmetered) return false;
+  if (account?.unlimited || account?.unmetered) return { good: false };
 
-  if ((account?.plan || 'free') !== 'free') return false;
+  if ((account?.plan || 'free') !== 'free') return { good: false };
 
   const tally = await tallyFor(user.id);
 
-  if (tally.hadTaster) return false;
+  if (tally.tasters >= FREE_TASTERS) return { good: false };
 
-  tally.hadTaster = true;
+  tally.tasters += 1;
 
   await saveTally(user.id, tally);
 
-  return true;
+  return {
+    good: true,
+    used: tally.tasters,
+    left: FREE_TASTERS - tally.tasters,
+    of: FREE_TASTERS
+  };
 
 }
 
@@ -4256,12 +4265,17 @@ function rolled(raw) {
     smartMonth: held.month === month ? Number(held.smartMonth) || 0 : 0,
 
     /*
-      This one never rolls. It marks that a free account has
-      had its one good picture, and it has to outlive the day
-      and the month or the taster would come round again
+      This one never rolls. It counts how many of the good
+      pictures a free account has had, and it has to outlive
+      the day and the month or they would come round again
       every month and stop being a taster.
+
+      The old yes or no is read as one used, so the handful
+      of accounts that got the single one under the previous
+      version keep two rather than losing what they had.
     */
-    hadTaster: held.hadTaster === true
+    tasters:
+      Number(held.tasters) || (held.hadTaster === true ? 1 : 0)
   };
 
 }
@@ -8312,17 +8326,17 @@ app.post('/api/image', async (req, res) => {
     );
 
 
-    /* one good one on the house, then the cheaper model */
-    const spec =
-      imageSpecFor(
-        user,
-        shape,
-        await takeTaster(user, await readAccount(user.id))
-      );
+    /* the first few on the house, on the good model */
+    const treat =
+      await takeTaster(user, await readAccount(user.id));
+
+    const spec = imageSpecFor(user, shape, treat.good);
 
     console.log(
       `IMAGE: ${spec.model} ${spec.quality} ${spec.size}` +
-      (spec.taster ? ' (first one free on the good model)' : '')
+      (spec.taster
+        ? ` (good model, ${treat.used} of ${treat.of} free ones)`
+        : '')
     );
 
     const result =
@@ -8368,11 +8382,13 @@ app.post('/api/image', async (req, res) => {
         user?.unlimited ? null : user?.creditsLeft,
 
       /*
-        Say when the good model was used, or the taster does
-        nothing at all. A better picture nobody knows was
-        better is just a picture.
+        Say when the good model was used, and how many are
+        left, or the taster does nothing at all. A better
+        picture nobody knows was better is just a picture.
       */
-      taster: spec.taster === true
+      taster: spec.taster === true,
+      tasterLeft: spec.taster ? treat.left : null,
+      tasterOf: spec.taster ? treat.of : null
 
     });
 
