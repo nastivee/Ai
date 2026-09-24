@@ -35,21 +35,22 @@ header {
   border-bottom: 1px solid var(--line);
 }
 
-header img {
-  width: 42px;
-  height: 42px;
-  object-fit: contain;
+/*
+  The header used to be the mark plus the name as text,
+  which read as "AtlaAI" the moment the name changed. One
+  picture now, so the artwork carries the name.
+*/
+.brandMark {
+  display: block;
+}
+
+.brandMark img {
+  display: block;
+  width: min(168px, 46vw);
+  height: auto;
   /* room round it so the glow is never clipped */
   filter: drop-shadow(0 6px 16px rgba(139, 92, 246, .35));
 }
-
-.brand {
-  font-size: 19px;
-  font-weight: 800;
-  letter-spacing: -.4px;
-}
-
-.brand span { color: var(--accent); }
 
 .back {
   margin-left: auto;
