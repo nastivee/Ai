@@ -12092,3 +12092,132 @@ body.motionOff .walkerDrops .drop {
 .shopOpen svg {
   color: #ffffff;
 }
+
+/* ---------- SHORTER PACE, FOOTPRINTS THAT CLEAR AT THE TURN ---------- */
+/*
+  He covers a fifth less ground, and the prints are now tied to
+  the walk rather than running on their own clock: they hold
+  while he is walking and go out one at a time as he reaches the
+  turn, oldest first, so the trail is swept away just before he
+  comes back over it.
+*/
+
+.imageProgress .progressTrack {
+  --pace: 72px;
+}
+
+@media (max-width: 560px) {
+  .imageProgress .progressTrack { --pace: 43px; }
+}
+
+.walkerDrops .drop {
+  /* half the walk, so it runs once per length */
+  animation: printWalk 2.1s linear infinite;
+}
+
+/* oldest goes first, newest last, all of it before the turn */
+.walkerDrops .drop.d5 { animation-delay: 0s; }
+.walkerDrops .drop.d4 { animation-delay: .09s; }
+.walkerDrops .drop.d3 { animation-delay: .18s; }
+.walkerDrops .drop.d2 { animation-delay: .27s; }
+.walkerDrops .drop.d1 { animation-delay: .36s; }
+
+@keyframes printWalk {
+  0%   { opacity: 0; transform: scale(.6); }
+  10%  { opacity: .95; transform: scale(1); }
+  62%  { opacity: .95; transform: scale(1); }
+  78%  { opacity: 0; transform: scale(.75); }
+  100% { opacity: 0; transform: scale(.6); }
+}
+
+/* the second foot still sits higher than the first */
+.walkerDrops .drop.d2,
+.walkerDrops .drop.d4 {
+  transform: translateY(-4px);
+}
+
+/* ---------- FAST AND SMART COLOUR EVERYTHING ---------- */
+/*
+  The mode already tints New chat and the composer edge. These
+  give it a solid colour and a wash to go with the gradient, so
+  anything else that wants to follow the mode can, rather than
+  every element inventing its own purple.
+*/
+
+:root {
+  --mode-acc: #a78bfa;
+  --mode-soft: rgba(167, 139, 250, .16);
+  --mode-line: #4a3568;
+  --mode-glow: rgba(167, 139, 250, .45);
+}
+
+body.smartMode {
+  --mode-acc: #60a5fa;
+  --mode-soft: rgba(96, 165, 250, .16);
+  --mode-line: #35507a;
+  --mode-glow: rgba(96, 165, 250, .45);
+}
+
+/* the shop follows the mode rather than the occasion */
+.shopDot,
+.shopBead.on,
+.shopFlag {
+  background: var(--mode-acc);
+}
+
+.shopBead:hover { background: var(--mode-acc); }
+
+.shopTileGives {
+  color: var(--mode-acc);
+}
+
+.shopTile.best {
+  border-color: var(--mode-acc);
+  background: linear-gradient(180deg, var(--mode-soft), rgba(255, 255, 255, .01));
+}
+
+.shopTile.best .shopBuy {
+  background: var(--mode-acc);
+  color: #10131f;
+}
+
+.shopTile:hover {
+  border-color: var(--mode-line);
+}
+
+.shopGroup.open {
+  border-color: var(--mode-line);
+}
+
+.shopBalance {
+  border-color: var(--mode-line);
+}
+
+/* and so do the two pills and the voice picker */
+.versionRow .sidebarPill[aria-pressed="true"] {
+  border-color: transparent;
+}
+
+.voiceSex[aria-pressed="true"] {
+  border-color: var(--mode-acc);
+  background: var(--mode-soft);
+  color: var(--mode-acc);
+}
+
+.voiceSex[aria-pressed="true"] svg {
+  filter: drop-shadow(0 0 6px var(--mode-glow));
+}
+
+/* the pacing robot and his prints take the mode too */
+.walkerDrops .drop {
+  background: var(--mode-acc);
+  box-shadow: 0 0 5px var(--mode-glow);
+}
+
+.walkerBot {
+  filter: drop-shadow(0 0 7px var(--mode-glow));
+}
+
+.progressDots i {
+  background: var(--mode-acc);
+}
