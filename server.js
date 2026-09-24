@@ -2016,14 +2016,54 @@ const PACKS = [
 
 ];
 
-function packById(id) {
-  return PACKS.find(pack => pack.id === String(id || ''));
+/*
+  What is actually on sale. An admin's own list when there is
+  one, otherwise the built in list above, so the shop is never
+  empty and a bad edit can be undone by clearing it.
+*/
+async function livePacks() {
+
+  try {
+
+    const settings = await getSettings();
+    const saved = settings?.sale_packs;
+
+    if (Array.isArray(saved) && saved.length) {
+
+      return saved
+        .filter(pack => pack && pack.id && Number.isFinite(Number(pack.pence)))
+        .map(pack => ({
+          id: String(pack.id),
+          kind: pack.kind === 'plan' ? 'plan' : 'topup',
+          plan: pack.kind === 'plan' ? String(pack.plan || pack.id) : undefined,
+          name: String(pack.name || pack.id),
+          blurb: String(pack.blurb || ''),
+          pence: Math.round(Number(pack.pence)),
+          images: Math.max(0, Math.round(Number(pack.images) || 0)),
+          voice: Math.max(0, Math.round(Number(pack.voice) || 0))
+        }));
+
+    }
+
+  } catch (error) {
+
+    console.warn('PACK LIST FAILED, USING BUILT IN:', error?.message);
+
+  }
+
+  return PACKS;
+
+}
+
+async function packById(id) {
+  const list = await livePacks();
+  return list.find(pack => pack.id === String(id || ''));
 }
 
 /* the shop, for the app to draw */
-app.get('/api/packs', (req, res) => {
+app.get('/api/packs', async (req, res) => {
   res.json({
-    packs: PACKS.map(pack => ({
+    packs: (await livePacks()).map(pack => ({
       id: pack.id,
       kind: pack.kind,
       name: pack.name,
@@ -2065,7 +2105,7 @@ app.post('/api/checkout', async (req, res) => {
       named, so anything already pointing at this route keeps
       working exactly as it did.
     */
-    const pack = packById(req.body?.pack);
+    const pack = await packById(req.body?.pack);
 
     const buying = pack || {
       id: 'legacy',
@@ -2311,6 +2351,60 @@ app.post('/api/admin/settings', async (req, res) => {
     the admin's own working, so it is stored as it comes but with
     a ceiling on size and a check that it is the right shape.
   */
+  /*
+    The shop itself. Kept apart from the pricing model, which is
+    only somebody's working: this list is what people can buy.
+  */
+  if (body.sale_packs !== undefined) {
+
+    const list = body.sale_packs;
+
+    if (!Array.isArray(list)) {
+      return res.status(400).json({ error: 'The pack list must be a list.' });
+    }
+
+    if (list.length > 40) {
+      return res.status(400).json({ error: 'Forty packs is plenty.' });
+    }
+
+    const seen = new Set();
+
+    for (const pack of list) {
+
+      const id = String(pack?.id || '').trim();
+
+      if (!/^[a-z0-9-]{2,32}$/.test(id)) {
+        return res.status(400).json({
+          error: `"${id || '(blank)'}" is not a usable id. Lower case letters, numbers and dashes.`
+        });
+      }
+
+      if (seen.has(id)) {
+        return res.status(400).json({ error: `Two packs share the id "${id}".` });
+      }
+
+      seen.add(id);
+
+      const pence = Math.round(Number(pack?.pence));
+
+      if (!Number.isFinite(pence) || pence < 100 || pence > 50000) {
+        return res.status(400).json({
+          error: `"${pack?.name || id}" must be priced between £1 and £500.`
+        });
+      }
+
+      if (!Number(pack?.images) && !Number(pack?.voice)) {
+        return res.status(400).json({
+          error: `"${pack?.name || id}" gives nothing. Add pictures or minutes.`
+        });
+      }
+
+    }
+
+    patch.sale_packs = list;
+
+  }
+
   if (body.pricing_model !== undefined) {
 
     const model = body.pricing_model;

@@ -11515,6 +11515,206 @@ document.getElementById('pricingSave')?.addEventListener('click', async () => {
 });
 
 /* =====================================================
+   THE SHOP, FROM THE ADMIN SIDE
+
+   The real catalogue, not a model of one. Everything typed here
+   is what people pay, so it is saved deliberately and checked by
+   the server before it lands.
+===================================================== */
+
+let salePacks = [];
+
+function saleRow(pack, index) {
+
+  const row = document.createElement('div');
+
+  row.className = 'saleRow' + (pack.kind === 'plan' ? ' isPlan' : '');
+
+  const field = (key, type, width) => {
+    const box = document.createElement('input');
+    box.type = type;
+    box.value = pack[key] ?? '';
+    box.placeholder = key;
+    if (width) box.style.flex = width;
+    box.addEventListener('input', () => {
+      pack[key] = type === 'number' ? Number(box.value || 0) : box.value;
+      paintSaleNote();
+    });
+    return box;
+  };
+
+  const kind = document.createElement('div');
+  kind.className = 'saleKind';
+  kind.textContent = pack.kind === 'plan' ? 'Monthly' : 'One off';
+
+  const id = field('id', 'text');
+  id.classList.add('saleId');
+
+  const name = field('name', 'text');
+
+  const price = document.createElement('input');
+  price.type = 'number';
+  price.step = '0.01';
+  price.min = '1';
+  price.className = 'salePrice';
+  price.value = (pack.pence / 100).toFixed(2);
+  price.addEventListener('input', () => {
+    pack.pence = Math.round(Number(price.value || 0) * 100);
+    paintSaleNote();
+  });
+
+  const images = field('images', 'number');
+  images.className = 'saleNum';
+  images.title = 'Pictures';
+
+  const voice = field('voice', 'number');
+  voice.className = 'saleNum';
+  voice.title = 'Minutes of talking';
+
+  const blurb = field('blurb', 'text');
+  blurb.className = 'saleBlurb';
+  blurb.placeholder = 'What they get, in a line';
+
+  const drop = document.createElement('button');
+  drop.type = 'button';
+  drop.className = 'packDrop';
+  drop.setAttribute('aria-label', `Remove ${pack.name || pack.id}`);
+  drop.textContent = '×';
+  drop.addEventListener('click', () => {
+    salePacks.splice(index, 1);
+    paintSale();
+  });
+
+  const top = document.createElement('div');
+  top.className = 'saleTop';
+  top.append(kind, id, name, price, images, voice, drop);
+
+  row.append(top, blurb);
+
+  return row;
+
+}
+
+function paintSaleNote() {
+
+  const note = document.getElementById('adminShopNote');
+
+  if (!note) return;
+
+  const plans = salePacks.filter(pack => pack.kind === 'plan').length;
+  const tops = salePacks.length - plans;
+
+  note.textContent =
+    salePacks.length
+      ? `${plans} plan${plans === 1 ? '' : 's'} and ${tops} top up${tops === 1 ? '' : 's'} on sale`
+      : 'Using the built in packs';
+
+}
+
+function paintSale() {
+
+  const table = document.getElementById('saleTable');
+
+  if (!table) return;
+
+  table.innerHTML = '';
+
+  if (!salePacks.length) {
+
+    const empty = document.createElement('div');
+    empty.className = 'adminHint';
+    empty.textContent =
+      'Nothing set, so the built in packs are on sale. Add one to take over.';
+    table.appendChild(empty);
+
+  }
+
+  salePacks.forEach((pack, index) => table.appendChild(saleRow(pack, index)));
+
+  paintSaleNote();
+
+  askTwiceEverywhere();
+
+}
+
+async function loadSale() {
+
+  try {
+
+    const response =
+      await fetch(`${API_BASE}/api/packs`);
+
+    const data = await response.json();
+
+    /* only adopt the list once, so edits are not thrown away */
+    if (!salePacks.length) {
+      salePacks = (data?.packs || []).map(pack => ({ ...pack }));
+    }
+
+    paintSale();
+
+  } catch (error) {
+
+    adminSay('adminShopResult', 'Could not load the shop.', false);
+
+  }
+
+}
+
+document.getElementById('saleAddTopup')?.addEventListener('click', () => {
+  salePacks.push({
+    id: `pack-${Date.now().toString(36).slice(-4)}`,
+    kind: 'topup', name: 'New pack', blurb: '', pence: 499, images: 0, voice: 60
+  });
+  paintSale();
+});
+
+document.getElementById('saleAddPlan')?.addEventListener('click', () => {
+  salePacks.push({
+    id: `plan-${Date.now().toString(36).slice(-4)}`,
+    kind: 'plan', name: 'New plan', blurb: '', pence: 999, images: 20, voice: 15
+  });
+  paintSale();
+});
+
+document.getElementById('saleSave')?.addEventListener('click', async () => {
+
+  const button = document.getElementById('saleSave');
+
+  button.disabled = true;
+
+  try {
+
+    const response =
+      await fetch(`${API_BASE}/api/admin/settings`, {
+        method: 'POST',
+        headers: await apiHeaders(),
+        body: JSON.stringify({ sale_packs: salePacks })
+      });
+
+    const data = await response.json();
+
+    if (!response.ok) throw new Error(data?.error || 'Could not save.');
+
+    adminSay('adminShopResult', 'Saved. That is what people pay now.', true);
+
+    /* the shop the app shows should agree with what was just saved */
+    shopPacks = [];
+
+  } catch (error) {
+
+    adminSay('adminShopResult', error.message, false);
+
+  } finally {
+
+    button.disabled = false;
+
+  }
+
+});
+
+
+/* =====================================================
    ASK TWICE
 
    Anything that deletes, and anything that saves a setting the
@@ -18405,6 +18605,10 @@ function showAdminPage(id) {
 
   if (target.id === 'adminRefusals') {
     loadRefusals();
+  }
+
+  if (target.id === 'adminShop') {
+    loadSale();
   }
 
   if (target.id === 'adminKnowledge') {

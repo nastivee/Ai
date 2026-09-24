@@ -11431,3 +11431,83 @@ body.motionOff .armed::after {
   animation: none;
   transform: scaleX(1);
 }
+
+/* ---------- EDITING THE SHOP ---------- */
+
+.saleTable {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.saleRow {
+  padding: 10px;
+  border: 1px solid #2f2447;
+  border-radius: 13px;
+  background: rgba(255, 255, 255, .02);
+}
+
+.saleRow.isPlan {
+  border-color: #3d4f7a;
+  background: rgba(90, 130, 220, .07);
+}
+
+.saleTop {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+
+.saleKind {
+  flex: 0 0 auto;
+  padding: 0 9px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 9px;
+  background: rgba(255, 255, 255, .05);
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: .5px;
+  text-transform: uppercase;
+  color: #a396b4;
+}
+
+.saleTop input,
+.saleBlurb {
+  min-width: 0;
+  height: 34px;
+  padding: 0 10px;
+  border: 1px solid #3a2c55;
+  border-radius: 10px;
+  background: #171024;
+  color: #efe7f9;
+  font-size: 13px;
+}
+
+.saleTop input:focus,
+.saleBlurb:focus {
+  outline: none;
+  border-color: #6b4fa0;
+}
+
+.saleId { flex: 0 1 120px; }
+.saleTop input[placeholder="name"] { flex: 1 1 130px; }
+.salePrice { flex: 0 1 90px; font-weight: 700; }
+.saleNum { flex: 0 1 74px; }
+
+.saleBlurb {
+  width: 100%;
+  margin-top: 8px;
+}
+
+.saleAddRow {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.saleAddRow .adminAction { flex: 1 1 auto; }

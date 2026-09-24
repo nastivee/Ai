@@ -51,7 +51,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-<link rel="stylesheet" href="./css/app.css?v=2026-09-24-04">
+<link rel="stylesheet" href="./css/app.css?v=2026-09-24-06">
 </head>
 
 <body>
@@ -794,6 +794,50 @@
 
     </div>
 
+    <div class="adminSection" id="adminShop">
+
+      <button class="adminSummary" type="button" data-section="adminShop">
+        <span class="adminDot" aria-hidden="true"></span>
+        <span class="adminSummaryText">
+          What is for sale
+          <span class="adminSummaryNote" id="adminShopNote">Checking...</span>
+        </span>
+        <svg class="adminChevron" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
+      </button>
+
+      <div class="adminBody">
+
+        <div class="adminHint">
+          The shop itself. Everything here is real: change a price
+          and the next person to open Plans and packs pays the new
+          one. A plan renews every month and sets the quality of
+          picture somebody gets; a top up is bought once and never
+          expires. The id is what the payment is recorded against,
+          so change it only for a pack nobody has bought yet.
+          Leaving the list empty puts the built in packs back.
+        </div>
+
+        <div class="saleTable" id="saleTable"></div>
+
+        <div class="saleAddRow">
+          <button class="adminAction adminQuiet" id="saleAddTopup" type="button">
+            Add a top up
+          </button>
+          <button class="adminAction adminQuiet" id="saleAddPlan" type="button">
+            Add a plan
+          </button>
+        </div>
+
+        <button class="adminAction" id="saleSave" type="button">
+          Save the shop
+        </button>
+
+        <div class="adminResult" id="adminShopResult"></div>
+
+      </div>
+
+    </div>
+
     <div class="adminSection" id="adminPricing">
 
       <button class="adminSummary" type="button" data-section="adminPricing">
@@ -966,7 +1010,7 @@
       <button class="adminSummary" type="button" data-section="adminPack">
         <span class="adminDot" aria-hidden="true"></span>
         <span class="adminSummaryText">
-          Pack and coupon
+          Access and credits
           <span class="adminSummaryNote" id="adminPackNote"></span>
         </span>
         <svg class="adminChevron" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
@@ -993,6 +1037,12 @@
           <input class="adminInput" id="adminPrice" type="number"
                  min="100" max="50000" step="1" inputmode="numeric">
           <div class="adminHint" id="adminPriceHint"></div>
+
+        <div class="adminHint">
+          The price and images here are the old single pack, used
+          only by the card somebody sees when they run out. The
+          real catalogue is What is for sale, above.
+        </div>
         </div>
 
         <div class="adminField">
@@ -2404,8 +2454,8 @@
   </div>
 </div>
 
-<script>window.NASTIVEE_VERSION = '2026-09-24-04';</script>
-<script src="./js/app.js?v=2026-09-24-04"></script>
+<script>window.NASTIVEE_VERSION = '2026-09-24-06';</script>
+<script src="./js/app.js?v=2026-09-24-06"></script>
 
 </body>
 </html>
