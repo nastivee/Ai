@@ -12517,8 +12517,19 @@ body.smartMode {
 .adminSection,
 .saleRow,
 .priceGroup {
-  background: var(--lift-2);
+  /* a level, not a decoration, so it replaces the gradient */
+  background-image: none;
+  background-color: var(--lift-2);
   box-shadow: var(--shade-1);
+}
+
+/* the buy button keeps its own look but takes the shared timings */
+.shopTile .shopBuy {
+  transition:
+    transform var(--quick) var(--ease),
+    filter var(--quick) var(--ease),
+    background-color var(--calm) var(--ease),
+    border-color var(--calm) var(--ease);
 }
 
 .shopTile:hover {
