@@ -10986,6 +10986,9 @@ function paintAdmin() {
 
   paintPricing();
 
+  /* rows the panel just drew need arming too */
+  askTwiceEverywhere();
+
   const c =
     adminData.configured || {};
 
@@ -11510,6 +11513,100 @@ document.getElementById('pricingSave')?.addEventListener('click', async () => {
   }
 
 });
+
+/* =====================================================
+   ASK TWICE
+
+   Anything that deletes, and anything that saves a setting the
+   whole site runs on, takes two taps. The first arms the button
+   and says what is about to happen, the second does it.
+
+   It works by listening on the way down and stopping the first
+   click before it reaches whatever else is bound to the button,
+   so nothing already written has to know about any of this.
+
+   An armed button disarms itself after a few seconds, and draws
+   that time as a bar draining across its bottom edge rather than
+   quietly reverting.
+===================================================== */
+
+const ASK_TWICE_MS = 4000;
+
+function armTwice(button, word) {
+
+  if (!button || button.dataset.twice) return;
+
+  button.dataset.twice = '1';
+
+  let armed = false;
+  let timer = null;
+  let was = '';
+
+  const disarm = () => {
+    armed = false;
+    clearTimeout(timer);
+    button.classList.remove('armed');
+    if (was) button.textContent = was;
+  };
+
+  button.addEventListener('click', event => {
+
+    if (armed) {
+      /* the real click: let it through and put the label back */
+      disarm();
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+    event.stopImmediatePropagation();
+
+    armed = true;
+    was = button.textContent;
+    button.textContent = word || 'Tap again to confirm';
+    button.classList.add('armed');
+
+    /* restart the bar cleanly each time it is armed */
+    button.style.removeProperty('--twiceTime');
+    void button.offsetWidth;
+    button.style.setProperty('--twiceTime', `${ASK_TWICE_MS}ms`);
+
+    timer = setTimeout(disarm, ASK_TWICE_MS);
+
+  }, true);
+
+}
+
+/*
+  Everything that deletes, and everything that saves a setting
+  other people will feel. Ids that do not exist are skipped, so
+  this list can be longer than the page.
+*/
+const TWICE_DELETE = [
+  'deleteGo', 'deleteStart', 'adminUploadDelete', 'savedViewerRemove',
+  'clearUploadButton', 'failuresClear', 'refusalsClear', 'resetSaveButton'
+];
+
+const TWICE_SAVE = [
+  'adminSaveSettings', 'adminSavePeek', 'saveRules', 'pricingSave',
+  'profileSave', 'pwSave'
+];
+
+function askTwiceEverywhere() {
+
+  TWICE_DELETE.forEach(id =>
+    armTwice(document.getElementById(id), 'Tap again to delete'));
+
+  TWICE_SAVE.forEach(id =>
+    armTwice(document.getElementById(id), 'Tap again to save'));
+
+  /* anything the app drew later that deletes something */
+  document.querySelectorAll('.savedAction.danger, .dangerButton, .packDrop')
+    .forEach(button => armTwice(button, 'Tap again to delete'));
+
+}
+
+askTwiceEverywhere();
 
 async function loadAdmin() {
 

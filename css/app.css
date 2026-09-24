@@ -11375,3 +11375,59 @@ body.motionOff .voiceBot .ball {
   font-size: 11px;
   letter-spacing: 0;
 }
+
+/* ---------- A BUTTON WAITING FOR ITS SECOND TAP ---------- */
+/*
+  Armed buttons say what is about to happen and draw the time
+  they will wait as a bar draining across the bottom, so nothing
+  reverts silently.
+*/
+
+.armed {
+  position: relative;
+  overflow: hidden;
+  border-color: #8a5a1c !important;
+  color: #ffd9a8 !important;
+}
+
+.armed::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 3px;
+  background: #f0a94a;
+  transform-origin: left center;
+  animation: twiceDrain var(--twiceTime, 4000ms) linear forwards;
+}
+
+@keyframes twiceDrain {
+  from { transform: scaleX(1); }
+  to { transform: scaleX(0); }
+}
+
+/* a delete that is armed reads as a delete */
+.dangerButton.armed,
+.savedAction.danger.armed,
+.packDrop.armed {
+  border-color: #8f3350 !important;
+  color: #ffb3c4 !important;
+}
+
+.dangerButton.armed::after,
+.savedAction.danger.armed::after,
+.packDrop.armed::after {
+  background: #e06080;
+}
+
+/* the little x in the pricing table has no room for words */
+.packDrop.armed {
+  font-size: 15px;
+  font-weight: 800;
+}
+
+body.motionOff .armed::after {
+  animation: none;
+  transform: scaleX(1);
+}
