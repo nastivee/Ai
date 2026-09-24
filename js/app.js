@@ -15374,7 +15374,7 @@ function startHum() {
 
     const gain = ctx.createGain();
     gain.gain.setValueAtTime(0.0001, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.045, ctx.currentTime + 0.5);
+    gain.gain.exponentialRampToValueAtTime(0.09, ctx.currentTime + 0.4);
     gain.connect(ctx.destination);
 
     /* the wobble, so it breathes instead of sitting there */
@@ -15393,18 +15393,34 @@ function startHum() {
     fifth.frequency.value = 220;
 
     const fifthGain = ctx.createGain();
-    fifthGain.gain.value = 0.35;
+    fifthGain.gain.value = 0.4;
+
+    /*
+      A phone speaker cannot really produce 147Hz, so on a mobile
+      a hum built only from the low notes is felt as nothing at
+      all. This one sits in the range a small speaker actually
+      reproduces, quiet enough not to talk over him.
+    */
+    const carry = ctx.createOscillator();
+    carry.type = 'triangle';
+    carry.frequency.value = 440;
+
+    const carryGain = ctx.createGain();
+    carryGain.gain.value = 0.16;
 
     wobbleDepth.connect(low.frequency);
     low.connect(gain);
     fifth.connect(fifthGain);
     fifthGain.connect(gain);
+    carry.connect(carryGain);
+    carryGain.connect(gain);
 
     low.start();
     fifth.start();
+    carry.start();
     wobble.start();
 
-    humParts = { ctx, gain, nodes: [low, fifth, wobble] };
+    humParts = { ctx, gain, nodes: [low, fifth, carry, wobble] };
 
   } catch (error) {
 
@@ -15607,9 +15623,12 @@ async function answerVoiceTool(call, item) {
     startHum();
 
     /*
-      If it really drags, he says so himself. Only when he is
-      not already mid sentence, because talking over himself
-      is worse than the gap ever was.
+      He says it himself, which is the one thing certain to be
+      heard: it comes down the call's own audio, so nothing
+      about phone speakers or audio permissions can swallow it
+      the way they can swallow the hum. Only when he is not
+      already mid sentence, because talking over himself is
+      worse than the gap ever was.
     */
     const sayIn = setTimeout(() => {
 
@@ -15630,7 +15649,7 @@ async function answerVoiceTool(call, item) {
 
       } catch {}
 
-    }, 4500);
+    }, 1800);
 
     /* and again on screen, so a long wait still looks alive */
     const dragIn = setTimeout(() => {
