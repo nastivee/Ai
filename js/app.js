@@ -19860,17 +19860,10 @@ function drawUploadPager(total) {
 async function loadAdminUploads(reset = false) {
 
   const grid = document.getElementById('adminUploadGrid');
-  const more = document.getElementById('adminUploadsMore');
-
   if (reset) adminUploadPage = 0;
 
   /* a page replaces the one before it */
   grid.innerHTML = '';
-
-  if (more) {
-    more.disabled = true;
-    more.textContent = 'Loading...';
-  }
 
   try {
 
@@ -19932,19 +19925,9 @@ async function loadAdminUploads(reset = false) {
 
     drawUploadPager(data.total);
 
-    /* the pager does this job now */
-    if (more) more.style.display = 'none';
-
   } catch (error) {
 
     adminSay('adminUploadsResult', error.message, false);
-
-  } finally {
-
-    if (more) {
-      more.disabled = false;
-      more.textContent = 'Show more';
-    }
 
   }
 

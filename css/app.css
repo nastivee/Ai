@@ -12221,3 +12221,125 @@ body.smartMode {
 .progressDots i {
   background: var(--mode-acc);
 }
+
+/* =====================================================
+   PASS ONE: ONE SET OF NUMBERS
+
+   Nine months of additions left the same idea expressed
+   several ways: buttons at 40, 42, 44, 46 and 48 tall,
+   radii at 9, 10, 11, 12, 13, 14, 16 and 18, four greys
+   doing the work of three. None of it wrong on its own,
+   all of it read as roughness.
+
+   These are the numbers everything should use from here.
+   Applied to the components that show, rather than with a
+   universal selector, so nothing shifts where it was
+   deliberate.
+===================================================== */
+
+:root {
+  /* spacing, a four step scale */
+  --s1: 6px;
+  --s2: 10px;
+  --s3: 14px;
+  --s4: 20px;
+  --s5: 28px;
+
+  /* radius: control, card, panel */
+  --r1: 10px;
+  --r2: 14px;
+  --r3: 18px;
+
+  /* the only three heights a control should be */
+  --h-sm: 36px;
+  --h-md: 44px;
+  --h-lg: 48px;
+
+  /* three levels of text, no more */
+  --ink: #f2ecfa;
+  --ink-2: #b3a6c4;
+  --ink-3: #8a7d9c;
+}
+
+/* ---- controls settle on two heights and one radius ---- */
+
+.adminAction,
+.shopBuy,
+.pagerStep,
+.voiceControl,
+.savedAction,
+.lockButton,
+.authButton,
+.guestButton {
+  border-radius: var(--r2);
+}
+
+.adminAction,
+.voiceControl,
+.lockButton {
+  min-height: var(--h-md);
+}
+
+.pagerStep,
+.savedAction {
+  min-height: var(--h-sm);
+  border-radius: var(--r1);
+}
+
+/* ---- cards and panels share two radii ---- */
+
+.adminSection,
+.shopTile,
+.saleRow,
+.priceGroup,
+.shopGroup,
+.chatHistoryItem {
+  border-radius: var(--r2);
+}
+
+.shopCard,
+.adminCard,
+.payCard,
+.authCard {
+  border-radius: var(--r3);
+}
+
+/* ---- text settles on three greys ---- */
+
+.adminHint,
+.shopItemBlurb,
+.shopTileBlurb,
+.shopPageNote,
+.priceField span,
+.savedHint,
+.pagerWhere,
+.shopLead {
+  color: var(--ink-2);
+}
+
+.historyLabel,
+.priceGroupTitle,
+.packHead,
+.projectHead,
+.saleKind,
+.shopSummaryNote {
+  color: var(--ink-3);
+}
+
+.shopTileName,
+.shopItemName,
+.adminSummaryText,
+.shopPageTitle {
+  color: var(--ink);
+}
+
+/* ---- inputs match the controls beside them ---- */
+
+.adminInput,
+.priceField input,
+.saleTop input,
+.saleBlurb,
+.packRow input {
+  min-height: var(--h-sm);
+  border-radius: var(--r1);
+}
