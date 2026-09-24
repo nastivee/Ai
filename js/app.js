@@ -10230,6 +10230,8 @@ const payMessage =
 let account = {
   signedIn: false,
   credits: 0,
+  plan: 'free',
+  voiceSeconds: 0,
   unlimited: false,
   packImages: 100,
   packPricePence: 500,
@@ -10441,6 +10443,237 @@ document
 payOverlay?.addEventListener('click', event => {
   if (event.target === payOverlay) {
     closePaywall();
+  }
+});
+
+
+/* =====================================================
+   THE SHOP
+
+   Four groups, closed until somebody opens one, each with a
+   summary row so the prices can be seen without opening
+   anything. Everything comes from the server's own catalogue,
+   so nothing here can quote a price that checkout will not
+   honour.
+===================================================== */
+
+const SHOP_GROUPS = [
+  {
+    id: 'plans',
+    title: 'Every month',
+    note: 'A plan that renews. Better pictures the higher you go.',
+    of: pack => pack.kind === 'plan'
+  },
+  {
+    id: 'voice',
+    title: 'Talking',
+    note: 'Minutes of voice chat. They never expire.',
+    of: pack => pack.kind === 'topup' && pack.voice > 0 && !pack.images
+  },
+  {
+    id: 'pictures',
+    title: 'Pictures',
+    note: 'Image credits. They never expire.',
+    of: pack => pack.kind === 'topup' && pack.images > 0 && !pack.voice
+  },
+  {
+    id: 'bundles',
+    title: 'Both together',
+    note: 'Pictures and talking in one, usually cheaper than separately.',
+    of: pack => pack.kind === 'topup' && pack.images > 0 && pack.voice > 0
+  }
+];
+
+let shopPacks = [];
+
+function priceTag(pence) {
+  return pence % 100 === 0
+    ? `£${pence / 100}`
+    : `£${(pence / 100).toFixed(2)}`;
+}
+
+function shopSay(text, good) {
+  const box = document.getElementById('shopResult');
+  if (!box) return;
+  box.textContent = text || '';
+  box.classList.toggle('good', good === true);
+  box.classList.toggle('bad', good === false);
+}
+
+async function buyPack(id, button) {
+
+  button.disabled = true;
+
+  const was = button.textContent;
+
+  button.textContent = 'Opening Stripe...';
+
+  try {
+
+    const response =
+      await fetch(`${API_BASE}/api/checkout`, {
+        method: 'POST',
+        headers: await apiHeaders(),
+        body: JSON.stringify({ pack: id })
+      });
+
+    const data = await response.json();
+
+    if (!response.ok || !data?.url) {
+      throw new Error(data?.error || 'Could not start checkout.');
+    }
+
+    location.href = data.url;
+
+  } catch (error) {
+
+    shopSay(error.message, false);
+    button.disabled = false;
+    button.textContent = was;
+
+  }
+
+}
+
+function paintShop() {
+
+  const holder = document.getElementById('shopGroups');
+
+  if (!holder) return;
+
+  holder.innerHTML = '';
+
+  const mine = String(account?.plan || '');
+
+  SHOP_GROUPS.forEach(group => {
+
+    const items = shopPacks.filter(group.of);
+
+    if (!items.length) return;
+
+    const cheapest = Math.min(...items.map(item => item.pence));
+
+    const card = document.createElement('div');
+
+    card.className = 'shopGroup';
+    /* so opening one brings it back to the same place next time */
+    card.id = `shop-${group.id}`;
+
+    const summary = document.createElement('button');
+    summary.type = 'button';
+    summary.className = 'shopSummary';
+    summary.innerHTML =
+      '<span class="shopDot" aria-hidden="true"></span>' +
+      `<span>${group.title}` +
+      `<span class="shopSummaryNote">${items.length} to choose from, ` +
+      `from ${priceTag(cheapest)}. ${group.note}</span></span>` +
+      '<svg class="shopChevron" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>';
+
+    summary.addEventListener('click', () => {
+      card.classList.toggle('open');
+      if (card.classList.contains('open')) {
+        card.scrollIntoView({ block: 'start', behavior: 'smooth' });
+      }
+    });
+
+    const body = document.createElement('div');
+    body.className = 'shopBody';
+
+    items.forEach(item => {
+
+      const row = document.createElement('div');
+
+      row.className =
+        'shopItem' + (item.kind === 'plan' && item.id === mine ? ' mine' : '');
+
+      const text = document.createElement('div');
+      text.className = 'shopItemText';
+      text.innerHTML =
+        `<div class="shopItemName">${item.name}</div>` +
+        `<div class="shopItemBlurb">${item.blurb}</div>`;
+
+      const buy = document.createElement('button');
+      buy.type = 'button';
+      buy.className = 'shopBuy';
+
+      const onThis = item.kind === 'plan' && item.id === mine;
+
+      buy.textContent =
+        onThis
+          ? 'Your plan'
+          : `${priceTag(item.pence)}${item.kind === 'plan' ? ' a month' : ''}`;
+
+      buy.disabled = onThis;
+
+      if (!onThis) {
+        buy.addEventListener('click', () => buyPack(item.id, buy));
+      }
+
+      row.append(text, buy);
+      body.appendChild(row);
+
+    });
+
+    card.append(summary, body);
+    holder.appendChild(card);
+
+  });
+
+}
+
+async function openShop() {
+
+  const overlay = document.getElementById('shopOverlay');
+
+  if (!overlay) return;
+
+  overlay.classList.add('show');
+
+  shopSay('');
+
+  const balance = document.getElementById('shopBalance');
+
+  if (balance) {
+    const left = account?.credits;
+    const mins = Math.round((account?.voiceSeconds || 0) / 60);
+    balance.textContent =
+      left === undefined
+        ? ''
+        : `You have ${left} picture${left === 1 ? '' : 's'} and ` +
+          `${mins} minute${mins === 1 ? '' : 's'} of talking left.`;
+  }
+
+  if (!shopPacks.length) {
+
+    try {
+
+      const response = await fetch(`${API_BASE}/api/packs`);
+      const data = await response.json();
+
+      shopPacks = data?.packs || [];
+
+    } catch (error) {
+
+      shopSay('Could not load the shop. Try again in a moment.', false);
+      return;
+
+    }
+
+  }
+
+  paintShop();
+
+}
+
+document.getElementById('shopOpen')?.addEventListener('click', openShop);
+
+document.getElementById('shopClose')?.addEventListener('click', () => {
+  document.getElementById('shopOverlay')?.classList.remove('show');
+});
+
+document.getElementById('shopOverlay')?.addEventListener('click', event => {
+  if (event.target.id === 'shopOverlay') {
+    event.currentTarget.classList.remove('show');
   }
 });
 

@@ -793,7 +793,7 @@ async function readAccount(userId) {
   const { data, error } =
     await supabaseAdmin
       .from('profiles')
-      .select('image_credits, unlimited, plan')
+      .select('image_credits, unlimited, plan, voice_seconds')
       .eq('id', userId)
       .maybeSingle();
 
@@ -841,6 +841,7 @@ async function readAccount(userId) {
     credits,
     unlimited: data?.unlimited === true,
     plan: data?.plan || null,
+    voiceSeconds: Number(data?.voice_seconds || 0),
     unmetered: settings.paywall_enabled === false
   };
 
@@ -1562,6 +1563,11 @@ app.get('/api/account', async (req, res) => {
   res.json({
     signedIn: true,
     credits: account.credits,
+
+    /* what they are on, and how long they can talk for */
+    plan: account.plan || 'free',
+    voiceSeconds: account.voiceSeconds || 0,
+
     unlimited: unlimitedReason !== null,
     unlimitedReason,
     packImages: settings.pack_images,
