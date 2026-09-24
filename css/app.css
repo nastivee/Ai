@@ -11548,3 +11548,67 @@ body .sidebarBottom {
 .newChatRow .newChatButton {
   padding-left: 48px;
 }
+
+/* ---------- THE WALKER STOPS PRETENDING ---------- */
+/*
+  A bar that fills toward an end is a promise about how long
+  this will take, and nothing here knows that: a reply can come
+  in one second or twenty. So he paces on the spot instead, which
+  says working without claiming to know how much is left.
+*/
+
+.imageProgress .progressTrack {
+  /* no rail to march along, so nothing reads as progress */
+  background: none;
+  border: 0;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.imageProgress .progressTrack::before,
+.imageProgress .progressTrack::after {
+  display: none;
+}
+
+.progressWalker {
+  position: relative;
+  left: auto;
+  top: auto;
+  width: 34px;
+  height: 34px;
+  margin: 0 0 0 4px;
+  /* pacing: a few steps out, a turn, a few steps back */
+  animation: walkPace 2.8s ease-in-out infinite;
+}
+
+@keyframes walkPace {
+  0%   { transform: translateX(0) scaleX(1); }
+  42%  { transform: translateX(18px) scaleX(1); }
+  50%  { transform: translateX(18px) scaleX(-1); }
+  92%  { transform: translateX(0) scaleX(-1); }
+  100% { transform: translateX(0) scaleX(1); }
+}
+
+/* the trail of light belonged to the bar, and the bar has gone */
+.walkerTail,
+.walkerDrops {
+  display: none;
+}
+
+.walkerBot {
+  left: 0;
+  width: 30px;
+}
+
+/* he was shoving something along; now he is just walking */
+body.theme-frost .walkerArms,
+body.theme-frost .walkerBot {
+  animation: walkBob .46s ease-in-out infinite alternate;
+}
+
+body.motionOff .progressWalker,
+body.motionOff .walkerBot {
+  animation: none;
+}
