@@ -2082,9 +2082,17 @@ const PACKS = [
   { id: 'voice300', kind: 'topup', name: '5 hours of talking',     pence: 1999, blurb: 'Five hours of voice chat. Never expires.', voice: 300 },
 
   /* ---- pictures ---- */
-  { id: 'img20',  kind: 'topup', name: '20 quick pictures',  pence: 349,  blurb: 'Twenty pictures. Never expires.', images: 20 },
-  { id: 'img15b', kind: 'topup', name: '15 better pictures', pence: 899,  blurb: 'Fifteen pictures at better quality. Never expires.', images: 15 },
-  { id: 'img8',   kind: 'topup', name: '8 best pictures',    pence: 1499, blurb: 'Eight pictures at the best quality. Never expires.', images: 8 },
+  /*
+    Three rungs of the same ladder, named so the difference is
+    the first thing read rather than something to work out from
+    the price. Dearer per picture is the point, not a mistake.
+  */
+  { id: 'img20',  kind: 'topup', name: '20 pictures',
+    pence: 349,  blurb: 'Twenty pictures at standard quality. Never expires.', images: 20 },
+  { id: 'img15b', kind: 'topup', name: '15 better quality pictures',
+    pence: 899,  blurb: 'Sharper, more detailed, and any shape you like. Never expires.', images: 15 },
+  { id: 'img8',   kind: 'topup', name: '8 best quality pictures',
+    pence: 1499, blurb: 'The best the model can do, for the ones that matter. Never expires.', images: 8 },
 
   /* ---- combinations ---- */
   { id: 'daypass',    kind: 'topup', name: 'Day pass',   pence: 299,  blurb: '5 pictures and 10 minutes of talking.', images: 5, voice: 10 },
