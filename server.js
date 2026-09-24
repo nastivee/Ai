@@ -2059,19 +2059,19 @@ const PACKS = [
   {
     id: 'starter', kind: 'plan', plan: 'starter',
     name: 'Starter', pence: 499,
-    blurb: '20 pictures, 120 replies and 5 minutes of talking, every month.',
+    blurb: '20 pictures, 120 text chat responses and 5 minutes of talking, every month.',
     images: 20, voice: 5
   },
   {
     id: 'plus', kind: 'plan', plan: 'plus',
     name: 'Plus', pence: 999,
-    blurb: '12 better pictures in any shape, 250 replies and 15 minutes of talking, every month.',
+    blurb: '12 better quality pictures in any shape, 250 text chat responses and 15 minutes of talking, every month.',
     images: 12, voice: 15
   },
   {
     id: 'pro', kind: 'plan', plan: 'pro',
     name: 'Pro', pence: 1999,
-    blurb: '30 pictures at the best quality, 500 replies and 30 minutes of talking, every month.',
+    blurb: '30 best quality pictures, 500 text chat responses and 30 minutes of talking, every month.',
     images: 30, voice: 30
   },
 
