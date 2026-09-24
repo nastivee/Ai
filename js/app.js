@@ -7380,6 +7380,28 @@ async function generateImage(
     );
 
 
+    /*
+      The first picture on a free account is made on the
+      better model. Say so, once, right underneath it, or
+      the whole point is lost: a better picture nobody
+      knows was better is just a picture.
+
+      Worded as a fact rather than a sales line. They can
+      see the thing they just made, so it does the arguing.
+    */
+    if (data.taster) {
+
+      addTextMessageTo(
+        requestChatId,
+        'assistant',
+        'That first one was made on the better model, on the house. ' +
+        'The rest of your free pictures use the quicker one, which is ' +
+        'decent but not the same. A plan keeps you on the better one.'
+      );
+
+    }
+
+
     await saveMessage(
       'assistant',
       prompt,

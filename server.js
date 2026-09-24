@@ -1171,14 +1171,71 @@ function planOf(user) {
 
 }
 
-function imageSpecFor(user, shape) {
+/*
+  THE TASTER
+
+  A free account's very first picture is made on the good
+  model at medium quality. Everything after it is made on
+  the cheap one.
+
+  The reasoning is plain: somebody's first picture is the
+  only one that decides whether they come back, and the gap
+  between the two models is obvious the moment you see them
+  side by side. Showing the good one once and then the
+  cheap one is a far better argument for a plan than
+  describing the difference ever could be.
+
+  It costs about 4p, once, per account, and it never comes
+  round again, which is what makes it a taster rather than
+  an allowance.
+*/
+const IMAGE_MODEL_CHEAP =
+  process.env.IMAGE_MODEL_CHEAP || 'gpt-image-1-mini';
+
+function imageSpecFor(user, shape, taster) {
 
   const plan = PLAN_IMAGES[planOf(user)] || PLAN_IMAGES.free;
 
+  const onFree = planOf(user) === 'free';
+
+  /* the one good one, then the cheap model from then on */
+  const good = !onFree || taster === true;
+
   return {
-    quality: process.env.IMAGE_QUALITY || plan.quality,
-    size: plan.shapes ? sizeFor(shape) : '1024x1024'
+    model: good ? IMAGE_MODEL : IMAGE_MODEL_CHEAP,
+    quality:
+      process.env.IMAGE_QUALITY ||
+      (onFree && taster ? 'medium' : plan.quality),
+    size: plan.shapes ? sizeFor(shape) : '1024x1024',
+    taster: Boolean(onFree && taster)
   };
+
+}
+
+/*
+  Has this free account had its one good picture yet, and
+  if not, mark it as having had it now. Marked before the
+  picture is made rather than after, because a second
+  request arriving while the first is still running would
+  otherwise get one too.
+*/
+async function takeTaster(user, account) {
+
+  if (!user || isAdmin(user)) return false;
+
+  if (account?.unlimited || account?.unmetered) return false;
+
+  if ((account?.plan || 'free') !== 'free') return false;
+
+  const tally = await tallyFor(user.id);
+
+  if (tally.hadTaster) return false;
+
+  tally.hadTaster = true;
+
+  await saveTally(user.id, tally);
+
+  return true;
 
 }
 
@@ -4196,7 +4253,15 @@ function rolled(raw) {
     searches: held.day === day ? Number(held.searches) || 0 : 0,
     textsMonth: held.month === month ? Number(held.textsMonth) || 0 : 0,
     searchesMonth: held.month === month ? Number(held.searchesMonth) || 0 : 0,
-    smartMonth: held.month === month ? Number(held.smartMonth) || 0 : 0
+    smartMonth: held.month === month ? Number(held.smartMonth) || 0 : 0,
+
+    /*
+      This one never rolls. It marks that a free account has
+      had its one good picture, and it has to outlive the day
+      and the month or the taster would come round again
+      every month and stop being a taster.
+    */
+    hadTaster: held.hadTaster === true
   };
 
 }
@@ -8247,16 +8312,29 @@ app.post('/api/image', async (req, res) => {
     );
 
 
+    /* one good one on the house, then the cheaper model */
+    const spec =
+      imageSpecFor(
+        user,
+        shape,
+        await takeTaster(user, await readAccount(user.id))
+      );
+
+    console.log(
+      `IMAGE: ${spec.model} ${spec.quality} ${spec.size}` +
+      (spec.taster ? ' (first one free on the good model)' : '')
+    );
+
     const result =
       await openai.images.generate({
 
-        model: IMAGE_MODEL,
+        model: spec.model,
 
         prompt: finalPrompt,
 
-        size: imageSpecFor(user, shape).size,
+        size: spec.size,
 
-        quality: imageSpecFor(user, shape).quality,
+        quality: spec.quality,
 
         n: 1
 
@@ -8287,7 +8365,14 @@ app.post('/api/image', async (req, res) => {
         `data:image/png;base64,${imageData}`,
 
       creditsLeft:
-        user?.unlimited ? null : user?.creditsLeft
+        user?.unlimited ? null : user?.creditsLeft,
+
+      /*
+        Say when the good model was used, or the taster does
+        nothing at all. A better picture nobody knows was
+        better is just a picture.
+      */
+      taster: spec.taster === true
 
     });
 
@@ -8639,18 +8724,26 @@ style was requested.
     // OPENAI IMAGE EDIT
     // =================================================
 
+    /*
+      An edit does not spend the taster. It is somebody
+      changing a picture they already have, not their first
+      look at what the thing can do, and the taster is only
+      worth anything on a first impression.
+    */
+    const spec = imageSpecFor(user, shape, false);
+
     const result =
       await openai.images.edit({
 
-        model: IMAGE_MODEL,
+        model: spec.model,
 
         image: imageFiles.length > 1 ? imageFiles : imageFiles[0],
 
         prompt: finalPrompt,
 
-        size: imageSpecFor(user, shape).size,
+        size: spec.size,
 
-        quality: imageSpecFor(user, shape).quality,
+        quality: spec.quality,
 
         n: 1
 
