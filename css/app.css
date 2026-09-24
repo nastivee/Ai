@@ -12389,3 +12389,266 @@ body.smartMode {
 .refusalBody {
   padding: var(--s1) 16px 16px;
 }
+
+/* =====================================================
+   PASS TWO: TYPOGRAPHY
+
+   One family and one weight were doing every job, and a
+   dozen sizes were in use where four would do. The biggest
+   single win is tabular figures: prices, credits, counts
+   and timers all change while you are looking at them, and
+   proportional digits make them jump about as they do.
+===================================================== */
+
+:root {
+  /* four sizes, and one step either side for the edges */
+  --t-xs: 11.5px;
+  --t-sm: 13px;
+  --t-md: 14.5px;
+  --t-lg: 19px;
+  --t-xl: 30px;
+}
+
+/* ---- numbers hold their width while they change ---- */
+
+.shopTilePrice,
+.pagerWhere,
+.packNum,
+.projectRow,
+.salePrice,
+.saleNum,
+.priceField input,
+.versionTag,
+.savedCount,
+.creditsCount,
+.shopBalance,
+.refusalSub,
+.adminSummaryNote {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+}
+
+/* ---- a price is a number first and a word second ---- */
+
+.shopTilePrice {
+  font-size: var(--t-xl);
+  letter-spacing: -.8px;
+}
+
+/* ---- headings step down cleanly ---- */
+
+.shopTitle,
+.adminTitle {
+  font-size: var(--t-lg);
+  letter-spacing: -.2px;
+}
+
+.shopPageTitle,
+.refusalTitle,
+.shopTileName {
+  letter-spacing: -.1px;
+}
+
+/* ---- body copy gets a line height that can be read ---- */
+
+.adminHint,
+.shopLead,
+.shopPageNote,
+.shopTileBlurb,
+.shopItemBlurb,
+.refusalText,
+.savedHint {
+  font-size: var(--t-sm);
+  line-height: 1.6;
+}
+
+/* ---- the small print is small, not shrunken ---- */
+
+.priceGroupTitle,
+.packHead,
+.projectHead,
+.saleKind,
+.shopSummaryNote,
+.refusalLabel,
+.historyLabel {
+  font-size: var(--t-xs);
+  line-height: 1.4;
+}
+
+/* ---- long words break rather than escaping their box ---- */
+
+.shopTileName,
+.shopItemName,
+.refusalTitle,
+.saleBlurb {
+  overflow-wrap: anywhere;
+}
+
+/* =====================================================
+   PASS THREE: DEPTH
+
+   Nearly every surface was a flat panel with a one pixel
+   border, so a card inside a card inside an overlay read
+   as three boxes rather than three levels. Hierarchy now
+   comes from surface lightness and a soft shadow, and the
+   borders that remain are there to separate, not to stack.
+===================================================== */
+
+:root {
+  /* three levels: the page, a panel on it, a card on that */
+  --lift-0: #120d1e;
+  --lift-1: #17112a;
+  --lift-2: #1d1633;
+
+  --shade-1: 0 1px 2px rgba(0, 0, 0, .3);
+  --shade-2: 0 6px 18px rgba(0, 0, 0, .35);
+  --shade-3: 0 18px 48px rgba(0, 0, 0, .45);
+}
+
+/* an overlay floats well clear of the page */
+.shopCard,
+.adminCard,
+.payCard {
+  box-shadow: var(--shade-3);
+}
+
+/* a card on a panel lifts a little */
+.shopTile,
+.adminSection,
+.saleRow,
+.priceGroup {
+  background: var(--lift-2);
+  box-shadow: var(--shade-1);
+}
+
+.shopTile:hover {
+  box-shadow: var(--shade-2);
+}
+
+/* rows inside a card sit back rather than drawing another box */
+.refusalRow,
+.projectRow,
+.packRow {
+  border: 0;
+  background: rgba(255, 255, 255, .035);
+}
+
+/* the failure and issue cards keep their state colour but lose
+   the heavy outline, since the colour already says it */
+.refusalCard {
+  box-shadow: var(--shade-1);
+}
+
+/* a balance strip is information, not a container */
+.shopBalance {
+  border: 0;
+  background: rgba(255, 255, 255, .04);
+}
+
+/* nothing is allowed to clip its own shadow */
+.shopGrid,
+.saleTable,
+.packTable,
+.projectTable,
+.refusalList {
+  overflow: visible;
+}
+
+/* except the two that must scroll, which get room instead */
+.packTable,
+.projectTable {
+  overflow-x: auto;
+  padding: 4px 2px 8px;
+}
+
+/* =====================================================
+   PASS FOUR: MOTION
+
+   There was a lot of animation and no agreement about how
+   long anything should take: .18s here, .22s there, .35s,
+   .46s, .5s, .55s, .7s. One curve and three durations now.
+   Fast is feedback, medium is something opening, slow is
+   ambience that nobody is waiting on.
+===================================================== */
+
+:root {
+  --ease: cubic-bezier(.32, .72, 0, 1);
+  --quick: .16s;
+  --calm: .3s;
+  --slow: .6s;
+}
+
+/* ---- feedback: a press, a hover, a colour ---- */
+
+.shopBuy,
+.shopOpen,
+.adminAction,
+.pagerStep,
+.sidebarPill,
+.voiceSex,
+.shopBead,
+.savedAction,
+.packDrop,
+.newChatButton,
+.profileButton,
+.logoutButton {
+  transition:
+    transform var(--quick) var(--ease),
+    filter var(--quick) var(--ease),
+    background-color var(--calm) var(--ease),
+    border-color var(--calm) var(--ease),
+    color var(--calm) var(--ease);
+}
+
+/* ---- opening: a panel, a card, a drawer ---- */
+
+.shopGroup,
+.adminSection,
+.shopTile,
+.refusalCard,
+.chatHistoryItem {
+  transition:
+    border-color var(--calm) var(--ease),
+    background-color var(--calm) var(--ease),
+    box-shadow var(--calm) var(--ease),
+    transform var(--calm) var(--ease);
+}
+
+.adminChevron,
+.shopChevron,
+.savedChevron,
+.refusalChevron {
+  transition: transform var(--calm) var(--ease);
+}
+
+/* ---- ambience: things nobody is waiting for ---- */
+
+.themeDecor,
+.voiceBot .botArt,
+.progressWalker {
+  transition-timing-function: var(--ease);
+}
+
+/*
+  One override to rule them all: somebody who has asked for
+  stillness gets stillness, including from anything added
+  after this was written.
+*/
+body.motionOff *,
+body.motionOff *::before,
+body.motionOff *::after {
+  animation-duration: .001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: .001ms !important;
+  scroll-behavior: auto !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important;
+  }
+}
