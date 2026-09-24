@@ -2162,11 +2162,32 @@ function renderChatHistory() {
    forgotten.
 ===================================================== */
 
+/*
+  Swiping belongs to a hand, not a mouse. Tablet width and
+  below get the swipe; anything wider gets the bin back on
+  the row, because there is nothing to swipe with and a
+  chat still has to be removable. The line moves live, so
+  turning a tablet or dragging a window across it changes
+  the rows rather than leaving half of them wrong.
+*/
+const SWIPE_UPTO =
+  window.matchMedia('(max-width: 1024px)');
+
+function swipeSized() {
+  return SWIPE_UPTO.matches;
+}
+
 const SWIPE_OPEN = 96;      /* how far the panel comes out */
 const SWIPE_CATCH = 12;     /* before then it might still be a scroll */
 const SWIPE_KEEP = 56;      /* let go past here and it stays open */
 
 let swipeOpenRow = null;
+
+/* crossing the line redraws the rows, so none are left half set up */
+SWIPE_UPTO.addEventListener('change', () => {
+  closeSwipe();
+  if (typeof renderChatHistory === 'function') renderChatHistory();
+});
 
 function closeSwipe(row) {
 
@@ -2181,7 +2202,44 @@ function closeSwipe(row) {
 
 }
 
+/*
+  The bin, for screens with a mouse and nothing to swipe.
+  It opens exactly the same confirmation the swipe does.
+*/
+function addBin(row, chatItem) {
+
+  const bin = document.createElement('button');
+
+  bin.className = 'deleteChatButton';
+
+  bin.type = 'button';
+
+  bin.innerHTML =
+    '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4.5A1.5 1.5 0 0 1 9.5 3h5A1.5 1.5 0 0 1 16 4.5V6"/><path d="M5.5 6l1 13.2A2 2 0 0 0 8.5 21h7a2 2 0 0 0 2-1.8L18.5 6"/><path d="M10 11v6M14 11v6"/></svg>';
+
+  bin.title = 'Delete chat';
+
+  bin.setAttribute(
+    'aria-label',
+    `Delete ${chatItem.title || 'chat'}`
+  );
+
+  bin.addEventListener('click', event => {
+    event.stopPropagation();
+    askToDelete(row, chatItem);
+  });
+
+  row.appendChild(bin);
+
+}
+
+
 function armSwipe(row, chatItem) {
+
+  if (!swipeSized()) {
+    addBin(row, chatItem);
+    return;
+  }
 
   const back =
     document.createElement('div');

@@ -12970,11 +12970,15 @@ body.motionOff *::after {
   flex-shrink: 0;
 }
 
-/* a swipe is a touch idea, so on a mouse the bin stays the way in */
-@media (hover: hover) and (pointer: fine) {
+/*
+  Wider than a tablet nothing is armed, so the row scrolls
+  and behaves exactly as it did before any of this.
+*/
+@media (min-width: 1025px) {
 
   .chatHistoryItem {
     touch-action: auto;
+    overflow: visible;
   }
 
 }
@@ -13095,38 +13099,52 @@ body.motionOff .swipeBack {
   align-items: baseline;
   justify-content: space-between;
   gap: var(--s2);
-  flex-wrap: wrap;
+  /* one row, always: the notice sits beside the word, never under it */
+  flex-wrap: nowrap;
+  white-space: nowrap;
+}
+
+.historyLabel > span:first-child {
+  flex: 0 0 auto;
 }
 
 .historyHint {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
   font-size: 10px;
-  letter-spacing: .4px;
+  letter-spacing: .3px;
   text-transform: none;
+  text-align: right;
   color: var(--ink-3, #6b6179);
   opacity: .85;
 }
 
-/* with a mouse there is nothing to swipe, so say the other way */
-@media (hover: hover) and (pointer: fine) {
+/*
+  Wider than a tablet there is nothing to swipe with, so the
+  bin comes back on the row and the notice would be telling
+  people to do something that is switched off.
+*/
+@media (min-width: 1025px) {
 
   .historyHint {
-    visibility: hidden;
-  }
-
-  .historyHint::before {
-    content: 'Drag left to delete';
-    visibility: visible;
+    display: none;
   }
 
 }
 
-/* the row keeps the whole width now the bin has gone */
-.chatHistoryItem {
-  padding-right: 12px;
-}
+/* on a touch screen the swipe is the way, so the row is all title */
+@media (max-width: 1024px) {
 
-.chatHistoryItem > button {
-  padding-right: 0;
+  .chatHistoryItem {
+    padding-right: 12px;
+  }
+
+  .chatHistoryItem > button {
+    padding-right: 0;
+  }
+
 }
 
 /* =====================================================
