@@ -10461,14 +10461,26 @@ const SHOP_GROUPS = [
   {
     id: 'plans',
     title: 'Every month',
-    note: 'A plan that renews, and better pictures the higher you go.',
+    note: 'Renews each month, and buys a better picture the higher you go.',
     of: pack => pack.kind === 'plan'
   },
   {
-    id: 'addons',
-    title: 'Add ons',
-    note: 'Bought once, never expires. Top up whenever you run low.',
-    of: pack => pack.kind !== 'plan'
+    id: 'voice',
+    title: 'Voice add ons',
+    note: 'Time to talk. Bought once, never expires.',
+    of: pack => pack.kind !== 'plan' && pack.voice > 0 && !pack.images
+  },
+  {
+    id: 'pictures',
+    title: 'Picture add ons',
+    note: 'Image credits. Bought once, never expires.',
+    of: pack => pack.kind !== 'plan' && pack.images > 0 && !pack.voice
+  },
+  {
+    id: 'mixed',
+    title: 'Mixed add ons',
+    note: 'Pictures and talking together, cheaper than buying each.',
+    of: pack => pack.kind !== 'plan' && pack.images > 0 && pack.voice > 0
   }
 ];
 
@@ -10525,6 +10537,50 @@ async function buyPack(id, button) {
 
 }
 
+function shopTile(item, mine, best) {
+
+  const tile = document.createElement('div');
+
+  tile.className =
+    'shopTile' +
+    (item.kind === 'plan' && item.id === mine ? ' mine' : '') +
+    (item.id === best ? ' best' : '');
+
+  const onThis = item.kind === 'plan' && item.id === mine;
+
+  /* what they get, in the two numbers that matter */
+  const gives = [];
+
+  if (item.images) gives.push(`${item.images} picture${item.images === 1 ? '' : 's'}`);
+  if (item.voice) {
+    gives.push(item.voice >= 60
+      ? `${(item.voice / 60) % 1 === 0 ? item.voice / 60 : (item.voice / 60).toFixed(1)} hour${item.voice >= 120 ? 's' : ''} of talking`
+      : `${item.voice} minutes of talking`);
+  }
+
+  tile.innerHTML =
+    (item.id === best ? '<span class="shopFlag">Best value</span>' : '') +
+    (onThis ? '<span class="shopFlag yours">Your plan</span>' : '') +
+    `<div class="shopTileName">${item.name}</div>` +
+    `<div class="shopTilePrice">${priceTag(item.pence)}` +
+    `${item.kind === 'plan' ? '<span class="shopPer">a month</span>' : ''}</div>` +
+    `<div class="shopTileGives">${gives.join(' and ')}</div>` +
+    `<div class="shopTileBlurb">${item.blurb}</div>`;
+
+  const buy = document.createElement('button');
+  buy.type = 'button';
+  buy.className = 'shopBuy';
+  buy.textContent = onThis ? 'Current plan' : (item.kind === 'plan' ? 'Subscribe' : 'Buy');
+  buy.disabled = onThis;
+
+  if (!onThis) buy.addEventListener('click', () => buyPack(item.id, buy));
+
+  tile.appendChild(buy);
+
+  return tile;
+
+}
+
 function paintShop() {
 
   const holder = document.getElementById('shopGroups');
@@ -10535,12 +10591,21 @@ function paintShop() {
 
   const mine = String(account?.plan || '');
 
-  /* one section to a page, so nothing competes for the eye */
   if (shopPage > SHOP_GROUPS.length - 1) shopPage = SHOP_GROUPS.length - 1;
   if (shopPage < 0) shopPage = 0;
 
   const group = SHOP_GROUPS[shopPage];
   const items = shopPacks.filter(group.of);
+
+  /* the one giving the most per pound, so nobody has to work it out */
+  let best = null;
+  let bestRate = 0;
+
+  items.forEach(item => {
+    const worth = (item.images || 0) * 16 + (item.voice || 0) * 1.5;
+    const rate = worth / (item.pence || 1);
+    if (rate > bestRate) { bestRate = rate; best = item.id; }
+  });
 
   const head = document.createElement('div');
   head.className = 'shopPageHead';
@@ -10550,54 +10615,21 @@ function paintShop() {
 
   holder.appendChild(head);
 
-  const list = document.createElement('div');
-  list.className = 'shopList';
+  const grid = document.createElement('div');
+  grid.className = 'shopGrid';
 
-  items.forEach(item => {
-
-    const row = document.createElement('div');
-
-    row.className =
-      'shopItem' + (item.kind === 'plan' && item.id === mine ? ' mine' : '');
-
-    const text = document.createElement('div');
-    text.className = 'shopItemText';
-    text.innerHTML =
-      `<div class="shopItemName">${item.name}</div>` +
-      `<div class="shopItemBlurb">${item.blurb}</div>`;
-
-    const buy = document.createElement('button');
-    buy.type = 'button';
-    buy.className = 'shopBuy';
-
-    const onThis = item.kind === 'plan' && item.id === mine;
-
-    buy.textContent =
-      onThis
-        ? 'Your plan'
-        : `${priceTag(item.pence)}${item.kind === 'plan' ? ' a month' : ''}`;
-
-    buy.disabled = onThis;
-
-    if (!onThis) {
-      buy.addEventListener('click', () => buyPack(item.id, buy));
-    }
-
-    row.append(text, buy);
-    list.appendChild(row);
-
-  });
+  items.forEach(item => grid.appendChild(shopTile(item, mine, items.length > 1 ? best : null)));
 
   if (!items.length) {
     const empty = document.createElement('div');
-    empty.className = 'shopItemBlurb';
+    empty.className = 'shopPageNote';
     empty.textContent = 'Nothing here at the moment.';
-    list.appendChild(empty);
+    grid.appendChild(empty);
   }
 
-  holder.appendChild(list);
+  holder.appendChild(grid);
 
-  /* moving between the pages */
+  /* which page, and the two beside it */
   const pager = document.createElement('div');
   pager.className = 'chatPager shopPager';
 
@@ -10615,13 +10647,22 @@ function paintShop() {
     return button;
   };
 
-  const where = document.createElement('span');
-  where.className = 'pagerWhere';
-  where.textContent = `${shopPage + 1} of ${SHOP_GROUPS.length}`;
+  const beads = document.createElement('span');
+  beads.className = 'shopBeads';
+
+  SHOP_GROUPS.forEach((one, index) => {
+    const bead = document.createElement('button');
+    bead.type = 'button';
+    bead.className = 'shopBead' + (index === shopPage ? ' on' : '');
+    bead.setAttribute('aria-label', one.title);
+    bead.title = one.title;
+    bead.addEventListener('click', () => { shopPage = index; paintShop(); });
+    beads.appendChild(bead);
+  });
 
   pager.append(
     step(SHOP_GROUPS[shopPage - 1]?.title || 'Back', shopPage - 1, shopPage < 1),
-    where,
+    beads,
     step(SHOP_GROUPS[shopPage + 1]?.title || 'Next', shopPage + 1, shopPage >= SHOP_GROUPS.length - 1)
   );
 

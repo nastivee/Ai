@@ -11834,3 +11834,141 @@ body.motionOff .walkerDrops .drop {
   animation: none;
   opacity: .5;
 }
+
+/* ---------- THE SHOP, LAID OUT PROPERLY ---------- */
+/*
+  Tiles rather than rows: the price is the thing people are
+  comparing, so it is the biggest thing on each one, with what
+  they actually get on the line beneath it in plain numbers.
+*/
+
+.shopGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 10px;
+}
+
+.shopTile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: 16px 14px 14px;
+  border: 1px solid #2f2447;
+  border-radius: 16px;
+  background: linear-gradient(180deg, rgba(255,255,255,.035), rgba(255,255,255,.012));
+  transition: border-color .35s var(--ease), transform .35s var(--ease);
+}
+
+.shopTile:hover {
+  border-color: var(--accLine, #4a3568);
+  transform: translateY(-2px);
+}
+
+.shopTileName {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: .3px;
+  color: #cfc3dd;
+}
+
+.shopTilePrice {
+  margin: 6px 0 2px;
+  font-size: 30px;
+  font-weight: 800;
+  letter-spacing: -.5px;
+  color: #f6f1fb;
+  line-height: 1.05;
+}
+
+.shopPer {
+  margin-left: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0;
+  color: #8d80a0;
+}
+
+.shopTileGives {
+  margin-top: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--acc, #cbb6ff);
+}
+
+.shopTileBlurb {
+  margin-top: 7px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #a396b4;
+  /* pushes the button to the bottom so every tile's button lines up */
+  flex: 1;
+}
+
+.shopTile .shopBuy {
+  width: 100%;
+  margin-top: 14px;
+  min-height: 42px;
+  padding: 0 16px;
+}
+
+/* the one giving the most per pound */
+.shopTile.best {
+  border-color: var(--acc, #a78bfa);
+  background:
+    linear-gradient(180deg, var(--accSoft, rgba(167,139,250,.14)), rgba(255,255,255,.01));
+}
+
+.shopFlag {
+  position: absolute;
+  top: -9px;
+  left: 14px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--acc, #a78bfa);
+  color: #17112a;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .5px;
+  text-transform: uppercase;
+}
+
+.shopFlag.yours {
+  background: #86b89a;
+  color: #10231a;
+}
+
+.shopTile.mine {
+  border-color: #2f6b45;
+  background: rgba(60, 170, 110, .08);
+}
+
+/* ---- the beads between the two steps ---- */
+
+.shopBeads {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.shopBead {
+  width: 8px;
+  height: 8px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: #3a2c55;
+  cursor: pointer;
+  transition: background .3s var(--ease), transform .3s var(--ease);
+}
+
+.shopBead.on {
+  background: var(--acc, #a78bfa);
+  transform: scale(1.3);
+}
+
+.shopBead:hover { background: var(--acc, #a78bfa); }
+
+@media (max-width: 480px) {
+  .shopGrid { grid-template-columns: 1fr; }
+  .shopPager .pagerStep { max-width: 36%; font-size: 10.5px; }
+}
