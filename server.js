@@ -7672,6 +7672,8 @@ LAST THING, AND THE ONE THAT MATTERS MOST: ${accentName}, thick, from the first 
       audio: {
         input: {
           transcription: { model: 'gpt-4o-mini-transcribe' },
+          /* the room stays out of it even on the plain fallback */
+          noise_reduction: { type: 'near_field' },
           turn_detection: { type: 'semantic_vad' }
         },
         output: { voice: chosenVoice }

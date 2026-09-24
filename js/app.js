@@ -16084,7 +16084,33 @@ async function startVoiceCall() {
     setVoiceState('connecting', 'Asking for your microphone...');
 
     const stream =
-      await navigator.mediaDevices.getUserMedia({ audio: true });
+      await navigator.mediaDevices.getUserMedia({
+        /*
+          KEEPING THE ROOM OUT
+
+          Plain "audio: true" takes whatever the browser feels
+          like, which on some of them is the raw microphone:
+          the telly, the road outside, somebody else in the
+          room, and his own voice coming back off the speaker,
+          all of it sent up and all of it billed as if it were
+          you talking.
+
+          Asked for explicitly rather than hoped for. Echo
+          cancellation stops him hearing himself, which is the
+          one that causes him to answer his own sentences.
+          Noise suppression drops steady background. Automatic
+          gain keeps a quiet voice up without dragging the
+          room up with it. One channel at the rate the voice
+          service wants, so nothing is resampled on the way.
+        */
+        audio: {
+          echoCancellation: { ideal: true },
+          noiseSuppression: { ideal: true },
+          autoGainControl: { ideal: true },
+          channelCount: { ideal: 1 },
+          sampleRate: { ideal: 24000 }
+        }
+      });
 
     call.stream = stream;
 
@@ -16521,10 +16547,10 @@ function nextOpener() {
 const VOICE_OPEN_ASK = 5000;
 
 /* how long a hush has to last before he says something */
-const VOICE_WAKE_AFTER = 10000;
+const VOICE_WAKE_AFTER = 6000;
 
 /* and how long before he is allowed to again */
-const VOICE_WAKE_GAP = 22000;
+const VOICE_WAKE_GAP = 13000;
 
 /* he tries a few times, then leaves it to the idle timers */
 const VOICE_WAKE_TRIES = 4;
